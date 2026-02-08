@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Button, Card, Input, Modal, Money } from '../components/ui'
+import { useKitchen } from '../ctx/KitchenContext'
 
 type Ingredient = {
   id: string
@@ -20,6 +21,8 @@ function toNum(s: string, fallback = 0) {
 }
 
 export default function Ingredients() {
+  const { kitchenId } = useKitchen()
+
   const [items, setItems] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -75,8 +78,10 @@ export default function Ingredients() {
   }
 
   useEffect(() => {
+    if (!kitchenId) return
     load().catch((e) => alert(e.message))
-  }, [])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kitchenId])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
@@ -85,9 +90,11 @@ export default function Ingredients() {
   }, [items, q])
 
   const onSave = async () => {
+    if (!kitchenId) return alert('Kitchen not loaded yet')
     if (!name.trim()) return alert('Name is required')
 
     const payload = {
+      kitchen_id: kitchenId,
       name: name.trim(),
       category: category.trim() || null,
       supplier: supplier.trim() || null,
