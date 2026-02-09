@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { useEffect, useState } from 'react'
 import { supabase } from './lib/supabase'
 
@@ -32,7 +32,8 @@ function AuthedApp() {
 
   const onSignOut = async () => {
     await supabase.auth.signOut()
-    window.location.href = '/login'
+    // With HashRouter, send user to #/login
+    window.location.hash = '#/login'
   }
 
   return (
@@ -42,7 +43,7 @@ function AuthedApp() {
         <Route path="/ingredients" element={<Ingredients />} />
         <Route path="/recipes" element={<Recipes />} />
 
-        {/* ✅ This fixes your 404 */}
+        {/* ✅ Works without Vercel rewrites */}
         <Route path="/recipe-editor" element={<RecipeEditor />} />
 
         <Route path="/settings" element={<Settings />} />
@@ -55,7 +56,7 @@ function AuthedApp() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <Routes>
         {/* Public */}
         <Route path="/login" element={<Login />} />
@@ -64,6 +65,6 @@ export default function App() {
         {/* App */}
         <Route path="/*" element={<AuthedApp />} />
       </Routes>
-    </BrowserRouter>
+    </HashRouter>
   )
 }
