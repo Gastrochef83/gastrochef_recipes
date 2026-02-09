@@ -1,7 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
-import { Button, Card, Input, Modal, Money } from '../components/ui'
-import { useKitchen } from '../ctx/KitchenContext'
 
 type Ingredient = {
   id: string
@@ -21,7 +19,7 @@ function toNum(s: string, fallback = 0) {
 }
 
 export default function Ingredients() {
-  const { kitchenId } = useKitchen()
+  const [kitchenId, setKitchenId] = useState<string | null>(null)
 
   const [items, setItems] = useState<Ingredient[]>([])
   const [loading, setLoading] = useState(true)
@@ -66,27 +64,49 @@ export default function Ingredients() {
     setOpen(true)
   }
 
+  const loadKitchen = async () => {
+    const { data, error } = await supabase.rpc('current_kitchen_id')
+    if (error) throw error
+    const kid = (data as string) ?? null
+    setKitchenId(kid)
+    return kid
+  }
+
   const load = async () => {
     setLoading(true)
     const { data, error } = await supabase
       .from('ingredients')
       .select('id,name,category,supplier,pack_size,pack_unit,pack_price,yield_percent,net_unit_cost')
       .order('created_at', { ascending: false })
+
     setLoading(false)
     if (error) throw error
     setItems((data ?? []) as Ingredient[])
   }
 
   useEffect(() => {
-    if (!kitchenId) return
-    load().catch((e) => alert(e.message))
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [kitchenId])
+    ;(async () => {
+      try {
+        const kid = await loadKitchen()
+        if (!kid) {
+          setLoading(false)
+          alert('No kitchen linked to this user yet.')
+          return
+        }
+        await load()
+      } catch (e: any) {
+        setLoading(false)
+        alert(e.message)
+      }
+    })()
+  }, [])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
     if (!s) return items
-    return items.filter((i) => [i.name, i.category ?? '', i.supplier ?? ''].join(' ').toLowerCase().includes(s))
+    return items.filter((i) =>
+      [i.name, i.category ?? '', i.supplier ?? ''].join(' ').toLowerCase().includes(s)
+    )
   }, [items, q])
 
   const onSave = async () => {
@@ -128,26 +148,32 @@ export default function Ingredients() {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <div className="gc-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <div className="text-sm font-semibold tracking-wide text-neutral-500">INGREDIENTS</div>
-            <div className="mt-1 text-2xl font-semibold">Database</div>
-            <div className="mt-2 text-sm text-neutral-600">Pack cost → Net unit cost computed automatically.</div>
+            <div className="gc-label">INGREDIENTS</div>
+            <div className="mt-2 text-2xl font-extrabold">Database</div>
+            <div className="mt-3 text-sm text-neutral-600">
+              Pack cost → Net unit cost computed automatically.
+            </div>
+            <div className="mt-2 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
           </div>
+
           <div className="flex items-center gap-2">
             <input
-              className="w-64 rounded-xl border px-3 py-2 text-sm"
+              className="gc-input w-64"
               placeholder="Search…"
               value={q}
               onChange={(e) => setQ(e.target.value)}
             />
-            <Button onClick={openCreate}>+ Add ingredient</Button>
+            <button className="gc-btn gc-btn-primary" onClick={openCreate} type="button">
+              + Add ingredient
+            </button>
           </div>
         </div>
-      </Card>
+      </div>
 
-      <Card>
+      <div className="gc-card p-6">
         {loading ? (
           <div className="text-sm text-neutral-600">Loading…</div>
         ) : filtered.length === 0 ? (
@@ -174,21 +200,17 @@ export default function Ingredients() {
                     <td className="py-2 pr-4">
                       {i.pack_size} {i.pack_unit}
                     </td>
-                    <td className="py-2 pr-4">
-                      <Money value={i.pack_price} />
-                    </td>
+                    <td className="py-2 pr-4">{i.pack_price}</td>
                     <td className="py-2 pr-4">{i.yield_percent}</td>
-                    <td className="py-2 pr-4">
-                      <Money value={i.net_unit_cost} />
-                    </td>
+                    <td className="py-2 pr-4">{i.net_unit_cost}</td>
                     <td className="py-2 pr-0 text-right">
                       <div className="inline-flex gap-2">
-                        <Button variant="ghost" onClick={() => openEdit(i)}>
+                        <button className="gc-btn gc-btn-ghost" onClick={() => openEdit(i)} type="button">
                           Edit
-                        </Button>
-                        <Button variant="danger" onClick={() => onDelete(i)}>
+                        </button>
+                        <button className="gc-btn gc-btn-ghost" onClick={() => onDelete(i)} type="button">
                           Delete
-                        </Button>
+                        </button>
                       </div>
                     </td>
                   </tr>
@@ -197,25 +219,79 @@ export default function Ingredients() {
             </table>
           </div>
         )}
-      </Card>
+      </div>
 
-      <Modal title={editing ? 'Edit ingredient' : 'Add ingredient'} open={open} onClose={() => setOpen(false)}>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          <Input label="Name" value={name} onChange={setName} placeholder="e.g. Chicken breast" />
-          <Input label="Category" value={category} onChange={setCategory} placeholder="e.g. Proteins" />
-          <Input label="Supplier" value={supplier} onChange={setSupplier} placeholder="Optional" />
-          <Input label="Pack unit" value={packUnit} onChange={setPackUnit} placeholder="kg / g / L / pcs" />
-          <Input label="Pack size" value={packSize} onChange={setPackSize} type="number" step="0.01" />
-          <Input label="Pack price" value={packPrice} onChange={setPackPrice} type="number" step="0.01" />
-          <Input label="Yield %" value={yieldPercent} onChange={setYieldPercent} type="number" step="0.01" />
+      {open && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
+          <div className="gc-card w-full max-w-2xl p-6">
+            <div className="text-lg font-extrabold">{editing ? 'Edit ingredient' : 'Add ingredient'}</div>
+
+            <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
+              <div>
+                <div className="gc-label">NAME</div>
+                <input className="gc-input mt-2" value={name} onChange={(e) => setName(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">CATEGORY</div>
+                <input className="gc-input mt-2" value={category} onChange={(e) => setCategory(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">SUPPLIER</div>
+                <input className="gc-input mt-2" value={supplier} onChange={(e) => setSupplier(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">PACK UNIT</div>
+                <input className="gc-input mt-2" value={packUnit} onChange={(e) => setPackUnit(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">PACK SIZE</div>
+                <input
+                  className="gc-input mt-2"
+                  value={packSize}
+                  onChange={(e) => setPackSize(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <div className="gc-label">PACK PRICE</div>
+                <input
+                  className="gc-input mt-2"
+                  value={packPrice}
+                  onChange={(e) => setPackPrice(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+
+              <div>
+                <div className="gc-label">YIELD %</div>
+                <input
+                  className="gc-input mt-2"
+                  value={yieldPercent}
+                  onChange={(e) => setYieldPercent(e.target.value)}
+                  type="number"
+                  step="0.01"
+                />
+              </div>
+            </div>
+
+            <div className="mt-6 flex justify-end gap-2">
+              <button className="gc-btn gc-btn-ghost" onClick={() => setOpen(false)} type="button">
+                Cancel
+              </button>
+              <button className="gc-btn gc-btn-primary" onClick={onSave} type="button">
+                {editing ? 'Save changes' : 'Create ingredient'}
+              </button>
+            </div>
+          </div>
         </div>
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <Button variant="ghost" onClick={() => setOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={onSave}>{editing ? 'Save changes' : 'Create ingredient'}</Button>
-        </div>
-      </Modal>
+      )}
     </div>
   )
 }
