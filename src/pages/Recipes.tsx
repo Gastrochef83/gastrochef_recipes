@@ -1,188 +1,55 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 
-type RecipeRow = {
+type Recipe = {
   id: string
-  kitchen_id: string
   name: string
-  category?: string | null
-  portions?: number | null
-  description?: string | null
-  method?: string | null
-  photo_urls?: string[] | null
-  calories?: number | string | null
-  protein_g?: number | string | null
-  carbs_g?: number | string | null
-  fat_g?: number | string | null
-  created_at?: string | null
-}
-
-function toNum(s: string, fallback = 0) {
-  const n = Number(s)
-  return Number.isFinite(n) ? n : fallback
+  category: string | null
+  portions: number
+  description: string | null
+  calories: number | null
 }
 
 export default function Recipes() {
-  const [kitchenId, setKitchenId] = useState<string | null>(null)
-  const [items, setItems] = useState<RecipeRow[]>([])
+  const [items, setItems] = useState<Recipe[]>([])
   const [loading, setLoading] = useState(true)
-  const [err, setErr] = useState<string | null>(null)
-
   const [q, setQ] = useState('')
-  const [open, setOpen] = useState(false)
-  const [editing, setEditing] = useState<RecipeRow | null>(null)
-
-  const [name, setName] = useState('')
-  const [category, setCategory] = useState('')
-  const [portions, setPortions] = useState('1')
-
-  const [description, setDescription] = useState('')
-  const [method, setMethod] = useState('')
-  const [photoUrlsText, setPhotoUrlsText] = useState('')
-
-  const [calories, setCalories] = useState('')
-  const [proteinG, setProteinG] = useState('')
-  const [carbsG, setCarbsG] = useState('')
-  const [fatG, setFatG] = useState('')
-
-  const resetForm = () => {
-    setName('')
-    setCategory('')
-    setPortions('1')
-    setDescription('')
-    setMethod('')
-    setPhotoUrlsText('')
-    setCalories('')
-    setProteinG('')
-    setCarbsG('')
-    setFatG('')
-  }
-
-  const openCreate = () => {
-    setEditing(null)
-    resetForm()
-    setOpen(true)
-  }
-
-  const openEdit = (r: RecipeRow) => {
-    setEditing(r)
-    setName(r.name ?? '')
-    setCategory((r.category as any) ?? '')
-    setPortions(r.portions == null ? '1' : String(r.portions))
-    setDescription((r.description as any) ?? '')
-    setMethod((r.method as any) ?? '')
-    setPhotoUrlsText(((r.photo_urls as any) ?? []).join('\n'))
-    setCalories(r.calories == null ? '' : String(r.calories))
-    setProteinG(r.protein_g == null ? '' : String(r.protein_g))
-    setCarbsG(r.carbs_g == null ? '' : String(r.carbs_g))
-    setFatG(r.fat_g == null ? '' : String(r.fat_g))
-    setOpen(true)
-  }
-
-  const loadKitchen = async () => {
-    const { data, error } = await supabase.rpc('current_kitchen_id')
-    if (error) throw error
-    const kid = (data as string) ?? null
-    setKitchenId(kid)
-    return kid
-  }
 
   const load = async () => {
     setLoading(true)
-    setErr(null)
-
     const { data, error } = await supabase
       .from('recipes')
-      .select(
-        'id,kitchen_id,name,category,portions,description,method,photo_urls,calories,protein_g,carbs_g,fat_g,created_at'
-      )
+      .select('id,name,category,portions,description,calories,created_at')
       .order('created_at', { ascending: false })
 
     setLoading(false)
-
     if (error) {
-      setErr(error.message)
-      setItems([])
+      alert(error.message)
       return
     }
-
-    setItems((data ?? []) as RecipeRow[])
+    setItems((data ?? []) as Recipe[])
   }
 
   useEffect(() => {
-    ;(async () => {
-      try {
-        const kid = await loadKitchen()
-        if (!kid) {
-          setLoading(false)
-          setErr('No kitchen linked to this user yet.')
-          return
-        }
-        await load()
-      } catch (e: any) {
-        setLoading(false)
-        setErr(e?.message ?? 'Unknown error')
-      }
-    })()
+    load()
   }, [])
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
     if (!s) return items
-    return items.filter((r) => {
-      const hay = [r.name ?? '', r.category ?? '', r.description ?? ''].join(' ').toLowerCase()
-      return hay.includes(s)
-    })
+    return items.filter((r) =>
+      [r.name, r.category ?? '', r.description ?? '']
+        .join(' ')
+        .toLowerCase()
+        .includes(s)
+    )
   }, [items, q])
 
-  const previewUrls = useMemo(() => {
-    return photoUrlsText
-      .split('\n')
-      .map((x) => x.trim())
-      .filter(Boolean)
-      .slice(0, 4)
-  }, [photoUrlsText])
-
-  const onSave = async () => {
-    if (!kitchenId) return alert('Kitchen not loaded yet')
-    if (!name.trim()) return alert('Name is required')
-
-    const portionsVal = toNum(portions, 1)
-    if (portionsVal <= 0) return alert('Portions must be >= 1')
-
-    const urls = photoUrlsText
-      .split('\n')
-      .map((x) => x.trim())
-      .filter(Boolean)
-
-    const payload = {
-      kitchen_id: kitchenId,
-      name: name.trim(),
-      category: category.trim() || null,
-      portions: portionsVal,
-      description: description.trim() || null,
-      method: method.trim() || null,
-      photo_urls: urls.length ? urls : null,
-      calories: calories.trim() === '' ? null : toNum(calories, 0),
-      protein_g: proteinG.trim() === '' ? null : toNum(proteinG, 0),
-      carbs_g: carbsG.trim() === '' ? null : toNum(carbsG, 0),
-      fat_g: fatG.trim() === '' ? null : toNum(fatG, 0),
-    }
-
-    const res = editing
-      ? await supabase.from('recipes').update(payload).eq('id', editing.id)
-      : await supabase.from('recipes').insert(payload)
-
-    if (res.error) {
-      alert(res.error.message)
-      return
-    }
-
-    setOpen(false)
-    await load()
+  const openEditor = (id: string) => {
+    window.location.href = `/recipe-editor?id=${id}`
   }
 
-  const onDelete = async (r: RecipeRow) => {
+  const onDelete = async (r: Recipe) => {
     if (!confirm(`Delete recipe: ${r.name}?`)) return
     const { error } = await supabase.from('recipes').delete().eq('id', r.id)
     if (error) return alert(error.message)
@@ -192,183 +59,69 @@ export default function Recipes() {
   return (
     <div className="space-y-6">
       <div className="gc-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="gc-label">RECIPES</div>
-            <div className="mt-2 text-3xl font-extrabold tracking-tight">Recipes Builder</div>
-            <div className="mt-2 text-sm text-neutral-600">
-              Description, method, photos, nutrition. (Costing lines next.)
-            </div>
-            <div className="mt-3 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
+            <div className="mt-2 text-3xl font-extrabold">Recipes</div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2">
-            <input className="gc-input w-64" placeholder="Search…" value={q} onChange={(e) => setQ(e.target.value)} />
-            <button className="gc-btn gc-btn-primary" onClick={openCreate} type="button">
-              + Add recipe
-            </button>
-          </div>
+          <input
+            className="gc-input w-72"
+            placeholder="Search…"
+            value={q}
+            onChange={(e) => setQ(e.target.value)}
+          />
         </div>
       </div>
-
-      {err && (
-        <div className="gc-card p-6">
-          <div className="gc-label">ERROR</div>
-          <div className="mt-2 text-sm text-red-600">{err}</div>
-        </div>
-      )}
 
       <div className="gc-card p-6">
         {loading ? (
-          <div className="text-sm text-neutral-600">Loading…</div>
+          <div>Loading…</div>
         ) : filtered.length === 0 ? (
-          <div className="text-sm text-neutral-600">No recipes yet. Click “Add recipe”.</div>
+          <div>No recipes yet.</div>
         ) : (
-          <div className="overflow-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs font-semibold text-neutral-500">
-                <tr>
-                  <th className="py-2 pr-4">Name</th>
-                  <th className="py-2 pr-4">Category</th>
-                  <th className="py-2 pr-4">Portions</th>
-                  <th className="py-2 pr-4">Calories</th>
-                  <th className="py-2 pr-4">Protein</th>
-                  <th className="py-2 pr-4">Carbs</th>
-                  <th className="py-2 pr-4">Fat</th>
-                  <th className="py-2 pr-0 text-right">Actions</th>
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs font-semibold text-neutral-500">
+              <tr>
+                <th className="py-2 pr-4">Name</th>
+                <th className="py-2 pr-4">Category</th>
+                <th className="py-2 pr-4">Portions</th>
+                <th className="py-2 pr-4">Calories</th>
+                <th className="py-2 pr-0 text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filtered.map((r) => (
+                <tr key={r.id} className="border-t">
+                  <td className="py-3 pr-4 font-semibold">{r.name}</td>
+                  <td className="py-3 pr-4">{r.category ?? '—'}</td>
+                  <td className="py-3 pr-4">{r.portions}</td>
+                  <td className="py-3 pr-4">{r.calories ?? '—'}</td>
+                  <td className="py-3 pr-0 text-right">
+                    <div className="inline-flex gap-2">
+                      <button
+                        className="gc-btn gc-btn-primary"
+                        onClick={() => openEditor(r.id)}
+                        type="button"
+                      >
+                        Open Editor
+                      </button>
+
+                      <button
+                        className="gc-btn gc-btn-ghost"
+                        onClick={() => onDelete(r)}
+                        type="button"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody className="align-top">
-                {filtered.map((r) => (
-                  <tr key={r.id} className="border-t">
-                    <td className="py-3 pr-4">
-                      <div className="font-semibold">{r.name}</div>
-                      <div className="text-xs text-neutral-500">{(r.description ?? '').slice(0, 60) || '—'}</div>
-                    </td>
-                    <td className="py-3 pr-4">{r.category ?? '—'}</td>
-                    <td className="py-3 pr-4">{r.portions ?? '—'}</td>
-                    <td className="py-3 pr-4">{r.calories ?? '—'}</td>
-                    <td className="py-3 pr-4">{r.protein_g ?? '—'}</td>
-                    <td className="py-3 pr-4">{r.carbs_g ?? '—'}</td>
-                    <td className="py-3 pr-4">{r.fat_g ?? '—'}</td>
-                    <td className="py-3 pr-0 text-right">
-                      <div className="inline-flex gap-2">
-                        <button className="gc-btn gc-btn-ghost" onClick={() => openEdit(r)} type="button">
-                          Edit
-                        </button>
-                        <button className="gc-btn gc-btn-ghost" onClick={() => onDelete(r)} type="button">
-                          Delete
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+              ))}
+            </tbody>
+          </table>
         )}
       </div>
-
-      {open && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-          <div className="gc-card w-full max-w-4xl p-6">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <div className="gc-label">{editing ? 'EDIT' : 'CREATE'}</div>
-                <div className="mt-1 text-xl font-extrabold">{editing ? 'Edit recipe' : 'Add recipe'}</div>
-              </div>
-              <button className="gc-btn gc-btn-ghost" onClick={() => setOpen(false)} type="button">
-                Close
-              </button>
-            </div>
-
-            <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <div>
-                <div className="gc-label">NAME</div>
-                <input className="gc-input mt-2" value={name} onChange={(e) => setName(e.target.value)} />
-              </div>
-
-              <div>
-                <div className="gc-label">CATEGORY</div>
-                <input className="gc-input mt-2" value={category} onChange={(e) => setCategory(e.target.value)} />
-              </div>
-
-              <div>
-                <div className="gc-label">PORTIONS</div>
-                <input
-                  className="gc-input mt-2"
-                  value={portions}
-                  onChange={(e) => setPortions(e.target.value)}
-                  type="number"
-                  step="1"
-                  min="1"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="gc-label">DESCRIPTION</div>
-                <input className="gc-input mt-2" value={description} onChange={(e) => setDescription(e.target.value)} />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="gc-label">METHOD</div>
-                <textarea className="gc-input mt-2" rows={8} value={method} onChange={(e) => setMethod(e.target.value)} />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="gc-label">PHOTO URLS (one per line)</div>
-                <textarea
-                  className="gc-input mt-2"
-                  rows={4}
-                  value={photoUrlsText}
-                  onChange={(e) => setPhotoUrlsText(e.target.value)}
-                  placeholder="https://…"
-                />
-                {previewUrls.length > 0 && (
-                  <div className="mt-3 grid grid-cols-2 gap-3 md:grid-cols-4">
-                    {previewUrls.map((u) => (
-                      <div key={u} className="gc-card overflow-hidden">
-                        <img src={u} alt="preview" className="h-28 w-full object-cover" />
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-
-              <div className="gc-card p-5 md:col-span-2">
-                <div className="gc-label">NUTRITION</div>
-                <div className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-4">
-                  <div>
-                    <div className="gc-label">CALORIES</div>
-                    <input className="gc-input mt-2" value={calories} onChange={(e) => setCalories(e.target.value)} type="number" />
-                  </div>
-                  <div>
-                    <div className="gc-label">PROTEIN (G)</div>
-                    <input className="gc-input mt-2" value={proteinG} onChange={(e) => setProteinG(e.target.value)} type="number" step="0.1" />
-                  </div>
-                  <div>
-                    <div className="gc-label">CARBS (G)</div>
-                    <input className="gc-input mt-2" value={carbsG} onChange={(e) => setCarbsG(e.target.value)} type="number" step="0.1" />
-                  </div>
-                  <div>
-                    <div className="gc-label">FAT (G)</div>
-                    <input className="gc-input mt-2" value={fatG} onChange={(e) => setFatG(e.target.value)} type="number" step="0.1" />
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="mt-6 flex justify-end gap-2">
-              <button className="gc-btn gc-btn-ghost" onClick={() => setOpen(false)} type="button">
-                Cancel
-              </button>
-              <button className="gc-btn gc-btn-primary" onClick={onSave} type="button">
-                {editing ? 'Save changes' : 'Create recipe'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }
