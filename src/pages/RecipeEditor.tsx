@@ -47,13 +47,19 @@ function safeUnit(u: string) {
   return x
 }
 
+// ✅ Parse ?id=... from HashRouter URL:
+// Example: https://site/#/recipe-editor?id=UUID
+function getHashQueryParam(key: string) {
+  const h = window.location.hash || ''
+  const qIndex = h.indexOf('?')
+  if (qIndex === -1) return null
+  const query = h.slice(qIndex + 1)
+  const params = new URLSearchParams(query)
+  return params.get(key)
+}
+
 export default function RecipeEditor() {
-  // We don't know how your router passes recipe id, so we support query string:
-  // /recipe-editor?id=UUID
-  const recipeId = useMemo(() => {
-    const p = new URLSearchParams(window.location.search)
-    return p.get('id')
-  }, [])
+  const recipeId = useMemo(() => getHashQueryParam('id'), [])
 
   const [kitchenId, setKitchenId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -119,7 +125,7 @@ export default function RecipeEditor() {
           return
         }
         if (!recipeId) {
-          setErr('Missing recipe id. Open this page as: /recipe-editor?id=RECIPE_UUID')
+          setErr('Missing recipe id. Open this page as: #/recipe-editor?id=RECIPE_UUID')
           setLoading(false)
           return
         }
@@ -196,9 +202,7 @@ export default function RecipeEditor() {
           <div>
             <div className="gc-label">RECIPE EDITOR</div>
             <div className="mt-2 text-3xl font-extrabold tracking-tight">{recipe?.name ?? '—'}</div>
-            <div className="mt-2 text-sm text-neutral-600">
-              Ingredients + quantities + live costing preview.
-            </div>
+            <div className="mt-2 text-sm text-neutral-600">Ingredients + quantities + live costing preview.</div>
             <div className="mt-3 text-xs text-neutral-500">
               Kitchen ID: {kitchenId ?? '—'} · Recipe ID: {recipeId ?? '—'}
             </div>
@@ -208,8 +212,7 @@ export default function RecipeEditor() {
             <div className="gc-label">COST</div>
             <div className="mt-2 text-2xl font-extrabold">{money(totals.totalCost)}</div>
             <div className="mt-2 text-xs text-neutral-500">
-              Cost / portion ({recipe?.portions ?? 1}):{' '}
-              <span className="font-semibold">{money(totals.costPerPortion)}</span>
+              Cost / portion ({recipe?.portions ?? 1}): <span className="font-semibold">{money(totals.costPerPortion)}</span>
             </div>
           </div>
         </div>
@@ -230,7 +233,6 @@ export default function RecipeEditor() {
 
       {!loading && !err && recipe && (
         <>
-          {/* Add line */}
           <div className="gc-card p-6">
             <div className="flex flex-wrap items-end gap-3">
               <div className="min-w-[260px] flex-1">
@@ -251,13 +253,7 @@ export default function RecipeEditor() {
 
               <div className="w-40">
                 <div className="gc-label">QTY</div>
-                <input
-                  className="gc-input mt-2"
-                  value={qty}
-                  onChange={(e) => setQty(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <input className="gc-input mt-2" value={qty} onChange={(e) => setQty(e.target.value)} type="number" step="0.01" />
               </div>
 
               <div className="w-36">
@@ -274,7 +270,6 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Lines table */}
           <div className="gc-card p-6">
             <div className="gc-label">INGREDIENT LINES</div>
 
@@ -298,7 +293,6 @@ export default function RecipeEditor() {
                       <tr key={line.id} className="border-t">
                         <td className="py-3 pr-4">
                           <div className="font-semibold">{ing?.name ?? line.ingredient_id}</div>
-                          <div className="text-xs text-neutral-500">Ingredient ID: {line.ingredient_id.slice(0, 8)}…</div>
                         </td>
 
                         <td className="py-3 pr-4">
@@ -312,11 +306,7 @@ export default function RecipeEditor() {
                         </td>
 
                         <td className="py-3 pr-4">
-                          <input
-                            className="gc-input w-28"
-                            value={line.unit}
-                            onChange={(e) => onUpdateLine(line.id, { unit: safeUnit(e.target.value) })}
-                          />
+                          <input className="gc-input w-28" value={line.unit} onChange={(e) => onUpdateLine(line.id, { unit: safeUnit(e.target.value) })} />
                         </td>
 
                         <td className="py-3 pr-4">{money(net)}</td>
