@@ -2,36 +2,18 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 
-type Ingredient = {
-  id: string
-  name?: string
-  pack_unit?: string | null
-  net_unit_cost?: number | null
-  is_active?: boolean
-}
-
 type Recipe = {
   id: string
-  kitchen_id: string
   name: string
   category: string | null
   portions: number
-  description: string | null
-  method: string | null
-  photo_urls: string[] | null
-  calories: number | null
-  protein_g: number | null
-  carbs_g: number | null
-  fat_g: number | null
-
   yield_qty: number | null
   yield_unit: string | null
   is_subrecipe: boolean
   is_archived: boolean
 }
 
-type RecipeLine = {
-  id: string
+type Line = {
   recipe_id: string
   ingredient_id: string | null
   sub_recipe_id: string | null
@@ -39,7 +21,13 @@ type RecipeLine = {
   unit: string
 }
 
-type LineMode = 'ingredient' | 'subrecipe'
+type Ingredient = {
+  id: string
+  name?: string | null
+  pack_unit?: string | null
+  net_unit_cost?: number | null
+  is_active?: boolean
+}
 
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
@@ -72,64 +60,55 @@ function convertQty(qty: number, fromUnit: string, toUnit: string) {
 
   const ff = unitFamily(from)
   const tf = unitFamily(to)
-  if (ff !== tf) return { ok: false, value: qty } // mismatch, return unchanged
+  if (ff !== tf) return { ok: false, value: qty }
 
-  // mass
   if (ff === 'mass') {
     if (from === 'g' && to === 'kg') return { ok: true, value: qty / 1000 }
     if (from === 'kg' && to === 'g') return { ok: true, value: qty * 1000 }
   }
-
-  // volume
   if (ff === 'volume') {
     if (from === 'ml' && to === 'l') return { ok: true, value: qty / 1000 }
     if (from === 'l' && to === 'ml') return { ok: true, value: qty * 1000 }
   }
-
-  // count/portion/other: no conversion
   return { ok: true, value: qty }
 }
 
-// HashRouter query param (/#/recipe-editor?id=UUID)
-function getHashQueryParam(key: string) {
-  const h = window.location.hash || ''
-  const qIndex = h.indexOf('?')
-  if (qIndex === -1) return null
-  const query = h.slice(qIndex + 1)
-  const params = new URLSearchParams(query)
-  return params.get(key)
+// Simple CSV parser (comma-separated, no quoted commas). Enough for clean exports.
+function parseCsv(text: string) {
+  const lines = text
+    .replace(/\r/g, '')
+    .split('\n')
+    .map((l) => l.trim())
+    .filter(Boolean)
+
+  if (lines.length === 0) return { headers: [], rows: [] as Record<string, string>[] }
+
+  const headers = lines[0].split(',').map((h) => h.trim())
+  const rows = lines.slice(1).map((line) => {
+    const cols = line.split(',').map((c) => c.trim())
+    const obj: Record<string, string> = {}
+    headers.forEach((h, i) => (obj[h] = cols[i] ?? ''))
+    return obj
+  })
+
+  return { headers, rows }
 }
 
-export default function RecipeEditor() {
-  const recipeId = useMemo(() => getHashQueryParam('id'), [])
-
-  const [kitchenId, setKitchenId] = useState<string | null>(null)
+export default function Recipes() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
-  const [recipe, setRecipe] = useState<Recipe | null>(null)
-  const [recipesAll, setRecipesAll] = useState<Pick<Recipe, 'id' | 'name' | 'portions' | 'yield_qty' | 'yield_unit' | 'is_subrecipe' | 'is_archived'>[]>([])
+  const [recipes, setRecipes] = useState<Recipe[]>([])
+  const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
-  const [lines, setLines] = useState<RecipeLine[]>([])
 
-  // Add line form
-  const [lineMode, setLineMode] = useState<LineMode>('ingredient')
-  const [pickIngredientId, setPickIngredientId] = useState('')
-  const [pickSubRecipeId, setPickSubRecipeId] = useState('')
-  const [qty, setQty] = useState('0')
-  const [unit, setUnit] = useState('g')
+  const [search, setSearch] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
 
-  // Recipe details form
-  const [rName, setRName] = useState('')
-  const [rCategory, setRCategory] = useState('')
-  const [rPortions, setRPortions] = useState('1')
-  const [rYieldQty, setRYieldQty] = useState('')
-  const [rYieldUnit, setRYieldUnit] = useState('g')
-  const [rSub, setRSub] = useState(false)
-  const [rArchived, setRArchived] = useState(false)
-  const [rDescription, setRDescription] = useState('')
-  const [rMethod, setRMethod] = useState('')
-  const [savingRecipe, setSavingRecipe] = useState(false)
+  // Import modal
+  const [importOpen, setImportOpen] = useState(false)
+  const [importType, setImportType] = useState<'ingredients' | 'recipes' | 'lines'>('ingredients')
+  const [importBusy, setImportBusy] = useState(false)
 
   // Toast
   const [toastMsg, setToastMsg] = useState('')
@@ -139,324 +118,242 @@ export default function RecipeEditor() {
     setToastOpen(true)
   }
 
-  const loadKitchen = async () => {
-    const { data, error } = await supabase.rpc('current_kitchen_id')
-    if (error) throw error
-    const kid = (data as string) ?? null
-    setKitchenId(kid)
-    return kid
-  }
+  const load = async () => {
+    setLoading(true)
+    setErr(null)
+    try {
+      const { data: rData, error: rErr } = await supabase
+        .from('recipes')
+        .select('id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived')
+        .order('name', { ascending: true })
+      if (rErr) throw rErr
 
-  const loadRecipe = async (id: string) => {
-    const { data, error } = await supabase
-      .from('recipes')
-      .select(
-        'id,kitchen_id,name,category,portions,description,method,photo_urls,calories,protein_g,carbs_g,fat_g,yield_qty,yield_unit,is_subrecipe,is_archived'
-      )
-      .eq('id', id)
-      .single()
-    if (error) throw error
-    const r = data as Recipe
-    setRecipe(r)
+      const { data: lData, error: lErr } = await supabase
+        .from('recipe_lines')
+        .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
+      if (lErr) throw lErr
 
-    setRName(r.name ?? '')
-    setRCategory(r.category ?? '')
-    setRPortions(String(r.portions ?? 1))
-    setRYieldQty(r.yield_qty == null ? '' : String(r.yield_qty))
-    setRYieldUnit((r.yield_unit ?? 'g') || 'g')
-    setRSub(!!r.is_subrecipe)
-    setRArchived(!!r.is_archived)
-    setRDescription(r.description ?? '')
-    setRMethod(r.method ?? '')
-  }
+      const { data: iData, error: iErr } = await supabase
+        .from('ingredients')
+        .select('id,name,pack_unit,net_unit_cost,is_active')
+      if (iErr) throw iErr
 
-  const loadRecipesAll = async () => {
-    const { data, error } = await supabase
-      .from('recipes')
-      .select('id,name,portions,yield_qty,yield_unit,is_subrecipe,is_archived')
-      .order('name', { ascending: true })
-    if (error) throw error
-    setRecipesAll((data ?? []) as any)
-  }
-
-  const loadIngredients = async () => {
-    const { data, error } = await supabase.from('ingredients').select('*').order('name', { ascending: true })
-    if (error) throw error
-    const list = (data ?? []) as Ingredient[]
-    setIngredients(list.filter((x) => (x.is_active ?? true)))
-  }
-
-  const loadLines = async (id: string) => {
-    const { data, error } = await supabase
-      .from('recipe_lines')
-      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit')
-      .eq('recipe_id', id)
-      .order('id', { ascending: true })
-    if (error) throw error
-    setLines((data ?? []) as RecipeLine[])
+      setRecipes((rData ?? []) as Recipe[])
+      setLines((lData ?? []) as Line[])
+      setIngredients((iData ?? []) as Ingredient[])
+      setLoading(false)
+    } catch (e: any) {
+      setErr(e?.message ?? 'Unknown error')
+      setLoading(false)
+    }
   }
 
   useEffect(() => {
-    ;(async () => {
-      setLoading(true)
-      setErr(null)
-      try {
-        const kid = await loadKitchen()
-        if (!kid) {
-          setErr('No kitchen linked to this user yet.')
-          setLoading(false)
-          return
-        }
-        if (!recipeId) {
-          setErr('Missing recipe id. Open as: #/recipe-editor?id=RECIPE_UUID')
-          setLoading(false)
-          return
-        }
-        await Promise.all([loadRecipe(recipeId), loadRecipesAll(), loadIngredients(), loadLines(recipeId)])
-        setLoading(false)
-      } catch (e: any) {
-        setErr(e?.message ?? 'Unknown error')
-        setLoading(false)
-      }
-    })()
-  }, [recipeId])
+    load()
+  }, [])
 
-  const ingredientById = useMemo(() => {
+  const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
     for (const i of ingredients) m.set(i.id, i)
     return m
   }, [ingredients])
 
-  const recipeMetaById = useMemo(() => {
-    const m = new Map<string, (typeof recipesAll)[number]>()
-    for (const r of recipesAll) m.set(r.id, r)
+  const recipeById = useMemo(() => {
+    const m = new Map<string, Recipe>()
+    for (const r of recipes) m.set(r.id, r)
     return m
-  }, [recipesAll])
+  }, [recipes])
 
-  // Build costs for all recipes (for sub-recipe lines)
-  const allRecipeLines = useMemo(() => {
-    // We only have lines for current recipe; for accurate sub-recipe cost we need all lines.
-    // So we'll compute sub-recipe cost using a small batch fetch in Recipes/Dashboard.
-    // Here we do best-effort: sub-recipe cost unknown => 0, and we warn.
-    return new Map<string, number>() // empty map in editor, dashboard will have full
-  }, [])
+  // Cost engine with sub-recipes (iterate until stable)
+  const recipeTotalCost = useMemo(() => {
+    const totals = new Map<string, number>()
+    for (const r of recipes) totals.set(r.id, 0)
 
-  const rows = useMemo(() => {
-    const totalCost = 0 // placeholder for pct; computed below with second pass
-    const out = lines.map((l) => {
-      if (l.ingredient_id) {
-        const ing = ingredientById.get(l.ingredient_id)
-        const packUnit = safeUnit(ing?.pack_unit ?? 'g')
-        const net = toNum(ing?.net_unit_cost, 0)
-        const conv = convertQty(toNum(l.qty, 0), l.unit, packUnit)
-        const lineCost = conv.value * net
-        return {
-          kind: 'ingredient' as const,
-          line: l,
-          label: ing?.name ?? l.ingredient_id,
-          unitNote: conv.ok ? null : `Unit mismatch (${safeUnit(l.unit)} vs ${packUnit})`,
-          basis: `${conv.ok ? 'Converted' : 'No conversion'} to ${packUnit}`,
-          unitCost: net,
-          lineCost,
+    const maxPass = 10
+    for (let pass = 0; pass < maxPass; pass++) {
+      let changed = false
+
+      for (const r of recipes) {
+        // compute total from its lines
+        const rLines = lines.filter((l) => l.recipe_id === r.id)
+        let sum = 0
+
+        for (const l of rLines) {
+          const qty = toNum(l.qty, 0)
+
+          // ingredient line
+          if (l.ingredient_id) {
+            const ing = ingById.get(l.ingredient_id)
+            const packUnit = safeUnit(ing?.pack_unit ?? 'g')
+            const net = toNum(ing?.net_unit_cost, 0)
+            const conv = convertQty(qty, l.unit, packUnit)
+            sum += conv.value * net
+            continue
+          }
+
+          // sub-recipe line
+          if (l.sub_recipe_id) {
+            const sub = recipeById.get(l.sub_recipe_id)
+            const subTotal = totals.get(l.sub_recipe_id) ?? 0
+            const u = safeUnit(l.unit)
+
+            if (sub) {
+              const subPortions = Math.max(1, toNum(sub.portions, 1))
+              const cpp = subTotal / subPortions
+
+              if (u === 'portion') {
+                sum += qty * cpp
+                continue
+              }
+
+              const yq = toNum(sub.yield_qty, 0)
+              const yu = safeUnit(sub.yield_unit ?? '')
+              if (yq > 0 && yu) {
+                const costPerYieldUnit = subTotal / yq
+                const conv = convertQty(qty, l.unit, yu)
+                sum += conv.value * costPerYieldUnit
+                continue
+              }
+
+              // fallback
+              sum += qty * cpp
+              continue
+            }
+
+            // unknown sub-recipe
+            sum += 0
+          }
+        }
+
+        const prev = totals.get(r.id) ?? 0
+        if (Math.abs(prev - sum) > 1e-9) {
+          totals.set(r.id, sum)
+          changed = true
         }
       }
 
-      // sub-recipe line
-      const meta = l.sub_recipe_id ? recipeMetaById.get(l.sub_recipe_id) : null
-      const subName = meta?.name ?? l.sub_recipe_id ?? '—'
-      const subTotal = l.sub_recipe_id ? (allRecipeLines.get(l.sub_recipe_id) ?? 0) : 0
+      if (!changed) break
+    }
 
-      const portions = Math.max(1, toNum(meta?.portions, 1))
-      const cpp = subTotal / portions
+    return totals
+  }, [recipes, lines, ingById, recipeById])
 
-      // If unit is portion, use cost/portion directly
-      const u = safeUnit(l.unit)
-      if (u === 'portion') {
-        const lineCost = toNum(l.qty, 0) * cpp
-        return {
-          kind: 'subrecipe' as const,
-          line: l,
-          label: `↳ ${subName}`,
-          unitNote: allRecipeLines.size === 0 ? 'Sub-recipe cost preview needs Dashboard (full lines).' : null,
-          basis: `qty × sub cost/portion`,
-          unitCost: cpp,
-          lineCost,
-        }
-      }
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    return recipes
+      .filter((r) => (showArchived ? true : !r.is_archived))
+      .filter((r) => !s || r.name.toLowerCase().includes(s) || (r.category ?? '').toLowerCase().includes(s))
+  }, [recipes, search, showArchived])
 
-      // Else try yield-based cost
-      const yq = toNum(meta?.yield_qty, 0)
-      const yu = safeUnit((meta?.yield_unit ?? '') || '')
-      if (yq > 0 && yu) {
-        const costPerYieldUnit = subTotal / yq
-        const conv = convertQty(toNum(l.qty, 0), l.unit, yu)
-        const lineCost = conv.value * costPerYieldUnit
-        return {
-          kind: 'subrecipe' as const,
-          line: l,
-          label: `↳ ${subName}`,
-          unitNote: conv.ok ? null : `Unit mismatch (${safeUnit(l.unit)} vs ${yu})`,
-          basis: `qty (converted to ${yu}) × sub cost/${yu}`,
-          unitCost: costPerYieldUnit,
-          lineCost,
-        }
-      }
+  const openEditor = (id: string) => {
+    window.location.href = `/#/recipe-editor?id=${id}`
+  }
 
-      // Fallback to portion cost if yield not set
-      const lineCost = toNum(l.qty, 0) * cpp
-      return {
-        kind: 'subrecipe' as const,
-        line: l,
-        label: `↳ ${subName}`,
-        unitNote: 'No yield set for sub-recipe. Using cost/portion fallback.',
-        basis: `qty × sub cost/portion`,
-        unitCost: cpp,
-        lineCost,
-      }
-    })
+  const toggleArchive = async (id: string, next: boolean) => {
+    const { error } = await supabase.from('recipes').update({ is_archived: next }).eq('id', id)
+    if (error) return showToast(error.message)
+    showToast(next ? 'Recipe archived ✅' : 'Recipe restored ✅')
+    await load()
+  }
 
-    const finalTotal = out.reduce((a, r) => a + r.lineCost, 0)
-    return out.map((r) => ({
-      ...r,
-      pct: finalTotal > 0 ? (r.lineCost / finalTotal) * 100 : 0,
-      total: finalTotal,
-    }))
-  }, [lines, ingredientById, recipeMetaById, allRecipeLines])
-
-  const totals = useMemo(() => {
-    const totalCost = rows.reduce((acc, r) => acc + r.lineCost, 0)
-    const portions = Math.max(1, toNum(recipe?.portions, 1))
-    const costPerPortion = totalCost / portions
-    return { totalCost, costPerPortion }
-  }, [rows, recipe])
-
-  const saveRecipe = async () => {
-    if (!recipeId) return showToast('Missing recipe id')
-    const name = rName.trim()
-    if (!name) return showToast('Recipe name is required')
-
-    setSavingRecipe(true)
+  const onImportFile = async (file: File) => {
+    setImportBusy(true)
     try {
-      const payload: any = {
-        name,
-        category: rCategory.trim() || null,
-        portions: Math.max(1, toNum(rPortions, 1)),
-        description: rDescription.trim() || null,
-        method: rMethod.trim() || null,
-        is_subrecipe: !!rSub,
-        is_archived: !!rArchived,
-        yield_qty: rYieldQty.trim() === '' ? null : toNum(rYieldQty, 0),
-        yield_unit: (rYieldUnit || '').trim() || null,
+      const text = await file.text()
+      const { rows } = parseCsv(text)
+      if (rows.length === 0) {
+        showToast('CSV is empty.')
+        setImportBusy(false)
+        return
       }
 
-      const { error } = await supabase.from('recipes').update(payload).eq('id', recipeId)
-      if (error) throw error
+      if (importType === 'ingredients') {
+        // expected columns: name,category,supplier,pack_size,pack_unit,pack_price,net_unit_cost,is_active
+        const payload = rows.map((r) => ({
+          name: r.name,
+          category: r.category || null,
+          supplier: r.supplier || null,
+          pack_size: r.pack_size ? toNum(r.pack_size, 1) : 1,
+          pack_unit: r.pack_unit || 'g',
+          pack_price: r.pack_price ? toNum(r.pack_price, 0) : 0,
+          net_unit_cost: r.net_unit_cost ? toNum(r.net_unit_cost, 0) : 0,
+          is_active: r.is_active === '' ? true : r.is_active.toLowerCase() !== 'false',
+        }))
+        const { error } = await supabase.from('ingredients').insert(payload)
+        if (error) throw error
+        showToast(`Imported ingredients: ${payload.length} ✅`)
+      }
 
-      await loadRecipe(recipeId)
-      await loadRecipesAll()
-      showToast('Recipe saved ✅')
+      if (importType === 'recipes') {
+        // expected columns: name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,description,method
+        const payload = rows.map((r) => ({
+          name: r.name,
+          category: r.category || null,
+          portions: Math.max(1, toNum(r.portions, 1)),
+          yield_qty: r.yield_qty === '' ? null : toNum(r.yield_qty, 0),
+          yield_unit: r.yield_unit || null,
+          is_subrecipe: (r.is_subrecipe || '').toLowerCase() === 'true',
+          is_archived: (r.is_archived || '').toLowerCase() === 'true',
+          description: r.description || null,
+          method: r.method || null,
+        }))
+        const { error } = await supabase.from('recipes').insert(payload)
+        if (error) throw error
+        showToast(`Imported recipes: ${payload.length} ✅`)
+      }
+
+      if (importType === 'lines') {
+        // expected columns: recipe_id,ingredient_id,sub_recipe_id,qty,unit
+        const payload = rows.map((r) => ({
+          recipe_id: r.recipe_id,
+          ingredient_id: r.ingredient_id || null,
+          sub_recipe_id: r.sub_recipe_id || null,
+          qty: toNum(r.qty, 0),
+          unit: r.unit || 'g',
+        }))
+        const { error } = await supabase.from('recipe_lines').insert(payload)
+        if (error) throw error
+        showToast(`Imported recipe lines: ${payload.length} ✅`)
+      }
+
+      setImportOpen(false)
+      await load()
     } catch (e: any) {
-      showToast(e?.message ?? 'Save failed')
+      showToast(e?.message ?? 'Import failed')
     } finally {
-      setSavingRecipe(false)
+      setImportBusy(false)
     }
   }
-
-  const onAddLine = async () => {
-    if (!recipeId) return showToast('Missing recipe id')
-    const q = toNum(qty, 0)
-    if (q <= 0) return showToast('Qty must be > 0')
-
-    if (lineMode === 'ingredient') {
-      if (!pickIngredientId) return showToast('Pick an ingredient')
-      const payload = {
-        recipe_id: recipeId,
-        ingredient_id: pickIngredientId,
-        sub_recipe_id: null,
-        qty: q,
-        unit: safeUnit(unit),
-      }
-      const { error } = await supabase.from('recipe_lines').insert(payload)
-      if (error) return showToast(error.message)
-      setPickIngredientId('')
-      setQty('0')
-      setUnit('g')
-      await loadLines(recipeId)
-      showToast('Ingredient line added ✅')
-      return
-    }
-
-    // sub-recipe
-    if (!pickSubRecipeId) return showToast('Pick a sub-recipe')
-    if (pickSubRecipeId === recipeId) return showToast('Sub-recipe cannot be the same recipe.')
-    const payload = {
-      recipe_id: recipeId,
-      ingredient_id: null,
-      sub_recipe_id: pickSubRecipeId,
-      qty: q,
-      unit: safeUnit(unit),
-    }
-    const { error } = await supabase.from('recipe_lines').insert(payload)
-    if (error) return showToast(error.message)
-    setPickSubRecipeId('')
-    setQty('0')
-    setUnit('portion')
-    await loadLines(recipeId)
-    showToast('Sub-recipe line added ✅')
-  }
-
-  const onUpdateLine = async (id: string, patch: Partial<RecipeLine>) => {
-    const { error } = await supabase.from('recipe_lines').update(patch).eq('id', id)
-    if (error) return showToast(error.message)
-    if (recipeId) await loadLines(recipeId)
-  }
-
-  const onDeleteLine = async (id: string) => {
-    const ok = confirm('Delete this line?')
-    if (!ok) return
-    const { error } = await supabase.from('recipe_lines').delete().eq('id', id)
-    if (error) return showToast(error.message)
-    if (recipeId) await loadLines(recipeId)
-    showToast('Line deleted ✅')
-  }
-
-  const subRecipeOptions = useMemo(() => {
-    // show only sub-recipes (not archived), excluding current recipe
-    return recipesAll
-      .filter((r) => r.id !== recipeId)
-      .filter((r) => (r.is_archived ? false : true))
-      .filter((r) => r.is_subrecipe) // only sub-recipes
-  }, [recipesAll, recipeId])
 
   return (
     <div className="space-y-6">
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="gc-label">RECIPE EDITOR (UPGRADE D)</div>
-            <div className="mt-2 text-3xl font-extrabold tracking-tight">{recipe?.name ?? '—'}</div>
-            <div className="mt-2 text-sm text-neutral-600">Unit conversion + Sub-recipe lines + Cost breakdown.</div>
-            <div className="mt-3 text-xs text-neutral-500">
-              Kitchen ID: {kitchenId ?? '—'} · Recipe ID: {recipeId ?? '—'}
-            </div>
+            <div className="gc-label">RECIPES (UPGRADE D)</div>
+            <div className="mt-2 text-2xl font-extrabold">Library</div>
+            <div className="mt-2 text-sm text-neutral-600">Sub-recipe costing + Unit conversion + CSV import.</div>
           </div>
 
-          <div className="gc-card p-4">
-            <div className="gc-label">COST</div>
-            <div className="mt-2 text-2xl font-extrabold">{money(totals.totalCost)}</div>
-            <div className="mt-2 text-xs text-neutral-500">
-              Cost / portion ({recipe?.portions ?? 1}): <span className="font-semibold">{money(totals.costPerPortion)}</span>
-            </div>
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+              Show archived
+            </label>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setImportOpen(true)}>
+              Import CSV
+            </button>
           </div>
+        </div>
+
+        <div className="mt-4">
+          <div className="gc-label">SEARCH</div>
+          <input className="gc-input mt-2 w-full" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search recipe name or category…" />
         </div>
       </div>
 
-      {loading && (
-        <div className="gc-card p-6">
-          <div className="text-sm text-neutral-600">Loading…</div>
-        </div>
-      )}
-
+      {loading && <div className="gc-card p-6">Loading…</div>}
       {err && (
         <div className="gc-card p-6">
           <div className="gc-label">ERROR</div>
@@ -464,223 +361,121 @@ export default function RecipeEditor() {
         </div>
       )}
 
-      {!loading && !err && recipe && (
-        <>
-          {/* Recipe details */}
-          <div className="gc-card p-6">
-            <div className="gc-label">RECIPE DETAILS</div>
+      {!loading && !err && (
+        <div className="grid gap-4 md:grid-cols-2">
+          {filtered.map((r) => {
+            const total = recipeTotalCost.get(r.id) ?? 0
+            const portions = Math.max(1, toNum(r.portions, 1))
+            const cpp = total / portions
+            return (
+              <div key={r.id} className="gc-card p-6">
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <div className="text-lg font-extrabold">{r.name}</div>
+                    <div className="mt-1 text-sm text-neutral-600">{r.category ?? '—'} · Portions: {portions}</div>
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {r.is_subrecipe && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">Sub-Recipe</span>}
+                      {r.is_archived && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">Archived</span>}
+                    </div>
+                  </div>
 
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <div className="gc-label">NAME</div>
-                <input className="gc-input mt-2 w-full" value={rName} onChange={(e) => setRName(e.target.value)} />
-              </div>
+                  <div className="text-right">
+                    <div className="gc-label">TOTAL COST</div>
+                    <div className="mt-1 text-xl font-extrabold">{money(total)}</div>
+                    <div className="mt-1 text-xs text-neutral-500">
+                      Cost/portion: <span className="font-semibold">{money(cpp)}</span>
+                    </div>
+                  </div>
+                </div>
 
-              <div>
-                <div className="gc-label">CATEGORY</div>
-                <input className="gc-input mt-2 w-full" value={rCategory} onChange={(e) => setRCategory(e.target.value)} />
-              </div>
-
-              <div>
-                <div className="gc-label">PORTIONS</div>
-                <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={rPortions} onChange={(e) => setRPortions(e.target.value)} />
-              </div>
-
-              <div>
-                <div className="gc-label">YIELD QTY (OPTIONAL)</div>
-                <input className="gc-input mt-2 w-full" type="number" step="0.01" value={rYieldQty} onChange={(e) => setRYieldQty(e.target.value)} placeholder="e.g. 3500" />
-              </div>
-
-              <div>
-                <div className="gc-label">YIELD UNIT</div>
-                <select className="gc-input mt-2 w-full" value={rYieldUnit} onChange={(e) => setRYieldUnit(e.target.value)}>
-                  <option value="g">g</option>
-                  <option value="kg">kg</option>
-                  <option value="ml">ml</option>
-                  <option value="L">L</option>
-                  <option value="pcs">pcs</option>
-                  <option value="portion">portion</option>
-                </select>
-              </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2 text-sm text-neutral-700">
-                  <input type="checkbox" checked={rSub} onChange={(e) => setRSub(e.target.checked)} />
-                  Sub-Recipe
-                </label>
-
-                <label className="flex items-center gap-2 text-sm text-neutral-700">
-                  <input type="checkbox" checked={rArchived} onChange={(e) => setRArchived(e.target.checked)} />
-                  Archived
-                </label>
-
-                <div className="ml-auto">
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={saveRecipe} disabled={savingRecipe}>
-                    {savingRecipe ? 'Saving…' : 'Save Recipe'}
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={() => openEditor(r.id)}>
+                    Open Editor
                   </button>
+
+                  {!r.is_archived ? (
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleArchive(r.id, true)}>
+                      Archive
+                    </button>
+                  ) : (
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleArchive(r.id, false)}>
+                      Restore
+                    </button>
+                  )}
                 </div>
               </div>
+            )
+          })}
+        </div>
+      )}
 
-              <div className="md:col-span-2">
-                <div className="gc-label">DESCRIPTION / NOTES</div>
-                <textarea className="gc-input mt-2 w-full" rows={3} value={rDescription} onChange={(e) => setRDescription(e.target.value)} />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="gc-label">DIRECTIONS / METHOD</div>
-                <textarea className="gc-input mt-2 w-full" rows={8} value={rMethod} onChange={(e) => setRMethod(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          {/* Add line */}
-          <div className="gc-card p-6">
-            <div className="gc-label">ADD LINE</div>
-
-            <div className="mt-4 flex flex-wrap items-end gap-3">
-              <div className="w-52">
-                <div className="gc-label">LINE TYPE</div>
-                <select className="gc-input mt-2 w-full" value={lineMode} onChange={(e) => setLineMode(e.target.value as LineMode)}>
-                  <option value="ingredient">Ingredient</option>
-                  <option value="subrecipe">Sub-Recipe</option>
-                </select>
-              </div>
-
-              {lineMode === 'ingredient' ? (
-                <div className="min-w-[260px] flex-1">
-                  <div className="gc-label">INGREDIENT</div>
-                  <select className="gc-input mt-2 w-full" value={pickIngredientId} onChange={(e) => setPickIngredientId(e.target.value)}>
-                    <option value="">Select ingredient…</option>
-                    {ingredients.map((i) => (
-                      <option key={i.id} value={i.id}>
-                        {i.name}
-                      </option>
-                    ))}
-                  </select>
+      {/* Import modal (simple) */}
+      {importOpen && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setImportOpen(false)} />
+          <div className="absolute left-1/2 top-1/2 w-[min(780px,92vw)] -translate-x-1/2 -translate-y-1/2">
+            <div className="gc-card p-6 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <div className="gc-label">IMPORT</div>
+                  <div className="mt-1 text-xl font-extrabold">Import CSV</div>
+                  <div className="mt-1 text-sm text-neutral-600">
+                    Use clean CSV (comma separated). No quoted commas.
+                  </div>
                 </div>
-              ) : (
-                <div className="min-w-[260px] flex-1">
-                  <div className="gc-label">SUB-RECIPE</div>
-                  <select className="gc-input mt-2 w-full" value={pickSubRecipeId} onChange={(e) => setPickSubRecipeId(e.target.value)}>
-                    <option value="">Select sub-recipe…</option>
-                    {subRecipeOptions.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name}
-                      </option>
-                    ))}
-                  </select>
-                  <div className="mt-1 text-xs text-neutral-500">Tip: Use unit = portion for best results.</div>
-                </div>
-              )}
-
-              <div className="w-40">
-                <div className="gc-label">QTY</div>
-                <input className="gc-input mt-2 w-full" value={qty} onChange={(e) => setQty(e.target.value)} type="number" step="0.01" />
-              </div>
-
-              <div className="w-44">
-                <div className="gc-label">UNIT</div>
-                <select className="gc-input mt-2 w-full" value={unit} onChange={(e) => setUnit(e.target.value)}>
-                  <option value="g">g</option>
-                  <option value="kg">kg</option>
-                  <option value="ml">ml</option>
-                  <option value="L">L</option>
-                  <option value="pcs">pcs</option>
-                  <option value="portion">portion</option>
-                </select>
-              </div>
-
-              <div>
-                <button className="gc-btn gc-btn-primary" onClick={onAddLine} type="button">
-                  + Add line
+                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setImportOpen(false)}>
+                  Close
                 </button>
               </div>
-            </div>
-          </div>
 
-          {/* Lines table */}
-          <div className="gc-card p-6">
-            <div className="gc-label">LINES (UNIT CONVERSION + SUB-RECIPES)</div>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <div className="gc-label">TYPE</div>
+                  <select className="gc-input mt-2 w-full" value={importType} onChange={(e) => setImportType(e.target.value as any)}>
+                    <option value="ingredients">Ingredients</option>
+                    <option value="recipes">Recipes</option>
+                    <option value="lines">Recipe Lines</option>
+                  </select>
 
-            {rows.length === 0 ? (
-              <div className="mt-3 text-sm text-neutral-600">No lines yet. Add your first line.</div>
-            ) : (
-              <div className="mt-4 overflow-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-xs font-semibold text-neutral-500">
-                    <tr>
-                      <th className="py-2 pr-4">Line</th>
-                      <th className="py-2 pr-4">Qty</th>
-                      <th className="py-2 pr-4">Unit</th>
-                      <th className="py-2 pr-4">Basis</th>
-                      <th className="py-2 pr-4">Unit Cost</th>
-                      <th className="py-2 pr-4">Line Cost</th>
-                      <th className="py-2 pr-4">% of Total</th>
-                      <th className="py-2 pr-0 text-right">Actions</th>
-                    </tr>
-                  </thead>
+                  <div className="mt-3 text-xs text-neutral-600">
+                    <div className="font-semibold">Expected columns:</div>
+                    {importType === 'ingredients' && (
+                      <div>name,category,supplier,pack_size,pack_unit,pack_price,net_unit_cost,is_active</div>
+                    )}
+                    {importType === 'recipes' && (
+                      <div>name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,description,method</div>
+                    )}
+                    {importType === 'lines' && (
+                      <div>recipe_id,ingredient_id,sub_recipe_id,qty,unit</div>
+                    )}
+                  </div>
+                </div>
 
-                  <tbody className="align-top">
-                    {rows.map((r) => (
-                      <tr key={r.line.id} className="border-t">
-                        <td className="py-3 pr-4">
-                          <div className="font-semibold">{r.label}</div>
-                          {r.unitNote && <div className="mt-1 text-xs text-amber-700">{r.unitNote}</div>}
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          <input
-                            className="gc-input w-28"
-                            type="number"
-                            step="0.01"
-                            value={String(r.line.qty)}
-                            onChange={(e) => onUpdateLine(r.line.id, { qty: toNum(e.target.value, r.line.qty) })}
-                          />
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          <input className="gc-input w-28" value={r.line.unit} onChange={(e) => onUpdateLine(r.line.id, { unit: safeUnit(e.target.value) })} />
-                        </td>
-
-                        <td className="py-3 pr-4 text-xs text-neutral-600">{r.basis}</td>
-                        <td className="py-3 pr-4">{money(r.unitCost)}</td>
-                        <td className="py-3 pr-4 font-semibold">{money(r.lineCost)}</td>
-                        <td className="py-3 pr-4">{r.pct.toFixed(1)}%</td>
-
-                        <td className="py-3 pr-0 text-right">
-                          <button className="gc-btn gc-btn-ghost" onClick={() => onDeleteLine(r.line.id)} type="button">
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-
-                    <tr className="border-t">
-                      <td className="py-3 pr-4 font-semibold" colSpan={5}>
-                        Total
-                      </td>
-                      <td className="py-3 pr-4 text-sm font-extrabold">{money(totals.totalCost)}</td>
-                      <td className="py-3 pr-4">{totals.totalCost > 0 ? '100.0%' : '0.0%'}</td>
-                      <td />
-                    </tr>
-                    <tr className="border-t">
-                      <td className="py-3 pr-4 font-semibold" colSpan={5}>
-                        Cost / portion ({recipe.portions})
-                      </td>
-                      <td className="py-3 pr-4 text-sm font-extrabold">{money(totals.costPerPortion)}</td>
-                      <td />
-                      <td />
-                    </tr>
-                  </tbody>
-                </table>
-
-                <div className="mt-3 text-xs text-neutral-500">
-                  Note: Sub-recipe cost preview inside this editor is best when you use Dashboard (full dataset). Use unit = <b>portion</b> for sub-recipe lines.
+                <div>
+                  <div className="gc-label">CSV FILE</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="file"
+                    accept=".csv,text/csv"
+                    disabled={importBusy}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0]
+                      if (f) onImportFile(f)
+                    }}
+                  />
+                  <div className="mt-2 text-xs text-neutral-500">
+                    When you pick a file, import starts immediately.
+                  </div>
+                  {importBusy && <div className="mt-2 text-sm">Importing…</div>}
                 </div>
               </div>
-            )}
+
+              <div className="mt-4 text-xs text-neutral-500">
+                Tip: For sub-recipe lines, set unit = <b>portion</b> and qty = number of portions used.
+              </div>
+            </div>
           </div>
-        </>
+        </div>
       )}
 
       <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
