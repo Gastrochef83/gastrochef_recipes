@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { Toast } from '../components/Toast'
 
 type Ingredient = {
   id: string
-  name: string
-  pack_unit: string
-  net_unit_cost: number
+  name?: string
+  pack_unit?: string | null
+  net_unit_cost?: number | null
+  is_active?: boolean
 }
 
 type Recipe = {
@@ -21,6 +23,12 @@ type Recipe = {
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
+
+  // Upgrade C fields
+  yield_qty: number | null
+  yield_unit: string | null
+  is_subrecipe: boolean
+  is_archived: boolean
 }
 
 type RecipeLine = {
@@ -31,8 +39,8 @@ type RecipeLine = {
   unit: string
 }
 
-function toNum(s: string, fallback = 0) {
-  const n = Number(s)
+function toNum(x: any, fallback = 0) {
+  const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
 
@@ -43,12 +51,10 @@ function money(n: number) {
 
 function safeUnit(u: string) {
   const x = (u ?? '').trim().toLowerCase()
-  if (!x) return 'g'
-  return x
+  return x || 'g'
 }
 
-// ✅ Parse ?id=... from HashRouter URL:
-// Example: https://site/#/recipe-editor?id=UUID
+// HashRouter query param (/#/recipe-editor?id=UUID)
 function getHashQueryParam(key: string) {
   const h = window.location.hash || ''
   const qIndex = h.indexOf('?')
@@ -66,16 +72,33 @@ export default function RecipeEditor() {
   const [err, setErr] = useState<string | null>(null)
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
-  const [nameDraft, setNameDraft] = useState('')
-  const [portionsDraft, setPortionsDraft] = useState('1')
-
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [lines, setLines] = useState<RecipeLine[]>([])
 
-  // Add line form
-  const [pickIngredientId, setPickIngredientId] = useState<string>('')
+  // add line
+  const [pickIngredientId, setPickIngredientId] = useState('')
   const [qty, setQty] = useState('0')
   const [unit, setUnit] = useState('g')
+
+  // editor fields
+  const [rName, setRName] = useState('')
+  const [rCategory, setRCategory] = useState('')
+  const [rPortions, setRPortions] = useState('1')
+  const [rYieldQty, setRYieldQty] = useState('')
+  const [rYieldUnit, setRYieldUnit] = useState('g')
+  const [rSub, setRSub] = useState(false)
+  const [rArchived, setRArchived] = useState(false)
+  const [rDescription, setRDescription] = useState('')
+  const [rMethod, setRMethod] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // Toast
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastOpen, setToastOpen] = useState(false)
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setToastOpen(true)
+  }
 
   const loadKitchen = async () => {
     const { data, error } = await supabase.rpc('current_kitchen_id')
@@ -89,25 +112,35 @@ export default function RecipeEditor() {
     const { data, error } = await supabase
       .from('recipes')
       .select(
-        'id,kitchen_id,name,category,portions,description,method,photo_urls,calories,protein_g,carbs_g,fat_g'
+        'id,kitchen_id,name,category,portions,description,method,photo_urls,calories,protein_g,carbs_g,fat_g,yield_qty,yield_unit,is_subrecipe,is_archived'
       )
       .eq('id', id)
       .single()
     if (error) throw error
-
     const r = data as Recipe
     setRecipe(r)
-    setNameDraft(r.name ?? '')
-    setPortionsDraft(String(r.portions ?? 1))
+
+    // seed form fields
+    setRName(r.name ?? '')
+    setRCategory(r.category ?? '')
+    setRPortions(String(r.portions ?? 1))
+    setRYieldQty(r.yield_qty == null ? '' : String(r.yield_qty))
+    setRYieldUnit((r.yield_unit ?? 'g') || 'g')
+    setRSub(!!r.is_subrecipe)
+    setRArchived(!!r.is_archived)
+    setRDescription(r.description ?? '')
+    setRMethod(r.method ?? '')
   }
 
   const loadIngredients = async () => {
     const { data, error } = await supabase
       .from('ingredients')
-      .select('id,name,pack_unit,net_unit_cost')
+      .select('*')
       .order('name', { ascending: true })
     if (error) throw error
-    setIngredients((data ?? []) as Ingredient[])
+    const list = (data ?? []) as Ingredient[]
+    // show only active if the column exists, otherwise keep all
+    setIngredients(list.filter((x) => (x.is_active ?? true)))
   }
 
   const loadLines = async (id: string) => {
@@ -132,7 +165,7 @@ export default function RecipeEditor() {
           return
         }
         if (!recipeId) {
-          setErr('Missing recipe id. Open this page as: #/recipe-editor?id=RECIPE_UUID')
+          setErr('Missing recipe id. Open as: #/recipe-editor?id=RECIPE_UUID')
           setLoading(false)
           return
         }
@@ -154,36 +187,24 @@ export default function RecipeEditor() {
   const rows = useMemo(() => {
     return lines.map((l) => {
       const ing = ingredientById.get(l.ingredient_id)
-      const net = ing?.net_unit_cost ?? 0
-      const lineCost = (l.qty ?? 0) * net
+      const net = toNum(ing?.net_unit_cost, 0)
+      const lineCost = toNum(l.qty, 0) * net
       return { line: l, ing, net, lineCost }
     })
   }, [lines, ingredientById])
 
   const totals = useMemo(() => {
     const totalCost = rows.reduce((acc, r) => acc + r.lineCost, 0)
-    const portions = recipe?.portions ?? 1
-    const costPerPortion = portions > 0 ? totalCost / portions : totalCost
+    const portions = Math.max(1, toNum(recipe?.portions, 1))
+    const costPerPortion = totalCost / portions
     return { totalCost, costPerPortion }
   }, [rows, recipe])
 
-  const saveHeader = async () => {
-    if (!recipeId) return
-    const p = Math.max(1, toNum(portionsDraft, 1))
-    const { error } = await supabase
-      .from('recipes')
-      .update({ name: nameDraft.trim() || 'Untitled', portions: p })
-      .eq('id', recipeId)
-
-    if (error) return alert(error.message)
-    await loadRecipe(recipeId)
-  }
-
   const onAddLine = async () => {
-    if (!recipeId) return alert('Missing recipe id')
-    if (!pickIngredientId) return alert('Pick an ingredient')
+    if (!recipeId) return showToast('Missing recipe id')
+    if (!pickIngredientId) return showToast('Pick an ingredient')
     const q = toNum(qty, 0)
-    if (q <= 0) return alert('Qty must be > 0')
+    if (q <= 0) return showToast('Qty must be > 0')
 
     const payload = {
       recipe_id: recipeId,
@@ -193,66 +214,69 @@ export default function RecipeEditor() {
     }
 
     const { error } = await supabase.from('recipe_lines').insert(payload)
-    if (error) return alert(error.message)
+    if (error) return showToast(error.message)
 
     setPickIngredientId('')
     setQty('0')
     setUnit('g')
     await loadLines(recipeId)
+    showToast('Line added ✅')
   }
 
   const onUpdateLine = async (id: string, patch: Partial<RecipeLine>) => {
     const { error } = await supabase.from('recipe_lines').update(patch).eq('id', id)
-    if (error) return alert(error.message)
+    if (error) return showToast(error.message)
     if (recipeId) await loadLines(recipeId)
   }
 
   const onDeleteLine = async (id: string) => {
-    if (!confirm('Delete this line?')) return
+    const ok = confirm('Delete this line?')
+    if (!ok) return
     const { error } = await supabase.from('recipe_lines').delete().eq('id', id)
-    if (error) return alert(error.message)
+    if (error) return showToast(error.message)
     if (recipeId) await loadLines(recipeId)
+    showToast('Line deleted ✅')
+  }
+
+  const saveRecipe = async () => {
+    if (!recipeId) return showToast('Missing recipe id')
+    const name = rName.trim()
+    if (!name) return showToast('Recipe name is required')
+
+    setSaving(true)
+    try {
+      const payload: any = {
+        name,
+        category: rCategory.trim() || null,
+        portions: Math.max(1, toNum(rPortions, 1)),
+        description: rDescription.trim() || null,
+        method: rMethod.trim() || null,
+        is_subrecipe: !!rSub,
+        is_archived: !!rArchived,
+        yield_qty: rYieldQty.trim() === '' ? null : toNum(rYieldQty, 0),
+        yield_unit: (rYieldUnit || '').trim() || null,
+      }
+
+      const { error } = await supabase.from('recipes').update(payload).eq('id', recipeId)
+      if (error) throw error
+
+      await loadRecipe(recipeId)
+      showToast('Recipe saved ✅')
+    } catch (e: any) {
+      showToast(e?.message ?? 'Save failed')
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
     <div className="space-y-6">
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
-          <div className="flex-1 min-w-[280px]">
-            <div className="gc-label">RECIPE EDITOR</div>
-
-            {/* ✅ Premium editable header */}
-            <div className="mt-2 flex flex-wrap items-end gap-3">
-              <div className="flex-1 min-w-[260px]">
-                <div className="gc-label">RECIPE NAME</div>
-                <input
-                  className="gc-input mt-2 w-full text-lg font-extrabold"
-                  value={nameDraft}
-                  onChange={(e) => setNameDraft(e.target.value)}
-                  placeholder="Recipe name…"
-                />
-              </div>
-
-              <div className="w-40">
-                <div className="gc-label">PORTIONS</div>
-                <input
-                  className="gc-input mt-2"
-                  type="number"
-                  min={1}
-                  step="1"
-                  value={portionsDraft}
-                  onChange={(e) => setPortionsDraft(e.target.value)}
-                />
-              </div>
-
-              <div>
-                <button className="gc-btn gc-btn-primary" onClick={saveHeader} type="button">
-                  Save
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-2 text-sm text-neutral-600">Ingredients + quantities + live costing preview.</div>
+          <div>
+            <div className="gc-label">RECIPE EDITOR (PRO)</div>
+            <div className="mt-2 text-3xl font-extrabold tracking-tight">{recipe?.name ?? '—'}</div>
+            <div className="mt-2 text-sm text-neutral-600">Details, directions, ingredients, and live cost breakdown.</div>
             <div className="mt-3 text-xs text-neutral-500">
               Kitchen ID: {kitchenId ?? '—'} · Recipe ID: {recipeId ?? '—'}
             </div>
@@ -262,8 +286,7 @@ export default function RecipeEditor() {
             <div className="gc-label">COST</div>
             <div className="mt-2 text-2xl font-extrabold">{money(totals.totalCost)}</div>
             <div className="mt-2 text-xs text-neutral-500">
-              Cost / portion ({recipe?.portions ?? 1}):{' '}
-              <span className="font-semibold">{money(totals.costPerPortion)}</span>
+              Cost / portion ({recipe?.portions ?? 1}): <span className="font-semibold">{money(totals.costPerPortion)}</span>
             </div>
           </div>
         </div>
@@ -284,19 +307,84 @@ export default function RecipeEditor() {
 
       {!loading && !err && recipe && (
         <>
+          {/* Recipe details */}
           <div className="gc-card p-6">
-            <div className="flex flex-wrap items-end gap-3">
+            <div className="gc-label">RECIPE DETAILS</div>
+
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <div className="md:col-span-2">
+                <div className="gc-label">NAME</div>
+                <input className="gc-input mt-2 w-full" value={rName} onChange={(e) => setRName(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">CATEGORY</div>
+                <input className="gc-input mt-2 w-full" value={rCategory} onChange={(e) => setRCategory(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">PORTIONS</div>
+                <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={rPortions} onChange={(e) => setRPortions(e.target.value)} />
+              </div>
+
+              <div>
+                <div className="gc-label">YIELD QTY</div>
+                <input className="gc-input mt-2 w-full" type="number" step="0.01" value={rYieldQty} onChange={(e) => setRYieldQty(e.target.value)} placeholder="optional" />
+              </div>
+
+              <div>
+                <div className="gc-label">YIELD UNIT</div>
+                <select className="gc-input mt-2 w-full" value={rYieldUnit} onChange={(e) => setRYieldUnit(e.target.value)}>
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="ml">ml</option>
+                  <option value="L">L</option>
+                  <option value="pcs">pcs</option>
+                  <option value="portion">portion</option>
+                </select>
+              </div>
+
+              <div className="flex items-center gap-4">
+                <label className="flex items-center gap-2 text-sm text-neutral-700">
+                  <input type="checkbox" checked={rSub} onChange={(e) => setRSub(e.target.checked)} />
+                  Sub-Recipe
+                </label>
+
+                <label className="flex items-center gap-2 text-sm text-neutral-700">
+                  <input type="checkbox" checked={rArchived} onChange={(e) => setRArchived(e.target.checked)} />
+                  Archived
+                </label>
+
+                <div className="ml-auto">
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={saveRecipe} disabled={saving}>
+                    {saving ? 'Saving…' : 'Save Recipe'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="gc-label">DESCRIPTION / NOTES</div>
+                <textarea className="gc-input mt-2 w-full" rows={3} value={rDescription} onChange={(e) => setRDescription(e.target.value)} />
+              </div>
+
+              <div className="md:col-span-2">
+                <div className="gc-label">DIRECTIONS / METHOD</div>
+                <textarea className="gc-input mt-2 w-full" rows={8} value={rMethod} onChange={(e) => setRMethod(e.target.value)} />
+              </div>
+            </div>
+          </div>
+
+          {/* Add line */}
+          <div className="gc-card p-6">
+            <div className="gc-label">ADD INGREDIENT LINE</div>
+            <div className="mt-4 flex flex-wrap items-end gap-3">
               <div className="min-w-[260px] flex-1">
                 <div className="gc-label">INGREDIENT</div>
-                <select
-                  className="gc-input mt-2 w-full"
-                  value={pickIngredientId}
-                  onChange={(e) => setPickIngredientId(e.target.value)}
-                >
+                <select className="gc-input mt-2 w-full" value={pickIngredientId} onChange={(e) => setPickIngredientId(e.target.value)}>
                   <option value="">Select ingredient…</option>
                   {ingredients.map((i) => (
                     <option key={i.id} value={i.id}>
-                      {i.name} {i.pack_unit ? `(${i.pack_unit})` : ''}
+                      {i.name}
                     </option>
                   ))}
                 </select>
@@ -304,25 +392,19 @@ export default function RecipeEditor() {
 
               <div className="w-40">
                 <div className="gc-label">QTY</div>
-                <input
-                  className="gc-input mt-2"
-                  value={qty}
-                  onChange={(e) => setQty(e.target.value)}
-                  type="number"
-                  step="0.01"
-                />
+                <input className="gc-input mt-2 w-full" value={qty} onChange={(e) => setQty(e.target.value)} type="number" step="0.01" />
               </div>
 
-              <div className="w-36">
+              <div className="w-44">
                 <div className="gc-label">UNIT</div>
-                <select className="gc-input mt-2" value={unit} onChange={(e) => setUnit(e.target.value)}>
+                <select className="gc-input mt-2 w-full" value={unit} onChange={(e) => setUnit(e.target.value)}>
                   <option value="g">g</option>
                   <option value="kg">kg</option>
                   <option value="ml">ml</option>
-                  <option value="l">L</option>
+                  <option value="L">L</option>
                   <option value="pcs">pcs</option>
+                  <option value="portion">portion</option>
                 </select>
-                <div className="mt-1 text-xs text-neutral-500">g / kg / ml / L / pcs</div>
               </div>
 
               <div>
@@ -333,8 +415,9 @@ export default function RecipeEditor() {
             </div>
           </div>
 
+          {/* Lines table */}
           <div className="gc-card p-6">
-            <div className="gc-label">INGREDIENT LINES</div>
+            <div className="gc-label">INGREDIENT LINES (COST BREAKDOWN)</div>
 
             {rows.length === 0 ? (
               <div className="mt-3 text-sm text-neutral-600">No lines yet. Add your first ingredient line.</div>
@@ -348,56 +431,53 @@ export default function RecipeEditor() {
                       <th className="py-2 pr-4">Unit</th>
                       <th className="py-2 pr-4">Net Unit Cost</th>
                       <th className="py-2 pr-4">Line Cost</th>
+                      <th className="py-2 pr-4">% of Total</th>
                       <th className="py-2 pr-0 text-right">Actions</th>
                     </tr>
                   </thead>
+
                   <tbody className="align-top">
-                    {rows.map(({ line, ing, net, lineCost }) => (
-                      <tr key={line.id} className="border-t">
-                        <td className="py-3 pr-4">
-                          <div className="font-semibold">{ing?.name ?? line.ingredient_id}</div>
-                        </td>
+                    {rows.map(({ line, ing, net, lineCost }) => {
+                      const pct = totals.totalCost > 0 ? (lineCost / totals.totalCost) * 100 : 0
+                      return (
+                        <tr key={line.id} className="border-t">
+                          <td className="py-3 pr-4">
+                            <div className="font-semibold">{ing?.name ?? line.ingredient_id}</div>
+                          </td>
 
-                        <td className="py-3 pr-4">
-                          <input
-                            className="gc-input w-28"
-                            type="number"
-                            step="0.01"
-                            value={String(line.qty)}
-                            onChange={(e) => onUpdateLine(line.id, { qty: toNum(e.target.value, line.qty) })}
-                          />
-                        </td>
+                          <td className="py-3 pr-4">
+                            <input
+                              className="gc-input w-28"
+                              type="number"
+                              step="0.01"
+                              value={String(line.qty)}
+                              onChange={(e) => onUpdateLine(line.id, { qty: toNum(e.target.value, line.qty) })}
+                            />
+                          </td>
 
-                        <td className="py-3 pr-4">
-                          <select
-                            className="gc-input w-28"
-                            value={line.unit}
-                            onChange={(e) => onUpdateLine(line.id, { unit: safeUnit(e.target.value) })}
-                          >
-                            <option value="g">g</option>
-                            <option value="kg">kg</option>
-                            <option value="ml">ml</option>
-                            <option value="l">L</option>
-                            <option value="pcs">pcs</option>
-                          </select>
-                        </td>
+                          <td className="py-3 pr-4">
+                            <input className="gc-input w-28" value={line.unit} onChange={(e) => onUpdateLine(line.id, { unit: safeUnit(e.target.value) })} />
+                          </td>
 
-                        <td className="py-3 pr-4">{money(net)}</td>
-                        <td className="py-3 pr-4 font-semibold">{money(lineCost)}</td>
+                          <td className="py-3 pr-4">{money(net)}</td>
+                          <td className="py-3 pr-4 font-semibold">{money(lineCost)}</td>
+                          <td className="py-3 pr-4">{pct.toFixed(1)}%</td>
 
-                        <td className="py-3 pr-0 text-right">
-                          <button className="gc-btn gc-btn-ghost" onClick={() => onDeleteLine(line.id)} type="button">
-                            Delete
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
+                          <td className="py-3 pr-0 text-right">
+                            <button className="gc-btn gc-btn-ghost" onClick={() => onDeleteLine(line.id)} type="button">
+                              Delete
+                            </button>
+                          </td>
+                        </tr>
+                      )
+                    })}
 
                     <tr className="border-t">
                       <td className="py-3 pr-4 font-semibold" colSpan={4}>
                         Total
                       </td>
                       <td className="py-3 pr-4 text-sm font-extrabold">{money(totals.totalCost)}</td>
+                      <td className="py-3 pr-4">{totals.totalCost > 0 ? '100.0%' : '0.0%'}</td>
                       <td />
                     </tr>
                     <tr className="border-t">
@@ -405,6 +485,7 @@ export default function RecipeEditor() {
                         Cost / portion ({recipe.portions})
                       </td>
                       <td className="py-3 pr-4 text-sm font-extrabold">{money(totals.costPerPortion)}</td>
+                      <td />
                       <td />
                     </tr>
                   </tbody>
@@ -414,6 +495,8 @@ export default function RecipeEditor() {
           </div>
         </>
       )}
+
+      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
     </div>
   )
 }
