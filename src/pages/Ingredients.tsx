@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { Toast } from '../components/Toast'
 
 type IngredientRow = {
   id: string
@@ -71,6 +72,14 @@ export default function Ingredients() {
 
   const [kitchenId, setKitchenId] = useState<string | null>(null)
 
+  // ✅ Toast
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastOpen, setToastOpen] = useState(false)
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setToastOpen(true)
+  }
+
   // Modal state
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -82,7 +91,6 @@ export default function Ingredients() {
   const [saving, setSaving] = useState(false)
 
   const loadKitchen = async () => {
-    // موجود عندك مسبقاً
     const { data, error } = await supabase.rpc('current_kitchen_id')
     if (!error) {
       const kid = (data as string) ?? null
@@ -99,12 +107,8 @@ export default function Ingredients() {
     try {
       await loadKitchen()
 
-      // ✅ schema-safe: select('*') حتى لا ينهار إذا عندك أعمدة مختلفة
-      let q = supabase.from('ingredients').select('*').order('name', { ascending: true })
-
-      // Default: show active only (if column exists, supabase will filter; if not, it will ignore? PostgREST requires column exists)
-      // لذلك سنفلتر على مستوى الواجهة إذا ما كان العمود موجود.
-      const { data, error } = await q
+      // ✅ schema-safe: select('*') حتى لا ينهار إذا جدولك فيه/ما فيه أعمدة إضافية
+      const { data, error } = await supabase.from('ingredients').select('*').order('name', { ascending: true })
       if (error) throw error
 
       const list = (data ?? []) as IngredientRow[]
@@ -122,7 +126,7 @@ export default function Ingredients() {
   }, [])
 
   const normalized = useMemo(() => {
-    // فلترة is_active على مستوى الواجهة لضمان عدم كسر إذا العمود غير موجود في بعض الصفوف
+    // فلترة is_active على مستوى الواجهة
     return rows.filter((r) => {
       const active = r.is_active ?? true
       return showInactive ? true : active
@@ -184,7 +188,11 @@ export default function Ingredients() {
 
   const save = async () => {
     const name = fName.trim()
-    if (!name) return alert('Name is required')
+    if (!name) {
+      showToast('Name is required')
+      return
+    }
+
     setSaving(true)
     try {
       const payload: any = {
@@ -196,31 +204,31 @@ export default function Ingredients() {
         is_active: true,
       }
 
-      // kitchen_id قد يكون موجوداً في جدولك — سنحاول إضافته بأمان
+      // kitchen_id قد يكون موجوداً في جدولك — نحاول إضافته بأمان
       if (kitchenId) payload.kitchen_id = kitchenId
 
       if (editingId) {
-        // update
         let { error } = await supabase.from('ingredients').update(payload).eq('id', editingId)
         if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
           delete payload.kitchen_id
           ;({ error } = await supabase.from('ingredients').update(payload).eq('id', editingId))
         }
         if (error) throw error
+        showToast('Ingredient updated ✅')
       } else {
-        // insert
         let { error } = await supabase.from('ingredients').insert(payload)
         if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
           delete payload.kitchen_id
           ;({ error } = await supabase.from('ingredients').insert(payload))
         }
         if (error) throw error
+        showToast('Ingredient created ✅')
       }
 
       setModalOpen(false)
       await load()
     } catch (e: any) {
-      alert(e?.message ?? 'Save failed')
+      showToast(e?.message ?? 'Save failed')
     } finally {
       setSaving(false)
     }
@@ -228,15 +236,24 @@ export default function Ingredients() {
 
   // ✅ Soft delete: deactivate / restore (لا يوجد FK crash)
   const deactivate = async (id: string) => {
-    if (!confirm('Deactivate ingredient? It will be hidden from pickers.')) return
+    const ok = confirm('Deactivate ingredient? It will be hidden from pickers.')
+    if (!ok) return
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
-    if (error) return alert(error.message)
+    if (error) {
+      showToast(error.message)
+      return
+    }
+    showToast('Ingredient deactivated ✅')
     await load()
   }
 
   const restore = async (id: string) => {
     const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
-    if (error) return alert(error.message)
+    if (error) {
+      showToast(error.message)
+      return
+    }
+    showToast('Ingredient restored ✅')
     await load()
   }
 
@@ -331,7 +348,7 @@ export default function Ingredients() {
             </div>
           </div>
 
-          {/* Category chips (Premium) */}
+          {/* Category chips */}
           <div className="gc-card p-4">
             <div className="flex flex-wrap items-center gap-2">
               <button
@@ -414,7 +431,7 @@ export default function Ingredients() {
                 </table>
 
                 <div className="mt-3 text-xs text-neutral-500">
-                  * Delete هنا = Deactivate (Soft Delete) لتجنّب مشاكل FK مع recipe_lines.
+                  * Delete هنا = Deactivate (Soft Delete) لتجنب مشاكل FK مع recipe_lines.
                 </div>
               </div>
             )}
@@ -476,6 +493,9 @@ export default function Ingredients() {
           </div>
         </div>
       </Modal>
+
+      {/* ✅ Toast */}
+      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
     </div>
   )
 }
