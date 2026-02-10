@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 
@@ -75,6 +76,8 @@ function convertQty(qty: number, fromUnit: string, toUnit: string) {
 }
 
 export default function Recipes() {
+  const navigate = useNavigate()
+
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
@@ -122,7 +125,6 @@ export default function Recipes() {
         return
       }
 
-      // Recipes (RLS will automatically restrict to your kitchen)
       const { data: rData, error: rErr } = await supabase
         .from('recipes')
         .select('id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived')
@@ -165,7 +167,7 @@ export default function Recipes() {
     return m
   }, [recipes])
 
-  // Cost engine with sub-recipes (iterate until stable)
+  // Cost engine with sub-recipes
   const recipeTotalCost = useMemo(() => {
     const totals = new Map<string, number>()
     for (const r of recipes) totals.set(r.id, 0)
@@ -239,8 +241,9 @@ export default function Recipes() {
       .filter((r) => !s || r.name.toLowerCase().includes(s) || (r.category ?? '').toLowerCase().includes(s))
   }, [recipes, search, showArchived])
 
+  // ✅ FIX: use navigate instead of window.location.href
   const openEditor = (id: string) => {
-    window.location.href = `/#/recipe-editor?id=${id}`
+    navigate(`/recipe-editor?id=${id}`)
   }
 
   const toggleArchive = async (id: string, next: boolean) => {
@@ -277,8 +280,6 @@ export default function Recipes() {
       setCSub(false)
 
       await load()
-
-      // open editor immediately
       if (data?.id) openEditor(data.id)
     } catch (e: any) {
       showToast(e?.message ?? 'Create failed')
@@ -292,9 +293,9 @@ export default function Recipes() {
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <div className="gc-label">RECIPES (PRO)</div>
+            <div className="gc-label">RECIPES (UPGRADE D)</div>
             <div className="mt-2 text-2xl font-extrabold">Library</div>
-            <div className="mt-2 text-sm text-neutral-600">Create recipes, open editor, preview cost.</div>
+            <div className="mt-2 text-sm text-neutral-600">Open editor, preview cost, and manage recipes.</div>
             <div className="mt-2 text-xs text-neutral-500">Kitchen: {kitchenId ?? '—'}</div>
           </div>
 
@@ -312,12 +313,7 @@ export default function Recipes() {
 
         <div className="mt-4">
           <div className="gc-label">SEARCH</div>
-          <input
-            className="gc-input mt-2 w-full"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search recipe name or category…"
-          />
+          <input className="gc-input mt-2 w-full" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search recipe name or category…" />
         </div>
       </div>
 
@@ -359,14 +355,9 @@ export default function Recipes() {
                     <div className="mt-1 text-sm text-neutral-600">
                       {r.category ?? '—'} · Portions: {portions}
                     </div>
-
                     <div className="mt-2 flex flex-wrap gap-2">
-                      {r.is_subrecipe && (
-                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">Sub-Recipe</span>
-                      )}
-                      {r.is_archived && (
-                        <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">Archived</span>
-                      )}
+                      {r.is_subrecipe && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">Sub-Recipe</span>}
+                      {r.is_archived && <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-700">Archived</span>}
                     </div>
                   </div>
 
@@ -410,7 +401,7 @@ export default function Recipes() {
                 <div>
                   <div className="gc-label">CREATE</div>
                   <div className="mt-1 text-xl font-extrabold">New Recipe</div>
-                  <div className="mt-1 text-sm text-neutral-600">This will be saved to your kitchen automatically.</div>
+                  <div className="mt-1 text-sm text-neutral-600">Saved to your kitchen automatically.</div>
                 </div>
                 <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCreateOpen(false)}>
                   Close
