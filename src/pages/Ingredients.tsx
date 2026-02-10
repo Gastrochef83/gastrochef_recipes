@@ -8,10 +8,10 @@ type IngredientRow = {
   category?: string | null
   supplier?: string | null
 
-  // ✅ موجود عندك و NOT NULL حسب الخطأ
+  // Required (NOT NULL in your DB)
   pack_size?: number | null
+  pack_price?: number | null
 
-  // غالباً موجود عندك
   pack_unit?: string | null
   net_unit_cost?: number | null
 
@@ -48,7 +48,7 @@ function Modal({
   return (
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute left-1/2 top-1/2 w-[min(780px,92vw)] -translate-x-1/2 -translate-y-1/2">
+      <div className="absolute left-1/2 top-1/2 w-[min(820px,92vw)] -translate-x-1/2 -translate-y-1/2">
         <div className="gc-card p-6 shadow-2xl">
           <div className="flex items-start justify-between gap-4">
             <div>
@@ -74,11 +74,11 @@ export default function Ingredients() {
   const [search, setSearch] = useState('')
   const [category, setCategory] = useState('')
   const [showInactive, setShowInactive] = useState(false)
-  const [sortBy, setSortBy] = useState<'name' | 'cost'>('name')
+  const [sortBy, setSortBy] = useState<'name' | 'cost' | 'pack_price'>('name')
 
   const [kitchenId, setKitchenId] = useState<string | null>(null)
 
-  // ✅ Toast
+  // Toast
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const showToast = (msg: string) => {
@@ -94,11 +94,13 @@ export default function Ingredients() {
   const [fCategory, setFCategory] = useState('')
   const [fSupplier, setFSupplier] = useState('')
 
-  // ✅ required field
+  // Required fields
   const [fPackSize, setFPackSize] = useState('1')
+  const [fPackPrice, setFPackPrice] = useState('0')
 
   const [fPackUnit, setFPackUnit] = useState('g')
   const [fNetUnitCost, setFNetUnitCost] = useState('0')
+
   const [saving, setSaving] = useState(false)
 
   const loadKitchen = async () => {
@@ -157,16 +159,20 @@ export default function Ingredients() {
 
     if (sortBy === 'name') {
       list = list.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-    } else {
+    } else if (sortBy === 'cost') {
       list = list.sort((a, b) => toNum(b.net_unit_cost, 0) - toNum(a.net_unit_cost, 0))
+    } else {
+      list = list.sort((a, b) => toNum(b.pack_price, 0) - toNum(a.pack_price, 0))
     }
+
     return list
   }, [normalized, search, category, sortBy])
 
   const stats = useMemo(() => {
     const items = filtered.length
     const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
-    return { items, avgNet }
+    const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
+    return { items, avgNet, maxPack }
   }, [filtered])
 
   const openCreate = () => {
@@ -175,6 +181,7 @@ export default function Ingredients() {
     setFCategory('')
     setFSupplier('')
     setFPackSize('1')
+    setFPackPrice('0')
     setFPackUnit('g')
     setFNetUnitCost('0')
     setModalOpen(true)
@@ -186,6 +193,7 @@ export default function Ingredients() {
     setFCategory(r.category ?? '')
     setFSupplier(r.supplier ?? '')
     setFPackSize(String(Math.max(1, toNum(r.pack_size, 1))))
+    setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
     setFPackUnit(r.pack_unit ?? 'g')
     setFNetUnitCost(String(Math.max(0, toNum(r.net_unit_cost, 0))))
     setModalOpen(true)
@@ -195,8 +203,8 @@ export default function Ingredients() {
     const name = fName.trim()
     if (!name) return showToast('Name is required')
 
-    // ✅ pack_size لازم يكون >= 1
     const packSize = Math.max(1, toNum(fPackSize, 1))
+    const packPrice = Math.max(0, toNum(fPackPrice, 0))
 
     setSaving(true)
     try {
@@ -205,8 +213,9 @@ export default function Ingredients() {
         category: fCategory.trim() || null,
         supplier: fSupplier.trim() || null,
 
-        // ✅ required
+        // Required
         pack_size: packSize,
+        pack_price: packPrice,
 
         pack_unit: (fPackUnit || 'g').trim(),
         net_unit_cost: Math.max(0, toNum(fNetUnitCost, 0)),
@@ -299,11 +308,12 @@ export default function Ingredients() {
             </select>
           </div>
 
-          <div className="min-w-[200px]">
+          <div className="min-w-[220px]">
             <div className="gc-label">SORT</div>
             <select className="gc-input mt-2 w-full" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
               <option value="name">Name (A→Z)</option>
               <option value="cost">Net Unit Cost (High→Low)</option>
+              <option value="pack_price">Pack Price (High→Low)</option>
             </select>
           </div>
         </div>
@@ -324,7 +334,7 @@ export default function Ingredients() {
 
       {!loading && !err && (
         <>
-          <div className="grid gap-4 md:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-3">
             <div className="gc-card p-5">
               <div className="gc-label">ITEMS</div>
               <div className="mt-2 text-2xl font-extrabold">{stats.items}</div>
@@ -335,6 +345,12 @@ export default function Ingredients() {
               <div className="gc-label">AVG NET UNIT</div>
               <div className="mt-2 text-2xl font-extrabold">{money(stats.avgNet)}</div>
               <div className="mt-1 text-xs text-neutral-500">Average net unit cost</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-label">MAX PACK PRICE</div>
+              <div className="mt-2 text-2xl font-extrabold">{money(stats.maxPack)}</div>
+              <div className="mt-1 text-xs text-neutral-500">Highest pack price</div>
             </div>
           </div>
 
@@ -366,6 +382,7 @@ export default function Ingredients() {
                       <th className="py-2 pr-4">Supplier</th>
                       <th className="py-2 pr-4">Pack</th>
                       <th className="py-2 pr-4">Unit</th>
+                      <th className="py-2 pr-4">Pack Price</th>
                       <th className="py-2 pr-4">Net Unit Cost</th>
                       <th className="py-2 pr-0 text-right">Actions</th>
                     </tr>
@@ -390,6 +407,7 @@ export default function Ingredients() {
                           <td className="py-3 pr-4">{r.supplier ?? '—'}</td>
                           <td className="py-3 pr-4">{Math.max(1, toNum(r.pack_size, 1))}</td>
                           <td className="py-3 pr-4">{r.pack_unit ?? '—'}</td>
+                          <td className="py-3 pr-4 font-semibold">{money(toNum(r.pack_price, 0))}</td>
                           <td className="py-3 pr-4 font-semibold">{money(toNum(r.net_unit_cost, 0))}</td>
                           <td className="py-3 pr-0 text-right">
                             <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
@@ -412,7 +430,7 @@ export default function Ingredients() {
                 </table>
 
                 <div className="mt-3 text-xs text-neutral-500">
-                  * Delete هنا = Deactivate (Soft Delete) لتجنب مشاكل FK مع recipe_lines.
+                  * Delete = Deactivate (Soft Delete) to prevent FK issues with recipe_lines.
                 </div>
               </div>
             )}
@@ -452,6 +470,12 @@ export default function Ingredients() {
               <option value="l">L</option>
               <option value="pcs">pcs</option>
             </select>
+          </div>
+
+          <div>
+            <div className="gc-label">PACK PRICE</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.01" value={fPackPrice} onChange={(e) => setFPackPrice(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
           </div>
 
           <div>
