@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 
@@ -15,11 +15,14 @@ type RecipeRow = {
 }
 
 export default function Recipes() {
+  const nav = useNavigate()
+
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
   const [rows, setRows] = useState<RecipeRow[]>([])
   const [q, setQ] = useState('')
+  const [creating, setCreating] = useState(false)
 
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
@@ -62,6 +65,46 @@ export default function Recipes() {
     })
   }, [rows, q])
 
+  const createNew = async () => {
+    if (creating) return
+    setCreating(true)
+    try {
+      // حاول نأخذ kitchen_id من أول وصفة موجودة (MVP)
+      const kitchenId = rows[0]?.kitchen_id
+      if (!kitchenId) {
+        showToast('No kitchen_id found yet. Create your first recipe via DB seed or login flow.')
+        setCreating(false)
+        return
+      }
+
+      const payload = {
+        kitchen_id: kitchenId,
+        name: 'New Recipe',
+        category: null,
+        portions: 1,
+        yield_qty: null,
+        yield_unit: null,
+        is_subrecipe: false,
+        is_archived: false,
+        photo_url: null,
+      }
+
+      const { data, error } = await supabase.from('recipes').insert(payload).select('id').single()
+      if (error) throw error
+
+      const newId = data?.id
+      if (!newId) throw new Error('Failed to create recipe id')
+
+      showToast('Recipe created ✅')
+      await load()
+      nav(`/recipe-editor?id=${newId}`)
+    } catch (e: any) {
+      showToast(e?.message ?? 'Create failed')
+    } finally {
+      setCreating(false)
+    }
+  }
+
   if (loading) return <div className="gc-card p-6">Loading recipes…</div>
 
   if (err) {
@@ -80,7 +123,6 @@ export default function Recipes() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -101,14 +143,13 @@ export default function Recipes() {
               Refresh
             </button>
 
-            <NavLink className="gc-btn gc-btn-primary" to="/recipe-editor">
-              + New
-            </NavLink>
+            <button className="gc-btn gc-btn-primary" onClick={createNew} disabled={creating}>
+              {creating ? 'Creating…' : '+ New'}
+            </button>
           </div>
         </div>
       </div>
 
-      {/* Grid */}
       {filtered.length === 0 ? (
         <div className="gc-card p-6">
           <div className="gc-label">EMPTY</div>
@@ -123,7 +164,6 @@ export default function Recipes() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((r) => (
             <div key={r.id} className="gc-card overflow-hidden">
-              {/* Photo */}
               <div className="relative h-40 w-full bg-neutral-100">
                 {r.photo_url ? (
                   <img src={r.photo_url} alt={r.name} className="h-full w-full object-cover" />
@@ -133,13 +173,11 @@ export default function Recipes() {
                   </div>
                 )}
 
-                {/* Badge */}
                 <div className="absolute left-3 top-3 rounded-full border border-neutral-200 bg-white/90 px-3 py-1 text-[11px] font-extrabold tracking-wide text-neutral-700">
                   {r.category ?? 'UNCATEGORIZED'}
                 </div>
               </div>
 
-              {/* Body */}
               <div className="p-4">
                 <div className="text-base font-extrabold leading-tight">{r.name}</div>
                 <div className="mt-1 text-xs text-neutral-500">Portions: {r.portions ?? 1}</div>
