@@ -20,7 +20,7 @@ type Recipe = {
   method?: string | null // legacy
   method_steps?: string[] | null
 
-  // per portion nutrition
+  // per portion nutrition (manual)
   calories?: number | null
   protein_g?: number | null
   carbs_g?: number | null
@@ -47,16 +47,6 @@ type Ingredient = {
   pack_unit?: string | null
   net_unit_cost?: number | null
   is_active?: boolean
-
-  // Nutrition per 100g
-  kcal_per_100g?: number | null
-  protein_per_100g?: number | null
-  carbs_per_100g?: number | null
-  fat_per_100g?: number | null
-
-  // Conversions for nutrition
-  density_g_per_ml?: number | null
-  grams_per_piece?: number | null
 }
 
 function toNum(x: any, fallback = 0) {
@@ -64,7 +54,7 @@ function toNum(x: any, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
 }
 function safeUnit(u: string | null | undefined) {
-  return (u ?? '').trim().toLowerCase()
+  return (u ?? '').trim().toLowerCase() || 'g'
 }
 function normalizeSteps(steps: string[] | null | undefined) {
   return (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
@@ -82,109 +72,6 @@ function fmtMoney(n: number, currency: string) {
   } catch {
     return `${v.toFixed(2)} ${cur}`
   }
-}
-
-// -------------------- Unit normalization + conversion --------------------
-function normalizeUnit(uRaw: string | null | undefined): string {
-  const u = safeUnit(uRaw)
-
-  // mass
-  if (u === 'g' || u === 'gram' || u === 'grams') return 'g'
-  if (u === 'kg' || u === 'kilogram' || u === 'kilograms') return 'kg'
-  if (u === 'mg' || u === 'milligram' || u === 'milligrams') return 'mg'
-  if (u === 'oz' || u === 'ounce' || u === 'ounces') return 'oz'
-  if (u === 'lb' || u === 'lbs' || u === 'pound' || u === 'pounds') return 'lb'
-
-  // volume
-  if (u === 'ml' || u === 'milliliter' || u === 'millilitre') return 'ml'
-  if (u === 'l' || u === 'lt' || u === 'liter' || u === 'litre') return 'l'
-  if (u === 'tsp' || u === 'teaspoon' || u === 'teaspoons') return 'tsp'
-  if (u === 'tbsp' || u === 'tablespoon' || u === 'tablespoons') return 'tbsp'
-  if (u === 'cup' || u === 'cups') return 'cup'
-  if (u === 'floz' || u === 'fl oz' || u === 'fluidounce' || u === 'fluid ounce') return 'floz'
-
-  // pieces
-  if (u === 'pcs' || u === 'pc' || u === 'piece' || u === 'pieces' || u === 'ea' || u === 'each') return 'pcs'
-
-  return u
-}
-
-function gramsFromMass(qty: number, unit: string): number | null {
-  switch (unit) {
-    case 'g':
-      return qty
-    case 'kg':
-      return qty * 1000
-    case 'mg':
-      return qty / 1000
-    case 'oz':
-      return qty * 28.349523125
-    case 'lb':
-      return qty * 453.59237
-    default:
-      return null
-  }
-}
-
-function mlFromVolume(qty: number, unit: string): number | null {
-  switch (unit) {
-    case 'ml':
-      return qty
-    case 'l':
-      return qty * 1000
-    case 'tsp':
-      return qty * 4.92892159375
-    case 'tbsp':
-      return qty * 14.78676478125
-    case 'cup':
-      return qty * 236.5882365
-    case 'floz':
-      return qty * 29.5735295625
-    default:
-      return null
-  }
-}
-
-type SkipReason =
-  | 'NO_INGREDIENT_ID'
-  | 'NO_INGREDIENT'
-  | 'BAD_QTY'
-  | 'MISSING_NUTRITION'
-  | 'MISSING_DENSITY'
-  | 'MISSING_GRAMS_PER_PIECE'
-  | 'UNSUPPORTED_UNIT'
-
-function unitToGrams(qty: number, unitRaw: string, ing: Ingredient | undefined) {
-  const unit = normalizeUnit(unitRaw)
-
-  // mass
-  const gMass = gramsFromMass(qty, unit)
-  if (gMass != null) return { ok: true as const, grams: gMass, unit, reason: '' }
-
-  // volume => density needed
-  const ml = mlFromVolume(qty, unit)
-  if (ml != null) {
-    const density = toNum(ing?.density_g_per_ml, 0)
-    if (density <= 0) return { ok: false as const, grams: 0, unit, reason: 'missing density_g_per_ml' }
-    return { ok: true as const, grams: ml * density, unit, reason: '' }
-  }
-
-  // pieces => grams_per_piece needed
-  if (unit === 'pcs') {
-    const gpp = toNum(ing?.grams_per_piece, 0)
-    if (gpp <= 0) return { ok: false as const, grams: 0, unit, reason: 'missing grams_per_piece' }
-    return { ok: true as const, grams: qty * gpp, unit, reason: '' }
-  }
-
-  return { ok: false as const, grams: 0, unit, reason: `unit not supported (${unitRaw})` }
-}
-
-function hasAnyNutrition(ing: Ingredient | undefined) {
-  const k = toNum(ing?.kcal_per_100g, 0)
-  const p = toNum(ing?.protein_per_100g, 0)
-  const c = toNum(ing?.carbs_per_100g, 0)
-  const f = toNum(ing?.fat_per_100g, 0)
-  return k !== 0 || p !== 0 || c !== 0 || f !== 0
 }
 
 export default function RecipeEditor() {
@@ -209,7 +96,6 @@ export default function RecipeEditor() {
   // Meta
   const [savingMeta, setSavingMeta] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [autoNLoading, setAutoNLoading] = useState(false)
 
   // Form fields
   const [name, setName] = useState('')
@@ -222,7 +108,7 @@ export default function RecipeEditor() {
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
 
-  // Nutrition per portion
+  // Nutrition (MANUAL)
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
@@ -251,7 +137,6 @@ export default function RecipeEditor() {
       .single()
     if (rErr) throw rErr
 
-    // ✅ IMPORTANT: include line id so delete becomes safe
     const { data: l, error: lErr } = await supabase
       .from('recipe_lines')
       .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit')
@@ -261,9 +146,7 @@ export default function RecipeEditor() {
 
     const { data: i, error: iErr } = await supabase
       .from('ingredients')
-      .select(
-        'id,name,pack_unit,net_unit_cost,is_active,kcal_per_100g,protein_per_100g,carbs_per_100g,fat_per_100g,density_g_per_ml,grams_per_piece'
-      )
+      .select('id,name,pack_unit,net_unit_cost,is_active')
       .order('name', { ascending: true })
     if (iErr) throw iErr
 
@@ -280,11 +163,13 @@ export default function RecipeEditor() {
     setSteps(normalizeSteps(rr.method_steps))
     setMethodLegacy(rr.method ?? '')
 
+    // Manual nutrition
     setCalories(rr.calories == null ? '' : String(rr.calories))
     setProtein(rr.protein_g == null ? '' : String(rr.protein_g))
     setCarbs(rr.carbs_g == null ? '' : String(rr.carbs_g))
     setFat(rr.fat_g == null ? '' : String(rr.fat_g))
 
+    // Pricing
     setCurrency((rr.currency ?? 'USD').toUpperCase())
     setSellingPrice(rr.selling_price == null ? '' : String(rr.selling_price))
     setTargetFC(rr.target_food_cost_pct == null ? '30' : String(rr.target_food_cost_pct))
@@ -321,12 +206,11 @@ export default function RecipeEditor() {
       const qty = toNum(l.qty, 0)
       if (!l.ingredient_id) continue
       const ing = ingById.get(l.ingredient_id)
-      const packUnit = safeUnit(ing?.pack_unit ?? 'g') || 'g'
+      const packUnit = safeUnit(ing?.pack_unit ?? 'g')
       const net = toNum(ing?.net_unit_cost, 0)
 
-      const u = normalizeUnit(l.unit)
-
-      // Basic conversion (keeps old behavior)
+      // basic conversion (keep your old logic)
+      const u = safeUnit(l.unit)
       let conv = qty
       if (u === 'g' && packUnit === 'kg') conv = qty / 1000
       else if (u === 'kg' && packUnit === 'g') conv = qty * 1000
@@ -363,6 +247,7 @@ export default function RecipeEditor() {
         method_steps: normalizeSteps(steps),
         method: methodLegacy.trim() || null,
 
+        // MANUAL nutrition fields
         calories: calories.trim() === '' ? null : Math.max(0, Math.floor(toNum(calories, 0))),
         protein_g: protein.trim() === '' ? null : Math.max(0, toNum(protein, 0)),
         carbs_g: carbs.trim() === '' ? null : Math.max(0, toNum(carbs, 0)),
@@ -404,152 +289,6 @@ export default function RecipeEditor() {
     })
   }
 
-  // ✅ Auto Nutrition (diagnostic + unit map)
-  const autoNutrition = async () => {
-    setAutoNLoading(true)
-    try {
-      let totalKcal = 0
-      let totalP = 0
-      let totalC = 0
-      let totalF = 0
-
-      let used = 0
-      const skipped: Array<{
-        lineId: string
-        ingredient: string
-        qty: number
-        unit: string
-        reason: SkipReason
-        detail: string
-      }> = []
-
-      for (const l of lines) {
-        const qty = toNum(l.qty, 0)
-        const unitRaw = l.unit
-
-        if (!l.ingredient_id) {
-          skipped.push({
-            lineId: l.id,
-            ingredient: '(sub-recipe line)',
-            qty,
-            unit: unitRaw,
-            reason: 'NO_INGREDIENT_ID',
-            detail: 'ingredient_id is null (sub_recipe_id line)',
-          })
-          continue
-        }
-
-        const ing = ingById.get(l.ingredient_id)
-        if (!ing) {
-          skipped.push({
-            lineId: l.id,
-            ingredient: '(missing ingredient)',
-            qty,
-            unit: unitRaw,
-            reason: 'NO_INGREDIENT',
-            detail: 'ingredient not found in loaded ingredients list',
-          })
-          continue
-        }
-
-        if (!qty || qty <= 0) {
-          skipped.push({
-            lineId: l.id,
-            ingredient: ing.name ?? 'Ingredient',
-            qty,
-            unit: unitRaw,
-            reason: 'BAD_QTY',
-            detail: 'qty is 0/null',
-          })
-          continue
-        }
-
-        if (!hasAnyNutrition(ing)) {
-          skipped.push({
-            lineId: l.id,
-            ingredient: ing.name ?? 'Ingredient',
-            qty,
-            unit: unitRaw,
-            reason: 'MISSING_NUTRITION',
-            detail: 'all nutrition per 100g are 0/null',
-          })
-          continue
-        }
-
-        const gRes = unitToGrams(qty, unitRaw, ing)
-        if (!gRes.ok) {
-          const r =
-            gRes.reason.includes('density') ? 'MISSING_DENSITY' : gRes.reason.includes('grams_per_piece') ? 'MISSING_GRAMS_PER_PIECE' : 'UNSUPPORTED_UNIT'
-          skipped.push({
-            lineId: l.id,
-            ingredient: ing.name ?? 'Ingredient',
-            qty,
-            unit: unitRaw,
-            reason: r,
-            detail: gRes.reason,
-          })
-          continue
-        }
-
-        const factor = gRes.grams / 100
-        totalKcal += factor * toNum(ing.kcal_per_100g, 0)
-        totalP += factor * toNum(ing.protein_per_100g, 0)
-        totalC += factor * toNum(ing.carbs_per_100g, 0)
-        totalF += factor * toNum(ing.fat_per_100g, 0)
-        used += 1
-      }
-
-      // ✅ If everything skipped, do NOT set zeros silently
-      if (used === 0) {
-        console.table(skipped)
-        const counts = skipped.reduce<Record<string, number>>((acc, s) => {
-          acc[s.reason] = (acc[s.reason] || 0) + 1
-          return acc
-        }, {})
-        const summary = Object.entries(counts)
-          .sort((a, b) => b[1] - a[1])
-          .map(([k, v]) => `${k}:${v}`)
-          .join(' · ')
-        showToast(`Auto-calc توقف: كل الأسطر تم Skip. ${summary} (تفاصيل في Console)`)
-        return
-      }
-
-      // Per portion
-      const kcalPP = totalKcal / portionsN
-      const pPP = totalP / portionsN
-      const cPP = totalC / portionsN
-      const fPP = totalF / portionsN
-
-      setCalories(String(Math.max(0, Math.round(kcalPP))))
-      setProtein(String(Math.max(0, Math.round(pPP * 10) / 10)))
-      setCarbs(String(Math.max(0, Math.round(cPP * 10) / 10)))
-      setFat(String(Math.max(0, Math.round(fPP * 10) / 10)))
-
-      // Toast summary + console
-      if (skipped.length) console.table(skipped)
-      const counts = skipped.reduce<Record<string, number>>((acc, s) => {
-        acc[s.reason] = (acc[s.reason] || 0) + 1
-        return acc
-      }, {})
-      const summary = Object.entries(counts)
-        .sort((a, b) => b[1] - a[1])
-        .map(([k, v]) => `${k}:${v}`)
-        .join(' · ')
-
-      showToast(skipped.length ? `Auto nutrition ✅ (Used:${used}) · Skipped:${skipped.length} · ${summary}` : `Auto nutrition ✅ (Used:${used})`)
-    } catch (e: any) {
-      showToast(e?.message ?? 'Auto nutrition failed')
-    } finally {
-      setAutoNLoading(false)
-    }
-  }
-
-  const applySuggested = () => {
-    if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) return
-    setSellingPrice(String(Math.round(suggestedPrice * 100) / 100))
-    showToast('Suggested price applied ✅ (remember Save)')
-  }
-
   const addLine = async () => {
     if (!id) return
     if (!addIngredientId) return showToast('Pick an ingredient first')
@@ -558,7 +297,7 @@ export default function RecipeEditor() {
 
     setSavingLine(true)
     try {
-      const payload = { recipe_id: id, ingredient_id: addIngredientId, sub_recipe_id: null, qty, unit: normalizeUnit(addUnit) || 'g' }
+      const payload = { recipe_id: id, ingredient_id: addIngredientId, sub_recipe_id: null, qty, unit: safeUnit(addUnit) }
       const { error } = await supabase.from('recipe_lines').insert(payload)
       if (error) throw error
       showToast('Ingredient added ✅')
@@ -574,7 +313,6 @@ export default function RecipeEditor() {
     }
   }
 
-  // ✅ Safe delete by line.id
   const deleteLine = async (idx: number) => {
     if (!id) return
     const line = lines[idx]
@@ -625,6 +363,12 @@ export default function RecipeEditor() {
     }
   }
 
+  const applySuggested = () => {
+    if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) return
+    setSellingPrice(String(Math.round(suggestedPrice * 100) / 100))
+    showToast('Suggested price applied ✅ (remember Save)')
+  }
+
   if (loading) return <div className="gc-card p-6">Loading editor…</div>
   if (err) {
     return (
@@ -667,7 +411,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="min-w-[min(560px,92vw)]">
-              <div className="gc-label">RECIPE EDITOR (AUTO NUTRITION + PRICING)</div>
+              <div className="gc-label">RECIPE EDITOR (MANUAL NUTRITION + PRICING)</div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
@@ -687,14 +431,7 @@ export default function RecipeEditor() {
 
                 <div>
                   <div className="gc-label">PORTIONS</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={1}
-                    step="1"
-                    value={portions}
-                    onChange={(e) => setPortions(e.target.value)}
-                  />
+                  <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={portions} onChange={(e) => setPortions(e.target.value)} />
                 </div>
 
                 <div className="flex items-end gap-2">
@@ -748,18 +485,13 @@ export default function RecipeEditor() {
           />
         </div>
 
-        {/* Nutrition */}
+        {/* Manual Nutrition */}
         <div className="gc-card p-6">
           <div className="flex items-center justify-between gap-2">
             <div>
               <div className="gc-label">NUTRITION (PER PORTION)</div>
-              <div className="mt-1 text-xs text-neutral-500">
-                Supports g/kg/mg/oz/lb + ml/l/tsp/tbsp/cup/fl oz + pcs/piece/each (needs density / grams-per-piece).
-              </div>
+              <div className="mt-1 text-xs text-neutral-500">Manual input. Enter values and press Save.</div>
             </div>
-            <button className="gc-btn gc-btn-primary" type="button" onClick={autoNutrition} disabled={autoNLoading}>
-              {autoNLoading ? 'Calculating…' : 'Auto-calc'}
-            </button>
           </div>
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
@@ -779,6 +511,10 @@ export default function RecipeEditor() {
               <div className="gc-label">FAT (g)</div>
               <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={fat} onChange={(e) => setFat(e.target.value)} />
             </div>
+          </div>
+
+          <div className="mt-3 text-xs text-neutral-500">
+            Tip: Calories as integer, macros with 1 decimal. Then press <span className="font-semibold">Save</span>.
           </div>
         </div>
 
@@ -977,12 +713,7 @@ export default function RecipeEditor() {
 
                 <div>
                   <div className="gc-label">UNIT</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    value={addUnit}
-                    onChange={(e) => setAddUnit(e.target.value)}
-                    placeholder="g/kg/ml/l/tsp/tbsp/cup/fl oz/pcs/piece/each..."
-                  />
+                  <input className="gc-input mt-2 w-full" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
                 </div>
 
                 <div className="md:col-span-2 flex justify-end gap-2">
