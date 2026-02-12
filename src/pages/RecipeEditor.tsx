@@ -15,15 +15,21 @@ type Recipe = {
   is_archived: boolean
 
   photo_url?: string | null
-
   description?: string | null
+
   method?: string | null // legacy
   method_steps?: string[] | null
 
+  // per portion nutrition
   calories?: number | null
   protein_g?: number | null
   carbs_g?: number | null
   fat_g?: number | null
+
+  // pricing
+  selling_price?: number | null
+  currency?: string | null
+  target_food_cost_pct?: number | null
 }
 
 type Line = {
@@ -46,45 +52,62 @@ type Ingredient = {
   protein_per_100g?: number | null
   carbs_per_100g?: number | null
   fat_per_100g?: number | null
+
+  // Conversions for nutrition
+  density_g_per_ml?: number | null
+  grams_per_piece?: number | null
 }
 
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
-
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
-
-function moneyUSD(n: number) {
-  const v = Number.isFinite(n) ? n : 0
-  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(v)
+function normalizeSteps(steps: string[] | null | undefined) {
+  return (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
 }
-
-function extFromType(mime: string) {
-  if (mime === 'image/png') return 'png'
-  if (mime === 'image/webp') return 'webp'
-  return 'jpg'
-}
-
 function clampStr(s: string, max = 140) {
   const x = (s ?? '').trim()
   if (!x) return ''
   if (x.length <= max) return x
   return x.slice(0, max - 1) + '…'
 }
-
-function normalizeSteps(steps: string[] | null | undefined) {
-  const arr = (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
-  return arr.length ? arr : []
+function extFromType(mime: string) {
+  if (mime === 'image/png') return 'png'
+  if (mime === 'image/webp') return 'webp'
+  return 'jpg'
+}
+function fmtMoney(n: number, currency: string) {
+  const v = Number.isFinite(n) ? n : 0
+  const cur = (currency || 'USD').toUpperCase()
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
+  } catch {
+    return `${v.toFixed(2)} ${cur}`
+  }
 }
 
-function toGrams(qty: number, unit: string) {
+function unitToGrams(qty: number, unit: string, ing: Ingredient | undefined) {
   const u = safeUnit(unit)
-  if (u === 'g') return { ok: true, g: qty }
-  if (u === 'kg') return { ok: true, g: qty * 1000 }
-  return { ok: false, g: qty }
+  if (u === 'g') return { ok: true, grams: qty, reason: '' }
+  if (u === 'kg') return { ok: true, grams: qty * 1000, reason: '' }
+
+  if (u === 'ml' || u === 'l') {
+    const density = toNum(ing?.density_g_per_ml, 0)
+    if (density <= 0) return { ok: false, grams: 0, reason: 'missing density_g_per_ml' }
+    const ml = u === 'ml' ? qty : qty * 1000
+    return { ok: true, grams: ml * density, reason: '' }
+  }
+
+  if (u === 'pcs') {
+    const gpp = toNum(ing?.grams_per_piece, 0)
+    if (gpp <= 0) return { ok: false, grams: 0, reason: 'missing grams_per_piece' }
+    return { ok: true, grams: qty * gpp, reason: '' }
+  }
+
+  return { ok: false, grams: 0, reason: 'unit not supported' }
 }
 
 export default function RecipeEditor() {
@@ -106,27 +129,32 @@ export default function RecipeEditor() {
   const [addUnit, setAddUnit] = useState('g')
   const [savingLine, setSavingLine] = useState(false)
 
-  // Premium editor fields
+  // Meta
   const [savingMeta, setSavingMeta] = useState(false)
   const [uploading, setUploading] = useState(false)
-  const [menuCompact, setMenuCompact] = useState(false)
   const [autoNLoading, setAutoNLoading] = useState(false)
 
+  // Form fields
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [portions, setPortions] = useState('1')
   const [description, setDescription] = useState('')
 
-  // Step Builder
+  // Steps
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
 
-  // Nutrition fields (PER PORTION)
+  // Nutrition per portion
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
+
+  // Pricing per portion
+  const [currency, setCurrency] = useState('USD')
+  const [sellingPrice, setSellingPrice] = useState('')
+  const [targetFC, setTargetFC] = useState('30')
 
   // Toast
   const [toastMsg, setToastMsg] = useState('')
@@ -140,7 +168,7 @@ export default function RecipeEditor() {
     const { data: r, error: rErr } = await supabase
       .from('recipes')
       .select(
-        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,calories,protein_g,carbs_g,fat_g'
+        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
       )
       .eq('id', recipeId)
       .single()
@@ -154,7 +182,9 @@ export default function RecipeEditor() {
 
     const { data: i, error: iErr } = await supabase
       .from('ingredients')
-      .select('id,name,pack_unit,net_unit_cost,is_active,kcal_per_100g,protein_per_100g,carbs_per_100g,fat_per_100g')
+      .select(
+        'id,name,pack_unit,net_unit_cost,is_active,kcal_per_100g,protein_per_100g,carbs_per_100g,fat_per_100g,density_g_per_ml,grams_per_piece'
+      )
       .order('name', { ascending: true })
     if (iErr) throw iErr
 
@@ -175,6 +205,10 @@ export default function RecipeEditor() {
     setProtein(rr.protein_g == null ? '' : String(rr.protein_g))
     setCarbs(rr.carbs_g == null ? '' : String(rr.carbs_g))
     setFat(rr.fat_g == null ? '' : String(rr.fat_g))
+
+    setCurrency((rr.currency ?? 'USD').toUpperCase())
+    setSellingPrice(rr.selling_price == null ? '' : String(rr.selling_price))
+    setTargetFC(rr.target_food_cost_pct == null ? '30' : String(rr.target_food_cost_pct))
   }
 
   useEffect(() => {
@@ -206,24 +240,35 @@ export default function RecipeEditor() {
     let sum = 0
     for (const l of lines) {
       const qty = toNum(l.qty, 0)
-      if (l.ingredient_id) {
-        const ing = ingById.get(l.ingredient_id)
-        const packUnit = safeUnit(ing?.pack_unit ?? 'g')
-        const net = toNum(ing?.net_unit_cost, 0)
+      if (!l.ingredient_id) continue
+      const ing = ingById.get(l.ingredient_id)
+      const packUnit = safeUnit(ing?.pack_unit ?? 'g')
+      const net = toNum(ing?.net_unit_cost, 0)
 
-        // cost conversion supports g/kg/ml/l/pcs as before
-        const u = safeUnit(l.unit)
-        let conv = qty
-        if (u === 'g' && packUnit === 'kg') conv = qty / 1000
-        else if (u === 'kg' && packUnit === 'g') conv = qty * 1000
-        else if (u === 'ml' && packUnit === 'l') conv = qty / 1000
-        else if (u === 'l' && packUnit === 'ml') conv = qty * 1000
+      // Basic conversion (keeps old behavior)
+      const u = safeUnit(l.unit)
+      let conv = qty
+      if (u === 'g' && packUnit === 'kg') conv = qty / 1000
+      else if (u === 'kg' && packUnit === 'g') conv = qty * 1000
+      else if (u === 'ml' && packUnit === 'l') conv = qty / 1000
+      else if (u === 'l' && packUnit === 'ml') conv = qty * 1000
 
-        sum += conv * net
-      }
+      sum += conv * net
     }
     return sum
   }, [lines, ingById])
+
+  const portionsN = Math.max(1, toNum(portions, 1))
+  const cpp = totalCost / portionsN
+
+  // Pricing metrics
+  const sell = Math.max(0, toNum(sellingPrice, 0))
+  const fcPct = sell > 0 ? (cpp / sell) * 100 : null
+  const margin = sell - cpp
+  const marginPct = sell > 0 ? (margin / sell) * 100 : null
+
+  const target = Math.min(99, Math.max(1, toNum(targetFC, 30)))
+  const suggestedPrice = target > 0 ? cpp / (target / 100) : 0
 
   const saveMeta = async () => {
     if (!id) return
@@ -238,11 +283,14 @@ export default function RecipeEditor() {
         method_steps: normalizeSteps(steps),
         method: methodLegacy.trim() || null,
 
-        // Nutrition PER PORTION
         calories: calories.trim() === '' ? null : Math.max(0, Math.floor(toNum(calories, 0))),
         protein_g: protein.trim() === '' ? null : Math.max(0, toNum(protein, 0)),
         carbs_g: carbs.trim() === '' ? null : Math.max(0, toNum(carbs, 0)),
         fat_g: fat.trim() === '' ? null : Math.max(0, toNum(fat, 0)),
+
+        currency: (currency || 'USD').toUpperCase(),
+        selling_price: sellingPrice.trim() === '' ? null : Math.max(0, toNum(sellingPrice, 0)),
+        target_food_cost_pct: Math.min(99, Math.max(1, toNum(targetFC, 30))),
       }
 
       const { error } = await supabase.from('recipes').update(payload).eq('id', id)
@@ -257,7 +305,7 @@ export default function RecipeEditor() {
     }
   }
 
-  // Step builder helpers
+  // Step builder
   const addStep = () => {
     const s = newStep.trim()
     if (!s) return
@@ -276,9 +324,8 @@ export default function RecipeEditor() {
     })
   }
 
-  // ✅ Auto Nutrition (per portion)
+  // ✅ Auto Nutrition (supports g/kg + ml/l + pcs)
   const autoNutrition = async () => {
-    const portionsN = Math.max(1, toNum(portions, 1))
     setAutoNLoading(true)
     try {
       let totalKcal = 0
@@ -287,16 +334,20 @@ export default function RecipeEditor() {
       let totalF = 0
 
       let skipped = 0
-      let missing = 0
+      let missingNut = 0
+      let missingConv = 0
 
       for (const l of lines) {
         if (!l.ingredient_id) continue
         const ing = ingById.get(l.ingredient_id)
         if (!ing) continue
 
-        const grams = toGrams(toNum(l.qty, 0), l.unit)
-        if (!grams.ok) {
-          skipped += 1
+        const qty = toNum(l.qty, 0)
+        const gramsRes = unitToGrams(qty, l.unit, ing)
+        if (!gramsRes.ok) {
+          // distinguish: missing conversion vs unsupported unit
+          if (gramsRes.reason.includes('missing')) missingConv += 1
+          else skipped += 1
           continue
         }
 
@@ -306,18 +357,18 @@ export default function RecipeEditor() {
         const f100 = ing.fat_per_100g
 
         if (k100 == null && p100 == null && c100 == null && f100 == null) {
-          missing += 1
+          missingNut += 1
           continue
         }
 
-        const factor = grams.g / 100
+        const factor = gramsRes.grams / 100
         totalKcal += factor * toNum(k100, 0)
         totalP += factor * toNum(p100, 0)
         totalC += factor * toNum(c100, 0)
         totalF += factor * toNum(f100, 0)
       }
 
-      // per portion
+      // Per portion
       const kcalPP = totalKcal / portionsN
       const pPP = totalP / portionsN
       const cPP = totalC / portionsN
@@ -328,16 +379,22 @@ export default function RecipeEditor() {
       setCarbs(String(Math.max(0, Math.round(cPP * 10) / 10)))
       setFat(String(Math.max(0, Math.round(fPP * 10) / 10)))
 
-      const msgParts = []
-      msgParts.push('Auto nutrition calculated ✅')
-      if (skipped > 0) msgParts.push(`${skipped} line(s) skipped (unit not g/kg)`)
-      if (missing > 0) msgParts.push(`${missing} ingredient(s) missing nutrition`)
-      showToast(msgParts.join(' · '))
+      const parts = ['Auto nutrition calculated ✅']
+      if (missingNut) parts.push(`${missingNut} ingredient(s) missing nutrition`)
+      if (missingConv) parts.push(`${missingConv} line(s) missing density/grams-per-piece`)
+      if (skipped) parts.push(`${skipped} line(s) skipped (unit not supported)`)
+      showToast(parts.join(' · '))
     } catch (e: any) {
       showToast(e?.message ?? 'Auto nutrition failed')
     } finally {
       setAutoNLoading(false)
     }
+  }
+
+  const applySuggested = () => {
+    if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) return
+    setSellingPrice(String(Math.round(suggestedPrice * 100) / 100))
+    showToast('Suggested price applied ✅ (remember Save)')
   }
 
   const addLine = async () => {
@@ -392,11 +449,19 @@ export default function RecipeEditor() {
       const ext = extFromType(file.type)
       const key = `recipes/${id}/${Date.now()}.${ext}`
 
-      const { error: upErr } = await supabase.storage.from('recipe-photos').upload(key, file, {
+      const { error: upErr } = await supabase.storage.from('recipe-photos').upload(key, {
         upsert: true,
         contentType: file.type,
-      })
-      if (upErr) throw upErr
+      } as any)
+
+      // NOTE: some supabase clients need the 3rd param form (file, options)
+      if (upErr) {
+        const { error: upErr2 } = await supabase.storage.from('recipe-photos').upload(key, file, {
+          upsert: true,
+          contentType: file.type,
+        })
+        if (upErr2) throw upErr2
+      }
 
       const { data: pub } = supabase.storage.from('recipe-photos').getPublicUrl(key)
       const url = pub?.publicUrl
@@ -441,14 +506,6 @@ export default function RecipeEditor() {
     )
   }
 
-  const portionsN = Math.max(1, toNum(portions, 1))
-  const cpp = totalCost / portionsN
-
-  const kcal = calories.trim() === '' ? null : Math.max(0, Math.floor(toNum(calories, 0)))
-  const p = protein.trim() === '' ? null : Math.max(0, toNum(protein, 0))
-  const c = carbs.trim() === '' ? null : Math.max(0, toNum(carbs, 0))
-  const f = fat.trim() === '' ? null : Math.max(0, toNum(fat, 0))
-
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -464,7 +521,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="min-w-[min(560px,92vw)]">
-              <div className="gc-label">RECIPE EDITOR (AUTO NUTRITION)</div>
+              <div className="gc-label">RECIPE EDITOR (AUTO NUTRITION + PRICING)</div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
@@ -524,165 +581,136 @@ export default function RecipeEditor() {
 
           <div className="text-right">
             <div className="gc-label">COST</div>
-            <div className="mt-1 text-2xl font-extrabold">{moneyUSD(totalCost)}</div>
+            <div className="mt-1 text-2xl font-extrabold">{fmtMoney(totalCost, currency)}</div>
             <div className="mt-1 text-xs text-neutral-500">
-              Cost/portion: <span className="font-semibold">{moneyUSD(cpp)}</span>
+              Cost/portion: <span className="font-semibold">{fmtMoney(cpp, currency)}</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* Menu Preview */}
-      <div className="gc-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="gc-label">MENU PREVIEW</div>
-            <div className="mt-1 text-sm text-neutral-600">Per-portion nutrition is used.</div>
-          </div>
-
-          <button className="gc-btn gc-btn-ghost" onClick={() => setMenuCompact((v) => !v)} type="button">
-            {menuCompact ? 'Expanded view' : 'Compact view'}
-          </button>
+      {/* Premium Panels */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Description */}
+        <div className="gc-card p-6">
+          <div className="gc-label">DESCRIPTION</div>
+          <textarea
+            className="gc-input mt-3 w-full min-h-[140px]"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short premium description for menu / customers..."
+          />
         </div>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[420px_1fr]">
-          <div className="gc-menu-card">
-            <div className={`gc-menu-hero ${menuCompact ? 'h-36' : 'h-44'}`}>
-              {recipe.photo_url ? (
-                <img src={recipe.photo_url} alt={name} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
-              )}
-              <div className="gc-menu-overlay" />
-              <div className="gc-menu-badges">
-                <span className="gc-chip gc-chip-dark">{(category || 'UNCATEGORIZED').toUpperCase()}</span>
-                {kcal != null ? <span className="gc-chip">{kcal} kcal</span> : null}
+        {/* Nutrition */}
+        <div className="gc-card p-6">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="gc-label">NUTRITION (PER PORTION)</div>
+              <div className="mt-1 text-xs text-neutral-500">Supports g/kg + ml/l + pcs (needs density / grams-per-piece).</div>
+            </div>
+            <button className="gc-btn gc-btn-primary" type="button" onClick={autoNutrition} disabled={autoNLoading}>
+              {autoNLoading ? 'Calculating…' : 'Auto-calc'}
+            </button>
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div>
+              <div className="gc-label">CALORIES</div>
+              <input className="gc-input mt-2 w-full" type="number" min={0} step="1" value={calories} onChange={(e) => setCalories(e.target.value)} />
+            </div>
+            <div>
+              <div className="gc-label">PROTEIN (g)</div>
+              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={protein} onChange={(e) => setProtein(e.target.value)} />
+            </div>
+            <div>
+              <div className="gc-label">CARBS (g)</div>
+              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
+            </div>
+            <div>
+              <div className="gc-label">FAT (g)</div>
+              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={fat} onChange={(e) => setFat(e.target.value)} />
+            </div>
+          </div>
+        </div>
+
+        {/* Pricing Premium */}
+        <div className="gc-card p-6 lg:col-span-2">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="gc-label">PRICING PREMIUM (PER PORTION)</div>
+              <div className="mt-1 text-sm text-neutral-600">
+                Food Cost% + Margin + Suggested Price from target.
               </div>
             </div>
 
-            <div className="p-4">
-              <div className="text-lg font-extrabold leading-tight">{name || 'Untitled'}</div>
-
-              <div className="mt-2 text-sm text-neutral-700">
-                {description?.trim()
-                  ? clampStr(description, menuCompact ? 90 : 170)
-                  : 'Add a premium description for menu & customers…'}
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2">
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Portions</div>
-                  <div className="gc-kpi-value">{portionsN}</div>
-                </div>
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Cost / portion</div>
-                  <div className="gc-kpi-value">{moneyUSD(cpp)}</div>
-                </div>
-              </div>
-
-              {(p != null || c != null || f != null) && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  {p != null ? <span className="gc-chip">P {p}g</span> : null}
-                  {c != null ? <span className="gc-chip">C {c}g</span> : null}
-                  {f != null ? <span className="gc-chip">F {f}g</span> : null}
-                </div>
-              )}
-
-              {steps.length > 0 && (
-                <div className="mt-4">
-                  <div className="gc-label">METHOD (PREVIEW)</div>
-                  <div className="mt-2 space-y-2">
-                    {steps.slice(0, menuCompact ? 2 : 4).map((s, i) => (
-                      <div key={i} className="text-sm text-neutral-700">
-                        <span className="font-extrabold mr-2">Step {i + 1}:</span>
-                        {clampStr(s, menuCompact ? 70 : 120)}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+            <div className="flex flex-wrap gap-2">
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={applySuggested}>
+                Apply Suggested
+              </button>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="gc-card p-5">
-              <div className="gc-label">DESCRIPTION</div>
-              <textarea
-                className="gc-input mt-3 w-full min-h-[120px]"
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="Short premium description for menu / customers..."
+          <div className="mt-4 grid gap-3 md:grid-cols-4">
+            <div>
+              <div className="gc-label">CURRENCY</div>
+              <input
+                className="gc-input mt-2 w-full"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value.toUpperCase())}
+                placeholder="USD"
               />
             </div>
-
-            <div className="gc-card p-5">
-              <div className="flex items-center justify-between gap-2">
-                <div>
-                  <div className="gc-label">NUTRITION (PER PORTION)</div>
-                  <div className="mt-1 text-xs text-neutral-500">Auto-calc works for lines with unit g/kg.</div>
-                </div>
-                <button className="gc-btn gc-btn-primary" type="button" onClick={autoNutrition} disabled={autoNLoading}>
-                  {autoNLoading ? 'Calculating…' : 'Auto-calc'}
-                </button>
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="gc-label">CALORIES</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={0}
-                    step="1"
-                    value={calories}
-                    onChange={(e) => setCalories(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <div className="gc-label">PROTEIN (g)</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={protein}
-                    onChange={(e) => setProtein(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <div className="gc-label">CARBS (g)</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={carbs}
-                    onChange={(e) => setCarbs(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <div className="gc-label">FAT (g)</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={0}
-                    step="0.1"
-                    value={fat}
-                    onChange={(e) => setFat(e.target.value)}
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="gc-card p-5">
-              <div className="gc-label">METHOD (LEGACY TEXT) — OPTIONAL</div>
-              <textarea
-                className="gc-input mt-3 w-full min-h-[120px]"
-                value={methodLegacy}
-                onChange={(e) => setMethodLegacy(e.target.value)}
-                placeholder="Optional legacy method text..."
+            <div>
+              <div className="gc-label">SELLING PRICE</div>
+              <input
+                className="gc-input mt-2 w-full"
+                type="number"
+                min={0}
+                step="0.01"
+                value={sellingPrice}
+                onChange={(e) => setSellingPrice(e.target.value)}
+                placeholder="e.g., 8.50"
               />
             </div>
+            <div>
+              <div className="gc-label">TARGET FOOD COST %</div>
+              <input
+                className="gc-input mt-2 w-full"
+                type="number"
+                min={1}
+                max={99}
+                step="1"
+                value={targetFC}
+                onChange={(e) => setTargetFC(e.target.value)}
+                placeholder="30"
+              />
+            </div>
+            <div>
+              <div className="gc-label">SUGGESTED PRICE</div>
+              <div className="gc-input mt-2 w-full flex items-center">
+                <span className="font-extrabold">{fmtMoney(suggestedPrice || 0, currency)}</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 grid gap-3 md:grid-cols-3">
+            <div className="gc-kpi">
+              <div className="gc-kpi-label">Food Cost %</div>
+              <div className="gc-kpi-value">{fcPct == null ? '—' : `${Math.round(fcPct * 10) / 10}%`}</div>
+            </div>
+            <div className="gc-kpi">
+              <div className="gc-kpi-label">Margin / portion</div>
+              <div className="gc-kpi-value">{sell > 0 ? fmtMoney(margin, currency) : '—'}</div>
+            </div>
+            <div className="gc-kpi">
+              <div className="gc-kpi-label">Margin %</div>
+              <div className="gc-kpi-value">{marginPct == null ? '—' : `${Math.round(marginPct * 10) / 10}%`}</div>
+            </div>
+          </div>
+
+          <div className="mt-3 text-xs text-neutral-500">
+            After setting price/target, press <span className="font-semibold">Save</span> to store pricing in DB.
           </div>
         </div>
       </div>
@@ -696,7 +724,7 @@ export default function RecipeEditor() {
             className="gc-input"
             value={newStep}
             onChange={(e) => setNewStep(e.target.value)}
-            placeholder="Write step… (e.g., Heat pan, add oil...)"
+            placeholder="Write step…"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
@@ -730,19 +758,11 @@ export default function RecipeEditor() {
                   </div>
                 </div>
 
-                <textarea
-                  className="gc-input mt-3 w-full min-h-[90px]"
-                  value={s}
-                  onChange={(e) => updateStep(idx, e.target.value)}
-                />
+                <textarea className="gc-input mt-3 w-full min-h-[90px]" value={s} onChange={(e) => updateStep(idx, e.target.value)} />
               </div>
             ))}
           </div>
         )}
-
-        <div className="mt-4 text-xs text-neutral-500">
-          After Auto-calc, press <span className="font-semibold">Save</span> to store nutrition in DB.
-        </div>
       </div>
 
       {/* Ingredients */}
@@ -763,14 +783,9 @@ export default function RecipeEditor() {
         ) : (
           <div className="mt-4 space-y-2">
             {lines.map((l, idx) => (
-              <div
-                key={idx}
-                className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3"
-              >
+              <div key={idx} className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-white px-4 py-3">
                 <div className="text-sm">
-                  <div className="font-semibold">
-                    {l.ingredient_id ? (ingById.get(l.ingredient_id)?.name ?? 'Ingredient') : 'Sub-recipe line'}
-                  </div>
+                  <div className="font-semibold">{l.ingredient_id ? (ingById.get(l.ingredient_id)?.name ?? 'Ingredient') : 'Sub-recipe line'}</div>
                   <div className="text-xs text-neutral-500">
                     qty: {l.qty} {l.unit}
                   </div>
@@ -804,11 +819,7 @@ export default function RecipeEditor() {
               <div className="mt-4 grid gap-4 md:grid-cols-2">
                 <div className="md:col-span-2">
                   <div className="gc-label">INGREDIENT</div>
-                  <select
-                    className="gc-input mt-2 w-full"
-                    value={addIngredientId}
-                    onChange={(e) => setAddIngredientId(e.target.value)}
-                  >
+                  <select className="gc-input mt-2 w-full" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
                     <option value="">Select ingredient…</option>
                     {activeIngredients.map((i) => (
                       <option key={i.id} value={i.id}>
@@ -820,19 +831,12 @@ export default function RecipeEditor() {
 
                 <div>
                   <div className="gc-label">QTY</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={0}
-                    step="0.01"
-                    value={addQty}
-                    onChange={(e) => setAddQty(e.target.value)}
-                  />
+                  <input className="gc-input mt-2 w-full" type="number" min={0} step="0.01" value={addQty} onChange={(e) => setAddQty(e.target.value)} />
                 </div>
 
                 <div>
                   <div className="gc-label">UNIT</div>
-                  <input className="gc-input mt-2 w-full" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} />
+                  <input className="gc-input mt-2 w-full" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
                 </div>
 
                 <div className="md:col-span-2 flex justify-end gap-2">
