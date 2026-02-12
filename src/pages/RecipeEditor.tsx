@@ -18,7 +18,9 @@ type Recipe = {
 
   // Premium fields
   description?: string | null
-  method?: string | null
+  method?: string | null // legacy
+  method_steps?: string[] | null
+
   calories?: number | null
   protein_g?: number | null
   carbs_g?: number | null
@@ -88,6 +90,11 @@ function clampStr(s: string, max = 140) {
   return x.slice(0, max - 1) + '…'
 }
 
+function normalizeSteps(steps: string[] | null | undefined) {
+  const arr = (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
+  return arr.length ? arr : []
+}
+
 export default function RecipeEditor() {
   const location = useLocation()
   const [sp] = useSearchParams()
@@ -117,7 +124,13 @@ export default function RecipeEditor() {
   const [portions, setPortions] = useState('1')
 
   const [description, setDescription] = useState('')
-  const [method, setMethod] = useState('')
+
+  // Step Builder
+  const [steps, setSteps] = useState<string[]>([])
+  const [newStep, setNewStep] = useState('')
+
+  // Legacy method (optional)
+  const [methodLegacy, setMethodLegacy] = useState('')
 
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
@@ -136,7 +149,7 @@ export default function RecipeEditor() {
     const { data: r, error: rErr } = await supabase
       .from('recipes')
       .select(
-        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,calories,protein_g,carbs_g,fat_g'
+        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,calories,protein_g,carbs_g,fat_g'
       )
       .eq('id', recipeId)
       .single()
@@ -165,7 +178,9 @@ export default function RecipeEditor() {
     setPortions(String(rr.portions ?? 1))
 
     setDescription(rr.description ?? '')
-    setMethod(rr.method ?? '')
+
+    setSteps(normalizeSteps(rr.method_steps))
+    setMethodLegacy(rr.method ?? '')
 
     setCalories(rr.calories == null ? '' : String(rr.calories))
     setProtein(rr.protein_g == null ? '' : String(rr.protein_g))
@@ -224,7 +239,13 @@ export default function RecipeEditor() {
         category: category.trim() || null,
         portions: Math.max(1, toNum(portions, 1)),
         description: description.trim() || null,
-        method: method.trim() || null,
+
+        // NEW: step builder
+        method_steps: normalizeSteps(steps),
+
+        // keep legacy (optional)
+        method: methodLegacy.trim() || null,
+
         calories: calories.trim() === '' ? null : Math.max(0, Math.floor(toNum(calories, 0))),
         protein_g: protein.trim() === '' ? null : Math.max(0, toNum(protein, 0)),
         carbs_g: carbs.trim() === '' ? null : Math.max(0, toNum(carbs, 0)),
@@ -241,6 +262,31 @@ export default function RecipeEditor() {
     } finally {
       setSavingMeta(false)
     }
+  }
+
+  // Step builder helpers
+  const addStep = () => {
+    const s = newStep.trim()
+    if (!s) return
+    setSteps((prev) => [...prev, s])
+    setNewStep('')
+  }
+  const updateStep = (idx: number, value: string) => {
+    setSteps((prev) => prev.map((x, i) => (i === idx ? value : x)))
+  }
+  const removeStep = (idx: number) => {
+    setSteps((prev) => prev.filter((_, i) => i !== idx))
+  }
+  const moveStep = (idx: number, dir: -1 | 1) => {
+    setSteps((prev) => {
+      const next = [...prev]
+      const j = idx + dir
+      if (j < 0 || j >= next.length) return prev
+      const t = next[idx]
+      next[idx] = next[j]
+      next[j] = t
+      return next
+    })
   }
 
   const addLine = async () => {
@@ -379,7 +425,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="min-w-[min(560px,92vw)]">
-              <div className="gc-label">RECIPE EDITOR (PREMIUM)</div>
+              <div className="gc-label">RECIPE EDITOR (STEP BUILDER)</div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
@@ -503,128 +549,161 @@ export default function RecipeEditor() {
                 </div>
               )}
 
-              <div className="mt-4 text-[11px] text-neutral-500">
-                Tip: Keep description short + highlight taste, texture, and key ingredients.
-              </div>
+              {steps.length > 0 && (
+                <div className="mt-4">
+                  <div className="gc-label">METHOD (PREVIEW)</div>
+                  <div className="mt-2 space-y-2">
+                    {steps.slice(0, menuCompact ? 2 : 4).map((s, i) => (
+                      <div key={i} className="text-sm text-neutral-700">
+                        <span className="font-extrabold mr-2">Step {i + 1}:</span>
+                        {clampStr(s, menuCompact ? 70 : 120)}
+                      </div>
+                    ))}
+                    {steps.length > (menuCompact ? 2 : 4) && (
+                      <div className="text-xs text-neutral-500">+ {steps.length - (menuCompact ? 2 : 4)} more…</div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
 
           <div className="space-y-4">
             <div className="gc-card p-5">
-              <div className="gc-label">MENU COPY (AR)</div>
-              <div className="mt-2 text-sm text-neutral-700">
-                اكتب الوصف مثل منيو مطعم:
-                <ul className="mt-2 list-disc pl-5 text-neutral-600">
-                  <li>سطر عن النكهة والقوام (smoky / creamy / fresh).</li>
-                  <li>سطر عن المكونات المميزة أو الصوص.</li>
-                  <li>سطر عن طريقة التقديم.</li>
-                </ul>
-              </div>
+              <div className="gc-label">DESCRIPTION</div>
+              <textarea
+                className="gc-input mt-3 w-full min-h-[120px]"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Short premium description for menu / customers..."
+              />
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-label">QUALITY CHECK</div>
-              <div className="mt-2 grid gap-2 sm:grid-cols-2">
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Has photo?</div>
-                  <div className="gc-kpi-value">{recipe.photo_url ? 'Yes ✅' : 'No'}</div>
+              <div className="gc-label">NUTRITION</div>
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                <div>
+                  <div className="gc-label">CALORIES</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={0}
+                    step="1"
+                    value={calories}
+                    onChange={(e) => setCalories(e.target.value)}
+                  />
                 </div>
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Has method?</div>
-                  <div className="gc-kpi-value">{method.trim() ? 'Yes ✅' : 'No'}</div>
+                <div>
+                  <div className="gc-label">PROTEIN (g)</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    value={protein}
+                    onChange={(e) => setProtein(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <div className="gc-label">CARBS (g)</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    value={carbs}
+                    onChange={(e) => setCarbs(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <div className="gc-label">FAT (g)</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={0}
+                    step="0.1"
+                    value={fat}
+                    onChange={(e) => setFat(e.target.value)}
+                  />
                 </div>
               </div>
             </div>
 
+            {/* Legacy method optional */}
             <div className="gc-card p-5">
-              <div className="gc-label">NEXT</div>
-              <div className="mt-2 text-sm text-neutral-700">
-                إذا تريد الخطوة القادمة:
-                <div className="mt-2 text-neutral-600">✅ Selling Price + Food Cost% + Margin (Premium)</div>
-              </div>
+              <div className="gc-label">METHOD (LEGACY TEXT) — OPTIONAL</div>
+              <textarea
+                className="gc-input mt-3 w-full min-h-[120px]"
+                value={methodLegacy}
+                onChange={(e) => setMethodLegacy(e.target.value)}
+                placeholder="Optional legacy method text..."
+              />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Description / Nutrition / Method */}
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="gc-card p-6">
-          <div className="gc-label">DESCRIPTION</div>
-          <textarea
-            className="gc-input mt-3 w-full min-h-[140px]"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Short premium description for menu / customers..."
-          />
-        </div>
-
-        <div className="gc-card p-6">
-          <div className="gc-label">NUTRITION</div>
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
-            <div>
-              <div className="gc-label">CALORIES (kcal)</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={0}
-                step="1"
-                value={calories}
-                onChange={(e) => setCalories(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <div className="gc-label">PROTEIN (g)</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={0}
-                step="0.1"
-                value={protein}
-                onChange={(e) => setProtein(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <div className="gc-label">CARBS (g)</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={0}
-                step="0.1"
-                value={carbs}
-                onChange={(e) => setCarbs(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <div className="gc-label">FAT (g)</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={0}
-                step="0.1"
-                value={fat}
-                onChange={(e) => setFat(e.target.value)}
-              />
-            </div>
+      {/* Step Builder */}
+      <div className="gc-card p-6">
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <div className="gc-label">STEP BUILDER</div>
+            <div className="mt-1 text-sm text-neutral-600">Add steps, reorder, and save.</div>
           </div>
-
-          <div className="mt-4 text-xs text-neutral-500">Tip: we can standardize nutrition per-portion later.</div>
         </div>
 
-        <div className="gc-card p-6 lg:col-span-2">
-          <div className="gc-label">METHOD</div>
-          <textarea
-            className="gc-input mt-3 w-full min-h-[220px]"
-            value={method}
-            onChange={(e) => setMethod(e.target.value)}
-            placeholder={`Step-by-step method (professional):
-1) Prep...
-2) Cook...
-3) Plate...`}
+        <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
+          <input
+            className="gc-input"
+            value={newStep}
+            onChange={(e) => setNewStep(e.target.value)}
+            placeholder="Write step… (e.g., Heat pan, add oil...)"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                addStep()
+              }
+            }}
           />
+          <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
+            + Add Step
+          </button>
+        </div>
+
+        {steps.length === 0 ? (
+          <div className="mt-4 text-sm text-neutral-600">No steps yet. Add your first step.</div>
+        ) : (
+          <div className="mt-4 space-y-2">
+            {steps.map((s, idx) => (
+              <div key={idx} className="rounded-2xl border border-neutral-200 bg-white p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div className="gc-label">STEP {idx + 1}</div>
+                  <div className="flex gap-2">
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveStep(idx, -1)}>
+                      ↑
+                    </button>
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveStep(idx, 1)}>
+                      ↓
+                    </button>
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => removeStep(idx)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
+
+                <textarea
+                  className="gc-input mt-3 w-full min-h-[90px]"
+                  value={s}
+                  onChange={(e) => updateStep(idx, e.target.value)}
+                  placeholder="Step details..."
+                />
+              </div>
+            ))}
+          </div>
+        )}
+
+        <div className="mt-4 text-xs text-neutral-500">
+          Important: After editing steps, press <span className="font-semibold">Save</span> in the header.
         </div>
       </div>
 
