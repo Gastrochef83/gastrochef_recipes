@@ -1,13 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
-import { NavLink, useSearchParams } from 'react-router-dom'
+import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 
 type Recipe = {
   id: string
   name: string
+  category: string | null
   portions: number
   photo_url?: string | null
+  description?: string | null
+
+  calories?: number | null
+  protein_g?: number | null
+  carbs_g?: number | null
+  fat_g?: number | null
+
+  selling_price?: number | null
+  currency?: string | null
 }
 
 type Line = {
@@ -31,18 +41,16 @@ function toNum(x: any, f = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : f
 }
-function safeUnit(u: string | null | undefined) {
-  return (u ?? '').trim().toLowerCase()
-}
 
 export default function RecipeEditor() {
+  const location = useLocation()
   const [sp] = useSearchParams()
   const id = sp.get('id')!
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
-  const [subRecipes, setSubRecipes] = useState<Recipe[]>([])
+  const [recipes, setRecipes] = useState<Recipe[]>([])
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
   const [toast, setToast] = useState('')
@@ -50,32 +58,23 @@ export default function RecipeEditor() {
   const loadAll = async () => {
     const { data: r } = await supabase.from('recipes').select('*').eq('id', id).single()
     const { data: l } = await supabase.from('recipe_lines').select('*').eq('recipe_id', id)
-    const { data: i } = await supabase.from('ingredients').select('*')
+    const { data: i } = await supabase.from('ingredients').select('*').order('name')
     const { data: sr } = await supabase.from('recipes').select('id,name,portions')
 
     setRecipe(r)
     setLines(l ?? [])
     setIngredients(i ?? [])
-    setSubRecipes(sr ?? [])
+    setRecipes(sr ?? [])
   }
 
   useEffect(() => {
     loadAll()
   }, [id])
 
-  const ingById = useMemo(() => {
-    const m = new Map<string, Ingredient>()
-    ingredients.forEach((x) => m.set(x.id, x))
-    return m
-  }, [ingredients])
+  const ingById = useMemo(() => new Map(ingredients.map(i => [i.id, i])), [ingredients])
+  const recipeById = useMemo(() => new Map(recipes.map(r => [r.id, r])), [recipes])
 
-  const recipeById = useMemo(() => {
-    const m = new Map<string, Recipe>()
-    subRecipes.forEach((x) => m.set(x.id, x))
-    return m
-  }, [subRecipes])
-
-  // ---------- Sub Recipe Cost Loader ----------
+  // ---------- Sub Recipe Cost Cache ----------
   const [subCostCache, setSubCostCache] = useState<Record<string, number>>({})
 
   const loadSubCost = async (rid: string): Promise<number> => {
@@ -91,11 +90,11 @@ export default function RecipeEditor() {
       }
     }
 
-    setSubCostCache((p) => ({ ...p, [rid]: sum }))
+    setSubCostCache(p => ({ ...p, [rid]: sum }))
     return sum
   }
 
-  // ---------- Total Cost with Sub Recipes ----------
+  // ---------- Total Cost ----------
   const [totalCost, setTotalCost] = useState(0)
 
   useEffect(() => {
@@ -119,20 +118,25 @@ export default function RecipeEditor() {
   }, [lines, ingredients])
 
   const toggleExpand = (id: string) =>
-    setExpanded((p) => ({ ...p, [id]: !p[id] }))
+    setExpanded(p => ({ ...p, [id]: !p[id] }))
 
-  if (!recipe) return <div>Loading…</div>
+  if (!recipe) return <div className="gc-card p-6">Loading…</div>
 
   return (
     <div className="space-y-6">
+
+      {/* Header */}
       <div className="gc-card p-6">
-        <div className="gc-label">SUB-RECIPE PRO EDITOR</div>
+        <div className="gc-label">RECIPE EDITOR — SUB RECIPES PRO</div>
         <div className="text-2xl font-bold mt-2">{recipe.name}</div>
         <div className="text-sm mt-2">Total Cost: {totalCost.toFixed(2)}</div>
       </div>
 
+      {/* Lines */}
       <div className="gc-card p-6 space-y-3">
-        {lines.map((l) => {
+
+        {lines.map(l => {
+
           // ---------- Ingredient line ----------
           if (l.ingredient_id) {
             const ing = ingById.get(l.ingredient_id)
@@ -153,11 +157,12 @@ export default function RecipeEditor() {
 
             return (
               <div key={l.id} className="border p-3 rounded-xl bg-amber-50">
+
                 <div className="flex justify-between">
                   <div>
                     <div className="font-bold">Sub-Recipe: {sr?.name}</div>
                     <div className="text-xs">
-                      qty × {l.qty} | cost each: {cost.toFixed(2)}
+                      qty × {l.qty} | unit cost: {cost.toFixed(2)}
                     </div>
                   </div>
 
@@ -172,27 +177,37 @@ export default function RecipeEditor() {
                 {expanded[l.id] && (
                   <SubBreakdown recipeId={l.sub_recipe_id} />
                 )}
+
               </div>
             )
           }
 
           return null
         })}
+
       </div>
+
+      <NavLink className="gc-btn gc-btn-ghost" to="/recipes">
+        ← Back
+      </NavLink>
 
       <Toast open={!!toast} message={toast} onClose={() => setToast('')} />
     </div>
   )
 }
 
-// ---------- Breakdown Component ----------
+
+// ---------- Sub Breakdown ----------
 function SubBreakdown({ recipeId }: { recipeId: string }) {
   const [lines, setLines] = useState<any[]>([])
   const [ingredients, setIngredients] = useState<any[]>([])
 
   useEffect(() => {
-    supabase.from('recipe_lines').select('*').eq('recipe_id', recipeId).then(r => setLines(r.data ?? []))
-    supabase.from('ingredients').select('*').then(r => setIngredients(r.data ?? []))
+    supabase.from('recipe_lines').select('*').eq('recipe_id', recipeId)
+      .then(r => setLines(r.data ?? []))
+
+    supabase.from('ingredients').select('*')
+      .then(r => setIngredients(r.data ?? []))
   }, [recipeId])
 
   const ingById = new Map(ingredients.map(i => [i.id, i]))
