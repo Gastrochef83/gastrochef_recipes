@@ -70,9 +70,7 @@ export default function AppLayout() {
               </button>
             </div>
 
-            <div className="mt-3 text-xs text-neutral-500 truncate">
-              {userEmail ? userEmail : '—'}
-            </div>
+            <div className="mt-3 text-xs text-neutral-500 truncate">{userEmail ? userEmail : '—'}</div>
 
             <div className="mt-4 space-y-2">
               <NavItem to="/dashboard" label="Dashboard" />
@@ -93,6 +91,7 @@ export default function AppLayout() {
           {/* Main */}
           <main className="space-y-6">
             <Routes>
+              {/* default */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
               <Route path="/dashboard" element={<Dashboard />} />
@@ -100,12 +99,13 @@ export default function AppLayout() {
               <Route path="/recipes" element={<Recipes />} />
               <Route path="/settings" element={<Settings />} />
 
-              {/* ✅ Editor */}
-              <Route path="/recipe" element={<RecipeEditor />} />
+              {/* ✅ Editor (accept /recipe, /recipe/, /recipe/anything) */}
+              <Route path="/recipe/*" element={<RecipeEditor />} />
 
-              {/* ✅ Cook Mode */}
-              <Route path="/cook" element={<RecipeCookMode />} />
+              {/* ✅ Cook Mode (accept /cook, /cook/, /cook/anything) */}
+              <Route path="/cook/*" element={<RecipeCookMode />} />
 
+              {/* fallback */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </main>
