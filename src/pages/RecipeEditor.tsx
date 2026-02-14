@@ -1070,12 +1070,24 @@ export default function RecipeEditor() {
 
                 <div>
                   <div className="gc-label">CATEGORY</div>
-                  <input className="gc-input mt-2 w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Veg / Chicken / Dessert..." />
+                  <input
+                    className="gc-input mt-2 w-full"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Veg / Chicken / Dessert..."
+                  />
                 </div>
 
                 <div>
                   <div className="gc-label">PORTIONS</div>
-                  <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={portions} onChange={(e) => setPortions(e.target.value)} />
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={1}
+                    step="1"
+                    value={portions}
+                    onChange={(e) => setPortions(e.target.value)}
+                  />
                 </div>
 
                 <div className="flex items-end gap-2">
@@ -1098,6 +1110,11 @@ export default function RecipeEditor() {
                     {savingMeta ? 'Saving…' : 'Save'}
                   </button>
 
+                  {/* ✅ NEW: Kitchen Mode button (no logic touched) */}
+                  <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
+                    🍳 Kitchen Mode
+                  </NavLink>
+
                   <NavLink className="gc-btn gc-btn-ghost" to="/recipes">
                     ← Back
                   </NavLink>
@@ -1109,7 +1126,9 @@ export default function RecipeEditor() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="gc-label">SUB-RECIPE SETTINGS</div>
-                    <div className="mt-1 text-xs text-neutral-500">Enable this to use the recipe inside other recipes by quantity of yield.</div>
+                    <div className="mt-1 text-xs text-neutral-500">
+                      Enable this to use the recipe inside other recipes by quantity of yield.
+                    </div>
                   </div>
 
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
@@ -1139,7 +1158,12 @@ export default function RecipeEditor() {
 
                   <div>
                     <div className="gc-label">YIELD UNIT</div>
-                    <select className="gc-input mt-2 w-full" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)} disabled={!isSubRecipe}>
+                    <select
+                      className="gc-input mt-2 w-full"
+                      value={yieldUnit}
+                      onChange={(e) => setYieldUnit(e.target.value as any)}
+                      disabled={!isSubRecipe}
+                    >
                       <option value="g">g</option>
                       <option value="kg">kg</option>
                       <option value="ml">ml</option>
@@ -1179,7 +1203,12 @@ export default function RecipeEditor() {
         {/* Description */}
         <div className="gc-card p-6">
           <div className="gc-label">DESCRIPTION</div>
-          <textarea className="gc-input mt-3 w-full min-h-[140px]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short premium description for menu / customers..." />
+          <textarea
+            className="gc-input mt-3 w-full min-h-[140px]"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short premium description for menu / customers..."
+          />
         </div>
 
         {/* Nutrition (manual only) */}
@@ -1231,11 +1260,28 @@ export default function RecipeEditor() {
             </div>
             <div>
               <div className="gc-label">SELLING PRICE</div>
-              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} placeholder="e.g., 8.50" />
+              <input
+                className="gc-input mt-2 w-full"
+                type="number"
+                min={0}
+                step="0.01"
+                value={sellingPrice}
+                onChange={(e) => setSellingPrice(e.target.value)}
+                placeholder="e.g., 8.50"
+              />
             </div>
             <div>
               <div className="gc-label">TARGET FOOD COST %</div>
-              <input className="gc-input mt-2 w-full" type="number" min={1} max={99} step="1" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} placeholder="30" />
+              <input
+                className="gc-input mt-2 w-full"
+                type="number"
+                min={1}
+                max={99}
+                step="1"
+                value={targetFC}
+                onChange={(e) => setTargetFC(e.target.value)}
+                placeholder="30"
+              />
             </div>
             <div>
               <div className="gc-label">SUGGESTED PRICE</div>
