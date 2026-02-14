@@ -1,11 +1,6 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import AppLayout from './layouts/AppLayout'
 
-import Dashboard from './pages/Dashboard'
-import Ingredients from './pages/Ingredients'
-import Recipes from './pages/Recipes'
-import Settings from './pages/Settings'
-import RecipeEditor from './pages/RecipeEditor'
 import Login from './pages/Login'
 import Register from './pages/Register'
 
@@ -49,12 +44,12 @@ export default function App() {
   return (
     <HashRouter>
       <Routes>
-        {/* Public routes */}
+        {/* Public */}
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
-        {/* Protected app */}
+        {/* Protected app (contains ALL internal routes) */}
         <Route
           path="/*"
           element={
