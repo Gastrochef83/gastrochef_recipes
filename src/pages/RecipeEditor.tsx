@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { NavLink, useLocation, useSearchParams } from 'react-router-dom'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 
@@ -18,7 +18,7 @@ type Recipe = {
   method?: string | null
   method_steps?: string[] | null
 
-  // ✅ NEW (optional column)
+  // optional column
   method_step_photos?: string[] | null
 
   calories?: number | null
@@ -112,8 +112,11 @@ type EditRow = {
   group_title: string
 }
 
+type MetaStatus = 'saved' | 'saving' | 'dirty'
+
 export default function RecipeEditor() {
   const location = useLocation()
+  const navigate = useNavigate()
   const [sp] = useSearchParams()
   const id = sp.get('id')
 
@@ -129,7 +132,7 @@ export default function RecipeEditor() {
   const [savingMeta, setSavingMeta] = useState(false)
   const [uploading, setUploading] = useState(false)
 
-  // ✅ NEW: upload state for step photos
+  // upload state for step photos
   const [stepUploading, setStepUploading] = useState(false)
 
   // Form fields
@@ -143,7 +146,7 @@ export default function RecipeEditor() {
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
 
-  // ✅ NEW: step photos aligned to steps
+  // step photos aligned to steps
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
 
   // Nutrition per portion (manual only)
@@ -197,14 +200,76 @@ export default function RecipeEditor() {
   // Recursive cache of recipe_lines for referenced subrecipes
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
 
-  // ✅ helper: align photos with steps length
+  // --------- NEW: Smart Back + Autosave Tracking ----------
+  const [metaStatus, setMetaStatus] = useState<MetaStatus>('saved')
+  const lastSavedSnapshotRef = useRef<string>('')
+
   const alignStepPhotos = (cleanSteps: string[], photos: string[] | null | undefined) => {
     const p = (photos ?? []).map((x) => (x ?? '').trim())
     return cleanSteps.map((_, idx) => p[idx] ?? '')
   }
 
+  const currentMetaSnapshot = () => {
+    const cleanSteps = normalizeSteps(steps)
+    const cleanPhotos = alignStepPhotos(cleanSteps, stepPhotos)
+    return JSON.stringify({
+      name: (name ?? '').trim(),
+      category: (category ?? '').trim(),
+      portions: String(portions ?? '1'),
+      description: (description ?? '').trim(),
+      methodLegacy: (methodLegacy ?? '').trim(),
+      method_steps: cleanSteps,
+      method_step_photos: cleanPhotos,
+      calories: String(calories ?? ''),
+      protein: String(protein ?? ''),
+      carbs: String(carbs ?? ''),
+      fat: String(fat ?? ''),
+      currency: String(currency ?? 'USD').toUpperCase(),
+      sellingPrice: String(sellingPrice ?? ''),
+      targetFC: String(targetFC ?? '30'),
+      isSubRecipe: !!isSubRecipe,
+      yieldQty: String(yieldQty ?? ''),
+      yieldUnit: safeUnit(String(yieldUnit ?? 'g')),
+    })
+  }
+
+  const smartBack = () => {
+    // If there's history, go back; otherwise default to Recipes
+    if (window.history.length > 1) navigate(-1)
+    else navigate('/recipes', { replace: true })
+  }
+
+  // mark dirty when user changes meta
+  useEffect(() => {
+    if (loading) return
+    if (savingMeta) return
+    const snap = currentMetaSnapshot()
+    const dirty = snap !== lastSavedSnapshotRef.current
+    setMetaStatus(dirty ? 'dirty' : 'saved')
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    loading,
+    savingMeta,
+    name,
+    category,
+    portions,
+    description,
+    methodLegacy,
+    steps,
+    stepPhotos,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+  ])
+
   const loadAll = async (recipeId: string) => {
-    // ✅ Try selecting method_step_photos, fallback if column doesn't exist
     const selectWithPhotos =
       'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
     const selectNoPhotos =
@@ -242,7 +307,7 @@ export default function RecipeEditor() {
 
     const { data: rs, error: rsErr } = await supabase
       .from('recipes')
-      .select(selectNoPhotos) // list doesn't need step photos
+      .select(selectNoPhotos)
       .eq('kitchen_id', (r as any).kitchen_id)
       .order('name', { ascending: true })
     if (rsErr) throw rsErr
@@ -265,8 +330,6 @@ export default function RecipeEditor() {
     const cleanSteps = normalizeSteps(rr.method_steps)
     setSteps(cleanSteps)
     setMethodLegacy(rr.method ?? '')
-
-    // ✅ NEW: load step photos aligned
     setStepPhotos(alignStepPhotos(cleanSteps, rr.method_step_photos))
 
     setCalories(rr.calories == null ? '' : String(rr.calories))
@@ -278,12 +341,10 @@ export default function RecipeEditor() {
     setSellingPrice(rr.selling_price == null ? '' : String(rr.selling_price))
     setTargetFC(rr.target_food_cost_pct == null ? '30' : String(rr.target_food_cost_pct))
 
-    // sub-recipe settings
     setIsSubRecipe(rr.is_subrecipe === true)
     setYieldQty(rr.yield_qty == null ? '' : String(rr.yield_qty))
     setYieldUnit((safeUnit(rr.yield_unit ?? 'g') as any) || 'g')
 
-    // edit map
     const m: Record<string, EditRow> = {}
     for (const x of ll) {
       m[x.id] = {
@@ -298,8 +359,33 @@ export default function RecipeEditor() {
     }
     setEdit(m)
 
-    // prime cache for current recipe
     setRecipeLinesCache((p) => ({ ...p, [rr.id]: ll }))
+
+    // NEW: after load -> mark saved snapshot
+    // (use the same snapshot builder based on state — update on next tick)
+    setTimeout(() => {
+      const snap = JSON.stringify({
+        name: (rr.name ?? '').trim(),
+        category: (rr.category ?? '').trim(),
+        portions: String(rr.portions ?? 1),
+        description: (rr.description ?? '').trim(),
+        methodLegacy: (rr.method ?? '').trim(),
+        method_steps: cleanSteps,
+        method_step_photos: alignStepPhotos(cleanSteps, rr.method_step_photos),
+        calories: rr.calories == null ? '' : String(rr.calories),
+        protein: rr.protein_g == null ? '' : String(rr.protein_g),
+        carbs: rr.carbs_g == null ? '' : String(rr.carbs_g),
+        fat: rr.fat_g == null ? '' : String(rr.fat_g),
+        currency: (rr.currency ?? 'USD').toUpperCase(),
+        sellingPrice: rr.selling_price == null ? '' : String(rr.selling_price),
+        targetFC: rr.target_food_cost_pct == null ? '30' : String(rr.target_food_cost_pct),
+        isSubRecipe: rr.is_subrecipe === true,
+        yieldQty: rr.yield_qty == null ? '' : String(rr.yield_qty),
+        yieldUnit: safeUnit(rr.yield_unit ?? 'g'),
+      })
+      lastSavedSnapshotRef.current = snap
+      setMetaStatus('saved')
+    }, 0)
   }
 
   useEffect(() => {
@@ -487,11 +573,15 @@ export default function RecipeEditor() {
   }
 
   // -------------------------
-  // Save recipe meta (includes sub-recipe + yield + ✅ step photos)
+  // Save recipe meta (includes sub-recipe + yield + step photos)
   // -------------------------
-  const saveMeta = async () => {
+  const saveMeta = async (opts?: { silent?: boolean; skipReload?: boolean; isAuto?: boolean }) => {
     if (!id) return
+    if (opts?.isAuto && metaStatus !== 'dirty') return
+
     setSavingMeta(true)
+    setMetaStatus('saving')
+
     try {
       const cleanSteps = normalizeSteps(steps)
       const cleanStepPhotos = alignStepPhotos(cleanSteps, stepPhotos)
@@ -505,7 +595,6 @@ export default function RecipeEditor() {
         method_steps: cleanSteps,
         method: methodLegacy.trim() || null,
 
-        // ✅ NEW
         method_step_photos: cleanStepPhotos,
 
         calories: calories.trim() === '' ? null : Math.max(0, Math.floor(toNum(calories, 0))),
@@ -517,7 +606,6 @@ export default function RecipeEditor() {
         selling_price: sellingPrice.trim() === '' ? null : Math.max(0, toNum(sellingPrice, 0)),
         target_food_cost_pct: Math.min(99, Math.max(1, toNum(targetFC, 30))),
 
-        // sub-recipe settings
         is_subrecipe: isSubRecipe,
         yield_qty: yieldQty.trim() === '' ? null : Math.max(0, toNum(yieldQty, 0)),
         yield_unit: isSubRecipe ? safeUnit(yieldUnit) : null,
@@ -525,7 +613,7 @@ export default function RecipeEditor() {
 
       let { error } = await supabase.from('recipes').update(payload).eq('id', id)
 
-      // ✅ fallback if column doesn't exist
+      // fallback if column doesn't exist
       if (error && String(error.message || '').toLowerCase().includes('method_step_photos')) {
         delete payload.method_step_photos
         ;({ error } = await supabase.from('recipes').update(payload).eq('id', id))
@@ -533,14 +621,67 @@ export default function RecipeEditor() {
 
       if (error) throw error
 
-      showToast('Saved ✅')
-      await loadAll(id)
+      // update snapshot -> saved
+      lastSavedSnapshotRef.current = currentMetaSnapshot()
+      setMetaStatus('saved')
+
+      if (!opts?.silent) showToast('Saved ✅')
+      if (!opts?.skipReload) await loadAll(id)
     } catch (e: any) {
+      setMetaStatus('dirty')
       showToast(e?.message ?? 'Save failed')
     } finally {
       setSavingMeta(false)
     }
   }
+
+  // -------------------------
+  // Auto-save (every 10s if dirty)
+  // -------------------------
+  useEffect(() => {
+    const t = setInterval(() => {
+      if (!id) return
+      if (loading) return
+      if (savingMeta) return
+      if (uploading) return
+      if (stepUploading) return
+      if (metaStatus !== 'dirty') return
+      saveMeta({ silent: true, skipReload: true, isAuto: true }).catch(() => {})
+    }, 10_000)
+
+    return () => clearInterval(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [id, loading, savingMeta, uploading, stepUploading, metaStatus])
+
+  // -------------------------
+  // Keyboard shortcuts
+  // -------------------------
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      const isMac = navigator.platform.toLowerCase().includes('mac')
+      const mod = isMac ? e.metaKey : e.ctrlKey
+
+      if (!mod) return
+
+      // Ctrl/Cmd + S
+      if (e.key.toLowerCase() === 's') {
+        e.preventDefault()
+        saveMeta().catch(() => {})
+        return
+      }
+
+      // Ctrl/Cmd + Enter => add step from newStep input
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        addStep()
+        return
+      }
+    }
+
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [newStep, steps, stepPhotos, name, category, portions, description, methodLegacy, calories, protein, carbs, fat, currency, sellingPrice, targetFC, isSubRecipe, yieldQty, yieldUnit, metaStatus])
 
   // -------------------------
   // Yield Smart
@@ -623,16 +764,16 @@ export default function RecipeEditor() {
   // Steps
   // -------------------------
   const addStep = () => {
-    const s = newStep.trim()
+    const s = (newStep ?? '').trim()
     if (!s) return
     setSteps((prev) => [...prev, s])
-    setStepPhotos((prev) => [...prev, '']) // ✅ keep aligned
+    setStepPhotos((prev) => [...prev, ''])
     setNewStep('')
   }
   const updateStep = (idx: number, value: string) => setSteps((prev) => prev.map((x, i) => (i === idx ? value : x)))
   const removeStep = (idx: number) => {
     setSteps((prev) => prev.filter((_, i) => i !== idx))
-    setStepPhotos((prev) => prev.filter((_, i) => i !== idx)) // ✅ keep aligned
+    setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
   }
   const moveStep = (idx: number, dir: -1 | 1) => {
     setSteps((prev) => {
@@ -682,7 +823,7 @@ export default function RecipeEditor() {
     }
   }
 
-  // ✅ NEW: Upload step photo (one per step)
+  // Upload step photo (one per step)
   const uploadStepPhoto = async (stepIdx: number, file: File) => {
     if (!id) return
     setStepUploading(true)
@@ -817,7 +958,15 @@ export default function RecipeEditor() {
         if (!title) throw new Error('Group title required')
         const { error } = await supabase
           .from('recipe_lines')
-          .update({ line_type: 'group', group_title: title, ingredient_id: null, sub_recipe_id: null, qty: 0, unit: 'g', note: null })
+          .update({
+            line_type: 'group',
+            group_title: title,
+            ingredient_id: null,
+            sub_recipe_id: null,
+            qty: 0,
+            unit: 'g',
+            note: null,
+          })
           .eq('id', lineId)
           .eq('recipe_id', id)
         if (error) throw error
@@ -1045,6 +1194,9 @@ export default function RecipeEditor() {
     )
   }
 
+  const metaBadge =
+    metaStatus === 'saving' ? 'Saving…' : metaStatus === 'dirty' ? 'Unsaved' : 'Saved'
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1070,24 +1222,12 @@ export default function RecipeEditor() {
 
                 <div>
                   <div className="gc-label">CATEGORY</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    placeholder="Veg / Chicken / Dessert..."
-                  />
+                  <input className="gc-input mt-2 w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Veg / Chicken / Dessert..." />
                 </div>
 
                 <div>
                   <div className="gc-label">PORTIONS</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={1}
-                    step="1"
-                    value={portions}
-                    onChange={(e) => setPortions(e.target.value)}
-                  />
+                  <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={portions} onChange={(e) => setPortions(e.target.value)} />
                 </div>
 
                 <div className="flex items-end gap-2">
@@ -1106,18 +1246,20 @@ export default function RecipeEditor() {
                     />
                   </label>
 
-                  <button className="gc-btn gc-btn-primary" onClick={saveMeta} disabled={savingMeta}>
+                  <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
                     {savingMeta ? 'Saving…' : 'Save'}
                   </button>
 
-                  {/* ✅ NEW: Kitchen Mode button (no logic touched) */}
+                  <span className="text-xs font-semibold text-neutral-500">{metaBadge}</span>
+
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
                     🍳 Kitchen Mode
                   </NavLink>
 
-                  <NavLink className="gc-btn gc-btn-ghost" to="/recipes">
+                  {/* SMART BACK */}
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
                     ← Back
-                  </NavLink>
+                  </button>
                 </div>
               </div>
 
@@ -1126,9 +1268,7 @@ export default function RecipeEditor() {
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div>
                     <div className="gc-label">SUB-RECIPE SETTINGS</div>
-                    <div className="mt-1 text-xs text-neutral-500">
-                      Enable this to use the recipe inside other recipes by quantity of yield.
-                    </div>
+                    <div className="mt-1 text-xs text-neutral-500">Enable this to use the recipe inside other recipes by quantity of yield.</div>
                   </div>
 
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
@@ -1158,12 +1298,7 @@ export default function RecipeEditor() {
 
                   <div>
                     <div className="gc-label">YIELD UNIT</div>
-                    <select
-                      className="gc-input mt-2 w-full"
-                      value={yieldUnit}
-                      onChange={(e) => setYieldUnit(e.target.value as any)}
-                      disabled={!isSubRecipe}
-                    >
+                    <select className="gc-input mt-2 w-full" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)} disabled={!isSubRecipe}>
                       <option value="g">g</option>
                       <option value="kg">kg</option>
                       <option value="ml">ml</option>
@@ -1203,15 +1338,10 @@ export default function RecipeEditor() {
         {/* Description */}
         <div className="gc-card p-6">
           <div className="gc-label">DESCRIPTION</div>
-          <textarea
-            className="gc-input mt-3 w-full min-h-[140px]"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="Short premium description for menu / customers..."
-          />
+          <textarea className="gc-input mt-3 w-full min-h-[140px]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short premium description for menu / customers..." />
         </div>
 
-        {/* Nutrition (manual only) */}
+        {/* Nutrition */}
         <div className="gc-card p-6">
           <div>
             <div className="gc-label">NUTRITION (PER PORTION)</div>
@@ -1238,7 +1368,7 @@ export default function RecipeEditor() {
           </div>
         </div>
 
-        {/* Pricing Premium */}
+        {/* Pricing */}
         <div className="gc-card p-6 lg:col-span-2">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
@@ -1260,28 +1390,11 @@ export default function RecipeEditor() {
             </div>
             <div>
               <div className="gc-label">SELLING PRICE</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={0}
-                step="0.01"
-                value={sellingPrice}
-                onChange={(e) => setSellingPrice(e.target.value)}
-                placeholder="e.g., 8.50"
-              />
+              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} placeholder="e.g., 8.50" />
             </div>
             <div>
               <div className="gc-label">TARGET FOOD COST %</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={1}
-                max={99}
-                step="1"
-                value={targetFC}
-                onChange={(e) => setTargetFC(e.target.value)}
-                placeholder="30"
-              />
+              <input className="gc-input mt-2 w-full" type="number" min={1} max={99} step="1" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} placeholder="30" />
             </div>
             <div>
               <div className="gc-label">SUGGESTED PRICE</div>
@@ -1307,12 +1420,12 @@ export default function RecipeEditor() {
           </div>
 
           <div className="mt-3 text-xs text-neutral-500">
-            After setting price/target, press <span className="font-semibold">Save</span> to store pricing in DB.
+            Tip: Use <span className="font-semibold">Ctrl/Cmd+S</span> to save quickly.
           </div>
         </div>
       </div>
 
-      {/* Step Builder (✅ WITH PHOTOS) */}
+      {/* Step Builder */}
       <div className="gc-card p-6">
         <div className="gc-label">STEP BUILDER (WITH PHOTOS)</div>
 
@@ -1321,7 +1434,7 @@ export default function RecipeEditor() {
             className="gc-input"
             value={newStep}
             onChange={(e) => setNewStep(e.target.value)}
-            placeholder="Write step…"
+            placeholder="Write step… (Ctrl/Cmd+Enter to add)"
             onKeyDown={(e) => {
               if (e.key === 'Enter') {
                 e.preventDefault()
@@ -1359,7 +1472,6 @@ export default function RecipeEditor() {
 
                   <textarea className="gc-input mt-3 w-full min-h-[90px]" value={s} onChange={(e) => updateStep(idx, e.target.value)} />
 
-                  {/* ✅ Step Photo block */}
                   <div className="mt-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div>
@@ -1568,7 +1680,6 @@ export default function RecipeEditor() {
                   )
                 }
 
-                // default edit row
                 const r =
                   row ||
                   ({
@@ -1587,7 +1698,6 @@ export default function RecipeEditor() {
                     [l.id]: { ...r, ...patch },
                   }))
 
-                // line cost display
                 let rightInfo = ''
                 if (r.line_type === 'ingredient' && r.ingredient_id) {
                   const ing = ingById.get(r.ingredient_id)
