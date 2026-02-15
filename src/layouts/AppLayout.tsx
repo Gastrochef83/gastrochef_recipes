@@ -32,6 +32,8 @@ function Icon({
     | 'sun'
     | 'moon'
     | 'sparkle'
+    | 'bolt'
+    | 'book'
   size?: number
 }) {
   const common = { width: size, height: size, viewBox: '0 0 24 24', fill: 'none', xmlns: 'http://www.w3.org/2000/svg' }
@@ -109,6 +111,19 @@ function Icon({
         <svg {...common}>
           <path d="M12 2l1.2 4.2L17 7.4l-3.8 1.2L12 13l-1.2-4.4L7 7.4l3.8-1.2L12 2Z" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round" />
           <path d="M19 12l.7 2.3L22 15l-2.3.7L19 18l-.7-2.3L16 15l2.3-.7L19 12Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'bolt':
+      return (
+        <svg {...common}>
+          <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+        </svg>
+      )
+    case 'book':
+      return (
+        <svg {...common}>
+          <path d="M5 4h10a3 3 0 0 1 3 3v13H8a3 3 0 0 0-3 3V4Z" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round" />
+          <path d="M5 18h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
         </svg>
       )
   }
@@ -195,8 +210,6 @@ function NavItem({
           <Icon name="chevron" size={16} />
         </span>
       )}
-
-      {/* soft glow */}
       <span className="pointer-events-none absolute inset-0 rounded-2xl ring-0 group-[.active]:ring-2 group-[.active]:ring-neutral-900/15 dark:group-[.active]:ring-white/25" />
     </NavLink>
   )
@@ -249,25 +262,21 @@ export default function AppLayout() {
     await supabase.auth.signOut()
   }
 
-  const statusLine = useMemo(() => {
-    return 'Yield checks • Unit logic • Cost/portion • Sub-recipes • Offline (next)'
-  }, [])
+  const statusLine = useMemo(() => 'Yield checks • Unit logic • Cost/portion • Sub-recipes • Offline (next)', [])
 
-  /** Ultimate+ keyboard shortcuts */
+  /** Ultimate++ keyboard shortcuts */
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const tag = (e.target as HTMLElement | null)?.tagName?.toLowerCase()
       const isTyping =
         tag === 'input' || tag === 'textarea' || (e.target as HTMLElement | null)?.isContentEditable
 
-      // Focus search with "/"
       if (!isTyping && e.key === '/') {
         e.preventDefault()
         searchRef.current?.focus()
         return
       }
 
-      // ESC blurs search
       if (e.key === 'Escape') {
         if (document.activeElement === searchRef.current) {
           searchRef.current?.blur()
@@ -275,7 +284,6 @@ export default function AppLayout() {
         }
       }
 
-      // Collapse / Expand
       if (!isTyping && e.key === '[') {
         e.preventDefault()
         setCollapsed(true)
@@ -287,7 +295,6 @@ export default function AppLayout() {
         return
       }
 
-      // Navigation shortcuts
       if (isTyping) return
       const k = e.key.toLowerCase()
 
@@ -302,160 +309,200 @@ export default function AppLayout() {
     return () => window.removeEventListener('keydown', onKeyDown)
   }, [navigate])
 
-  const sidebarWidth = collapsed ? 'lg:grid-cols-[92px_1fr]' : 'lg:grid-cols-[320px_1fr]'
+  // Collapsing only matters on lg+. On mobile it will always behave as normal.
+  const gridCols = collapsed ? 'lg:grid-cols-[96px_1fr]' : 'lg:grid-cols-[340px_1fr]'
 
   return (
     <div className="min-h-screen bg-neutral-100 dark:bg-neutral-950">
       <div className="container-app">
-        <div className={cx('grid grid-cols-1 gap-4', sidebarWidth)}>
+        <div className={cx('grid grid-cols-1 gap-4', gridCols)}>
           {/* Sidebar */}
           <aside className="gc-card p-4 dark:bg-neutral-900 dark:border dark:border-neutral-800">
-            {/* Top: Brand + actions */}
-            <div className="flex items-center justify-between gap-3">
-              <div className={cx('flex items-center gap-3 min-w-0', collapsed && 'justify-center w-full')}>
-                {/* No-image premium mark */}
-                <div
-                  className={cx(
-                    'h-12 w-12 rounded-2xl flex items-center justify-center font-extrabold select-none',
-                    'bg-neutral-900 text-white border border-neutral-900',
-                    'dark:bg-white dark:text-neutral-900 dark:border-white'
+            {/* Header FIXED (no overlap on mobile) */}
+            <div className="flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-3">
+                <div className={cx('flex items-center gap-3 min-w-0', collapsed && 'justify-center w-full')}>
+                  <div
+                    className={cx(
+                      'h-12 w-12 rounded-2xl flex items-center justify-center font-extrabold select-none',
+                      'bg-neutral-900 text-white border border-neutral-900',
+                      'dark:bg-white dark:text-neutral-900 dark:border-white'
+                    )}
+                    title="GastroChef"
+                  >
+                    GC
+                  </div>
+
+                  {!collapsed && (
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                        GastroChef
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <div className="text-lg font-extrabold text-neutral-900 dark:text-white">
+                          v4 Global
+                        </div>
+
+                        <Pill>PRO</Pill>
+                        <Pill tone="dark">
+                          <Icon name="sparkle" size={12} />
+                          Ultimate++
+                        </Pill>
+                      </div>
+                    </div>
                   )}
-                  title="GastroChef"
-                >
-                  GC
                 </div>
 
                 {!collapsed && (
-                  <div className="min-w-0">
-                    <div className="text-xs font-semibold text-neutral-500 dark:text-neutral-400">
-                      GastroChef
-                    </div>
+                  <button
+                    onClick={onSignOut}
+                    className="rounded-2xl px-4 py-2 text-sm font-extrabold border border-neutral-200 bg-white hover:bg-neutral-50
+                               dark:bg-neutral-950 dark:text-white dark:border-neutral-800"
+                  >
+                    Sign out
+                  </button>
+                )}
 
-                    <div className="flex items-center gap-2">
-                      <div className="text-lg font-extrabold text-neutral-900 dark:text-white">
-                        v4 Global
-                      </div>
-
-                      <Pill>PRO</Pill>
-                      <Pill tone="dark">
-                        <Icon name="sparkle" size={12} />
-                        Ultimate+
-                      </Pill>
-                    </div>
-                  </div>
+                {collapsed && (
+                  <button
+                    onClick={() => setCollapsed(false)}
+                    className="hidden lg:inline-flex rounded-2xl px-3 py-2 text-sm font-bold border border-neutral-200 bg-white hover:bg-neutral-50
+                               dark:bg-neutral-950 dark:text-white dark:border-neutral-800"
+                    title="Expand sidebar ]"
+                    aria-label="Expand sidebar"
+                  >
+                    <Icon name="chevron" />
+                  </button>
                 )}
               </div>
 
               {!collapsed && (
-                <div className="flex items-center gap-2">
-                  {/* Theme toggle */}
+                <div className="text-xs text-neutral-500 truncate dark:text-neutral-400">
+                  {userEmail ? userEmail : '—'}
+                </div>
+              )}
+
+              {/* Actions row (separate, prevents overlap) */}
+              {!collapsed && (
+                <div className="flex items-center justify-between gap-2">
                   <button
-                    className="gc-btn gc-btn-ghost dark:border dark:border-neutral-800"
                     onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                    className="rounded-2xl px-3 py-2 text-sm font-bold border border-neutral-200 bg-white hover:bg-neutral-50
+                               dark:bg-neutral-950 dark:text-white dark:border-neutral-800"
                     title="Toggle theme"
                     aria-label="Toggle theme"
                   >
                     {theme === 'dark' ? <Icon name="sun" /> : <Icon name="moon" />}
                   </button>
 
-                  {/* Collapse */}
+                  {/* Collapse only on lg+ */}
                   <button
-                    className="gc-btn gc-btn-ghost dark:border dark:border-neutral-800"
                     onClick={() => setCollapsed(true)}
+                    className="hidden lg:inline-flex rounded-2xl px-3 py-2 text-sm font-bold border border-neutral-200 bg-white hover:bg-neutral-50
+                               dark:bg-neutral-950 dark:text-white dark:border-neutral-800"
                     title="Collapse sidebar ["
                     aria-label="Collapse sidebar"
                   >
                     <Icon name="chevron" />
                   </button>
-
-                  {/* Sign out */}
-                  <button className="gc-btn gc-btn-ghost" onClick={onSignOut}>
-                    Sign out
-                  </button>
                 </div>
-              )}
-
-              {collapsed && (
-                <button
-                  className="gc-btn gc-btn-ghost dark:border dark:border-neutral-800"
-                  onClick={() => setCollapsed(false)}
-                  title="Expand sidebar ]"
-                  aria-label="Expand sidebar"
-                >
-                  <Icon name="chevron" />
-                </button>
               )}
             </div>
 
-            {/* Email */}
+            {/* Sticky area: Search + New + Mode + Quick Actions */}
             {!collapsed && (
-              <div className="mt-3 text-xs text-neutral-500 truncate dark:text-neutral-400">
-                {userEmail ? userEmail : '—'}
-              </div>
-            )}
-
-            {/* Search + Quick Add */}
-            {!collapsed && (
-              <div className="mt-4 space-y-2">
-                <div className="relative">
-                  <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
-                    <Icon name="search" size={16} />
+              <div className="mt-4 sticky top-3 z-10">
+                <div className="rounded-3xl border border-neutral-200 bg-white/90 backdrop-blur px-3 py-3 dark:bg-neutral-950/80 dark:border-neutral-800">
+                  {/* Search */}
+                  <div className="relative">
+                    <div className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                      <Icon name="search" size={16} />
+                    </div>
+                    <input
+                      ref={searchRef}
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search (press /)"
+                      className={cx(
+                        'w-full rounded-2xl border border-neutral-200 bg-white',
+                        'pl-10 pr-3 py-2 text-sm font-medium text-neutral-900 outline-none',
+                        'focus:ring-2 focus:ring-neutral-900/10',
+                        'dark:bg-neutral-950 dark:text-white dark:border-neutral-800 dark:focus:ring-white/15'
+                      )}
+                    />
                   </div>
-                  <input
-                    ref={searchRef}
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search (press /)"
+
+                  {/* Primary action */}
+                  <button
+                    onClick={() => navigate('/recipe/new')}
                     className={cx(
-                      'w-full rounded-2xl border border-neutral-200 bg-white',
-                      'pl-10 pr-3 py-2 text-sm font-medium text-neutral-900 outline-none',
-                      'focus:ring-2 focus:ring-neutral-900/10',
-                      'dark:bg-neutral-950 dark:text-white dark:border-neutral-800 dark:focus:ring-white/15'
+                      'mt-3 w-full rounded-2xl px-4 py-3 text-sm font-extrabold flex items-center justify-center gap-2',
+                      'bg-neutral-900 text-white hover:opacity-95',
+                      'dark:bg-white dark:text-neutral-900'
                     )}
-                  />
-                </div>
+                    title="New Recipe (N)"
+                  >
+                    <Icon name="plus" />
+                    New Recipe
+                  </button>
 
-                <button
-                  onClick={() => navigate('/recipe/new')}
-                  className={cx(
-                    'w-full rounded-2xl px-4 py-3 text-sm font-extrabold flex items-center justify-center gap-2',
-                    'bg-neutral-900 text-white hover:opacity-95',
-                    'dark:bg-white dark:text-neutral-900'
-                  )}
-                  title="New Recipe (N)"
-                >
-                  <Icon name="plus" />
-                  New Recipe
-                </button>
+                  {/* Mode */}
+                  <div className="mt-3 flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-950">
+                    <div className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
+                      Mode
+                    </div>
 
-                {/* Mode toggle */}
-                <div className="flex items-center justify-between rounded-2xl border border-neutral-200 bg-neutral-50 px-3 py-2 dark:border-neutral-800 dark:bg-neutral-950">
-                  <div className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
-                    Mode
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => setMode('kitchen')}
+                        className={cx(
+                          'rounded-full px-3 py-1 text-[11px] font-bold border',
+                          mode === 'kitchen'
+                            ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white'
+                            : 'bg-white text-neutral-700 border-neutral-200 dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-800'
+                        )}
+                      >
+                        Kitchen
+                      </button>
+                      <button
+                        onClick={() => setMode('management')}
+                        className={cx(
+                          'rounded-full px-3 py-1 text-[11px] font-bold border',
+                          mode === 'management'
+                            ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white'
+                            : 'bg-white text-neutral-700 border-neutral-200 dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-800'
+                        )}
+                      >
+                        Mgmt
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex gap-1">
+                  {/* Quick actions */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
                     <button
-                      onClick={() => setMode('kitchen')}
-                      className={cx(
-                        'rounded-full px-3 py-1 text-[11px] font-bold border',
-                        mode === 'kitchen'
-                          ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white'
-                          : 'bg-white text-neutral-700 border-neutral-200 dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-800'
-                      )}
+                      onClick={() => navigate('/recipes')}
+                      className="rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50
+                                 dark:bg-neutral-950 dark:text-neutral-200 dark:border-neutral-800"
+                      title="Go Recipes (R)"
                     >
-                      Kitchen
+                      <span className="inline-flex items-center gap-2">
+                        <Icon name="book" size={16} />
+                        Recipes
+                      </span>
                     </button>
+
                     <button
-                      onClick={() => setMode('management')}
-                      className={cx(
-                        'rounded-full px-3 py-1 text-[11px] font-bold border',
-                        mode === 'management'
-                          ? 'bg-neutral-900 text-white border-neutral-900 dark:bg-white dark:text-neutral-900 dark:border-white'
-                          : 'bg-white text-neutral-700 border-neutral-200 dark:bg-neutral-900 dark:text-neutral-200 dark:border-neutral-800'
-                      )}
+                      onClick={() => navigate('/ingredients')}
+                      className="rounded-2xl border border-neutral-200 bg-white px-3 py-2 text-xs font-bold text-neutral-700 hover:bg-neutral-50
+                                 dark:bg-neutral-950 dark:text-neutral-200 dark:border-neutral-800"
+                      title="Go Ingredients (I)"
                     >
-                      Mgmt
+                      <span className="inline-flex items-center gap-2">
+                        <Icon name="bolt" size={16} />
+                        Stock
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -470,24 +517,9 @@ export default function AppLayout() {
                 </div>
               )}
 
-              <NavItem
-                to="/dashboard"
-                label="Dashboard"
-                icon={<Icon name="dashboard" />}
-                collapsed={collapsed}
-              />
-              <NavItem
-                to="/ingredients"
-                label="Ingredients"
-                icon={<Icon name="ingredients" />}
-                collapsed={collapsed}
-              />
-              <NavItem
-                to="/recipes"
-                label="Recipes"
-                icon={<Icon name="recipes" />}
-                collapsed={collapsed}
-              />
+              <NavItem to="/dashboard" label="Dashboard" icon={<Icon name="dashboard" />} collapsed={collapsed} />
+              <NavItem to="/ingredients" label="Ingredients" icon={<Icon name="ingredients" />} collapsed={collapsed} />
+              <NavItem to="/recipes" label="Recipes" icon={<Icon name="recipes" />} collapsed={collapsed} />
 
               {!collapsed && (
                 <div className="pt-2">
@@ -497,23 +529,17 @@ export default function AppLayout() {
                 </div>
               )}
 
-              <NavItem
-                to="/settings"
-                label="Settings"
-                icon={<Icon name="settings" />}
-                collapsed={collapsed}
-              />
+              <NavItem to="/settings" label="Settings" icon={<Icon name="settings" />} collapsed={collapsed} />
             </div>
 
-            {/* Status / Quick */}
+            {/* Status */}
             {!collapsed && (
               <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-950">
                 <div className="flex items-center justify-between">
                   <div className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
                     Status
                   </div>
-
-                  <Pill>MVP → Ultimate+</Pill>
+                  <Pill>MVP → Ultimate++</Pill>
                 </div>
 
                 <div className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
@@ -525,7 +551,7 @@ export default function AppLayout() {
                 </div>
 
                 <div className="mt-3 text-[10px] text-neutral-400 dark:text-neutral-500">
-                  Shortcuts: / search • N new • [ collapse • ] expand
+                  Shortcuts: / search • N new • [ collapse • ] expand • G dashboard
                 </div>
               </div>
             )}
@@ -534,7 +560,6 @@ export default function AppLayout() {
           {/* Main */}
           <main className="space-y-6">
             <Routes>
-              {/* default */}
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
 
               <Route path="/dashboard" element={<Dashboard />} />
@@ -542,13 +567,9 @@ export default function AppLayout() {
               <Route path="/recipes" element={<Recipes />} />
               <Route path="/settings" element={<Settings />} />
 
-              {/* Editor */}
               <Route path="/recipe/*" element={<RecipeEditor />} />
-
-              {/* Cook Mode */}
               <Route path="/cook/*" element={<RecipeCookMode />} />
 
-              {/* fallback */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
             </Routes>
           </main>
