@@ -32,6 +32,10 @@ function clampStr(s: string, max = 120) {
   return x.slice(0, max - 1) + '…'
 }
 
+function upperChip(x: string) {
+  return (x || '').trim().toUpperCase()
+}
+
 export default function Recipes() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<RecipeRow[]>([])
@@ -98,7 +102,6 @@ export default function Recipes() {
       const newId = (data as any)?.id
       showToast('Created ✅')
 
-      // ✅ FIX: route that actually exists in AppLayout
       if (newId) window.location.hash = `#/recipe?id=${newId}`
       else await load()
     } catch (e: any) {
@@ -124,7 +127,7 @@ export default function Recipes() {
           <div>
             <div className="gc-label">RECIPES</div>
             <div className="mt-2 text-2xl font-extrabold">Recipe Library</div>
-            <div className="mt-1 text-sm text-neutral-600">Paprika-style grid with photos.</div>
+            <div className="mt-1 text-sm text-neutral-600">Premium Paprika-style cards (fixed aspect + aligned actions).</div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -151,56 +154,80 @@ export default function Recipes() {
           <div className="text-sm text-neutral-600">No recipes. Create your first one.</div>
         </div>
       ) : (
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {filtered.map((r) => (
-            <div key={r.id} className="gc-menu-card">
-              <div className="gc-menu-hero h-44">
-                {r.photo_url ? (
-                  <img src={r.photo_url} alt={r.name} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
-                )}
-                <div className="gc-menu-overlay" />
-                <div className="gc-menu-badges">
-                  <span className="gc-chip gc-chip-dark">{(r.category || 'UNCATEGORIZED').toUpperCase()}</span>
-                  {r.calories != null ? <span className="gc-chip">{r.calories} kcal</span> : null}
-                </div>
-              </div>
+        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {filtered.map((r) => {
+            const cat = upperChip(r.category || 'Uncategorized')
+            const portions = toNum(r.portions, 1)
+            const kcal = r.calories != null ? toNum(r.calories, 0) : null
 
-              <div className="p-4">
-                <div className="text-lg font-extrabold leading-tight">{r.name}</div>
-                <div className="mt-1 text-xs text-neutral-500">Portions: {toNum(r.portions, 1)}</div>
+            return (
+              <div
+                key={r.id}
+                className="gc-menu-card overflow-hidden transition hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                {/* HERO — Premium: fixed aspect ratio (no distortion) */}
+                <div className="relative w-full aspect-[4/3] overflow-hidden">
+                  {r.photo_url ? (
+                    <img
+                      src={r.photo_url}
+                      alt={r.name}
+                      className="absolute inset-0 h-full w-full object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-neutral-500 bg-neutral-100">
+                      No Photo
+                    </div>
+                  )}
 
-                <div className="mt-2 text-sm text-neutral-700">
-                  {r.description?.trim() ? clampStr(r.description, 120) : 'Add a short menu description…'}
-                </div>
+                  {/* Premium overlay */}
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/35 via-black/0 to-transparent" />
 
-                {(r.protein_g != null || r.carbs_g != null || r.fat_g != null) && (
-                  <div className="mt-3 flex flex-wrap gap-2">
-                    {r.protein_g != null ? <span className="gc-chip">P {toNum(r.protein_g, 0)}g</span> : null}
-                    {r.carbs_g != null ? <span className="gc-chip">C {toNum(r.carbs_g, 0)}g</span> : null}
-                    {r.fat_g != null ? <span className="gc-chip">F {toNum(r.fat_g, 0)}g</span> : null}
+                  {/* Badges */}
+                  <div className="absolute left-3 top-3 flex flex-wrap gap-2">
+                    <span className="gc-chip gc-chip-dark">{cat}</span>
+                    {kcal != null ? <span className="gc-chip">{kcal} kcal</span> : null}
+                    {r.is_subrecipe ? <span className="gc-chip">SUB</span> : null}
                   </div>
-                )}
+                </div>
 
-                <div className="mt-4 flex gap-2">
-                  {/* ✅ FIX: correct route */}
-                  <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${r.id}`}>
-                    Open Editor
-                  </NavLink>
+                {/* BODY — Premium: equal height + actions pinned bottom */}
+                <div className="p-4 flex flex-col h-[240px]">
+                  <div>
+                    <div className="text-lg font-extrabold leading-tight">{r.name}</div>
+                    <div className="mt-1 text-xs text-neutral-500">Portions: {portions}</div>
 
-                  {/* ✅ Optional quick kitchen mode */}
-                  <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${r.id}`}>
-                    🍳 Cook
-                  </NavLink>
+                    <div className="mt-2 text-sm text-neutral-700">
+                      {r.description?.trim() ? clampStr(r.description, 120) : 'Add a short menu description…'}
+                    </div>
 
-                  <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)} type="button">
-                    Archive
-                  </button>
+                    {(r.protein_g != null || r.carbs_g != null || r.fat_g != null) && (
+                      <div className="mt-3 flex flex-wrap gap-2">
+                        {r.protein_g != null ? <span className="gc-chip">P {toNum(r.protein_g, 0)}g</span> : null}
+                        {r.carbs_g != null ? <span className="gc-chip">C {toNum(r.carbs_g, 0)}g</span> : null}
+                        {r.fat_g != null ? <span className="gc-chip">F {toNum(r.fat_g, 0)}g</span> : null}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* ACTIONS pinned to bottom */}
+                  <div className="mt-auto pt-4 flex gap-2">
+                    <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${r.id}`}>
+                      Open Editor
+                    </NavLink>
+
+                    <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${r.id}`}>
+                      🍳 Cook
+                    </NavLink>
+
+                    <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)} type="button">
+                      Archive
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </div>
       )}
 
