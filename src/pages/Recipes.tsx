@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { NavLink } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
-import { useMode } from '../lib/mode'
 
 type RecipeRow = {
   id: string
@@ -18,12 +17,43 @@ type RecipeRow = {
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
+  selling_price?: number | null
+  currency?: string | null
   created_at?: string | null
+  yield_qty?: number | null
+  yield_unit?: string | null
+}
+
+type Ingredient = {
+  id: string
+  name?: string | null
+  pack_unit?: string | null
+  net_unit_cost?: number | null
+  is_active?: boolean
+}
+
+type LineType = 'ingredient' | 'subrecipe' | 'group'
+
+type Line = {
+  id: string
+  recipe_id: string
+  ingredient_id: string | null
+  sub_recipe_id: string | null
+  qty: number
+  unit: string
+  note: string | null
+  sort_order: number
+  line_type: LineType
+  group_title: string | null
 }
 
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
+}
+
+function safeUnit(u: string) {
+  return (u ?? '').trim().toLowerCase() || 'g'
 }
 
 function clampStr(s: string, max = 120) {
@@ -33,12 +63,50 @@ function clampStr(s: string, max = 120) {
   return x.slice(0, max - 1) + '…'
 }
 
-export default function Recipes() {
-  const { isKitchen, isMgmt } = useMode()
+function fmtMoney(n: number, currency: string) {
+  const v = Number.isFinite(n) ? n : 0
+  const cur = (currency || 'USD').toUpperCase()
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
+  } catch {
+    return `${v.toFixed(2)} ${cur}`
+  }
+}
 
+// g<->kg , ml<->l , pcs only
+function convertQty(qty: number, fromUnit: string, toUnit: string) {
+  const f = safeUnit(fromUnit)
+  const t = safeUnit(toUnit)
+  if (f === t) return { ok: true, value: qty }
+  if (f === 'g' && t === 'kg') return { ok: true, value: qty / 1000 }
+  if (f === 'kg' && t === 'g') return { ok: true, value: qty * 1000 }
+  if (f === 'ml' && t === 'l') return { ok: true, value: qty / 1000 }
+  if (f === 'l' && t === 'ml') return { ok: true, value: qty * 1000 }
+  if (f === 'pcs' && t === 'pcs') return { ok: true, value: qty }
+  return { ok: false, value: 0 }
+}
+
+// convert ingredient line qty to ingredient pack unit (same as editor)
+function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
+  const u = safeUnit(lineUnit)
+  const p = safeUnit(packUnit)
+  let conv = qty
+  if (u === 'g' && p === 'kg') conv = qty / 1000
+  else if (u === 'kg' && p === 'g') conv = qty * 1000
+  else if (u === 'ml' && p === 'l') conv = qty / 1000
+  else if (u === 'l' && p === 'ml') conv = qty * 1000
+  return conv
+}
+
+export default function Recipes() {
   const [loading, setLoading] = useState(true)
   const [rows, setRows] = useState<RecipeRow[]>([])
   const [q, setQ] = useState('')
+
+  // data for cost calc
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [allRecipes, setAllRecipes] = useState<RecipeRow[]>([])
+  const [linesCache, setLinesCache] = useState<Record<string, Line[]>>({})
 
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
@@ -50,16 +118,50 @@ export default function Recipes() {
   const load = async () => {
     setLoading(true)
     try {
+      // 1) recipes list (visible)
       const { data, error } = await supabase
         .from('recipes')
         .select(
-          'id,kitchen_id,name,category,portions,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,created_at'
+          'id,kitchen_id,name,category,portions,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,created_at,yield_qty,yield_unit'
         )
         .eq('is_archived', false)
         .order('created_at', { ascending: false })
 
       if (error) throw error
-      setRows((data ?? []) as RecipeRow[])
+      const list = (data ?? []) as RecipeRow[]
+      setRows(list)
+
+      // 2) ingredients (for cost)
+      const { data: i, error: iErr } = await supabase
+        .from('ingredients')
+        .select('id,name,pack_unit,net_unit_cost,is_active')
+        .order('name', { ascending: true })
+      if (iErr) throw iErr
+      setIngredients((i ?? []) as Ingredient[])
+
+      // 3) all recipes in same kitchens (for subrecipe yield + currency)
+      // (cheap: just use current list as "all" — enough for yields/currency in most cases)
+      setAllRecipes(list)
+
+      // 4) preload lines for visible recipes only (sub-recipes will be lazy-loaded)
+      const ids = list.map((r) => r.id)
+      if (ids.length) {
+        const { data: l, error: lErr } = await supabase
+          .from('recipe_lines')
+          .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
+          .in('recipe_id', ids)
+          .order('sort_order', { ascending: true })
+          .order('id', { ascending: true })
+        if (lErr) throw lErr
+
+        const by: Record<string, Line[]> = {}
+        for (const rid of ids) by[rid] = []
+        for (const row of (l ?? []) as Line[]) {
+          if (!by[row.recipe_id]) by[row.recipe_id] = []
+          by[row.recipe_id].push(row)
+        }
+        setLinesCache((p) => ({ ...p, ...by }))
+      }
     } catch (e: any) {
       showToast(e?.message ?? 'Load failed')
     } finally {
@@ -82,10 +184,124 @@ export default function Recipes() {
     })
   }, [rows, q])
 
+  const ingById = useMemo(() => {
+    const m = new Map<string, Ingredient>()
+    for (const i of ingredients) m.set(i.id, i)
+    return m
+  }, [ingredients])
+
+  const recipeById = useMemo(() => {
+    const m = new Map<string, RecipeRow>()
+    for (const r of allRecipes) m.set(r.id, r)
+    return m
+  }, [allRecipes])
+
+  const ensureLinesLoaded = async (rootRecipeId: string) => {
+    const seen = new Set<string>()
+    const queue: string[] = [rootRecipeId]
+    const needFetch: string[] = []
+
+    while (queue.length) {
+      const rid = queue.shift()!
+      if (seen.has(rid)) continue
+      seen.add(rid)
+
+      const cached = linesCache[rid]
+      if (!cached) needFetch.push(rid)
+
+      const linesHere = cached || []
+      for (const l of linesHere) {
+        if (l.line_type === 'subrecipe' && l.sub_recipe_id) queue.push(l.sub_recipe_id)
+      }
+    }
+
+    if (needFetch.length === 0) return
+
+    const { data, error } = await supabase
+      .from('recipe_lines')
+      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
+      .in('recipe_id', needFetch)
+      .order('sort_order', { ascending: true })
+      .order('id', { ascending: true })
+    if (error) throw error
+
+    const by: Record<string, Line[]> = {}
+    for (const rid of needFetch) by[rid] = []
+    for (const row of (data ?? []) as Line[]) {
+      if (!by[row.recipe_id]) by[row.recipe_id] = []
+      by[row.recipe_id].push(row)
+    }
+
+    setLinesCache((p) => ({ ...p, ...by }))
+  }
+
+  const getRecipeTotalCost = (recipeId: string, visited: Set<string>): { cost: number; warnings: string[] } => {
+    const warnings: string[] = []
+    if (visited.has(recipeId)) {
+      warnings.push('Loop detected')
+      return { cost: 0, warnings }
+    }
+    visited.add(recipeId)
+
+    const rr = recipeById.get(recipeId)
+    const rLines = linesCache[recipeId] ?? []
+    let sum = 0
+
+    for (const l of rLines) {
+      if (l.line_type === 'group') continue
+
+      if (l.line_type === 'ingredient') {
+        if (!l.ingredient_id) continue
+        const ing = ingById.get(l.ingredient_id)
+        const net = toNum(ing?.net_unit_cost, 0)
+        const packUnit = safeUnit(ing?.pack_unit ?? 'g')
+        const conv = convertQtyToPackUnit(toNum(l.qty, 0), l.unit, packUnit)
+        sum += conv * net
+        continue
+      }
+
+      if (l.line_type === 'subrecipe') {
+        if (!l.sub_recipe_id) continue
+        const childId = l.sub_recipe_id
+        const child = recipeById.get(childId)
+        const childLines = linesCache[childId]
+        if (!child || !childLines) {
+          warnings.push('Sub-recipe not loaded')
+          continue
+        }
+
+        const childRes = getRecipeTotalCost(childId, visited)
+        for (const w of childRes.warnings) warnings.push(w)
+
+        const yq = toNum(child.yield_qty, 0)
+        const yu = safeUnit(child.yield_unit ?? '')
+        if (yq <= 0 || !yu) {
+          warnings.push('Missing yield')
+          continue
+        }
+
+        const qtyParent = toNum(l.qty, 0)
+        const conv = convertQty(qtyParent, l.unit, yu)
+        if (!conv.ok) {
+          warnings.push('Unit mismatch')
+          continue
+        }
+
+        const costPerYieldUnit = childRes.cost / yq
+        sum += conv.value * costPerYieldUnit
+        continue
+      }
+    }
+
+    visited.delete(recipeId)
+    if (!rr) return { cost: sum, warnings }
+    return { cost: sum, warnings }
+  }
+
+  // Create recipe
   const createNew = async () => {
     try {
       const kitchenId = rows[0]?.kitchen_id ?? 'default'
-
       const payload = {
         kitchen_id: kitchenId,
         name: 'New Recipe',
@@ -94,10 +310,8 @@ export default function Recipes() {
         is_subrecipe: false,
         is_archived: false,
       }
-
       const { data, error } = await supabase.from('recipes').insert(payload).select('id').single()
       if (error) throw error
-
       const newId = (data as any)?.id
       showToast('Created ✅')
       if (newId) window.location.hash = `#/recipe?id=${newId}`
@@ -118,6 +332,50 @@ export default function Recipes() {
     }
   }
 
+  // ✅ compute per-card metrics (memo)
+  const cardMetrics = useMemo(() => {
+    const out: Record<
+      string,
+      {
+        totalCost: number
+        cpp: number
+        warnings: string[]
+        fcPct: number | null
+        margin: number | null
+      }
+    > = {}
+
+    for (const r of filtered) {
+      const portions = Math.max(1, toNum(r.portions, 1))
+      const res = getRecipeTotalCost(r.id, new Set<string>())
+      const cpp = res.cost / portions
+
+      const sell = Math.max(0, toNum(r.selling_price, 0))
+      const fcPct = sell > 0 ? (cpp / sell) * 100 : null
+      const margin = sell > 0 ? sell - cpp : null
+
+      out[r.id] = { totalCost: res.cost, cpp, warnings: res.warnings, fcPct, margin }
+    }
+
+    return out
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered, linesCache, ingById, recipeById])
+
+  // ✅ lazy-load subrecipe lines as needed
+  useEffect(() => {
+    // prefetch subrecipes for currently visible list
+    const run = async () => {
+      const ids = filtered.slice(0, 24).map((r) => r.id) // keep it light
+      for (const rid of ids) {
+        await ensureLinesLoaded(rid)
+      }
+    }
+    run().catch(() => {})
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filtered])
+
+  const currencyDefault = (rows[0]?.currency ?? 'USD').toUpperCase()
+
   return (
     <div className="space-y-6">
       <div className="gc-card p-6">
@@ -125,9 +383,7 @@ export default function Recipes() {
           <div>
             <div className="gc-label">RECIPES</div>
             <div className="mt-2 text-2xl font-extrabold">Recipe Library</div>
-            <div className="mt-1 text-sm text-neutral-600">
-              {isKitchen ? 'Kitchen view: fast cooking access.' : 'Management view: edit + archive + nutrition.'}
-            </div>
+            <div className="mt-1 text-sm text-neutral-600">Premium grid with stable images + cost cards.</div>
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
@@ -154,77 +410,78 @@ export default function Recipes() {
           <div className="text-sm text-neutral-600">No recipes. Create your first one.</div>
         </div>
       ) : (
-        <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((r) => {
-            const heroStyle: React.CSSProperties = r.photo_url
-              ? {
-                  backgroundImage: `url("${r.photo_url}")`,
-                  backgroundSize: 'cover',
-                  backgroundPosition: 'center',
-                  backgroundRepeat: 'no-repeat',
-                }
-              : {
-                  background: 'linear-gradient(180deg,#f3f4f6,#e5e7eb)',
-                }
+            const cur = (r.currency ?? currencyDefault).toUpperCase()
+            const m = cardMetrics[r.id]
+            const warn = m?.warnings?.length ? m.warnings[0] : ''
+            const hasWarn = !!warn
 
             return (
               <div key={r.id} className="gc-menu-card">
-                <div className="relative w-full overflow-hidden" style={{ paddingTop: '75%', ...heroStyle }}>
-                  <div className="absolute inset-0 gc-menu-overlay" />
+                <div className="gc-menu-hero">
+                  {r.photo_url ? (
+                    <img src={r.photo_url} alt={r.name} />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
+                  )}
+
+                  <div className="gc-menu-overlay" />
                   <div className="gc-menu-badges">
                     <span className="gc-chip gc-chip-dark">{(r.category || 'UNCATEGORIZED').toUpperCase()}</span>
-                    {r.calories != null ? <span className="gc-chip">{toNum(r.calories, 0)} kcal</span> : null}
-                    {r.is_subrecipe ? <span className="gc-chip">SUB</span> : null}
+                    {r.calories != null ? <span className="gc-chip">{r.calories} kcal</span> : null}
+                    {hasWarn ? <span className="gc-chip gc-chip-warn">⚠ {warn}</span> : null}
                   </div>
-                  {!r.photo_url ? (
-                    <div className="absolute inset-0 flex items-center justify-center text-xs font-extrabold text-neutral-500">
-                      No Photo
-                    </div>
-                  ) : null}
                 </div>
 
-                <div className="p-4 flex flex-col h-[240px]">
-                  <div>
-                    <div className="text-lg font-extrabold leading-tight">{r.name}</div>
-                    <div className="mt-1 text-xs text-neutral-500">Portions: {toNum(r.portions, 1)}</div>
+                <div className="p-4">
+                  <div className="text-lg font-extrabold leading-tight">{r.name}</div>
+                  <div className="mt-1 text-xs text-neutral-500">Portions: {Math.max(1, toNum(r.portions, 1))}</div>
 
-                    <div className="mt-2 text-sm text-neutral-700">
-                      {r.description?.trim() ? clampStr(r.description, 120) : 'Add a short menu description…'}
+                  <div className="mt-2 text-sm text-neutral-700">
+                    {r.description?.trim() ? clampStr(r.description, 120) : 'Add a short menu description…'}
+                  </div>
+
+                  {(r.protein_g != null || r.carbs_g != null || r.fat_g != null) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {r.protein_g != null ? <span className="gc-chip">P {toNum(r.protein_g, 0)}g</span> : null}
+                      {r.carbs_g != null ? <span className="gc-chip">C {toNum(r.carbs_g, 0)}g</span> : null}
+                      {r.fat_g != null ? <span className="gc-chip">F {toNum(r.fat_g, 0)}g</span> : null}
                     </div>
+                  )}
 
-                    {isMgmt && (r.protein_g != null || r.carbs_g != null || r.fat_g != null) && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {r.protein_g != null ? <span className="gc-chip">P {toNum(r.protein_g, 0)}g</span> : null}
-                        {r.carbs_g != null ? <span className="gc-chip">C {toNum(r.carbs_g, 0)}g</span> : null}
-                        {r.fat_g != null ? <span className="gc-chip">F {toNum(r.fat_g, 0)}g</span> : null}
-                      </div>
+                  {/* ✅ NEW: Stats bar (Mgmt only) */}
+                  <div className="gc-card-stats gc-mgmt-only">
+                    <span className="gc-stat">
+                      Cost/portion: <span className="ml-2">{fmtMoney(m?.cpp ?? 0, cur)}</span>
+                    </span>
+
+                    {r.selling_price != null ? (
+                      <>
+                        <span className="gc-stat">
+                          FC%: <span className="ml-2">{m?.fcPct == null ? '—' : `${Math.round(m.fcPct * 10) / 10}%`}</span>
+                        </span>
+                        <span className="gc-stat">
+                          Margin: <span className="ml-2">{m?.margin == null ? '—' : fmtMoney(m.margin, cur)}</span>
+                        </span>
+                      </>
+                    ) : (
+                      <span className="gc-stat gc-stat-muted">Set selling price to see FC% + margin</span>
                     )}
                   </div>
 
-                  <div className="mt-auto pt-4 flex gap-2 flex-wrap">
-                    {/* Kitchen: Cook is primary */}
-                    {isKitchen ? (
-                      <>
-                        <NavLink className="gc-btn gc-btn-primary" to={`/cook?id=${r.id}`}>
-                          Cook
-                        </NavLink>
-                        <NavLink className="gc-btn gc-btn-ghost" to={`/recipe?id=${r.id}`}>
-                          Open Editor
-                        </NavLink>
-                      </>
-                    ) : (
-                      <>
-                        <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${r.id}`}>
-                          Open Editor
-                        </NavLink>
-                        <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${r.id}`}>
-                          Cook
-                        </NavLink>
-                        <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)} type="button">
-                          Archive
-                        </button>
-                      </>
-                    )}
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${r.id}`}>
+                      Open Editor
+                    </NavLink>
+
+                    <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${r.id}`}>
+                      🍳 Cook
+                    </NavLink>
+
+                    <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)} type="button">
+                      Archive
+                    </button>
                   </div>
                 </div>
               </div>
