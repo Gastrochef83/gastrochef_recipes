@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
+import { useMode } from '../lib/mode'
 
 type Recipe = {
   id: string
@@ -115,6 +116,9 @@ type EditRow = {
 type MetaStatus = 'saved' | 'saving' | 'dirty'
 
 export default function RecipeEditor() {
+  // ✅ Mode Engine (UI only — no logic changes)
+  const { isKitchen, isMgmt } = useMode()
+
   const location = useLocation()
   const navigate = useNavigate()
   const [sp] = useSearchParams()
@@ -200,7 +204,7 @@ export default function RecipeEditor() {
   // Recursive cache of recipe_lines for referenced subrecipes
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
 
-  // --------- NEW: Smart Back + Autosave Tracking ----------
+  // --------- Smart Back + Autosave Tracking ----------
   const [metaStatus, setMetaStatus] = useState<MetaStatus>('saved')
   const lastSavedSnapshotRef = useRef<string>('')
 
@@ -234,7 +238,6 @@ export default function RecipeEditor() {
   }
 
   const smartBack = () => {
-    // If there's history, go back; otherwise default to Recipes
     if (window.history.length > 1) navigate(-1)
     else navigate('/recipes', { replace: true })
   }
@@ -361,8 +364,6 @@ export default function RecipeEditor() {
 
     setRecipeLinesCache((p) => ({ ...p, [rr.id]: ll }))
 
-    // NEW: after load -> mark saved snapshot
-    // (use the same snapshot builder based on state — update on next tick)
     setTimeout(() => {
       const snap = JSON.stringify({
         name: (rr.name ?? '').trim(),
@@ -613,7 +614,6 @@ export default function RecipeEditor() {
 
       let { error } = await supabase.from('recipes').update(payload).eq('id', id)
 
-      // fallback if column doesn't exist
       if (error && String(error.message || '').toLowerCase().includes('method_step_photos')) {
         delete payload.method_step_photos
         ;({ error } = await supabase.from('recipes').update(payload).eq('id', id))
@@ -621,7 +621,6 @@ export default function RecipeEditor() {
 
       if (error) throw error
 
-      // update snapshot -> saved
       lastSavedSnapshotRef.current = currentMetaSnapshot()
       setMetaStatus('saved')
 
@@ -660,17 +659,14 @@ export default function RecipeEditor() {
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toLowerCase().includes('mac')
       const mod = isMac ? e.metaKey : e.ctrlKey
-
       if (!mod) return
 
-      // Ctrl/Cmd + S
       if (e.key.toLowerCase() === 's') {
         e.preventDefault()
         saveMeta().catch(() => {})
         return
       }
 
-      // Ctrl/Cmd + Enter => add step from newStep input
       if (e.key === 'Enter') {
         e.preventDefault()
         addStep()
@@ -681,7 +677,27 @@ export default function RecipeEditor() {
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [newStep, steps, stepPhotos, name, category, portions, description, methodLegacy, calories, protein, carbs, fat, currency, sellingPrice, targetFC, isSubRecipe, yieldQty, yieldUnit, metaStatus])
+  }, [
+    newStep,
+    steps,
+    stepPhotos,
+    name,
+    category,
+    portions,
+    description,
+    methodLegacy,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+    metaStatus,
+  ])
 
   // -------------------------
   // Yield Smart
@@ -1135,7 +1151,11 @@ export default function RecipeEditor() {
                 const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : undefined
                 const label = ing?.name ?? 'Ingredient'
                 return (
-                  <div key={l.id} className="flex items-center justify-between gap-2 text-sm" style={{ paddingLeft: depth * 12 }}>
+                  <div
+                    key={l.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                    style={{ paddingLeft: depth * 12 }}
+                  >
                     <div className="text-neutral-700">
                       • {label} — {l.qty} {safeUnit(l.unit)}
                     </div>
@@ -1194,8 +1214,7 @@ export default function RecipeEditor() {
     )
   }
 
-  const metaBadge =
-    metaStatus === 'saving' ? 'Saving…' : metaStatus === 'dirty' ? 'Unsaved' : 'Saved'
+  const metaBadge = metaStatus === 'saving' ? 'Saving…' : metaStatus === 'dirty' ? 'Unsaved' : 'Saved'
 
   return (
     <div className="space-y-6">
@@ -1212,7 +1231,9 @@ export default function RecipeEditor() {
             </div>
 
             <div className="min-w-[min(640px,92vw)]">
-              <div className="gc-label">RECIPE EDITOR (SUB-RECIPES TREE + YIELD SMART)</div>
+              <div className="gc-label">
+                RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}
+              </div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
@@ -1222,15 +1243,27 @@ export default function RecipeEditor() {
 
                 <div>
                   <div className="gc-label">CATEGORY</div>
-                  <input className="gc-input mt-2 w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="Veg / Chicken / Dessert..." />
+                  <input
+                    className="gc-input mt-2 w-full"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Veg / Chicken / Dessert..."
+                  />
                 </div>
 
                 <div>
                   <div className="gc-label">PORTIONS</div>
-                  <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={portions} onChange={(e) => setPortions(e.target.value)} />
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={1}
+                    step="1"
+                    value={portions}
+                    onChange={(e) => setPortions(e.target.value)}
+                  />
                 </div>
 
-                <div className="flex items-end gap-2">
+                <div className="flex items-end gap-2 flex-wrap">
                   <label className="gc-btn gc-btn-ghost cursor-pointer">
                     {uploading ? 'Uploading…' : 'Upload Photo'}
                     <input
@@ -1253,179 +1286,199 @@ export default function RecipeEditor() {
                   <span className="text-xs font-semibold text-neutral-500">{metaBadge}</span>
 
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
-                    🍳 Kitchen Mode
+                    🍳 Cook Mode
                   </NavLink>
 
-                  {/* SMART BACK */}
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
                     ← Back
                   </button>
                 </div>
               </div>
 
-              {/* Sub-Recipe Settings */}
-              <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                <div className="flex flex-wrap items-center justify-between gap-3">
-                  <div>
-                    <div className="gc-label">SUB-RECIPE SETTINGS</div>
-                    <div className="mt-1 text-xs text-neutral-500">Enable this to use the recipe inside other recipes by quantity of yield.</div>
+              {/* Sub-Recipe Settings (Mgmt فقط) */}
+              {isMgmt && (
+                <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <div className="gc-label">SUB-RECIPE SETTINGS</div>
+                      <div className="mt-1 text-xs text-neutral-500">
+                        Enable this to use the recipe inside other recipes by quantity of yield.
+                      </div>
+                    </div>
+
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
+                      {yieldSmartLoading ? 'Calculating…' : 'Yield Smart'}
+                    </button>
                   </div>
 
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
-                    {yieldSmartLoading ? 'Calculating…' : 'Yield Smart'}
-                  </button>
+                  <div className="mt-3 grid gap-3 md:grid-cols-3">
+                    <label className="flex items-center gap-2 text-sm font-semibold">
+                      <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} />
+                      This is a Sub-Recipe
+                    </label>
+
+                    <div>
+                      <div className="gc-label">YIELD QTY</div>
+                      <input
+                        className="gc-input mt-2 w-full"
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={yieldQty}
+                        onChange={(e) => setYieldQty(e.target.value)}
+                        disabled={!isSubRecipe}
+                        placeholder="e.g., 500"
+                      />
+                    </div>
+
+                    <div>
+                      <div className="gc-label">YIELD UNIT</div>
+                      <select
+                        className="gc-input mt-2 w-full"
+                        value={yieldUnit}
+                        onChange={(e) => setYieldUnit(e.target.value as any)}
+                        disabled={!isSubRecipe}
+                      >
+                        <option value="g">g</option>
+                        <option value="kg">kg</option>
+                        <option value="ml">ml</option>
+                        <option value="l">l</option>
+                        <option value="pcs">pcs</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {isSubRecipe && (yieldQty.trim() === '' || !yieldUnit) ? (
+                    <div className="mt-2 text-xs text-amber-700">Tip: set Yield Qty + Unit then press Save.</div>
+                  ) : null}
                 </div>
-
-                <div className="mt-3 grid gap-3 md:grid-cols-3">
-                  <label className="flex items-center gap-2 text-sm font-semibold">
-                    <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} />
-                    This is a Sub-Recipe
-                  </label>
-
-                  <div>
-                    <div className="gc-label">YIELD QTY</div>
-                    <input
-                      className="gc-input mt-2 w-full"
-                      type="number"
-                      min={0}
-                      step="0.01"
-                      value={yieldQty}
-                      onChange={(e) => setYieldQty(e.target.value)}
-                      disabled={!isSubRecipe}
-                      placeholder="e.g., 500"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="gc-label">YIELD UNIT</div>
-                    <select className="gc-input mt-2 w-full" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)} disabled={!isSubRecipe}>
-                      <option value="g">g</option>
-                      <option value="kg">kg</option>
-                      <option value="ml">ml</option>
-                      <option value="l">l</option>
-                      <option value="pcs">pcs</option>
-                    </select>
-                  </div>
-                </div>
-
-                {isSubRecipe && (yieldQty.trim() === '' || !yieldUnit) ? (
-                  <div className="mt-2 text-xs text-amber-700">Tip: set Yield Qty + Unit then press Save.</div>
-                ) : null}
-              </div>
+              )}
             </div>
           </div>
 
-          <div className="text-right">
-            <div className="gc-label">COST (RECURSIVE)</div>
-            <div className="mt-1 text-2xl font-extrabold">{fmtMoney(totalCost, currency)}</div>
-            <div className="mt-1 text-xs text-neutral-500">
-              Cost/portion: <span className="font-semibold">{fmtMoney(cpp, currency)}</span>
-            </div>
-
-            {totalCostRes.warnings.length > 0 && (
-              <div className="mt-2 text-xs text-amber-700">
-                {totalCostRes.warnings.slice(0, 2).map((w, i) => (
-                  <div key={i}>• {w}</div>
-                ))}
+          {/* Cost box (Mgmt فقط — Kitchen ما يحتاجه أثناء الطبخ) */}
+          {isMgmt && (
+            <div className="text-right">
+              <div className="gc-label">COST (RECURSIVE)</div>
+              <div className="mt-1 text-2xl font-extrabold">{fmtMoney(totalCost, currency)}</div>
+              <div className="mt-1 text-xs text-neutral-500">
+                Cost/portion: <span className="font-semibold">{fmtMoney(cpp, currency)}</span>
               </div>
-            )}
-          </div>
+
+              {totalCostRes.warnings.length > 0 && (
+                <div className="mt-2 text-xs text-amber-700">
+                  {totalCostRes.warnings.slice(0, 2).map((w, i) => (
+                    <div key={i}>• {w}</div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Premium Panels */}
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Description */}
+        {/* Description (كلا المودين) */}
         <div className="gc-card p-6">
           <div className="gc-label">DESCRIPTION</div>
-          <textarea className="gc-input mt-3 w-full min-h-[140px]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short premium description for menu / customers..." />
+          <textarea
+            className="gc-input mt-3 w-full min-h-[140px]"
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Short premium description for menu / customers..."
+          />
         </div>
 
-        {/* Nutrition */}
-        <div className="gc-card p-6">
-          <div>
-            <div className="gc-label">NUTRITION (PER PORTION)</div>
-            <div className="mt-1 text-xs text-neutral-500">Manual input only.</div>
-          </div>
-
-          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        {/* Nutrition (Mgmt فقط) */}
+        {isMgmt && (
+          <div className="gc-card p-6">
             <div>
-              <div className="gc-label">CALORIES</div>
-              <input className="gc-input mt-2 w-full" type="number" min={0} step="1" value={calories} onChange={(e) => setCalories(e.target.value)} />
-            </div>
-            <div>
-              <div className="gc-label">PROTEIN (g)</div>
-              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={protein} onChange={(e) => setProtein(e.target.value)} />
-            </div>
-            <div>
-              <div className="gc-label">CARBS (g)</div>
-              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
-            </div>
-            <div>
-              <div className="gc-label">FAT (g)</div>
-              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={fat} onChange={(e) => setFat(e.target.value)} />
-            </div>
-          </div>
-        </div>
-
-        {/* Pricing */}
-        <div className="gc-card p-6 lg:col-span-2">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="gc-label">PRICING PREMIUM (PER PORTION)</div>
-              <div className="mt-1 text-sm text-neutral-600">Food Cost% + Margin + Suggested Price from target.</div>
+              <div className="gc-label">NUTRITION (PER PORTION)</div>
+              <div className="mt-1 text-xs text-neutral-500">Manual input only.</div>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={applySuggested}>
-                Apply Suggested
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid gap-3 md:grid-cols-4">
-            <div>
-              <div className="gc-label">CURRENCY</div>
-              <input className="gc-input mt-2 w-full" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} placeholder="USD" />
-            </div>
-            <div>
-              <div className="gc-label">SELLING PRICE</div>
-              <input className="gc-input mt-2 w-full" type="number" min={0} step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} placeholder="e.g., 8.50" />
-            </div>
-            <div>
-              <div className="gc-label">TARGET FOOD COST %</div>
-              <input className="gc-input mt-2 w-full" type="number" min={1} max={99} step="1" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} placeholder="30" />
-            </div>
-            <div>
-              <div className="gc-label">SUGGESTED PRICE</div>
-              <div className="gc-input mt-2 w-full flex items-center">
-                <span className="font-extrabold">{fmtMoney(suggestedPrice || 0, currency)}</span>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <div className="gc-label">CALORIES</div>
+                <input className="gc-input mt-2 w-full" type="number" min={0} step="1" value={calories} onChange={(e) => setCalories(e.target.value)} />
+              </div>
+              <div>
+                <div className="gc-label">PROTEIN (g)</div>
+                <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={protein} onChange={(e) => setProtein(e.target.value)} />
+              </div>
+              <div>
+                <div className="gc-label">CARBS (g)</div>
+                <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={carbs} onChange={(e) => setCarbs(e.target.value)} />
+              </div>
+              <div>
+                <div className="gc-label">FAT (g)</div>
+                <input className="gc-input mt-2 w-full" type="number" min={0} step="0.1" value={fat} onChange={(e) => setFat(e.target.value)} />
               </div>
             </div>
           </div>
+        )}
 
-          <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="gc-kpi">
-              <div className="gc-kpi-label">Food Cost %</div>
-              <div className="gc-kpi-value">{fcPct == null ? '—' : `${Math.round(fcPct * 10) / 10}%`}</div>
+        {/* Pricing (Mgmt فقط) */}
+        {isMgmt && (
+          <div className="gc-card p-6 lg:col-span-2">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="gc-label">PRICING PREMIUM (PER PORTION)</div>
+                <div className="mt-1 text-sm text-neutral-600">Food Cost% + Margin + Suggested Price from target.</div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button className="gc-btn gc-btn-ghost" type="button" onClick={applySuggested}>
+                  Apply Suggested
+                </button>
+              </div>
             </div>
-            <div className="gc-kpi">
-              <div className="gc-kpi-label">Margin / portion</div>
-              <div className="gc-kpi-value">{sell > 0 ? fmtMoney(margin, currency) : '—'}</div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-4">
+              <div>
+                <div className="gc-label">CURRENCY</div>
+                <input className="gc-input mt-2 w-full" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} placeholder="USD" />
+              </div>
+              <div>
+                <div className="gc-label">SELLING PRICE</div>
+                <input className="gc-input mt-2 w-full" type="number" min={0} step="0.01" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} placeholder="e.g., 8.50" />
+              </div>
+              <div>
+                <div className="gc-label">TARGET FOOD COST %</div>
+                <input className="gc-input mt-2 w-full" type="number" min={1} max={99} step="1" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} placeholder="30" />
+              </div>
+              <div>
+                <div className="gc-label">SUGGESTED PRICE</div>
+                <div className="gc-input mt-2 w-full flex items-center">
+                  <span className="font-extrabold">{fmtMoney(suggestedPrice || 0, currency)}</span>
+                </div>
+              </div>
             </div>
-            <div className="gc-kpi">
-              <div className="gc-kpi-label">Margin %</div>
-              <div className="gc-kpi-value">{marginPct == null ? '—' : `${Math.round(marginPct * 10) / 10}%`}</div>
+
+            <div className="mt-4 grid gap-3 md:grid-cols-3">
+              <div className="gc-kpi">
+                <div className="gc-kpi-label">Food Cost %</div>
+                <div className="gc-kpi-value">{fcPct == null ? '—' : `${Math.round(fcPct * 10) / 10}%`}</div>
+              </div>
+              <div className="gc-kpi">
+                <div className="gc-kpi-label">Margin / portion</div>
+                <div className="gc-kpi-value">{sell > 0 ? fmtMoney(margin, currency) : '—'}</div>
+              </div>
+              <div className="gc-kpi">
+                <div className="gc-kpi-label">Margin %</div>
+                <div className="gc-kpi-value">{marginPct == null ? '—' : `${Math.round(marginPct * 10) / 10}%`}</div>
+              </div>
+            </div>
+
+            <div className="mt-3 text-xs text-neutral-500">
+              Tip: Use <span className="font-semibold">Ctrl/Cmd+S</span> to save quickly.
             </div>
           </div>
-
-          <div className="mt-3 text-xs text-neutral-500">
-            Tip: Use <span className="font-semibold">Ctrl/Cmd+S</span> to save quickly.
-          </div>
-        </div>
+        )}
       </div>
 
-      {/* Step Builder */}
+      {/* Step Builder (كلا المودين) */}
       <div className="gc-card p-6">
         <div className="gc-label">STEP BUILDER (WITH PHOTOS)</div>
 
@@ -1516,7 +1569,7 @@ export default function RecipeEditor() {
         )}
       </div>
 
-      {/* LINES */}
+      {/* LINES (Mgmt + Kitchen) */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1594,18 +1647,20 @@ export default function RecipeEditor() {
           </div>
         </div>
 
-        {/* Add Group */}
-        <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
-          <div>
-            <div className="gc-label">ADD GROUP HEADER</div>
-            <input className="gc-input mt-2 w-full" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} placeholder="e.g., Sauce / Filling / Topping" />
+        {/* Add Group (Mgmt فقط — في Kitchen نخليها بسيطة) */}
+        {isMgmt && (
+          <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
+            <div>
+              <div className="gc-label">ADD GROUP HEADER</div>
+              <input className="gc-input mt-2 w-full" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} placeholder="e.g., Sauce / Filling / Topping" />
+            </div>
+            <div className="flex items-end">
+              <button className="gc-btn gc-btn-ghost w-full" type="button" onClick={addGroup} disabled={savingGroup}>
+                {savingGroup ? 'Saving…' : '+ Add Group'}
+              </button>
+            </div>
           </div>
-          <div className="flex items-end">
-            <button className="gc-btn gc-btn-ghost w-full" type="button" onClick={addGroup} disabled={savingGroup}>
-              {savingGroup ? 'Saving…' : '+ Add Group'}
-            </button>
-          </div>
-        </div>
+        )}
 
         {/* Table */}
         {lines.length === 0 ? (
@@ -1625,7 +1680,6 @@ export default function RecipeEditor() {
                 const row = edit[l.id]
                 const saving = rowSaving[l.id] === true
 
-                // GROUP row
                 if ((row?.line_type ?? l.line_type) === 'group') {
                   const title = row?.group_title ?? l.group_title ?? ''
                   return (
@@ -1722,7 +1776,11 @@ export default function RecipeEditor() {
                     <div className="grid grid-cols-[1.4fr_.55fr_.55fr_1fr_1.2fr] items-center gap-3">
                       <div className="pr-2">
                         <div className="flex items-center gap-2">
-                          <select className="gc-input w-[140px]" value={r.line_type} onChange={(ev) => setRow({ line_type: ev.target.value as any, ingredient_id: '', sub_recipe_id: '' })}>
+                          <select
+                            className="gc-input w-[140px]"
+                            value={r.line_type}
+                            onChange={(ev) => setRow({ line_type: ev.target.value as any, ingredient_id: '', sub_recipe_id: '' })}
+                          >
                             <option value="ingredient">Ingredient</option>
                             <option value="subrecipe">Sub-recipe</option>
                           </select>
@@ -1748,10 +1806,13 @@ export default function RecipeEditor() {
                           )}
                         </div>
 
-                        <div className="mt-1 text-[11px] text-neutral-500 flex items-center justify-between">
-                          <span className="truncate">{rightInfo ? 'Line cost computed' : ''}</span>
-                          <span className="font-semibold">{rightInfo}</span>
-                        </div>
+                        {/* cost info فقط في Mgmt */}
+                        {isMgmt && (
+                          <div className="mt-1 text-[11px] text-neutral-500 flex items-center justify-between">
+                            <span className="truncate">{rightInfo ? 'Line cost computed' : ''}</span>
+                            <span className="font-semibold">{rightInfo}</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="text-right">
