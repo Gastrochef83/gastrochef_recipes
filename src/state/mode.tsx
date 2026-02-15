@@ -17,7 +17,6 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
 
   const setMode = (m: Mode) => setModeState(m)
 
-  // Apply to <html> for CSS targeting + persist
   useEffect(() => {
     const root = document.documentElement
     root.classList.remove('gc-mode-mgmt', 'gc-mode-kitchen')
