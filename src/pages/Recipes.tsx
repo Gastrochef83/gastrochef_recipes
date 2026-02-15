@@ -86,20 +86,23 @@ export default function Recipes() {
   const createNew = async () => {
     try {
       const kitchenId = rows[0]?.kitchen_id ?? 'default'
-      const payload = {
-        kitchen_id: kitchenId,
-        name: 'New Recipe',
-        category: null,
-        portions: 1,
-        is_subrecipe: false,
-        is_archived: false,
-      }
 
-      const { data, error } = await supabase.from('recipes').insert(payload).select('id').single()
+      const { data, error } = await supabase
+        .from('recipes')
+        .insert({
+          kitchen_id: kitchenId,
+          name: 'New Recipe',
+          portions: 1,
+          is_subrecipe: false,
+          is_archived: false,
+        })
+        .select('id')
+        .single()
+
       if (error) throw error
-
       const newId = (data as any)?.id
       showToast('Created ✅')
+
       if (newId) window.location.hash = `#/recipe?id=${newId}`
       else await load()
     } catch (e: any) {
@@ -120,13 +123,14 @@ export default function Recipes() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="gc-label">RECIPES</div>
             <div className="mt-2 text-2xl font-extrabold">Recipe Library</div>
             <div className="mt-1 text-sm text-neutral-600">
-              Premium cards (fixed photo ratio + aligned actions).
+              Premium cards — distortion-proof images.
             </div>
           </div>
 
@@ -147,75 +151,82 @@ export default function Recipes() {
         </div>
       </div>
 
+      {/* Grid */}
       {loading ? (
         <div className="gc-card p-6">Loading…</div>
       ) : filtered.length === 0 ? (
-        <div className="gc-card p-6">
-          <div className="text-sm text-neutral-600">No recipes. Create your first one.</div>
-        </div>
+        <div className="gc-card p-6">No recipes.</div>
       ) : (
         <div className="grid gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {filtered.map((r) => {
             const cat = upperChip(r.category || 'Uncategorized')
-            const portions = toNum(r.portions, 1)
-            const kcal = r.calories != null ? toNum(r.calories, 0) : null
 
             return (
-              <div key={r.id} className="gc-menu-card transition hover:-translate-y-0.5 hover:shadow-xl">
-                {/* ✅ HERO FIX: aspect ratio (NO h-44 anywhere) */}
-                <div className="gc-menu-hero">
-                  <div className="relative w-full aspect-[4/3] overflow-hidden">
-                    {r.photo_url ? (
-                      <img
-                        src={r.photo_url}
-                        alt={r.name}
-                        className="absolute inset-0 h-full w-full object-cover"
-                        loading="lazy"
-                      />
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-xs font-semibold text-neutral-500 bg-neutral-100">
-                        No Photo
-                      </div>
-                    )}
-
-                    <div className="gc-menu-overlay" />
-                    <div className="gc-menu-badges">
-                      <span className="gc-chip gc-chip-dark">{cat}</span>
-                      {kcal != null ? <span className="gc-chip">{kcal} kcal</span> : null}
-                      {r.is_subrecipe ? <span className="gc-chip">SUB</span> : null}
+              <div key={r.id} className="gc-menu-card">
+                {/* HERO — ratio lock via padding (no Tailwind dependency) */}
+                <div className="relative w-full overflow-hidden" style={{ paddingTop: '75%' }}>
+                  {r.photo_url ? (
+                    <img
+                      src={r.photo_url}
+                      alt={r.name}
+                      loading="lazy"
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                      }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 12,
+                        fontWeight: 700,
+                        color: '#6b7280',
+                        background: '#f3f4f6',
+                      }}
+                    >
+                      No Photo
                     </div>
+                  )}
+
+                  <div className="gc-menu-overlay" />
+                  <div className="gc-menu-badges">
+                    <span className="gc-chip gc-chip-dark">{cat}</span>
+                    {r.calories != null && (
+                      <span className="gc-chip">{toNum(r.calories)} kcal</span>
+                    )}
+                    {r.is_subrecipe && <span className="gc-chip">SUB</span>}
                   </div>
                 </div>
 
-                {/* BODY: consistent height, actions pinned */}
+                {/* BODY */}
                 <div className="p-4 flex flex-col min-h-[240px]">
                   <div>
-                    <div className="text-lg font-extrabold leading-tight">{r.name}</div>
-                    <div className="mt-1 text-xs text-neutral-500">Portions: {portions}</div>
-
-                    <div className="mt-2 text-sm text-neutral-700">
-                      {r.description?.trim() ? clampStr(r.description, 120) : 'Add a short menu description…'}
+                    <div className="text-lg font-extrabold">{r.name}</div>
+                    <div className="text-xs text-neutral-500">
+                      Portions: {toNum(r.portions, 1)}
                     </div>
 
-                    {(r.protein_g != null || r.carbs_g != null || r.fat_g != null) && (
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        {r.protein_g != null ? <span className="gc-chip">P {toNum(r.protein_g, 0)}g</span> : null}
-                        {r.carbs_g != null ? <span className="gc-chip">C {toNum(r.carbs_g, 0)}g</span> : null}
-                        {r.fat_g != null ? <span className="gc-chip">F {toNum(r.fat_g, 0)}g</span> : null}
-                      </div>
-                    )}
+                    <div className="mt-2 text-sm text-neutral-700">
+                      {clampStr(r.description || '', 120) || 'Add description…'}
+                    </div>
                   </div>
 
                   <div className="mt-auto pt-4 flex gap-2">
                     <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${r.id}`}>
-                      Open Editor
+                      Open
                     </NavLink>
-
                     <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${r.id}`}>
-                      🍳 Cook
+                      Cook
                     </NavLink>
-
-                    <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)} type="button">
+                    <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)}>
                       Archive
                     </button>
                   </div>
