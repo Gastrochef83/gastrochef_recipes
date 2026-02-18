@@ -51,7 +51,6 @@ function calcLineCost(l: ProLine, ing: IngredientPick | undefined, servingsPrevi
   if (net <= 0) return 0
 
   const qty = toNum(l.qty, 0) * Math.max(1, servingsPreview)
-
   const u = safeUnit(l.unit)
   const packUnit = safeUnit(ing.pack_unit ?? 'g')
 
@@ -68,6 +67,14 @@ function calcLineCost(l: ProLine, ing: IngredientPick | undefined, servingsPrevi
 
   return cost
 }
+
+const UNIT_OPTIONS: Array<{ value: string; label: string }> = [
+  { value: 'g', label: 'g — grams' },
+  { value: 'kg', label: 'kg — kilograms' },
+  { value: 'ml', label: 'ml — milliliters' },
+  { value: 'l', label: 'l — liters' },
+  { value: 'pcs', label: 'pcs — pieces' },
+]
 
 export default function RecipeLinesPro({
   currency,
@@ -137,10 +144,7 @@ export default function RecipeLinesPro({
   }
 
   const total = React.useMemo(() => {
-    return lines.reduce(
-      (sum, l) => sum + calcLineCost(l, l.ingredient_id ? ingById.get(l.ingredient_id) : undefined, servingsPreview),
-      0
-    )
+    return lines.reduce((sum, l) => sum + calcLineCost(l, l.ingredient_id ? ingById.get(l.ingredient_id) : undefined, servingsPreview), 0)
   }, [lines, ingById, servingsPreview])
 
   return (
@@ -217,12 +221,16 @@ export default function RecipeLinesPro({
                       </td>
 
                       <td className="py-3 pr-4">
-                        <select className="gc-input w-28" value={l.unit} onChange={(e) => update(l.id, { unit: safeUnit(e.target.value) })}>
-                          <option value="g">g</option>
-                          <option value="kg">kg</option>
-                          <option value="ml">ml</option>
-                          <option value="l">l</option>
-                          <option value="pcs">pcs</option>
+                        <select
+                          className="gc-input w-28 font-semibold text-neutral-900"
+                          value={l.unit}
+                          onChange={(e) => update(l.id, { unit: safeUnit(e.target.value) })}
+                        >
+                          {UNIT_OPTIONS.map((u) => (
+                            <option key={u.value} value={u.value}>
+                              {u.label}
+                            </option>
+                          ))}
                         </select>
                       </td>
 
