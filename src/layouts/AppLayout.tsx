@@ -1,142 +1,98 @@
-import { useEffect, useState } from 'react'
-import { NavLink, Routes, Route, Navigate, useLocation } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
+// src/layouts/AppLayout.tsx
 
-import Dashboard from '../pages/Dashboard'
-import Ingredients from '../pages/Ingredients'
-import Recipes from '../pages/Recipes'
-import Settings from '../pages/Settings'
-import RecipeEditor from '../pages/RecipeEditor'
-import RecipeCookMode from '../pages/RecipeCookMode'
-
-import ErrorBoundary from '../components/ErrorBoundary'
-import { useMode } from '../state/mode'
-
-function NavItem({ to, label }: { to: string; label: string }) {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        `block rounded-2xl px-4 py-3 text-sm font-extrabold ${
-          isActive ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100'
-        }`
-      }
-    >
-      {label}
-    </NavLink>
-  )
-}
+import { NavLink, Outlet } from 'react-router-dom'
+import { useMode } from '../lib/mode'
 
 export default function AppLayout() {
-  const location = useLocation()
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-
-  // ✅ Mode Engine from Provider (fixes crash)
-  const { mode, setMode } = useMode()
-
-  useEffect(() => {
-    let mounted = true
-
-    const boot = async () => {
-      const { data } = await supabase.auth.getUser()
-      if (!mounted) return
-      setUserEmail(data.user?.email ?? null)
-    }
-
-    boot()
-
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (!mounted) return
-      setUserEmail(session?.user?.email ?? null)
-    })
-
-    return () => {
-      mounted = false
-      sub.subscription.unsubscribe()
-    }
-  }, [])
-
-  const onSignOut = async () => {
-    await supabase.auth.signOut()
-  }
+  const { isKitchen, toggleMode } = useMode()
 
   return (
-    <div className="min-h-screen">
-      <div className="container-app">
-        <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
-          {/* Sidebar */}
-          <aside className="gc-card p-4">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="text-xs font-extrabold text-neutral-500">GastroChef</div>
-                <div className="text-lg font-extrabold text-neutral-900">v4 MVP</div>
-              </div>
-              <button className="gc-btn gc-btn-ghost" onClick={onSignOut}>
-                Sign out
-              </button>
+    <div className="h-screen w-screen bg-neutral-100">
+      <div className="flex h-full">
+
+        {/* Sidebar */}
+        <aside className="w-64 bg-white border-r border-neutral-200 flex flex-col">
+
+          <div className="p-6 border-b border-neutral-200">
+            <div className="text-lg font-extrabold tracking-tight">
+              GastroChef
             </div>
-
-            <div className="mt-3 text-xs text-neutral-500 truncate">{userEmail ? userEmail : '—'}</div>
-
-            {/* ✅ Mode toggle */}
-            <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-              <div className="text-xs font-extrabold text-neutral-600">Mode</div>
-              <div className="mt-2 grid grid-cols-2 gap-2">
-                <button
-                  type="button"
-                  className={`gc-btn ${mode === 'kitchen' ? 'gc-btn-primary' : 'gc-btn-ghost'}`}
-                  onClick={() => setMode('kitchen')}
-                >
-                  🍳 Kitchen
-                </button>
-                <button
-                  type="button"
-                  className={`gc-btn ${mode === 'mgmt' ? 'gc-btn-primary' : 'gc-btn-ghost'}`}
-                  onClick={() => setMode('mgmt')}
-                >
-                  📊 Mgmt
-                </button>
-              </div>
-              <div className="mt-2 text-[11px] text-neutral-500">
-                Kitchen hides analytics. Mgmt shows pricing & KPIs.
-              </div>
+            <div className="text-xs text-neutral-500 mt-1">
+              v4 MVP
             </div>
+          </div>
 
-            <div className="mt-4 space-y-2">
-              <NavItem to="/dashboard" label="Dashboard" />
-              <NavItem to="/ingredients" label="Ingredients" />
-              <NavItem to="/recipes" label="Recipes" />
-              <NavItem to="/settings" label="Settings" />
-            </div>
+          <nav className="flex-1 p-4 space-y-2">
 
-            {/* Quick links */}
-            <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-              <div className="text-xs font-extrabold text-neutral-600">Quick</div>
-              <div className="mt-2 text-xs text-neutral-500">
-                Current: <span className="font-mono">{location.pathname}</span>
-              </div>
-            </div>
-          </aside>
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                `block rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-black text-white'
+                    : 'text-neutral-700 hover:bg-neutral-100'
+                }`
+              }
+            >
+              Dashboard
+            </NavLink>
 
-          {/* Main */}
-          <main className="space-y-6">
-            <ErrorBoundary>
-              <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <NavLink
+              to="/ingredients"
+              className={({ isActive }) =>
+                `block rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-black text-white'
+                    : 'text-neutral-700 hover:bg-neutral-100'
+                }`
+              }
+            >
+              Ingredients
+            </NavLink>
 
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/ingredients" element={<Ingredients />} />
-                <Route path="/recipes" element={<Recipes />} />
-                <Route path="/settings" element={<Settings />} />
+            <NavLink
+              to="/recipes"
+              className={({ isActive }) =>
+                `block rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-black text-white'
+                    : 'text-neutral-700 hover:bg-neutral-100'
+                }`
+              }
+            >
+              Recipes
+            </NavLink>
 
-                <Route path="/recipe/*" element={<RecipeEditor />} />
-                <Route path="/cook/*" element={<RecipeCookMode />} />
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                `block rounded-xl px-4 py-2 text-sm font-semibold transition ${
+                  isActive
+                    ? 'bg-black text-white'
+                    : 'text-neutral-700 hover:bg-neutral-100'
+                }`
+              }
+            >
+              Settings
+            </NavLink>
+          </nav>
 
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
-              </Routes>
-            </ErrorBoundary>
-          </main>
-        </div>
+          <div className="p-4 border-t border-neutral-200">
+            <button
+              onClick={toggleMode}
+              className="w-full rounded-xl bg-neutral-100 hover:bg-neutral-200 text-sm font-semibold py-2 transition"
+            >
+              Mode: {isKitchen ? 'Kitchen' : 'Mgmt'}
+            </button>
+          </div>
+        </aside>
+
+        {/* Main Content */}
+        <main className="flex-1 overflow-y-auto">
+          <div className="max-w-[1400px] mx-auto p-8">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </div>
   )
