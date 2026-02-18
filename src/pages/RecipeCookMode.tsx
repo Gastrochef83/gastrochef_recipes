@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
+import { loadCookSession, saveCookSession, clearCookSession } from '../lib/cookSession'
 
 type Recipe = {
   id: string
@@ -22,9 +23,33 @@ type Recipe = {
   selling_price?: number | null
 }
 
+type LineType = 'ingredient' | 'subrecipe' | 'group'
+type Line = {
+  id: string
+  recipe_id: string
+  ingredient_id: string | null
+  sub_recipe_id: string | null
+  qty: number
+  unit: string
+  note: string | null
+  sort_order: number
+  line_type: LineType
+  group_title: string | null
+}
+
+type Ingredient = {
+  id: string
+  name: string | null
+  pack_unit: string | null
+}
+
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
+}
+
+function safeUnit(u: string) {
+  return (u ?? '').trim().toLowerCase() || 'g'
 }
 
 function normalizeSteps(steps: string[] | null | undefined) {
@@ -36,6 +61,20 @@ function alignPhotos(cleanSteps: string[], photos: string[] | null | undefined) 
   return cleanSteps.map((_, i) => p[i] ?? '')
 }
 
+function fmtQty(q: number) {
+  const v = Number.isFinite(q) ? q : 0
+  if (Math.abs(v) >= 100) return String(Math.round(v))
+  if (Math.abs(v) >= 10) return String(Math.round(v * 10) / 10)
+  return String(Math.round(v * 100) / 100)
+}
+
+type PrepItem = {
+  label: string
+  qty: number
+  unit: string
+  note: string
+}
+
 export default function RecipeCookMode() {
   const [sp] = useSearchParams()
   const id = sp.get('id')
@@ -44,6 +83,9 @@ export default function RecipeCookMode() {
 
   const [loading, setLoading] = useState(true)
   const [recipe, setRecipe] = useState<Recipe | null>(null)
+
+  const [lines, setLines] = useState<Line[]>([])
+  const [ings, setIngs] = useState<Ingredient[]>([])
 
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
@@ -54,6 +96,10 @@ export default function RecipeCookMode() {
 
   const [servings, setServings] = useState(1)
   const [checked, setChecked] = useState<Record<number, boolean>>({})
+  const [timers, setTimers] = useState<Record<number, number>>({})
+  const [prepOpen, setPrepOpen] = useState(false)
+
+  const tickRef = useRef<number | null>(null)
 
   const load = async (recipeId: string) => {
     setLoading(true)
@@ -75,15 +121,32 @@ export default function RecipeCookMode() {
         r = res2.data
         rErr = res2.error
       }
-
       if (rErr) throw rErr
 
       const rr = r as Recipe
       setRecipe(rr)
-      setServings(Math.max(1, toNum(rr.portions, 1)))
 
-      // Reset checks when recipe changes
-      setChecked({})
+      // load lines
+      const { data: l, error: lErr } = await supabase
+        .from('recipe_lines')
+        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
+        .eq('recipe_id', recipeId)
+        .order('sort_order', { ascending: true })
+        .order('id', { ascending: true })
+      if (lErr) throw lErr
+      setLines((l ?? []) as Line[])
+
+      // load ingredients (for labels)
+      const { data: i, error: iErr } = await supabase.from('ingredients').select('id,name,pack_unit').order('name', { ascending: true })
+      if (iErr) throw iErr
+      setIngs((i ?? []) as Ingredient[])
+
+      // restore session
+      const sess = loadCookSession(recipeId)
+      const base = Math.max(1, toNum(rr.portions, 1))
+      setServings(sess?.servings && sess.servings > 0 ? sess.servings : base)
+      setChecked(sess?.checkedSteps ?? {})
+      setTimers(sess?.timers ?? {})
     } catch (e: any) {
       showToast(e?.message ?? 'Load failed')
     } finally {
@@ -104,15 +167,92 @@ export default function RecipeCookMode() {
   const basePortions = Math.max(1, toNum(recipe?.portions, 1))
   const scale = servings / basePortions
 
+  const ingById = useMemo(() => {
+    const m = new Map<string, Ingredient>()
+    for (const i of ings) m.set(i.id, i)
+    return m
+  }, [ings])
+
   const cleanSteps = useMemo(() => normalizeSteps(recipe?.method_steps), [recipe?.method_steps])
   const stepPhotos = useMemo(() => alignPhotos(cleanSteps, recipe?.method_step_photos), [cleanSteps, recipe?.method_step_photos])
 
+  // persist session (servings/checked/timers)
+  useEffect(() => {
+    if (!id) return
+    saveCookSession(id, { servings, checkedSteps: checked, timers })
+  }, [id, servings, checked, timers])
+
+  // timer tick
+  useEffect(() => {
+    if (tickRef.current) window.clearInterval(tickRef.current)
+    tickRef.current = window.setInterval(() => {
+      setTimers((prev) => {
+        let changed = false
+        const next: Record<number, number> = { ...prev }
+        for (const k of Object.keys(next)) {
+          const idx = Number(k)
+          const v = toNum(next[idx], 0)
+          if (v > 0) {
+            next[idx] = v - 1
+            changed = true
+          }
+          if (next[idx] <= 0) next[idx] = 0
+        }
+        return changed ? next : prev
+      })
+    }, 1000)
+    return () => {
+      if (tickRef.current) window.clearInterval(tickRef.current)
+      tickRef.current = null
+    }
+  }, [])
+
   const toggleStep = (idx: number) => setChecked((p) => ({ ...p, [idx]: !p[idx] }))
 
-  const print = () => {
-    // print only main area; CSS @media print handles hiding sidebar
-    window.print()
+  const setTimerPreset = (idx: number, minutes: number) => {
+    setTimers((p) => ({ ...p, [idx]: Math.max(0, Math.floor(minutes * 60)) }))
   }
+
+  const print = () => window.print()
+
+  const resetSession = () => {
+    if (!id) return
+    clearCookSession(id)
+    setChecked({})
+    setTimers({})
+    setPrepOpen(false)
+    // keep servings as-is
+    showToast('Cook session cleared ✅')
+  }
+
+  const prepList = useMemo(() => {
+    // Only ingredient lines (no subrecipe expansion here to keep it fast + no logic change)
+    const items: PrepItem[] = []
+    for (const l of lines) {
+      if (l.line_type !== 'ingredient') continue
+      if (!l.ingredient_id) continue
+      const ing = ingById.get(l.ingredient_id)
+      const label = ing?.name ?? 'Ingredient'
+      const qtyScaled = Math.max(0, toNum(l.qty, 0) * scale)
+      items.push({
+        label,
+        qty: qtyScaled,
+        unit: safeUnit(l.unit),
+        note: (l.note ?? '').trim(),
+      })
+    }
+
+    // group by label+unit+note
+    const m = new Map<string, PrepItem>()
+    for (const it of items) {
+      const key = `${it.label}__${it.unit}__${it.note}`
+      const cur = m.get(key)
+      if (!cur) m.set(key, { ...it })
+      else m.set(key, { ...cur, qty: cur.qty + it.qty })
+    }
+
+    return Array.from(m.values()).sort((a, b) => a.label.localeCompare(b.label))
+  }, [lines, ingById, scale])
 
   if (loading) return <div className="gc-card p-6">Loading cook mode…</div>
 
@@ -164,7 +304,6 @@ export default function RecipeCookMode() {
                 </div>
               </div>
 
-              {/* Slider */}
               <div className="mt-4">
                 <div className="gc-label">SERVINGS</div>
                 <div className="mt-2 flex items-center gap-3">
@@ -193,7 +332,6 @@ export default function RecipeCookMode() {
                 </div>
               </div>
 
-              {/* Nutrition / Pricing visibility based on mode */}
               <div className="mt-4 flex flex-wrap gap-2">
                 {(recipe.calories != null || recipe.protein_g != null || recipe.carbs_g != null || recipe.fat_g != null) && (
                   <>
@@ -217,8 +355,14 @@ export default function RecipeCookMode() {
                 <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${recipe.id}`}>
                   Back to Editor
                 </NavLink>
+                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen((v) => !v)}>
+                  Prep List
+                </button>
                 <button className="gc-btn gc-btn-ghost" type="button" onClick={print}>
                   Print A4
+                </button>
+                <button className="gc-btn gc-btn-ghost" type="button" onClick={resetSession}>
+                  Reset
                 </button>
                 <NavLink className="gc-btn gc-btn-ghost" to="/recipes">
                   Recipes
@@ -227,9 +371,40 @@ export default function RecipeCookMode() {
             </div>
           </div>
         </div>
+
+        {prepOpen && (
+          <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <div className="gc-label">PREP LIST (SCALED)</div>
+                <div className="text-xs text-neutral-500">Ingredient-only list · scaled by servings.</div>
+              </div>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen(false)}>
+                Close
+              </button>
+            </div>
+
+            {prepList.length === 0 ? (
+              <div className="mt-3 text-sm text-neutral-600">No ingredient lines yet.</div>
+            ) : (
+              <div className="mt-3 space-y-2">
+                {prepList.map((it, i) => (
+                  <div key={i} className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+                    <div className="min-w-0">
+                      <div className="text-sm font-extrabold truncate">{it.label}</div>
+                      {it.note ? <div className="text-xs text-neutral-500 truncate">{it.note}</div> : null}
+                    </div>
+                    <div className="text-sm font-extrabold">
+                      {fmtQty(it.qty)} {it.unit}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Steps */}
       <div className="gc-card p-6 gc-print-surface">
         <div className="gc-label">STEPS</div>
 
@@ -240,6 +415,11 @@ export default function RecipeCookMode() {
             {cleanSteps.map((s, idx) => {
               const photo = (stepPhotos[idx] ?? '').trim()
               const done = checked[idx] === true
+              const t = toNum(timers[idx], 0)
+
+              const mm = Math.floor(t / 60)
+              const ss = t % 60
+              const timerLabel = t > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : '—'
 
               return (
                 <div key={idx} className={`gc-step ${done ? 'gc-step-done' : ''}`}>
@@ -248,10 +428,26 @@ export default function RecipeCookMode() {
                   </button>
 
                   <div className="flex-1">
-                    <div className="flex items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="gc-step-title">Step {idx + 1}</div>
-                      <div className="gc-step-badges">
+
+                      <div className="flex flex-wrap items-center gap-2">
                         {done ? <span className="gc-chip gc-chip-dark">Done</span> : <span className="gc-chip">Todo</span>}
+
+                        <span className="gc-chip">Timer {timerLabel}</span>
+
+                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimerPreset(idx, 1)}>
+                          +1m
+                        </button>
+                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimerPreset(idx, 5)}>
+                          +5m
+                        </button>
+                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimerPreset(idx, 10)}>
+                          +10m
+                        </button>
+                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimers((p) => ({ ...p, [idx]: 0 }))}>
+                          Clear
+                        </button>
                       </div>
                     </div>
 
