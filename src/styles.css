@@ -76,7 +76,7 @@ body {
 }
 
 /* =========================================================
-   Inputs
+   ✅ Inputs (FIX: unit visibility in selects)
    ========================================================= */
 
 .gc-input {
@@ -85,8 +85,15 @@ body {
   padding: 12px 12px;
   background: #fff;
   outline: none;
+
+  /* ✅ Stronger readability (fix for g not clear) */
   font-size: 14px;
-  color: var(--gc-text);
+  font-weight: 800;
+  color: #111;
+
+  /* Premium micro-spacing */
+  letter-spacing: 0.01em;
+
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 }
 
@@ -104,6 +111,43 @@ body {
   background: #f9fafb;
   color: rgba(20, 20, 20, 0.55);
   cursor: not-allowed;
+}
+
+/* ✅ Make SELECT text + unit (g/kg/ml/...) super clear */
+select.gc-input {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  /* Keep enough right padding so text doesn't hide behind arrow */
+  padding-right: 42px;
+
+  /* More contrast specifically for dropdowns */
+  color: #0b0b0b;
+  font-weight: 900;
+
+  background-color: #fff;
+
+  /* custom arrow */
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(17,17,17,0.9) 50%),
+    linear-gradient(135deg, rgba(17,17,17,0.9) 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) calc(50% - 3px),
+    calc(100% - 12px) calc(50% - 3px),
+    0 0;
+  background-size:
+    6px 6px,
+    6px 6px,
+    100% 100%;
+  background-repeat: no-repeat;
+}
+
+/* options clarity (some browsers ignore styling here, but harmless) */
+select.gc-input option {
+  font-weight: 800;
+  color: #111;
 }
 
 /* =========================================================
@@ -334,7 +378,6 @@ a.gc-btn {
 
 /* =========================================================
    ✅ RECIPE LIBRARY — PREMIUM CARDS (UI ONLY, NO LOGIC)
-   These classes only affect the look of cards.
    ========================================================= */
 
 .gc-menu-link {
@@ -365,7 +408,6 @@ a.gc-btn {
   overflow: hidden;
 }
 
-/* ✅ prevents white image flash by keeping a stable box + background */
 .gc-menu-hero img {
   width: 100%;
   height: 100%;
@@ -380,7 +422,6 @@ a.gc-btn {
   transform: scale(1.06);
 }
 
-/* overlay gradient */
 .gc-menu-overlay {
   position: absolute;
   inset: 0;
@@ -416,21 +457,11 @@ a.gc-btn {
   color: #fff;
 }
 
-.gc-chip--dark {
-  background: rgba(17, 24, 39, 0.55);
-}
+.gc-chip--dark { background: rgba(17, 24, 39, 0.55); }
+.gc-chip--accent { background: rgba(107, 127, 42, 0.35); }
+.gc-chip--warn { background: rgba(245, 158, 11, 0.35); }
 
-.gc-chip--accent {
-  background: rgba(107, 127, 42, 0.35); /* olive tint */
-}
-
-.gc-chip--warn {
-  background: rgba(245, 158, 11, 0.35); /* amber tint */
-}
-
-.gc-menu-body {
-  padding: 14px 14px 12px;
-}
+.gc-menu-body { padding: 14px 14px 12px; }
 
 .gc-menu-title {
   font-weight: 800;
@@ -451,32 +482,6 @@ a.gc-btn {
   font-size: 13px;
   line-height: 1.4;
   min-height: 34px;
-}
-
-.gc-menu-metrics {
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--gc-border);
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.gc-metric {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.gc-metric .k {
-  font-size: 11.5px;
-  color: #6b7280;
-}
-
-.gc-metric .v {
-  font-size: 13.5px;
-  font-weight: 800;
-  color: #111827;
 }
 
 .gc-menu-actions {
@@ -520,7 +525,7 @@ a.gc-btn {
 }
 
 /* =========================================================
-   Pack D+ — Print Premium (your exact CSS, preserved)
+   Pack D+ — Print Premium (preserved)
    ========================================================= */
 
 .gc-print-only { display: none; }
