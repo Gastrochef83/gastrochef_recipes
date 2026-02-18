@@ -1,3 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================= */
+/* SaaS Theme Variables */
+/* ============================= */
+
 :root {
   --bg-main: #f5f5f5;
   --bg-card: #ffffff;
