@@ -46,46 +46,67 @@ export default function RecipeLinesPro(props: {
     setLines(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)))
   }
 
+  if (!lines.length) {
+    return <div className="text-sm text-neutral-600">No lines yet.</div>
+  }
+
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       {lines.map((l) => {
         const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+        const unit = safeUnit(l.unit)
 
         return (
           <div key={l.id} className="gc-card p-4">
-            <div className="grid gap-2 md:grid-cols-12 items-center">
-              <div className="md:col-span-5">
-                <div className="text-sm font-bold">{ing?.name ?? 'Ingredient'}</div>
-                <div className="text-xs text-neutral-500">{ing?.pack_unit ? `Pack unit: ${ing.pack_unit}` : ''}</div>
+            <div className="flex flex-col gap-3">
+              {/* Title */}
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="text-sm font-extrabold">{ing?.name ?? 'Ingredient'}</div>
+                  <div className="text-xs text-neutral-500">
+                    {ing?.pack_unit ? `Pack unit: ${safeUnit(ing.pack_unit)}` : 'Pack unit: —'}
+                  </div>
+                </div>
+
+                <div className="text-xs text-neutral-500">#{l.position}</div>
               </div>
 
-              <div className="md:col-span-2">
-                <input
-                  className="gc-input w-full text-right"
-                  value={String(toNum(l.qty, 0))}
-                  inputMode="decimal"
-                  onChange={(e) => update(l.id, { qty: Math.max(0, toNum(e.target.value, 0)) })}
-                />
-              </div>
+              {/* Controls */}
+              <div className="grid gap-3 sm:grid-cols-12">
+                <div className="sm:col-span-4">
+                  <div className="gc-label">QTY</div>
+                  <input
+                    className="gc-input w-full"
+                    value={String(toNum(l.qty, 0))}
+                    onChange={(e) => update(l.id, { qty: Math.max(0, toNum(e.target.value, 0)) })}
+                    inputMode="decimal"
+                  />
+                </div>
 
-              <div className="md:col-span-2">
-                {/* ✅ unit visibility fix */}
-                <select className="gc-input w-full gc-unit-select" value={safeUnit(l.unit)} onChange={(e) => update(l.id, { unit: safeUnit(e.target.value) })}>
-                  <option value="g">g</option>
-                  <option value="kg">kg</option>
-                  <option value="ml">ml</option>
-                  <option value="l">l</option>
-                  <option value="pcs">pcs</option>
-                </select>
-              </div>
+                <div className="sm:col-span-4">
+                  <div className="gc-label">UNIT</div>
+                  <select
+                    className="gc-input w-full"
+                    value={unit}
+                    onChange={(e) => update(l.id, { unit: safeUnit(e.target.value) })}
+                  >
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="l">l</option>
+                    <option value="pcs">pcs</option>
+                  </select>
+                </div>
 
-              <div className="md:col-span-3">
-                <input
-                  className="gc-input w-full"
-                  value={l.notes ?? ''}
-                  placeholder="Note…"
-                  onChange={(e) => update(l.id, { notes: e.target.value })}
-                />
+                <div className="sm:col-span-4">
+                  <div className="gc-label">NOTES</div>
+                  <input
+                    className="gc-input w-full"
+                    value={l.notes ?? ''}
+                    onChange={(e) => update(l.id, { notes: e.target.value })}
+                    placeholder="Optional…"
+                  />
+                </div>
               </div>
             </div>
           </div>
