@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
-import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
+import { addCostPoint, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 
 type Recipe = {
   id: string
@@ -34,14 +34,16 @@ type LineType = 'ingredient' | 'subrecipe' | 'group'
 type Line = {
   id: string
   recipe_id: string
+  kitchen_id: string | null
+  line_type: LineType
   ingredient_id: string | null
   sub_recipe_id: string | null
+  group_title: string | null
   qty: number
   unit: string
   note: string | null
-  sort_order: number
-  line_type: LineType
-  group_title: string | null
+  yield_percent: number | null
+  position: number
 }
 
 type Ingredient = {
@@ -49,20 +51,16 @@ type Ingredient = {
   name?: string | null
   pack_unit?: string | null
   net_unit_cost?: number | null
-  is_active?: boolean
 }
 
 type EditRow = {
-  line_type: LineType
-  ingredient_id: string
-  sub_recipe_id: string
   qty: string
   unit: string
+  yield_percent: string
   note: string
-  group_title: string
 }
 
-type MetaStatus = 'saved' | 'saving' | 'dirty'
+type MetaStatus = 'saved' | 'dirty' | 'saving'
 
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
@@ -73,110 +71,56 @@ function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
 
-function normalizeSteps(steps: string[] | null | undefined) {
-  return (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
-}
-
-function extFromType(mime: string) {
-  if (mime === 'image/png') return 'png'
-  if (mime === 'image/webp') return 'webp'
-  return 'jpg'
-}
-
-function fmtMoney(n: number, currency: string) {
+function money(n: number, currency: string) {
   const v = Number.isFinite(n) ? n : 0
   const cur = (currency || 'USD').toUpperCase()
   try {
     return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
   } catch {
-    return `${v.toFixed(2)} ${cur}`
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(v)
   }
 }
 
-// g<->kg , ml<->l , pcs only
-function convertQty(qty: number, fromUnit: string, toUnit: string) {
-  const f = safeUnit(fromUnit)
-  const t = safeUnit(toUnit)
-  if (f === t) return { ok: true, value: qty }
-  if (f === 'g' && t === 'kg') return { ok: true, value: qty / 1000 }
-  if (f === 'kg' && t === 'g') return { ok: true, value: qty * 1000 }
-  if (f === 'ml' && t === 'l') return { ok: true, value: qty / 1000 }
-  if (f === 'l' && t === 'ml') return { ok: true, value: qty * 1000 }
-  if (f === 'pcs' && t === 'pcs') return { ok: true, value: qty }
-  return { ok: false, value: 0 }
+function clampStr(s: string, n = 120) {
+  const x = (s ?? '').trim()
+  if (x.length <= n) return x
+  return x.slice(0, n - 1).trim() + '…'
 }
 
-// convert ingredient line qty to ingredient pack unit (keeps old behavior)
-function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
-  const u = safeUnit(lineUnit)
-  const p = safeUnit(packUnit)
-  let conv = qty
-  if (u === 'g' && p === 'kg') conv = qty / 1000
-  else if (u === 'kg' && p === 'g') conv = qty * 1000
-  else if (u === 'ml' && p === 'l') conv = qty / 1000
-  else if (u === 'l' && p === 'ml') conv = qty * 1000
-  return conv
-}
-
-/**
- * ✅ Unit UI Fix (NO logic change):
- * - values stay: g/kg/ml/l/pcs
- * - labels become clearer: "g — grams" etc
- * - select gets stronger font + min width
- */
-const UNIT_OPTIONS: Array<{ value: 'g' | 'kg' | 'ml' | 'l' | 'pcs'; label: string }> = [
-  { value: 'g', label: 'g — grams' },
-  { value: 'kg', label: 'kg — kilograms' },
-  { value: 'ml', label: 'ml — milliliters' },
-  { value: 'l', label: 'l — liters' },
-  { value: 'pcs', label: 'pcs — pieces' },
-]
-
-function UnitSelect({
-  value,
-  onChange,
-  className = '',
-  ariaLabel,
-}: {
-  value: string
-  onChange: (next: 'g' | 'kg' | 'ml' | 'l' | 'pcs') => void
-  className?: string
-  ariaLabel?: string
-}) {
-  const v = (safeUnit(value) as any) as 'g' | 'kg' | 'ml' | 'l' | 'pcs'
-  return (
-    <select
-      aria-label={ariaLabel ?? 'Unit'}
-      className={`gc-input min-w-[150px] font-semibold text-neutral-900 ${className}`}
-      value={v}
-      onChange={(e) => onChange(safeUnit(e.target.value) as any)}
-    >
-      {UNIT_OPTIONS.map((o) => (
-        <option key={o.value} value={o.value}>
-          {o.label}
-        </option>
-      ))}
-    </select>
-  )
+function normalizeSteps(steps: string[] | null | undefined) {
+  const arr = (steps ?? []).map((x) => (x ?? '').trim()).filter(Boolean)
+  // keep at least one for UX
+  return arr.length ? arr : []
 }
 
 export default function RecipeEditor() {
-  const navigate = useNavigate()
   const location = useLocation()
+  const navigate = useNavigate()
   const [sp] = useSearchParams()
-  const { isManagement } = useMode()
 
-  const id = sp.get('id') || ''
+  // ✅ Mode (Kitchen vs Mgmt)
+  const { mode } = useMode()
+  const isKitchen = mode === 'kitchen'
+  const isMgmt = mode === 'mgmt'
+
+  // Parse id robustly (HashRouter + search params)
+  const id = useMemo(() => {
+    const qp = sp.get('id') || sp.get('rid') || sp.get('recipe') || ''
+    if (qp) return qp
+    // fallback: /recipes/:id
+    const parts = location.pathname.split('/').filter(Boolean)
+    const maybe = parts[parts.length - 1]
+    if (maybe && maybe.length >= 6 && maybe !== 'editor') return maybe
+    return ''
+  }, [location.pathname, sp])
 
   const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState('')
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
-  const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
-
-  // Photo upload
-  const [uploading, setUploading] = useState(false)
+  const [subRecipes, setSubRecipes] = useState<Recipe[]>([])
 
   // Meta fields
   const [name, setName] = useState('')
@@ -184,19 +128,19 @@ export default function RecipeEditor() {
   const [portions, setPortions] = useState('1')
   const [description, setDescription] = useState('')
 
-  // Steps
+  // legacy + steps
+  const [methodLegacy, setMethodLegacy] = useState('')
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
-  const [stepUploading, setStepUploading] = useState(false)
 
-  // Nutrition per portion (manual only)
+  // Nutrition (manual)
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
 
-  // Pricing per portion
+  // Pricing (per portion)
   const [currency, setCurrency] = useState('USD')
   const [sellingPrice, setSellingPrice] = useState('')
   const [targetFC, setTargetFC] = useState('30')
@@ -237,10 +181,10 @@ export default function RecipeEditor() {
   // Expand breakdown
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
 
-  // Recursive cache of recipe_lines for referenced subrecipes
+  // Recursive cache for subrecipes
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
 
-  // --------- Smart Back + Autosave Tracking ----------
+  // Smart back + autosave tracking
   const [metaStatus, setMetaStatus] = useState<MetaStatus>('saved')
   const lastSavedSnapshotRef = useRef<string>('')
   const autoSaveTimerRef = useRef<number | null>(null)
@@ -263,174 +207,219 @@ export default function RecipeEditor() {
     return JSON.stringify({
       name: name.trim(),
       category: category.trim(),
-      portions: toNum(portions, 1),
+      portions: String(Math.max(1, toNum(portions, 1))),
       description: description.trim(),
-      isSubRecipe,
-      yieldQty: toNum(yieldQty, 0),
-      yieldUnit,
-      calories: toNum(calories, 0),
-      protein: toNum(protein, 0),
-      carbs: toNum(carbs, 0),
-      fat: toNum(fat, 0),
+      methodLegacy: methodLegacy.trim(),
+      steps: normalizeSteps(steps),
+      stepPhotos: (stepPhotos ?? []).map((x) => (x ?? '').trim()),
+      calories: calories.trim(),
+      protein: protein.trim(),
+      carbs: carbs.trim(),
+      fat: fat.trim(),
       currency: (currency || 'USD').toUpperCase(),
-      sellingPrice: toNum(sellingPrice, 0),
-      targetFC: toNum(targetFC, 30),
-      steps: steps,
-      stepPhotos: stepPhotos,
+      sellingPrice: sellingPrice.trim(),
+      targetFC: targetFC.trim(),
+      isSubRecipe,
+      yieldQty: yieldQty.trim(),
+      yieldUnit: safeUnit(yieldUnit),
     })
   }
 
-  const ingById = useMemo(() => {
-    const m = new Map<string, Ingredient>()
-    for (const i of ingredients) m.set(i.id, i)
-    return m
-  }, [ingredients])
-
-  const recipeById = useMemo(() => {
-    const m = new Map<string, Recipe>()
-    for (const r of allRecipes) m.set(r.id, r)
-    return m
-  }, [allRecipes])
-
   const loadAll = async (rid: string) => {
     setLoading(true)
+    setErr('')
     try {
-      // recipe
-      const { data: r, error: rErr } = await supabase
-        .from('recipes')
-        .select(
-          'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
-        )
-        .eq('id', rid)
-        .single()
-      if (rErr) throw rErr
-      const rr = r as Recipe
-      setRecipe(rr)
+      const rRes = await supabase.from('recipes').select('*').eq('id', rid).maybeSingle()
+      if (rRes.error) throw rRes.error
+      const r = rRes.data as Recipe | null
+      if (!r) {
+        setRecipe(null)
+        setLines([])
+        setLoading(false)
+        return
+      }
 
-      // ingredients list
-      const { data: i, error: iErr } = await supabase.from('ingredients').select('id,name,pack_unit,net_unit_cost,is_active').order('name', { ascending: true })
-      if (iErr) throw iErr
-      setIngredients((i ?? []) as Ingredient[])
+      setRecipe(r)
 
-      // all recipes for subrecipe selector
-      const { data: ar, error: arErr } = await supabase
-        .from('recipes')
-        .select('id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct')
-        .eq('is_archived', false)
-        .order('name', { ascending: true })
-      if (arErr) throw arErr
-      setAllRecipes((ar ?? []) as Recipe[])
+      setName(r.name ?? '')
+      setCategory(r.category ?? '')
+      setPortions(String(Math.max(1, toNum(r.portions, 1))))
+      setDescription(r.description ?? '')
 
-      // lines
-      const { data: l, error: lErr } = await supabase
+      setMethodLegacy(r.method ?? '')
+      setSteps((r.method_steps ?? []).map((x) => (x ?? '').trim()).filter(Boolean))
+      setStepPhotos((r.method_step_photos ?? []).map((x) => (x ?? '').trim()))
+
+      setCalories(r.calories == null ? '' : String(Math.max(0, Math.floor(toNum(r.calories, 0)))))
+      setProtein(r.protein_g == null ? '' : String(Math.max(0, toNum(r.protein_g, 0))))
+      setCarbs(r.carbs_g == null ? '' : String(Math.max(0, toNum(r.carbs_g, 0))))
+      setFat(r.fat_g == null ? '' : String(Math.max(0, toNum(r.fat_g, 0))))
+
+      setCurrency((r.currency ?? 'USD').toUpperCase())
+      setSellingPrice(r.selling_price == null ? '' : String(Math.max(0, toNum(r.selling_price, 0))))
+      setTargetFC(r.target_food_cost_pct == null ? '30' : String(Math.min(99, Math.max(1, toNum(r.target_food_cost_pct, 30)))))
+
+      setIsSubRecipe(!!r.is_subrecipe)
+      setYieldQty(r.yield_qty == null ? '' : String(Math.max(0, toNum(r.yield_qty, 0))))
+      const yu = safeUnit(r.yield_unit || 'g') as any
+      setYieldUnit(['g', 'kg', 'ml', 'l', 'pcs'].includes(yu) ? yu : 'g')
+
+      const lRes = await supabase
         .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
+        .select('*')
         .eq('recipe_id', rid)
-        .order('sort_order', { ascending: true })
-        .order('id', { ascending: true })
-      if (lErr) throw lErr
-      const ll = (l ?? []) as Line[]
-      setLines(ll)
-      setRecipeLinesCache((p) => ({ ...p, [rid]: ll }))
+        .order('position', { ascending: true })
+      if (lRes.error) throw lRes.error
+      setLines((lRes.data ?? []) as Line[])
 
-      // hydrate UI fields
-      setName(rr.name ?? '')
-      setCategory(rr.category ?? '')
-      setPortions(String(Math.max(1, toNum(rr.portions, 1))))
-      setDescription(rr.description ?? '')
+      const iRes = await supabase.from('ingredients').select('id,name,pack_unit,net_unit_cost').order('name', { ascending: true })
+      if (iRes.error) throw iRes.error
+      setIngredients((iRes.data ?? []) as Ingredient[])
 
-      const st = normalizeSteps(rr.method_steps ?? [])
-      setSteps(st)
+      const srRes = await supabase.from('recipes').select('id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct').eq('is_archived', false)
+      if (srRes.error) throw srRes.error
+      setSubRecipes((srRes.data ?? []) as Recipe[])
 
-      const photosAligned = alignStepPhotos(st, rr.method_step_photos)
-      setStepPhotos(photosAligned)
-
-      setCalories(rr.calories != null ? String(toNum(rr.calories, 0)) : '')
-      setProtein(rr.protein_g != null ? String(toNum(rr.protein_g, 0)) : '')
-      setCarbs(rr.carbs_g != null ? String(toNum(rr.carbs_g, 0)) : '')
-      setFat(rr.fat_g != null ? String(toNum(rr.fat_g, 0)) : '')
-
-      setCurrency((rr.currency ?? 'USD').toUpperCase())
-      setSellingPrice(rr.selling_price != null ? String(toNum(rr.selling_price, 0)) : '')
-      setTargetFC(rr.target_food_cost_pct != null ? String(toNum(rr.target_food_cost_pct, 30)) : '30')
-
-      setIsSubRecipe(!!rr.is_subrecipe)
-      setYieldQty(rr.yield_qty != null ? String(toNum(rr.yield_qty, 0)) : '')
-      setYieldUnit((safeUnit(rr.yield_unit ?? 'g') as any) as 'g' | 'kg' | 'ml' | 'l' | 'pcs')
-
-      // init add selectors defaults
-      const firstIng = ((i ?? []) as Ingredient[])[0]
-      if (firstIng && !addIngredientId) setAddIngredientId(firstIng.id)
-
-      const firstSub = ((ar ?? []) as Recipe[]).find((x) => x.id !== rid && x.is_subrecipe)
-      if (firstSub && !addSubRecipeId) setAddSubRecipeId(firstSub.id)
-
-      // snapshot for autosave
-      const snap = currentMetaSnapshot()
-      lastSavedSnapshotRef.current = snap
+      lastSavedSnapshotRef.current = currentMetaSnapshot()
       setMetaStatus('saved')
       setLastSavedAt(Date.now())
     } catch (e: any) {
-      showToast(e?.message ?? 'Load failed')
+      setErr(e?.message ?? 'Failed to load')
     } finally {
       setLoading(false)
     }
   }
 
   useEffect(() => {
-    if (!id) return
+    if (!id) {
+      setErr('Missing recipe id.')
+      setLoading(false)
+      return
+    }
     loadAll(id).catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id])
 
-  // mark dirty when meta changes
+  // Mark dirty on meta change
   useEffect(() => {
-    if (!id) return
     if (loading) return
     const snap = currentMetaSnapshot()
+    if (!lastSavedSnapshotRef.current) lastSavedSnapshotRef.current = snap
     if (snap !== lastSavedSnapshotRef.current) setMetaStatus('dirty')
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name, category, portions, description, isSubRecipe, yieldQty, yieldUnit, calories, protein, carbs, fat, currency, sellingPrice, targetFC, steps, stepPhotos])
+  }, [
+    loading,
+    name,
+    category,
+    portions,
+    description,
+    methodLegacy,
+    steps,
+    stepPhotos,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+  ])
+
+  const totalCost = useMemo(() => {
+    const ingById = new Map<string, Ingredient>()
+    for (const i of ingredients) ingById.set(i.id, i)
+    let sum = 0
+    for (const l of lines) {
+      if (l.line_type !== 'ingredient') continue
+      if (!l.ingredient_id) continue
+      const ing = ingById.get(l.ingredient_id)
+      const nuc = toNum(ing?.net_unit_cost, 0)
+      const qty = Math.max(0, toNum(l.qty, 0))
+      sum += qty * nuc
+    }
+    return sum
+  }, [lines, ingredients])
+
+  const cpp = useMemo(() => {
+    const p = Math.max(1, toNum(portions, 1))
+    return totalCost / p
+  }, [totalCost, portions])
+
+  const sell = Math.max(0, toNum(sellingPrice, 0))
+  const fcPct = sell > 0 ? (cpp / sell) * 100 : null
+  const margin = sell - cpp
+  const marginPct = sell > 0 ? (margin / sell) * 100 : null
+  const target = Math.min(99, Math.max(1, toNum(targetFC, 30)))
+  const suggestedPrice = target > 0 ? cpp / (target / 100) : 0
+
+  const applySuggested = () => {
+    if (!Number.isFinite(suggestedPrice) || suggestedPrice <= 0) return
+    setSellingPrice(String(Math.round(suggestedPrice * 100) / 100))
+    showToast('Suggested price applied ✅ (remember Save)')
+  }
 
   const [savingMeta, setSavingMeta] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [stepUploading, setStepUploading] = useState(false)
 
   const saveMeta = async (opts?: { silent?: boolean; skipReload?: boolean; isAuto?: boolean }) => {
-    if (!recipe) return
+    if (!id) return
+    if (opts?.isAuto && metaStatus !== 'dirty') return
+
     setSavingMeta(true)
     setMetaStatus('saving')
     try {
-      const payload = {
-        name: name.trim() || 'Untitled recipe',
+      const cleanSteps = normalizeSteps(steps)
+      const cleanStepPhotos = alignStepPhotos(cleanSteps, stepPhotos)
+
+      const payload: any = {
+        name: name.trim() || 'Untitled',
         category: category.trim() || null,
         portions: Math.max(1, toNum(portions, 1)),
         description: description.trim() || null,
 
-        method_steps: normalizeSteps(steps),
-        method_step_photos: stepPhotos,
+        method_steps: cleanSteps,
+        method: methodLegacy.trim() || null,
+        method_step_photos: cleanStepPhotos,
 
-        calories: calories.trim() ? toNum(calories, 0) : null,
-        protein_g: protein.trim() ? toNum(protein, 0) : null,
-        carbs_g: carbs.trim() ? toNum(carbs, 0) : null,
-        fat_g: fat.trim() ? toNum(fat, 0) : null,
+        calories: calories.trim() === '' ? null : Math.max(0, Math.floor(toNum(calories, 0))),
+        protein_g: protein.trim() === '' ? null : Math.max(0, toNum(protein, 0)),
+        carbs_g: carbs.trim() === '' ? null : Math.max(0, toNum(carbs, 0)),
+        fat_g: fat.trim() === '' ? null : Math.max(0, toNum(fat, 0)),
 
         currency: (currency || 'USD').toUpperCase(),
-        selling_price: sellingPrice.trim() ? toNum(sellingPrice, 0) : null,
-        target_food_cost_pct: targetFC.trim() ? toNum(targetFC, 30) : null,
+        selling_price: sellingPrice.trim() === '' ? null : Math.max(0, toNum(sellingPrice, 0)),
+        target_food_cost_pct: Math.min(99, Math.max(1, toNum(targetFC, 30))),
 
-        is_subrecipe: !!isSubRecipe,
-        yield_qty: yieldQty.trim() ? toNum(yieldQty, 0) : null,
+        is_subrecipe: isSubRecipe,
+        yield_qty: yieldQty.trim() === '' ? null : Math.max(0, toNum(yieldQty, 0)),
         yield_unit: isSubRecipe ? safeUnit(yieldUnit) : null,
       }
 
-      const { error } = await supabase.from('recipes').update(payload).eq('id', recipe.id)
+      let { error } = await supabase.from('recipes').update(payload).eq('id', id)
+
+      if (error && String(error.message || '').toLowerCase().includes('method_step_photos')) {
+        delete payload.method_step_photos
+        ;({ error } = await supabase.from('recipes').update(payload).eq('id', id))
+      }
+
       if (error) throw error
+
+      addCostPoint(id, {
+        totalCost,
+        cpp,
+        portions: Math.max(1, toNum(portions, 1)),
+        currency: (currency || 'USD').toUpperCase(),
+      })
 
       lastSavedSnapshotRef.current = currentMetaSnapshot()
       setMetaStatus('saved')
       setLastSavedAt(Date.now())
 
       if (!opts?.silent) showToast('Saved ✅')
-      if (!opts?.skipReload) await loadAll(recipe.id)
+      if (!opts?.skipReload) await loadAll(id)
     } catch (e: any) {
       setMetaStatus('dirty')
       showToast(e?.message ?? 'Save failed')
@@ -439,7 +428,7 @@ export default function RecipeEditor() {
     }
   }
 
-  // ✅ Autosave debounce
+  // Autosave debounce
   useEffect(() => {
     if (!id) return
     if (loading) return
@@ -459,9 +448,7 @@ export default function RecipeEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loading, savingMeta, uploading, stepUploading, metaStatus, currentMetaSnapshot()])
 
-  // -------------------------
   // Keyboard shortcuts
-  // -------------------------
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toLowerCase().includes('mac')
@@ -487,24 +474,15 @@ export default function RecipeEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [newStep, steps, stepPhotos, metaStatus])
 
-  // -------------------------
-  // Lines helpers
-  // -------------------------
   const ensureRecipeLinesLoaded = async (rid: string) => {
     if (recipeLinesCache[rid]) return
-    const { data, error } = await supabase
-      .from('recipe_lines')
-      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
-      .eq('recipe_id', rid)
-      .order('sort_order', { ascending: true })
-      .order('id', { ascending: true })
-    if (error) throw error
-    setRecipeLinesCache((p) => ({ ...p, [rid]: (data ?? []) as Line[] }))
+    const res = await supabase.from('recipe_lines').select('*').eq('recipe_id', rid).order('position', { ascending: true })
+    if (!res.error) {
+      setRecipeLinesCache((prev) => ({ ...prev, [rid]: (res.data ?? []) as Line[] }))
+    }
   }
 
-  // -------------------------
   // Yield Smart
-  // -------------------------
   const yieldSmart = async () => {
     if (!recipe) return
     setYieldSmartLoading(true)
@@ -531,118 +509,85 @@ export default function RecipeEditor() {
       }
 
       const rLines = recipeLinesCache[recipe.id] ?? []
-
       for (const l of rLines) {
         if (l.line_type === 'group') continue
         const q = Math.max(0, toNum(l.qty, 0))
         const u = safeUnit(l.unit)
-
         if (u === 'g' || u === 'kg') addWeight(q, u)
         else if (u === 'ml' || u === 'l') addVolume(q, u)
         else if (u === 'pcs') addPcs(q, u)
       }
 
-      if (weightG > 0) {
-        setYieldUnit('g')
-        setYieldQty(String(Math.round(weightG)))
-        showToast('Yield smart: set to grams ✅')
-        return
-      }
-      if (volumeML > 0) {
-        setYieldUnit('ml')
-        setYieldQty(String(Math.round(volumeML)))
-        showToast('Yield smart: set to ml ✅')
-        return
-      }
       if (pieces > 0) {
+        setYieldQty(String(Math.round(pieces * 100) / 100))
         setYieldUnit('pcs')
-        setYieldQty(String(Math.round(pieces)))
-        showToast('Yield smart: set to pcs ✅')
-        return
+        showToast('Yield smart: pcs ✅ (remember Save)')
+      } else if (volumeML > 0) {
+        setYieldQty(String(Math.round(volumeML * 100) / 100))
+        setYieldUnit('ml')
+        showToast('Yield smart: ml ✅ (remember Save)')
+      } else if (weightG > 0) {
+        setYieldQty(String(Math.round(weightG * 100) / 100))
+        setYieldUnit('g')
+        showToast('Yield smart: g ✅ (remember Save)')
+      } else {
+        showToast('Yield smart: no measurable qty found')
       }
-
-      showToast('Yield smart: could not infer yield (add lines first)')
-    } catch (e: any) {
-      showToast(e?.message ?? 'Yield smart failed')
     } finally {
       setYieldSmartLoading(false)
     }
   }
 
-  // -------------------------
-  // Add Step
-  // -------------------------
   const addStep = () => {
-    const s = (newStep ?? '').trim()
+    const s = newStep.trim()
     if (!s) return
-    const next = [...steps, s]
-    setSteps(next)
-    setStepPhotos((p) => [...p, ''])
+    setSteps((prev) => [...prev, s])
+    setStepPhotos((prev) => [...prev, ''])
     setNewStep('')
-    setMetaStatus('dirty')
-    setTimeout(() => newStepInputRef.current?.focus(), 50)
+    setTimeout(() => newStepInputRef.current?.focus(), 10)
   }
 
-  const removeStep = (idx: number) => {
-    const nextSteps = steps.filter((_, i) => i !== idx)
-    const nextPhotos = stepPhotos.filter((_, i) => i !== idx)
-    setSteps(nextSteps)
-    setStepPhotos(nextPhotos)
-    setMetaStatus('dirty')
+  const deleteStepAt = (idx: number) => {
+    setSteps((prev) => prev.filter((_, i) => i !== idx))
+    setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
   }
 
-  // -------------------------
-  // Photo Upload (recipe)
-  // -------------------------
-  const uploadRecipePhoto = async (file: File) => {
-    if (!recipe) return
-    setUploading(true)
-    try {
-      const ext = extFromType(file.type)
-      const key = `${recipe.id}/${Date.now()}.${ext}`
-
-      const { error: upErr } = await supabase.storage.from('recipe-photos').upload(key, file, { upsert: true })
-      if (upErr) throw upErr
-
-      const { data } = supabase.storage.from('recipe-photos').getPublicUrl(key)
-      const url = data.publicUrl
-
-      const { error } = await supabase.from('recipes').update({ photo_url: url }).eq('id', recipe.id)
-      if (error) throw error
-
-      showToast('Photo uploaded ✅')
-      await loadAll(recipe.id)
-    } catch (e: any) {
-      showToast(e?.message ?? 'Upload failed')
-    } finally {
-      setUploading(false)
-    }
+  const moveStep = (idx: number, dir: -1 | 1) => {
+    setSteps((prev) => {
+      const arr = [...prev]
+      const j = idx + dir
+      if (j < 0 || j >= arr.length) return prev
+      ;[arr[idx], arr[j]] = [arr[j], arr[idx]]
+      return arr
+    })
+    setStepPhotos((prev) => {
+      const arr = [...prev]
+      const j = idx + dir
+      if (j < 0 || j >= arr.length) return prev
+      ;[arr[idx], arr[j]] = [arr[j], arr[idx]]
+      return arr
+    })
   }
 
-  // -------------------------
-  // Step Photo Upload
-  // -------------------------
   const uploadStepPhoto = async (idx: number, file: File) => {
     if (!recipe) return
     setStepUploading(true)
     try {
-      const ext = extFromType(file.type)
-      const key = `${recipe.id}/steps/${idx}_${Date.now()}.${ext}`
+      const ext = file.name.split('.').pop() || 'jpg'
+      const path = `recipes/${recipe.id}/steps/${Date.now()}_${idx}.${ext}`
 
-      const { error: upErr } = await supabase.storage.from('recipe-photos').upload(key, file, { upsert: true })
-      if (upErr) throw upErr
+      const up = await supabase.storage.from('recipe-photos').upload(path, file, { upsert: true })
+      if (up.error) throw up.error
 
-      const { data } = supabase.storage.from('recipe-photos').getPublicUrl(key)
-      const url = data.publicUrl
+      const pub = supabase.storage.from('recipe-photos').getPublicUrl(path)
+      const url = pub.data.publicUrl
 
-      setStepPhotos((p) => {
-        const copy = [...p]
-        copy[idx] = url
-        return copy
+      setStepPhotos((prev) => {
+        const arr = [...prev]
+        arr[idx] = url
+        return arr
       })
-
-      setMetaStatus('dirty')
-      showToast('Step photo uploaded ✅')
+      showToast('Step photo uploaded ✅ (remember Save)')
     } catch (e: any) {
       showToast(e?.message ?? 'Upload failed')
     } finally {
@@ -650,891 +595,729 @@ export default function RecipeEditor() {
     }
   }
 
-  const removeStepPhoto = (idx: number) => {
-    setStepPhotos((p) => {
-      const copy = [...p]
-      copy[idx] = ''
-      return copy
-    })
-    setMetaStatus('dirty')
-  }
+  // Ingredients + cost mapping
+  const ingById = useMemo(() => {
+    const m = new Map<string, Ingredient>()
+    for (const i of ingredients) m.set(i.id, i)
+    return m
+  }, [ingredients])
 
-  // -------------------------
-  // Inline Add Line / Group
-  // -------------------------
-  const filteredIngredients = useMemo(() => {
-    const s = ingSearch.trim().toLowerCase()
-    const list = ingredients.filter((i) => (i.is_active ?? true) !== false)
-    if (!s) return list
-    return list.filter((i) => (i.name ?? '').toLowerCase().includes(s))
-  }, [ingredients, ingSearch])
+  // Pack D: Consolidated shopping list
+  const consolidated = useMemo(() => {
+    const p = Math.max(1, toNum(portions, 1))
+    const base = Math.max(1, toNum(recipe?.portions, 1))
+    const scale = p / base
 
-  const availableSubRecipes = useMemo(() => {
-    return allRecipes.filter((r) => r.is_subrecipe && !r.is_archived && r.id !== recipe?.id)
-  }, [allRecipes, recipe?.id])
+    const items: { label: string; qty: number; unit: string; note: string }[] = []
 
-  const addLine = async () => {
-    if (!recipe) return
-    if (savingAdd) return
-    setSavingAdd(true)
-    try {
-      const qty = Math.max(0, toNum(addQty, 0))
-      if (qty <= 0) {
-        showToast('Qty must be > 0')
-        return
-      }
-
-      const payload: Partial<Line> = {
-        recipe_id: recipe.id,
-        qty,
-        unit: safeUnit(addUnit),
-        note: addNote.trim() || null,
-        sort_order: (lines.at(-1)?.sort_order ?? 0) + 1,
-        line_type: addType,
-        group_title: null,
-        ingredient_id: addType === 'ingredient' ? (addIngredientId || null) : null,
-        sub_recipe_id: addType === 'subrecipe' ? (addSubRecipeId || null) : null,
-      }
-
-      if (addType === 'ingredient' && !payload.ingredient_id) {
-        showToast('Pick an ingredient')
-        return
-      }
-      if (addType === 'subrecipe' && !payload.sub_recipe_id) {
-        showToast('Pick a sub-recipe')
-        return
-      }
-
-      const { error } = await supabase.from('recipe_lines').insert(payload)
-      if (error) throw error
-
-      showToast('Added ✅')
-      await loadAll(recipe.id)
-
-      setAddQty('1')
-      setAddUnit('g')
-      setAddNote('')
-    } catch (e: any) {
-      showToast(e?.message ?? 'Add failed')
-    } finally {
-      setSavingAdd(false)
-    }
-  }
-
-  const addGroup = async () => {
-    if (!recipe) return
-    if (savingGroup) return
-    setSavingGroup(true)
-    try {
-      const title = groupTitle.trim()
-      if (!title) {
-        showToast('Group title required')
-        return
-      }
-
-      const payload: Partial<Line> = {
-        recipe_id: recipe.id,
-        qty: 0,
-        unit: 'g',
-        note: null,
-        sort_order: (lines.at(-1)?.sort_order ?? 0) + 1,
-        line_type: 'group',
-        group_title: title,
-        ingredient_id: null,
-        sub_recipe_id: null,
-      }
-
-      const { error } = await supabase.from('recipe_lines').insert(payload)
-      if (error) throw error
-
-      showToast('Group added ✅')
-      await loadAll(recipe.id)
-      setGroupTitle('')
-    } catch (e: any) {
-      showToast(e?.message ?? 'Add group failed')
-    } finally {
-      setSavingGroup(false)
-    }
-  }
-
-  // -------------------------
-  // Row edit / save / delete
-  // -------------------------
-  const startEdit = (l: Line) => {
-    setEdit((p) => ({
-      ...p,
-      [l.id]: {
-        line_type: l.line_type,
-        ingredient_id: l.ingredient_id ?? '',
-        sub_recipe_id: l.sub_recipe_id ?? '',
-        qty: String(l.qty ?? 0),
-        unit: safeUnit(l.unit ?? 'g'),
-        note: l.note ?? '',
-        group_title: l.group_title ?? '',
-      },
-    }))
-  }
-
-  const cancelEdit = (id: string) => {
-    setEdit((p) => {
-      const copy = { ...p }
-      delete copy[id]
-      return copy
-    })
-  }
-
-  const saveRow = async (idRow: string) => {
-    if (!recipe) return
-    const e = edit[idRow]
-    if (!e) return
-
-    setRowSaving((p) => ({ ...p, [idRow]: true }))
-    try {
-      const patch: any = {}
-      patch.line_type = e.line_type
-
-      if (e.line_type === 'group') {
-        patch.group_title = e.group_title.trim() || 'Group'
-        patch.qty = 0
-        patch.unit = 'g'
-        patch.note = null
-        patch.ingredient_id = null
-        patch.sub_recipe_id = null
-      } else {
-        patch.group_title = null
-        patch.qty = Math.max(0, toNum(e.qty, 0))
-        patch.unit = safeUnit(e.unit)
-        patch.note = e.note.trim() || null
-        patch.ingredient_id = e.line_type === 'ingredient' ? (e.ingredient_id || null) : null
-        patch.sub_recipe_id = e.line_type === 'subrecipe' ? (e.sub_recipe_id || null) : null
-      }
-
-      const { error } = await supabase.from('recipe_lines').update(patch).eq('id', idRow)
-      if (error) throw error
-
-      showToast('Row saved ✅')
-      await loadAll(recipe.id)
-      cancelEdit(idRow)
-    } catch (err: any) {
-      showToast(err?.message ?? 'Save row failed')
-    } finally {
-      setRowSaving((p) => ({ ...p, [idRow]: false }))
-    }
-  }
-
-  const deleteRow = async (idRow: string) => {
-    if (!recipe) return
-    try {
-      const { error } = await supabase.from('recipe_lines').delete().eq('id', idRow)
-      if (error) throw error
-      showToast('Deleted ✅')
-      await loadAll(recipe.id)
-    } catch (e: any) {
-      showToast(e?.message ?? 'Delete failed')
-    }
-  }
-
-  // -------------------------
-  // Reorder (simple)
-  // -------------------------
-  const moveRow = async (idRow: string, dir: -1 | 1) => {
-    if (reorderSaving) return
-    const idx = lines.findIndex((x) => x.id === idRow)
-    if (idx < 0) return
-    const j = idx + dir
-    if (j < 0 || j >= lines.length) return
-
-    const copy = [...lines]
-    ;[copy[idx], copy[j]] = [copy[j], copy[idx]]
-
-    setReorderSaving(true)
-    try {
-      // keep old sort_order semantics: 1..n
-      const updates = copy.map((x, i) => ({ id: x.id, sort_order: i + 1 }))
-      for (const u of updates) {
-        const { error } = await supabase.from('recipe_lines').update({ sort_order: u.sort_order }).eq('id', u.id)
-        if (error) throw error
-      }
-      showToast('Reordered ✅')
-      if (recipe) await loadAll(recipe.id)
-    } catch (e: any) {
-      showToast(e?.message ?? 'Reorder failed')
-    } finally {
-      setReorderSaving(false)
-    }
-  }
-
-  // -------------------------
-  // Costing (preview)
-  // -------------------------
-  const costTotals = useMemo(() => {
-    if (!recipe) return { total: 0, perPortion: 0 }
-    let sum = 0
     for (const l of lines) {
-      if (l.line_type === 'group') continue
+      if (l.line_type !== 'ingredient') continue
+      if (!l.ingredient_id) continue
 
-      if (l.line_type === 'ingredient') {
-        if (!l.ingredient_id) continue
-        const ing = ingById.get(l.ingredient_id)
-        const net = toNum(ing?.net_unit_cost, 0)
-        if (net <= 0) continue
-        const packUnit = safeUnit(ing?.pack_unit ?? 'g')
-        const conv = convertQtyToPackUnit(toNum(l.qty, 0), l.unit, packUnit)
-        sum += conv * net
-        continue
-      }
-
-      if (l.line_type === 'subrecipe') {
-        if (!l.sub_recipe_id) continue
-        const child = recipeById.get(l.sub_recipe_id)
-        if (!child) continue
-        // lightweight: costHistory optional / not recalculating full recursion here
-        // (keeps your existing behavior simple)
-      }
+      const ing = ingById.get(l.ingredient_id)
+      const label = ing?.name ?? 'Ingredient'
+      items.push({
+        label,
+        qty: Math.max(0, toNum(l.qty, 0) * scale),
+        unit: safeUnit(l.unit),
+        note: (l.note ?? '').trim(),
+      })
     }
 
-    const portionsN = Math.max(1, toNum(portions, 1))
-    return { total: sum, perPortion: sum / portionsN }
-  }, [lines, ingById, recipeById, recipe, portions])
-
-  // -------------------------
-  // Print
-  // -------------------------
-  const printRecipe = () => {
-    window.print()
-  }
-
-  // -------------------------
-  // Cost History UI (optional)
-  // -------------------------
-  const [costPoints, setCostPoints] = useState<any[]>([])
-  const loadCostPoints = async () => {
-    if (!recipe) return
-    try {
-      const pts = await listCostPoints(recipe.id)
-      setCostPoints(pts ?? [])
-    } catch {
-      // ignore
+    const m = new Map<string, { label: string; qty: number; unit: string; note: string }>()
+    for (const it of items) {
+      const key = `${it.label}__${it.unit}__${it.note}`
+      const cur = m.get(key)
+      if (!cur) m.set(key, { ...it })
+      else m.set(key, { ...cur, qty: cur.qty + it.qty })
     }
+
+    return Array.from(m.values()).sort((a, b) => a.label.localeCompare(b.label))
+  }, [lines, ingById, portions, recipe?.portions])
+
+  // Pack D: Cost history memo
+  const costPoints = useMemo(() => {
+    if (!id) return []
+    return listCostPoints(id)
+  }, [id, savingMeta, metaStatus, costOpen])
+
+  const printNow = () => {
+    setTimeout(() => {
+      try {
+        window.print()
+      } catch {}
+    }, 50)
   }
 
-  const addCostSnapshot = async () => {
-    if (!recipe) return
-    await addCostPoint({
-      recipe_id: recipe.id,
-      name: name.trim() || recipe.name || 'Recipe',
-      total_cost: costTotals.total,
-      cost_per_portion: costTotals.perPortion,
-      currency: (currency || 'USD').toUpperCase(),
-    })
-    showToast('Cost snapshot added ✅')
-    await loadCostPoints()
-  }
+  // Guards
+  if (loading) return <div className="gc-card p-6">Loading editor…</div>
 
-  const clearHistory = async () => {
-    if (!recipe) return
-    await clearCostPoints(recipe.id)
-    showToast('History cleared ✅')
-    await loadCostPoints()
-  }
-
-  const deletePoint = async (pid: string) => {
-    if (!recipe) return
-    await deleteCostPoint(pid)
-    showToast('Deleted ✅')
-    await loadCostPoints()
-  }
-
-  useEffect(() => {
-    if (!recipe) return
-    if (!costOpen) return
-    loadCostPoints().catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [costOpen, recipe?.id])
-
-  // -------------------------
-  // Navigation guard (soft)
-  // -------------------------
-  const goBackSmart = () => {
-    if (metaStatus === 'dirty') {
-      const ok = window.confirm('You have unsaved changes. Leave anyway?')
-      if (!ok) return
-    }
-    navigate('/recipes')
-  }
-
-  if (!id) {
+  if (err) {
     return (
-      <div className="gc-card p-6">
-        <div className="text-sm text-neutral-700">Missing recipe id.</div>
-        <div className="mt-4">
-          <NavLink className="gc-btn gc-btn-primary" to="/recipes">
-            Back to Recipes
-          </NavLink>
+      <div className="gc-card p-6 space-y-3">
+        <div className="gc-label">ERROR</div>
+        <div className="text-sm text-red-600">{err}</div>
+        <div className="text-xs text-neutral-500">
+          Debug: <span className="font-mono">{location.pathname + location.search}</span>
         </div>
+        <NavLink className="gc-btn gc-btn-primary" to="/recipes">
+          Back to Recipes
+        </NavLink>
       </div>
     )
   }
 
+  if (!recipe) {
+    return (
+      <div className="gc-card p-6 space-y-3">
+        <div className="gc-label">NOT FOUND</div>
+        <div className="text-sm text-neutral-600">Recipe not found.</div>
+        <NavLink className="gc-btn gc-btn-primary" to="/recipes">
+          Back to Recipes
+        </NavLink>
+      </div>
+    )
+  }
+
+  const metaBadge =
+    metaStatus === 'saving'
+      ? 'Saving…'
+      : metaStatus === 'dirty'
+        ? 'Unsaved'
+        : lastSavedAt
+          ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString()}`
+          : 'Saved'
+
   return (
-    <div className="space-y-6 p-6">
-      {/* Small CSS hint to improve select clarity without touching global styles */}
-      <style>{`
-        select.gc-input { cursor: pointer; }
-        select.gc-input option { font-weight: 600; }
-      `}</style>
-
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <div>
-          <div className="gc-label">RECIPE EDITOR — PREMIUM</div>
-          <div className="mt-2 text-2xl font-extrabold">{loading ? 'Loading…' : name || recipe?.name || 'Recipe'}</div>
-          <div className="mt-1 text-xs text-neutral-500">
-            Status:{' '}
-            <span className={metaStatus === 'dirty' ? 'font-bold text-amber-700' : metaStatus === 'saving' ? 'font-bold text-blue-700' : 'font-bold text-emerald-700'}>
-              {metaStatus}
-            </span>
-            {lastSavedAt ? <span className="ml-2 text-neutral-400">• Last saved: {new Date(lastSavedAt).toLocaleTimeString()}</span> : null}
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="gc-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="gc-label">RECIPE EDITOR</div>
+            <div className="mt-1 text-2xl font-extrabold">{name?.trim() ? name : 'Untitled recipe'}</div>
+            <div className="mt-1 text-xs text-neutral-500">
+              Mode: <b>{isKitchen ? 'Kitchen' : 'Management'}</b> • <span className="gc-chip">{metaBadge}</span>
+            </div>
           </div>
-        </div>
 
-        <div className="flex flex-wrap gap-2">
-          <button className="gc-btn gc-btn-ghost" type="button" onClick={goBackSmart}>
-            ← Back
-          </button>
-          <button className="gc-btn gc-btn-ghost" type="button" onClick={printRecipe}>
-            Print
-          </button>
-          {isManagement ? (
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen((p) => !p)}>
+          <div className="flex flex-wrap items-center gap-2">
+            <button className="gc-btn gc-btn-ghost" onClick={() => navigate('/recipes')}>
+              Back
+            </button>
+            <button className="gc-btn gc-btn-ghost" onClick={() => setCostOpen((v) => !v)}>
               Cost History
             </button>
-          ) : null}
-          <button className="gc-btn gc-btn-primary" type="button" onClick={() => saveMeta()} disabled={savingMeta || loading}>
-            {savingMeta ? 'Saving…' : 'Save'}
-          </button>
+            <button className="gc-btn gc-btn-ghost" onClick={printNow}>
+              Print
+            </button>
+            <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
+              {savingMeta ? 'Saving…' : 'Save'}
+            </button>
+          </div>
         </div>
       </div>
 
-      {loading ? (
-        <div className="gc-card p-6">Loading…</div>
-      ) : (
-        <>
-          {/* Meta */}
-          <div className="gc-card p-6 space-y-4">
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="md:col-span-2">
-                <div className="gc-label">NAME</div>
-                <input className="gc-input w-full text-lg font-bold" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name" />
-              </div>
-              <div>
-                <div className="gc-label">CATEGORY</div>
-                <input className="gc-input w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Main, Salad..." />
-              </div>
-            </div>
-
-            <div className="grid gap-4 md:grid-cols-3">
-              <div>
-                <div className="gc-label">PORTIONS</div>
-                <input className="gc-input w-full" type="number" min={1} value={portions} onChange={(e) => setPortions(e.target.value)} />
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="gc-label">MENU DESCRIPTION</div>
-                <textarea className="gc-input w-full min-h-[84px]" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short premium menu description…" />
-              </div>
-            </div>
-
-            {/* Photo */}
-            <div className="grid gap-4 md:grid-cols-3">
-              <div className="md:col-span-2">
-                <div className="gc-label">RECIPE PHOTO</div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <label className="gc-btn gc-btn-ghost cursor-pointer">
-                    {uploading ? 'Uploading…' : 'Upload Photo'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const f = e.target.files?.[0]
-                        if (f) uploadRecipePhoto(f)
-                      }}
-                    />
-                  </label>
-                  {recipe?.photo_url ? (
-                    <a className="gc-btn gc-btn-ghost" href={recipe.photo_url} target="_blank" rel="noreferrer">
-                      View
-                    </a>
-                  ) : (
-                    <span className="text-xs text-neutral-500">No photo yet</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="md:col-span-1">
-                <div className="gc-label">SUB-RECIPE</div>
-                <label className="flex items-center gap-2 text-sm">
-                  <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} />
-                  This recipe is a sub-recipe
-                </label>
-
-                {isSubRecipe ? (
-                  <div className="mt-3 grid grid-cols-2 gap-2">
-                    <div>
-                      <div className="gc-label">YIELD QTY</div>
-                      <input className="gc-input w-full" type="number" min={0} step="0.01" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} placeholder="e.g. 1200" />
-                    </div>
-                    <div>
-                      <div className="gc-label">YIELD UNIT</div>
-                      <UnitSelect value={yieldUnit} onChange={setYieldUnit} ariaLabel="Yield unit" />
-                    </div>
-                    <div className="col-span-2">
-                      <button className="gc-btn gc-btn-ghost w-full" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
-                        {yieldSmartLoading ? 'Working…' : 'Yield Smart'}
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-              </div>
-            </div>
+      {/* Meta */}
+      <div className="gc-card p-6">
+        <div className="grid gap-4 md:grid-cols-3">
+          <div>
+            <div className="gc-label">NAME</div>
+            <input className="gc-input mt-2 w-full" value={name} onChange={(e) => setName(e.target.value)} />
           </div>
 
-          {/* Cost preview */}
-          {isManagement ? (
-            <div className="gc-card p-6">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <div className="gc-label">COST PREVIEW</div>
-                  <div className="mt-1 text-sm text-neutral-600">Ingredient-only preview (same logic). Sub-recipe costing stays as your system rules.</div>
-                </div>
-                <div className="text-right">
-                  <div className="text-sm text-neutral-600">Total</div>
-                  <div className="text-xl font-extrabold">{fmtMoney(costTotals.total, currency)}</div>
-                  <div className="mt-1 text-sm text-neutral-600">
-                    / portion: <span className="font-bold">{fmtMoney(costTotals.perPortion, currency)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          ) : null}
-
-          {/* Lines Builder */}
-          <div className="gc-card p-6 space-y-4">
-            <div className="flex flex-wrap items-start justify-between gap-3">
-              <div>
-                <div className="gc-label">RECIPE LINES</div>
-                <div className="mt-1 text-sm text-neutral-600">Add ingredients, sub-recipes, and groups.</div>
-              </div>
-            </div>
-
-            {/* Inline add */}
-            <div className="grid gap-3 md:grid-cols-6">
-              <div className="md:col-span-1">
-                <div className="gc-label">TYPE</div>
-                <select className="gc-input w-full font-semibold text-neutral-900" value={addType} onChange={(e) => setAddType(e.target.value as LineType)}>
-                  <option value="ingredient">Ingredient</option>
-                  <option value="subrecipe">Sub-recipe</option>
-                </select>
-              </div>
-
-              <div className="md:col-span-2">
-                <div className="gc-label">{addType === 'ingredient' ? 'INGREDIENT' : 'SUB-RECIPE'}</div>
-
-                {addType === 'ingredient' ? (
-                  <div className="space-y-2">
-                    <input className="gc-input w-full" placeholder="Search ingredient…" value={ingSearch} onChange={(e) => setIngSearch(e.target.value)} />
-                    <select className="gc-input w-full font-semibold text-neutral-900" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
-                      <option value="">Select…</option>
-                      {filteredIngredients.map((i) => (
-                        <option key={i.id} value={i.id}>
-                          {i.name ?? i.id}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                ) : (
-                  <select className="gc-input w-full font-semibold text-neutral-900" value={addSubRecipeId} onChange={(e) => setAddSubRecipeId(e.target.value)}>
-                    <option value="">Select…</option>
-                    {availableSubRecipes.map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.name || 'Untitled'} {r.yield_qty ? `— yield ${toNum(r.yield_qty, 0)} ${safeUnit(r.yield_unit ?? '')}` : ''}
-                      </option>
-                    ))}
-                  </select>
-                )}
-              </div>
-
-              <div className="md:col-span-1">
-                <div className="gc-label">QTY</div>
-                <input className="gc-input w-full" type="number" min={0} step="0.01" value={addQty} onChange={(e) => setAddQty(e.target.value)} />
-              </div>
-
-              <div className="md:col-span-1">
-                <div className="gc-label">UNIT</div>
-                <UnitSelect value={addUnit} onChange={setAddUnit} ariaLabel="Line unit" />
-              </div>
-
-              <div className="md:col-span-1">
-                <div className="gc-label">ADD</div>
-                <button className="gc-btn gc-btn-primary w-full" type="button" onClick={addLine} disabled={savingAdd}>
-                  {savingAdd ? 'Adding…' : 'Add'}
-                </button>
-              </div>
-
-              <div className="md:col-span-6">
-                <div className="gc-label">NOTE</div>
-                <input className="gc-input w-full" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="e.g. chopped, peeled…" />
-              </div>
-            </div>
-
-            {/* Add group */}
-            <div className="grid gap-3 md:grid-cols-6">
-              <div className="md:col-span-5">
-                <div className="gc-label">GROUP TITLE</div>
-                <input className="gc-input w-full" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} placeholder="e.g. Sauce, Garnish…" />
-              </div>
-              <div className="md:col-span-1">
-                <div className="gc-label">ADD</div>
-                <button className="gc-btn gc-btn-ghost w-full" type="button" onClick={addGroup} disabled={savingGroup}>
-                  {savingGroup ? 'Adding…' : '+ Group'}
-                </button>
-              </div>
-            </div>
-
-            {/* Lines list */}
-            <div className="overflow-auto">
-              <table className="w-full min-w-[1100px] text-sm">
-                <thead className="text-left text-xs font-semibold text-neutral-500">
-                  <tr>
-                    <th className="py-2 pr-4">#</th>
-                    <th className="py-2 pr-4">Type</th>
-                    <th className="py-2 pr-4">Item</th>
-                    <th className="py-2 pr-4">Qty</th>
-                    <th className="py-2 pr-4">Unit</th>
-                    <th className="py-2 pr-4">Note</th>
-                    <th className="py-2 pr-0 text-right">Actions</th>
-                  </tr>
-                </thead>
-
-                <tbody className="align-top">
-                  {lines.map((l, idx) => {
-                    const isEditing = !!edit[l.id]
-                    const e = edit[l.id]
-                    const itemName =
-                      l.line_type === 'group'
-                        ? l.group_title || 'Group'
-                        : l.line_type === 'ingredient'
-                          ? ingById.get(l.ingredient_id ?? '')?.name || 'Ingredient'
-                          : recipeById.get(l.sub_recipe_id ?? '')?.name || 'Sub-recipe'
-
-                    return (
-                      <tr key={l.id} className="border-t">
-                        <td className="py-3 pr-4 font-semibold">{idx + 1}</td>
-
-                        <td className="py-3 pr-4">
-                          {!isEditing ? (
-                            <span className="font-semibold">{l.line_type}</span>
-                          ) : (
-                            <select
-                              className="gc-input w-[150px] font-semibold text-neutral-900"
-                              value={e!.line_type}
-                              onChange={(ev) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], line_type: ev.target.value as LineType } }))}
-                            >
-                              <option value="ingredient">ingredient</option>
-                              <option value="subrecipe">subrecipe</option>
-                              <option value="group">group</option>
-                            </select>
-                          )}
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          {!isEditing ? (
-                            <span className={l.line_type === 'group' ? 'font-bold' : ''}>{itemName}</span>
-                          ) : e!.line_type === 'group' ? (
-                            <input
-                              className="gc-input w-[420px]"
-                              value={e!.group_title}
-                              onChange={(ev) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], group_title: ev.target.value } }))}
-                              placeholder="Group title"
-                            />
-                          ) : e!.line_type === 'ingredient' ? (
-                            <select
-                              className="gc-input w-[420px] font-semibold text-neutral-900"
-                              value={e!.ingredient_id}
-                              onChange={(ev) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], ingredient_id: ev.target.value } }))}
-                            >
-                              <option value="">Select…</option>
-                              {ingredients.map((i) => (
-                                <option key={i.id} value={i.id}>
-                                  {i.name ?? i.id}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <select
-                              className="gc-input w-[420px] font-semibold text-neutral-900"
-                              value={e!.sub_recipe_id}
-                              onChange={(ev) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], sub_recipe_id: ev.target.value } }))}
-                            >
-                              <option value="">Select…</option>
-                              {availableSubRecipes.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.name || 'Untitled'}
-                                </option>
-                              ))}
-                            </select>
-                          )}
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          {!isEditing ? (
-                            <span>{l.line_type === 'group' ? '—' : l.qty}</span>
-                          ) : e!.line_type === 'group' ? (
-                            <span className="text-neutral-500">—</span>
-                          ) : (
-                            <input
-                              className="gc-input w-[120px]"
-                              type="number"
-                              min={0}
-                              step="0.01"
-                              value={e!.qty}
-                              onChange={(ev) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], qty: ev.target.value } }))}
-                            />
-                          )}
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          {!isEditing ? (
-                            <span className="font-semibold">{l.line_type === 'group' ? '—' : safeUnit(l.unit)}</span>
-                          ) : e!.line_type === 'group' ? (
-                            <span className="text-neutral-500">—</span>
-                          ) : (
-                            <UnitSelect
-                              value={e!.unit}
-                              onChange={(u) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], unit: u } }))}
-                              className="min-w-[170px]"
-                              ariaLabel="Edit unit"
-                            />
-                          )}
-                        </td>
-
-                        <td className="py-3 pr-4">
-                          {!isEditing ? (
-                            <span className="text-neutral-700">{l.note ?? ''}</span>
-                          ) : e!.line_type === 'group' ? (
-                            <span className="text-neutral-500">—</span>
-                          ) : (
-                            <input
-                              className="gc-input w-[320px]"
-                              value={e!.note}
-                              onChange={(ev) => setEdit((p) => ({ ...p, [l.id]: { ...p[l.id], note: ev.target.value } }))}
-                              placeholder="e.g. chopped…"
-                            />
-                          )}
-                        </td>
-
-                        <td className="py-3 pr-0 text-right">
-                          {!isEditing ? (
-                            <div className="flex justify-end gap-2">
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveRow(l.id, -1)} disabled={reorderSaving}>
-                                ↑
-                              </button>
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveRow(l.id, 1)} disabled={reorderSaving}>
-                                ↓
-                              </button>
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => startEdit(l)}>
-                                Edit
-                              </button>
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deleteRow(l.id)}>
-                                Delete
-                              </button>
-                            </div>
-                          ) : (
-                            <div className="flex justify-end gap-2">
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => cancelEdit(l.id)}>
-                                Cancel
-                              </button>
-                              <button className="gc-btn gc-btn-primary" type="button" onClick={() => saveRow(l.id)} disabled={!!rowSaving[l.id]}>
-                                {rowSaving[l.id] ? 'Saving…' : 'Save'}
-                              </button>
-                            </div>
-                          )}
-                        </td>
-                      </tr>
-                    )
-                  })}
-                </tbody>
-              </table>
-            </div>
+          <div>
+            <div className="gc-label">CATEGORY</div>
+            <input className="gc-input mt-2 w-full" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Salad, Main, Dessert" />
           </div>
 
-          {/* Steps */}
-          <div className="gc-card p-6 space-y-4">
-            <div>
-              <div className="gc-label">METHOD — STEP BUILDER</div>
-              <div className="mt-1 text-sm text-neutral-600">Write steps, attach step photos, and auto-save.</div>
-            </div>
+          <div>
+            <div className="gc-label">PORTIONS</div>
+            <input className="gc-input mt-2 w-full text-right" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="decimal" />
+          </div>
+        </div>
 
-            <div className="flex flex-wrap gap-2">
-              <input
-                ref={newStepInputRef}
-                className="gc-input flex-1 min-w-[280px]"
-                value={newStep}
-                onChange={(e) => setNewStep(e.target.value)}
-                placeholder="Write a step… (Ctrl+Enter to add)"
-              />
-              <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
-                + Add Step
-              </button>
-            </div>
+        <div className="mt-4">
+          <div className="gc-label">DESCRIPTION (Menu)</div>
+          <textarea className="gc-input mt-2 w-full" rows={3} value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short menu description..." />
+        </div>
+      </div>
 
-            {steps.length === 0 ? (
-              <div className="text-sm text-neutral-600">No steps yet.</div>
-            ) : (
-              <div className="space-y-3">
-                {steps.map((s, idx) => (
-                  <div key={`${idx}-${s}`} className="gc-card p-4">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex-1">
-                        <div className="text-xs font-semibold text-neutral-500">STEP {idx + 1}</div>
-                        <div className="mt-1 font-semibold">{s}</div>
-                      </div>
+      {/* Method Steps */}
+      <div className="gc-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="gc-label">METHOD STEPS</div>
+            <div className="text-xs text-neutral-500">Tip: Ctrl/Cmd + Enter adds step • Ctrl/Cmd + S saves</div>
+          </div>
+        </div>
 
-                      <div className="flex gap-2">
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => removeStep(idx)}>
-                          Remove
-                        </button>
-                      </div>
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <input
+            ref={newStepInputRef}
+            className="gc-input flex-1 min-w-[240px]"
+            placeholder="Add a step..."
+            value={newStep}
+            onChange={(e) => setNewStep(e.target.value)}
+          />
+          <button className="gc-btn gc-btn-primary" onClick={addStep}>
+            + Add Step
+          </button>
+        </div>
+
+        <div className="mt-4 space-y-3">
+          {steps.length === 0 ? (
+            <div className="text-sm text-neutral-500">No steps yet. Add your first step above.</div>
+          ) : (
+            steps.map((s, idx) => (
+              <div key={idx} className="gc-card p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex-1">
+                    <div className="text-sm font-semibold">
+                      Step {idx + 1}
                     </div>
+                    <div className="mt-1 text-sm text-neutral-700">{s}</div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2">
                       <label className="gc-btn gc-btn-ghost cursor-pointer">
-                        {stepUploading ? 'Uploading…' : 'Upload Photo'}
+                        Upload Photo
                         <input
                           type="file"
                           accept="image/*"
                           className="hidden"
                           onChange={(e) => {
                             const f = e.target.files?.[0]
-                            if (f) uploadStepPhoto(idx, f)
+                            if (f) uploadStepPhoto(idx, f).catch(() => {})
                           }}
                         />
                       </label>
 
                       {stepPhotos[idx] ? (
-                        <>
-                          <a className="gc-btn gc-btn-ghost" href={stepPhotos[idx]} target="_blank" rel="noreferrer">
-                            View
-                          </a>
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => removeStepPhoto(idx)}>
-                            Remove Photo
-                          </button>
-                        </>
-                      ) : (
-                        <span className="text-xs text-neutral-500">No photo</span>
-                      )}
+                        <button
+                          className="gc-btn gc-btn-ghost"
+                          onClick={() => {
+                            setStepPhotos((prev) => {
+                              const arr = [...prev]
+                              arr[idx] = ''
+                              return arr
+                            })
+                            showToast('Step photo removed (remember Save)')
+                          }}
+                        >
+                          Remove Photo
+                        </button>
+                      ) : null}
                     </div>
+
+                    {stepPhotos[idx] ? (
+                      <div className="mt-3 overflow-hidden rounded-2xl border">
+                        <img src={stepPhotos[idx]} alt={`Step ${idx + 1}`} className="h-56 w-full object-cover" />
+                      </div>
+                    ) : null}
                   </div>
-                ))}
+
+                  <div className="flex flex-col gap-2">
+                    <button className="gc-btn gc-btn-ghost" onClick={() => moveStep(idx, -1)} disabled={idx === 0}>
+                      ↑
+                    </button>
+                    <button className="gc-btn gc-btn-ghost" onClick={() => moveStep(idx, 1)} disabled={idx === steps.length - 1}>
+                      ↓
+                    </button>
+                    <button className="gc-btn gc-btn-ghost" onClick={() => deleteStepAt(idx)}>
+                      Remove
+                    </button>
+                  </div>
+                </div>
               </div>
+            ))
+          )}
+        </div>
+
+        {/* legacy (optional) */}
+        <div className="mt-6">
+          <div className="gc-label">LEGACY METHOD (optional)</div>
+          <textarea className="gc-input mt-2 w-full" rows={3} value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="(Optional) old text method..." />
+        </div>
+      </div>
+
+      {/* Lines */}
+      <div className="gc-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="gc-label">RECIPE LINES</div>
+            <div className="text-xs text-neutral-500">Add ingredients, sub-recipes, and groups. Edit in place.</div>
+          </div>
+
+          <div className="text-right">
+            <div className="text-xs text-neutral-500">Total</div>
+            <div className="text-xl font-extrabold">{money(totalCost, currency)}</div>
+            <div className="text-xs text-neutral-500">
+              CPP: <b>{money(cpp, currency)}</b>
+            </div>
+          </div>
+        </div>
+
+        {/* Inline Add */}
+        <div className="mt-4 grid gap-3 md:grid-cols-6">
+          <div className="md:col-span-2">
+            <div className="gc-label">SEARCH</div>
+            <input className="gc-input mt-2 w-full" value={ingSearch} onChange={(e) => setIngSearch(e.target.value)} placeholder="Search ingredient..." />
+          </div>
+
+          <div>
+            <div className="gc-label">TYPE</div>
+            <select className="gc-input mt-2 w-full" value={addType} onChange={(e) => setAddType(e.target.value as LineType)}>
+              <option value="ingredient">Ingredient</option>
+              <option value="subrecipe">Sub-Recipe</option>
+              <option value="group">Group</option>
+            </select>
+          </div>
+
+          <div className="md:col-span-2">
+            <div className="gc-label">PICK</div>
+            {addType === 'ingredient' ? (
+              <select className="gc-input mt-2 w-full" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
+                <option value="">Select ingredient…</option>
+                {ingredients
+                  .filter((i) => {
+                    const q = ingSearch.trim().toLowerCase()
+                    if (!q) return true
+                    return (i.name ?? '').toLowerCase().includes(q)
+                  })
+                  .map((i) => (
+                    <option key={i.id} value={i.id}>
+                      {i.name ?? 'Ingredient'}
+                    </option>
+                  ))}
+              </select>
+            ) : addType === 'subrecipe' ? (
+              <select className="gc-input mt-2 w-full" value={addSubRecipeId} onChange={(e) => setAddSubRecipeId(e.target.value)}>
+                <option value="">Select sub-recipe…</option>
+                {subRecipes
+                  .filter((r) => r.id !== recipe.id)
+                  .map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.name}
+                    </option>
+                  ))}
+              </select>
+            ) : (
+              <input className="gc-input mt-2 w-full" value={groupTitle} onChange={(e) => setGroupTitle(e.target.value)} placeholder="Group title..." />
             )}
           </div>
 
-          {/* Nutrition & Pricing */}
-          <div className="grid gap-4 lg:grid-cols-2">
-            <div className="gc-card p-6 space-y-3">
-              <div className="gc-label">NUTRITION (PER PORTION)</div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="gc-label">CALORIES</div>
-                  <input className="gc-input w-full" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="kcal" />
-                </div>
-                <div>
-                  <div className="gc-label">PROTEIN (g)</div>
-                  <input className="gc-input w-full" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="g" />
-                </div>
-                <div>
-                  <div className="gc-label">CARBS (g)</div>
-                  <input className="gc-input w-full" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="g" />
-                </div>
-                <div>
-                  <div className="gc-label">FAT (g)</div>
-                  <input className="gc-input w-full" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="g" />
-                </div>
-              </div>
-            </div>
+          <div>
+            <div className="gc-label">QTY</div>
+            <input className="gc-input mt-2 w-full text-right" value={addQty} onChange={(e) => setAddQty(e.target.value)} inputMode="decimal" />
+          </div>
 
-            <div className="gc-card p-6 space-y-3">
-              <div className="gc-label">PRICING (PER PORTION)</div>
-              <div className="grid gap-3 sm:grid-cols-2">
-                <div>
-                  <div className="gc-label">CURRENCY</div>
-                  <input className="gc-input w-full font-semibold" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} placeholder="USD" />
+          <div>
+            <div className="gc-label">UNIT</div>
+            {/* ✅ unit visibility fix: gc-unit-select */}
+            <select className="gc-input mt-2 w-full gc-unit-select" value={addUnit} onChange={(e) => setAddUnit(e.target.value as any)}>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">l</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="mt-3">
+          <div className="gc-label">NOTE</div>
+          <input className="gc-input mt-2 w-full" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="Optional note..." />
+        </div>
+
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <button
+            className="gc-btn gc-btn-primary"
+            disabled={savingAdd || savingGroup}
+            onClick={async () => {
+              if (!recipe) return
+
+              if (addType === 'group') {
+                const gt = groupTitle.trim()
+                if (!gt) return showToast('Group title is required')
+                setSavingGroup(true)
+                try {
+                  const pos = lines.length ? Math.max(...lines.map((x) => toNum(x.position, 0))) + 1 : 1
+                  const ins = await supabase.from('recipe_lines').insert({
+                    recipe_id: recipe.id,
+                    kitchen_id: recipe.kitchen_id,
+                    line_type: 'group',
+                    group_title: gt,
+                    ingredient_id: null,
+                    sub_recipe_id: null,
+                    qty: 0,
+                    unit: 'g',
+                    note: null,
+                    yield_percent: null,
+                    position: pos,
+                  })
+                  if (ins.error) throw ins.error
+                  setGroupTitle('')
+                  await loadAll(recipe.id)
+                  showToast('Group added ✅')
+                } catch (e: any) {
+                  showToast(e?.message ?? 'Add failed')
+                } finally {
+                  setSavingGroup(false)
+                }
+                return
+              }
+
+              if (addType === 'ingredient' && !addIngredientId) return showToast('Pick an ingredient')
+              if (addType === 'subrecipe' && !addSubRecipeId) return showToast('Pick a sub-recipe')
+
+              setSavingAdd(true)
+              try {
+                const pos = lines.length ? Math.max(...lines.map((x) => toNum(x.position, 0))) + 1 : 1
+                const ins = await supabase.from('recipe_lines').insert({
+                  recipe_id: recipe.id,
+                  kitchen_id: recipe.kitchen_id,
+                  line_type: addType,
+                  group_title: null,
+                  ingredient_id: addType === 'ingredient' ? addIngredientId : null,
+                  sub_recipe_id: addType === 'subrecipe' ? addSubRecipeId : null,
+                  qty: Math.max(0, toNum(addQty, 0)),
+                  unit: safeUnit(addUnit),
+                  note: addNote.trim() || null,
+                  yield_percent: null,
+                  position: pos,
+                })
+                if (ins.error) throw ins.error
+                setAddQty('1')
+                setAddUnit('g')
+                setAddNote('')
+                setAddIngredientId('')
+                setAddSubRecipeId('')
+                await loadAll(recipe.id)
+                showToast('Added ✅')
+              } catch (e: any) {
+                showToast(e?.message ?? 'Add failed')
+              } finally {
+                setSavingAdd(false)
+              }
+            }}
+          >
+            {savingAdd || savingGroup ? 'Saving…' : addType === 'group' ? '+ Add Group' : '+ Add Line'}
+          </button>
+
+          <button
+            className="gc-btn gc-btn-ghost"
+            onClick={async () => {
+              if (!recipe) return
+              await loadAll(recipe.id)
+              showToast('Refreshed ✅')
+            }}
+          >
+            Refresh
+          </button>
+        </div>
+
+        {/* Lines table */}
+        <div className="mt-6 space-y-2">
+          {lines.length === 0 ? (
+            <div className="text-sm text-neutral-500">No lines yet.</div>
+          ) : (
+            lines.map((r) => {
+              const isGroup = r.line_type === 'group'
+              const isIng = r.line_type === 'ingredient'
+              const isSub = r.line_type === 'subrecipe'
+              const ing = r.ingredient_id ? ingById.get(r.ingredient_id) : null
+              const sr = r.sub_recipe_id ? subRecipes.find((x) => x.id === r.sub_recipe_id) : null
+
+              const rowKey = r.id
+              const ed = edit[rowKey] ?? {
+                qty: String(toNum(r.qty, 0)),
+                unit: safeUnit(r.unit),
+                yield_percent: r.yield_percent == null ? '' : String(toNum(r.yield_percent, 0)),
+                note: (r.note ?? '').trim(),
+              }
+
+              const lineCost = isIng && ing ? Math.max(0, toNum(r.qty, 0)) * Math.max(0, toNum(ing.net_unit_cost, 0)) : 0
+
+              return (
+                <div key={r.id} className="gc-card p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div className="min-w-[220px]">
+                      <div className="text-sm font-bold">
+                        {isGroup ? `📁 ${r.group_title || 'Group'}` : isIng ? (ing?.name ?? 'Ingredient') : `🧩 ${sr?.name ?? 'Sub-Recipe'}`}
+                      </div>
+                      {r.note?.trim() ? <div className="mt-1 text-xs text-neutral-500">{clampStr(r.note, 140)}</div> : null}
+                    </div>
+
+                    {!isGroup ? (
+                      <div className="grid grid-cols-3 gap-2 w-full sm:w-auto">
+                        <input
+                          className="gc-input w-full text-right"
+                          value={ed.qty}
+                          inputMode="decimal"
+                          onChange={(e) => setEdit((p) => ({ ...p, [rowKey]: { ...ed, qty: e.target.value } }))}
+                        />
+
+                        {/* ✅ unit visibility fix: gc-unit-select */}
+                        <select
+                          className="gc-input w-full text-right gc-unit-select"
+                          value={safeUnit(r.unit)}
+                          onChange={(ev) => {
+                            const u = safeUnit(ev.target.value)
+                            setEdit((p) => ({ ...p, [rowKey]: { ...ed, unit: u } }))
+                            setLines((prev) => prev.map((x) => (x.id === r.id ? { ...x, unit: u } : x)))
+                          }}
+                        >
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="l">l</option>
+                          <option value="pcs">pcs</option>
+                        </select>
+
+                        <div className="text-right text-sm font-semibold">{money(lineCost, currency)}</div>
+                      </div>
+                    ) : (
+                      <div className="text-right text-xs text-neutral-500">Group</div>
+                    )}
+                  </div>
+
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        className="gc-btn gc-btn-ghost"
+                        onClick={() => setExpanded((p) => ({ ...p, [r.id]: !p[r.id] }))}
+                        disabled={!isSub}
+                      >
+                        {expanded[r.id] ? 'Hide Breakdown' : 'Expand'}
+                      </button>
+
+                      {/* Mgmt-only controls */}
+                      {isMgmt ? (
+                        <span className="gc-chip gc-chip--dark">MGMT</span>
+                      ) : (
+                        <span className="gc-chip">KITCHEN</span>
+                      )}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        className="gc-btn gc-btn-ghost"
+                        disabled={rowSaving[rowKey] || isGroup}
+                        onClick={async () => {
+                          if (!recipe) return
+                          if (isGroup) return
+                          setRowSaving((p) => ({ ...p, [rowKey]: true }))
+                          try {
+                            const upd = await supabase
+                              .from('recipe_lines')
+                              .update({
+                                qty: Math.max(0, toNum(ed.qty, 0)),
+                                unit: safeUnit(ed.unit),
+                                note: ed.note.trim() || null,
+                                yield_percent: ed.yield_percent.trim() === '' ? null : Math.max(0, toNum(ed.yield_percent, 0)),
+                              })
+                              .eq('id', r.id)
+                            if (upd.error) throw upd.error
+                            showToast('Row saved ✅')
+                            await loadAll(recipe.id)
+                          } catch (e: any) {
+                            showToast(e?.message ?? 'Save failed')
+                          } finally {
+                            setRowSaving((p) => ({ ...p, [rowKey]: false }))
+                          }
+                        }}
+                      >
+                        {rowSaving[rowKey] ? 'Saving…' : 'Save Row'}
+                      </button>
+
+                      <button
+                        className="gc-btn gc-btn-ghost"
+                        onClick={async () => {
+                          if (!recipe) return
+                          try {
+                            const del = await supabase.from('recipe_lines').delete().eq('id', r.id)
+                            if (del.error) throw del.error
+                            showToast('Deleted ✅')
+                            await loadAll(recipe.id)
+                          } catch (e: any) {
+                            showToast(e?.message ?? 'Delete failed')
+                          }
+                        }}
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  </div>
+
+                  {isSub && expanded[r.id] ? (
+                    <div className="mt-4 border-t pt-4">
+                      <div className="text-xs font-semibold text-neutral-600">SUB-RECIPE BREAKDOWN</div>
+                      <div className="mt-2 text-xs text-neutral-500">This is a view-only breakdown for reference.</div>
+                    </div>
+                  ) : null}
                 </div>
-                <div>
-                  <div className="gc-label">SELLING PRICE</div>
-                  <input className="gc-input w-full" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} placeholder="e.g. 9.99" />
-                </div>
-                <div className="sm:col-span-2">
-                  <div className="gc-label">TARGET FOOD COST %</div>
-                  <input className="gc-input w-full" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} placeholder="30" />
-                </div>
-              </div>
+              )
+            })
+          )}
+        </div>
+      </div>
+
+      {/* Sub-recipe settings */}
+      <div className="gc-card p-6">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="gc-label">SUB-RECIPE SETTINGS</div>
+            <div className="text-xs text-neutral-500">Enable yield fields when this recipe is used as a sub-recipe.</div>
+          </div>
+          <button className="gc-btn gc-btn-ghost" onClick={yieldSmart} disabled={!isSubRecipe || yieldSmartLoading}>
+            {yieldSmartLoading ? 'Calculating…' : 'Yield Smart'}
+          </button>
+        </div>
+
+        <div className="mt-4 grid gap-4 md:grid-cols-3">
+          <label className="flex items-center gap-2">
+            <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} />
+            <span className="text-sm font-semibold">This is a sub-recipe</span>
+          </label>
+
+          <div>
+            <div className="gc-label">YIELD QTY</div>
+            <input className="gc-input mt-2 w-full text-right" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} inputMode="decimal" disabled={!isSubRecipe} />
+          </div>
+
+          <div>
+            <div className="gc-label">YIELD UNIT</div>
+            {/* ✅ unit visibility fix: gc-unit-select */}
+            <select
+              className="gc-input mt-2 w-full gc-unit-select"
+              value={yieldUnit}
+              onChange={(e) => setYieldUnit(e.target.value as any)}
+              disabled={!isSubRecipe}
+            >
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">l</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Nutrition + Pricing (Mgmt view can see pricing emphasis) */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="gc-card p-6">
+          <div className="gc-label">NUTRITION (per portion)</div>
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <div>
+              <div className="gc-label">KCAL</div>
+              <input className="gc-input mt-2 w-full text-right" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="numeric" />
+            </div>
+            <div>
+              <div className="gc-label">PROTEIN</div>
+              <input className="gc-input mt-2 w-full text-right" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" />
+            </div>
+            <div>
+              <div className="gc-label">CARBS</div>
+              <input className="gc-input mt-2 w-full text-right" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" />
+            </div>
+            <div>
+              <div className="gc-label">FAT</div>
+              <input className="gc-input mt-2 w-full text-right" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" />
+            </div>
+          </div>
+        </div>
+
+        <div className="gc-card p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="gc-label">PRICING (per portion)</div>
+              <div className="text-xs text-neutral-500">{isMgmt ? 'Management view: pricing tools enabled.' : 'Kitchen view: pricing still visible (read-only mindset).'}</div>
+            </div>
+            {isMgmt ? <span className="gc-chip gc-chip--dark">MGMT</span> : <span className="gc-chip">KITCHEN</span>}
+          </div>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-3">
+            <div>
+              <div className="gc-label">CURRENCY</div>
+              <input className="gc-input mt-2 w-full" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+            </div>
+            <div>
+              <div className="gc-label">SELLING PRICE</div>
+              <input className="gc-input mt-2 w-full text-right" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
+            </div>
+            <div>
+              <div className="gc-label">TARGET FC %</div>
+              <input className="gc-input mt-2 w-full text-right" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
             </div>
           </div>
 
-          {/* Cost History (Management) */}
-          {isManagement && costOpen ? (
-            <div className="gc-card p-6 space-y-3">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <div className="gc-label">COST HISTORY</div>
-                  <div className="text-sm text-neutral-600">Snapshots of total + per-portion cost.</div>
-                </div>
-                <div className="flex gap-2">
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={addCostSnapshot}>
-                    + Snapshot
-                  </button>
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={clearHistory}>
-                    Clear
-                  </button>
-                </div>
-              </div>
-
-              {costPoints.length === 0 ? (
-                <div className="text-sm text-neutral-600">No history yet.</div>
-              ) : (
-                <div className="overflow-auto">
-                  <table className="w-full min-w-[720px] text-sm">
-                    <thead className="text-left text-xs font-semibold text-neutral-500">
-                      <tr>
-                        <th className="py-2 pr-4">When</th>
-                        <th className="py-2 pr-4">Total</th>
-                        <th className="py-2 pr-4">/ Portion</th>
-                        <th className="py-2 pr-0 text-right">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {costPoints.map((p: any) => (
-                        <tr key={p.id} className="border-t">
-                          <td className="py-3 pr-4">{p.created_at ? new Date(p.created_at).toLocaleString() : '—'}</td>
-                          <td className="py-3 pr-4 font-semibold">{fmtMoney(toNum(p.total_cost, 0), p.currency || currency)}</td>
-                          <td className="py-3 pr-4 font-semibold">{fmtMoney(toNum(p.cost_per_portion, 0), p.currency || currency)}</td>
-                          <td className="py-3 pr-0 text-right">
-                            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deletePoint(p.id)}>
-                              Delete
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
+          <div className="mt-4 grid gap-3 sm:grid-cols-4">
+            <div className="gc-card p-4">
+              <div className="text-xs text-neutral-500">CPP</div>
+              <div className="text-lg font-extrabold">{money(cpp, currency)}</div>
             </div>
-          ) : null}
-        </>
-      )}
+            <div className="gc-card p-4">
+              <div className="text-xs text-neutral-500">Food Cost</div>
+              <div className="text-lg font-extrabold">{fcPct == null ? '—' : `${Math.round(fcPct * 10) / 10}%`}</div>
+            </div>
+            <div className="gc-card p-4">
+              <div className="text-xs text-neutral-500">Margin</div>
+              <div className="text-lg font-extrabold">{money(margin, currency)}</div>
+              <div className="text-xs text-neutral-500">{marginPct == null ? '—' : `${Math.round(marginPct * 10) / 10}%`}</div>
+            </div>
+            <div className="gc-card p-4">
+              <div className="text-xs text-neutral-500">Suggested</div>
+              <div className="text-lg font-extrabold">{money(suggestedPrice, currency)}</div>
+              <button className="gc-btn gc-btn-ghost mt-2" onClick={applySuggested} disabled={!isMgmt}>
+                Apply
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Pack D: Cost History Drawer */}
+      {costOpen ? (
+        <div className="gc-card p-6">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="gc-label">COST HISTORY</div>
+              <div className="text-xs text-neutral-500">Local history points saved after successful Save.</div>
+            </div>
+            <button className="gc-btn gc-btn-ghost" onClick={() => setCostOpen(false)}>
+              Close
+            </button>
+          </div>
+
+          {costPoints.length === 0 ? (
+            <div className="mt-3 text-sm text-neutral-500">No history yet.</div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {costPoints.slice().reverse().map((p: any, idx: number) => (
+                <div key={idx} className="gc-card p-4 flex items-center justify-between gap-2">
+                  <div className="text-sm">
+                    <div className="font-semibold">{money(toNum(p.cpp, 0), p.currency || currency)}</div>
+                    <div className="text-xs text-neutral-500">
+                      Portions: {toNum(p.portions, 1)} • Total: {money(toNum(p.totalCost, 0), p.currency || currency)}
+                    </div>
+                  </div>
+                  <button
+                    className="gc-btn gc-btn-ghost"
+                    onClick={() => {
+                      if (!id) return
+                      deleteCostPoint(id, p.ts)
+                      showToast('Removed history point')
+                    }}
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
 
       <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
     </div>
