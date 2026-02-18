@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from 'react'
+import { useEffect } from 'react'
 
 export function Toast({
   open,
@@ -9,45 +9,20 @@ export function Toast({
   message: string
   onClose: () => void
 }) {
-  const lastMsgRef = useRef<string>('')
-
-  // Avoid re-trigger loops if same message is set again quickly
   useEffect(() => {
     if (!open) return
-    lastMsgRef.current = message || ''
-  }, [open, message])
-
-  useEffect(() => {
-    if (!open) return
-    const t = window.setTimeout(onClose, 2600)
-    return () => window.clearTimeout(t)
+    const t = setTimeout(onClose, 2600)
+    return () => clearTimeout(t)
   }, [open, onClose])
-
-  const shown = useMemo(() => {
-    const m = (message ?? '').trim()
-    return m || 'Done ✅'
-  }, [message])
 
   if (!open) return null
 
   return (
-    <div
-      className="fixed bottom-6 right-6 z-50"
-      role="status"
-      aria-live="polite"
-      aria-atomic="true"
-    >
+    <div className="fixed bottom-6 right-6 z-50">
       <div className="gc-toast">
-        <div className="text-sm font-semibold">{shown}</div>
-
-        <button
-          type="button"
-          className="gc-toast-close"
-          onClick={onClose}
-          aria-label="Close"
-          title="Close"
-        >
-          ✕
+        <div className="text-sm font-semibold">{message}</div>
+        <button type="button" className="gc-toast-close" onClick={onClose} aria-label="Close">
+          ×
         </button>
       </div>
     </div>
