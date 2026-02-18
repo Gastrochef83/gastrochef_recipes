@@ -1,15 +1,14 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
 import App from './App'
 
-// ✅ IMPORTANT: make sure styles load (your whole UI depends on this)
+// ✅ keep your styles
 import './styles.css'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <HashRouter>
-      <App />
-    </HashRouter>
+    {/* ✅ IMPORTANT: do NOT wrap router here.
+        App.tsx already contains HashRouter in your project. */}
+    <App />
   </React.StrictMode>
 )
