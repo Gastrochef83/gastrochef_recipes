@@ -3,6 +3,7 @@ import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
+import { listSnapshots, saveSnapshot, deleteSnapshot } from '../lib/recipeSnapshots'
 
 type Recipe = {
   id: string
@@ -18,10 +19,7 @@ type Recipe = {
   description?: string | null
   method?: string | null
   method_steps?: string[] | null
-
-  // optional column
   method_step_photos?: string[] | null
-
   calories?: number | null
   protein_g?: number | null
   carbs_g?: number | null
@@ -116,7 +114,6 @@ type EditRow = {
 type MetaStatus = 'saved' | 'saving' | 'dirty'
 
 export default function RecipeEditor() {
-  // ✅ Mode Engine (UI only — no logic changes)
   const { isKitchen, isMgmt } = useMode()
 
   const location = useLocation()
@@ -132,45 +129,35 @@ export default function RecipeEditor() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
-  // Meta saving
   const [savingMeta, setSavingMeta] = useState(false)
   const [uploading, setUploading] = useState(false)
-
-  // upload state for step photos
   const [stepUploading, setStepUploading] = useState(false)
 
-  // Form fields
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [portions, setPortions] = useState('1')
   const [description, setDescription] = useState('')
 
-  // Steps
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
 
-  // step photos aligned to steps
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
 
-  // Nutrition per portion (manual only)
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
 
-  // Pricing per portion
   const [currency, setCurrency] = useState('USD')
   const [sellingPrice, setSellingPrice] = useState('')
   const [targetFC, setTargetFC] = useState('30')
 
-  // Sub-recipe settings
   const [isSubRecipe, setIsSubRecipe] = useState(false)
   const [yieldQty, setYieldQty] = useState('')
   const [yieldUnit, setYieldUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
   const [yieldSmartLoading, setYieldSmartLoading] = useState(false)
 
-  // Toast
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const showToast = (msg: string) => {
@@ -178,7 +165,6 @@ export default function RecipeEditor() {
     setToastOpen(true)
   }
 
-  // Inline Add
   const [ingSearch, setIngSearch] = useState('')
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [addIngredientId, setAddIngredientId] = useState('')
@@ -188,23 +174,18 @@ export default function RecipeEditor() {
   const [addNote, setAddNote] = useState('')
   const [savingAdd, setSavingAdd] = useState(false)
 
-  // Add Group
   const [groupTitle, setGroupTitle] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
 
-  // Inline edit per row
   const [edit, setEdit] = useState<Record<string, EditRow>>({})
   const [rowSaving, setRowSaving] = useState<Record<string, boolean>>({})
   const [reorderSaving, setReorderSaving] = useState(false)
 
-  // Expand breakdown
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const toggleExpand = (lineId: string) => setExpanded((p) => ({ ...p, [lineId]: !p[lineId] }))
 
-  // Recursive cache of recipe_lines for referenced subrecipes
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
 
-  // --------- Smart Back + Autosave Tracking ----------
   const [metaStatus, setMetaStatus] = useState<MetaStatus>('saved')
   const lastSavedSnapshotRef = useRef<string>('')
 
@@ -242,7 +223,6 @@ export default function RecipeEditor() {
     else navigate('/recipes', { replace: true })
   }
 
-  // mark dirty when user changes meta
   useEffect(() => {
     if (loading) return
     if (savingMeta) return
@@ -433,9 +413,6 @@ export default function RecipeEditor() {
 
   const portionsN = Math.max(1, toNum(portions, 1))
 
-  // -------------------------
-  // Recursive cost (multi-level)
-  // -------------------------
   const ensureRecipeLinesLoaded = async (rootRecipeId: string) => {
     const seen = new Set<string>()
     const queue: string[] = [rootRecipeId]
@@ -559,7 +536,6 @@ export default function RecipeEditor() {
   const totalCost = totalCostRes.cost
   const cpp = totalCost / portionsN
 
-  // Pricing metrics
   const sell = Math.max(0, toNum(sellingPrice, 0))
   const fcPct = sell > 0 ? (cpp / sell) * 100 : null
   const margin = sell - cpp
@@ -573,9 +549,6 @@ export default function RecipeEditor() {
     showToast('Suggested price applied ✅ (remember Save)')
   }
 
-  // -------------------------
-  // Save recipe meta (includes sub-recipe + yield + step photos)
-  // -------------------------
   const saveMeta = async (opts?: { silent?: boolean; skipReload?: boolean; isAuto?: boolean }) => {
     if (!id) return
     if (opts?.isAuto && metaStatus !== 'dirty') return
@@ -634,9 +607,6 @@ export default function RecipeEditor() {
     }
   }
 
-  // -------------------------
-  // Auto-save (every 10s if dirty)
-  // -------------------------
   useEffect(() => {
     const t = setInterval(() => {
       if (!id) return
@@ -652,9 +622,6 @@ export default function RecipeEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loading, savingMeta, uploading, stepUploading, metaStatus])
 
-  // -------------------------
-  // Keyboard shortcuts
-  // -------------------------
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toLowerCase().includes('mac')
@@ -699,9 +666,6 @@ export default function RecipeEditor() {
     metaStatus,
   ])
 
-  // -------------------------
-  // Yield Smart
-  // -------------------------
   const yieldSmart = async () => {
     if (!recipe) return
     setYieldSmartLoading(true)
@@ -776,9 +740,6 @@ export default function RecipeEditor() {
     }
   }
 
-  // -------------------------
-  // Steps
-  // -------------------------
   const addStep = () => {
     const s = (newStep ?? '').trim()
     if (!s) return
@@ -808,9 +769,6 @@ export default function RecipeEditor() {
     })
   }
 
-  // -------------------------
-  // Upload main recipe photo
-  // -------------------------
   const uploadPhoto = async (file: File) => {
     if (!id) return
     setUploading(true)
@@ -839,7 +797,6 @@ export default function RecipeEditor() {
     }
   }
 
-  // Upload step photo (one per step)
   const uploadStepPhoto = async (stepIdx: number, file: File) => {
     if (!id) return
     setStepUploading(true)
@@ -871,9 +828,6 @@ export default function RecipeEditor() {
     showToast(`Step ${stepIdx + 1} photo removed (press Save)`)
   }
 
-  // -------------------------
-  // Lines CRUD
-  // -------------------------
   const addLineInline = async () => {
     if (!id) return
     const qty = Math.max(0, toNum(addQty, 0))
@@ -1108,9 +1062,6 @@ export default function RecipeEditor() {
     await persistOrder(next)
   }
 
-  // -------------------------
-  // Breakdown render (depth up to 2)
-  // -------------------------
   const renderBreakdown = (subRecipeId: string, depth: number) => {
     const r = recipeById.get(subRecipeId)
     const rLines = recipeLinesCache[subRecipeId] ?? []
@@ -1151,11 +1102,7 @@ export default function RecipeEditor() {
                 const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : undefined
                 const label = ing?.name ?? 'Ingredient'
                 return (
-                  <div
-                    key={l.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                    style={{ paddingLeft: depth * 12 }}
-                  >
+                  <div key={l.id} className="flex items-center justify-between gap-2 text-sm" style={{ paddingLeft: depth * 12 }}>
                     <div className="text-neutral-700">
                       • {label} — {l.qty} {safeUnit(l.unit)}
                     </div>
@@ -1184,9 +1131,96 @@ export default function RecipeEditor() {
     )
   }
 
-  // -------------------------
-  // Guards
-  // -------------------------
+  const [snapOpen, setSnapOpen] = useState(false)
+  const [snapLabel, setSnapLabel] = useState('')
+  const [prepOpen, setPrepOpen] = useState(false)
+
+  const snapshots = useMemo(() => {
+    if (!id) return []
+    return listSnapshots(id)
+  }, [id, snapOpen, metaStatus])
+
+  const makeSnapshotPayload = () => ({
+    name,
+    category,
+    portions,
+    description,
+    methodLegacy,
+    steps,
+    stepPhotos,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+  })
+
+  const onSaveSnapshot = () => {
+    if (!id) return
+    const label = snapLabel.trim() || `v${new Date().toLocaleString()}`
+    saveSnapshot(id, label, makeSnapshotPayload())
+    setSnapLabel('')
+    setSnapOpen(false)
+    showToast('Version saved ✅')
+  }
+
+  const applySnapshot = (payload: any) => {
+    setName(payload?.name ?? '')
+    setCategory(payload?.category ?? '')
+    setPortions(payload?.portions ?? '1')
+    setDescription(payload?.description ?? '')
+    setMethodLegacy(payload?.methodLegacy ?? '')
+    setSteps(Array.isArray(payload?.steps) ? payload.steps : [])
+    setStepPhotos(Array.isArray(payload?.stepPhotos) ? payload.stepPhotos : [])
+    setCalories(payload?.calories ?? '')
+    setProtein(payload?.protein ?? '')
+    setCarbs(payload?.carbs ?? '')
+    setFat(payload?.fat ?? '')
+    setCurrency((payload?.currency ?? 'USD').toUpperCase())
+    setSellingPrice(payload?.sellingPrice ?? '')
+    setTargetFC(payload?.targetFC ?? '30')
+    setIsSubRecipe(!!payload?.isSubRecipe)
+    setYieldQty(payload?.yieldQty ?? '')
+    setYieldUnit(payload?.yieldUnit ?? 'g')
+    showToast('Version loaded ✅ (press Save to store)')
+  }
+
+  const prepPreview = useMemo(() => {
+    const p = Math.max(1, toNum(portions, 1))
+    const base = Math.max(1, toNum(recipe?.portions, 1))
+    const scale = p / base
+
+    const items: { label: string; qty: number; unit: string; note: string }[] = []
+
+    for (const l of lines) {
+      if (l.line_type !== 'ingredient') continue
+      if (!l.ingredient_id) continue
+      const ing = ingById.get(l.ingredient_id)
+      const label = ing?.name ?? 'Ingredient'
+      items.push({
+        label,
+        qty: Math.max(0, toNum(l.qty, 0) * scale),
+        unit: safeUnit(l.unit),
+        note: (l.note ?? '').trim(),
+      })
+    }
+
+    const m = new Map<string, { label: string; qty: number; unit: string; note: string }>()
+    for (const it of items) {
+      const key = `${it.label}__${it.unit}__${it.note}`
+      const cur = m.get(key)
+      if (!cur) m.set(key, { ...it })
+      else m.set(key, { ...cur, qty: cur.qty + it.qty })
+    }
+
+    return Array.from(m.values()).sort((a, b) => a.label.localeCompare(b.label))
+  }, [lines, ingById, portions, recipe?.portions])
+
   if (loading) return <div className="gc-card p-6">Loading editor…</div>
   if (err) {
     return (
@@ -1218,7 +1252,6 @@ export default function RecipeEditor() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
@@ -1231,9 +1264,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="min-w-[min(640px,92vw)]">
-              <div className="gc-label">
-                RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}
-              </div>
+              <div className="gc-label">RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}</div>
 
               <div className="mt-3 grid gap-3 md:grid-cols-2">
                 <div>
@@ -1285,6 +1316,14 @@ export default function RecipeEditor() {
 
                   <span className="text-xs font-semibold text-neutral-500">{metaBadge}</span>
 
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen((v) => !v)}>
+                    Prep List
+                  </button>
+
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setSnapOpen((v) => !v)}>
+                    Versions
+                  </button>
+
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
                     🍳 Cook Mode
                   </NavLink>
@@ -1295,7 +1334,6 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-              {/* Sub-Recipe Settings (Mgmt فقط) */}
               {isMgmt && (
                 <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1356,7 +1394,6 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Cost box (Mgmt فقط — Kitchen ما يحتاجه أثناء الطبخ) */}
           {isMgmt && (
             <div className="text-right">
               <div className="gc-label">COST (RECURSIVE)</div>
@@ -1377,9 +1414,108 @@ export default function RecipeEditor() {
         </div>
       </div>
 
-      {/* Premium Panels */}
+      {isMgmt && totalCostRes.warnings.length > 0 ? (
+        <div className="gc-card p-6">
+          <div className="gc-label">QUICK WARNINGS</div>
+          <div className="mt-3 text-sm text-amber-800 space-y-1">
+            {totalCostRes.warnings.slice(0, 6).map((w, i) => (
+              <div key={i}>• {w}</div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
+      {prepOpen ? (
+        <div className="gc-card p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="gc-label">PREP LIST (SCALED)</div>
+              <div className="mt-1 text-xs text-neutral-500">Uses current Portions vs base recipe portions. Ingredient lines only.</div>
+            </div>
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen(false)}>
+              Close
+            </button>
+          </div>
+
+          {prepPreview.length === 0 ? (
+            <div className="mt-4 text-sm text-neutral-600">No ingredient lines yet.</div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {prepPreview.map((it, i) => (
+                <div key={i} className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-extrabold truncate">{it.label}</div>
+                    {it.note ? <div className="text-xs text-neutral-500 truncate">{it.note}</div> : null}
+                  </div>
+                  <div className="text-sm font-extrabold">
+                    {Math.round(it.qty * 100) / 100} {it.unit}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
+      {snapOpen && id ? (
+        <div className="gc-card p-6">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <div className="gc-label">RECIPE VERSIONS (LOCAL)</div>
+              <div className="mt-1 text-xs text-neutral-500">Saves locally. Load a version then press Save to store in Supabase.</div>
+            </div>
+
+            <div className="flex flex-wrap gap-2">
+              <input
+                className="gc-input w-[min(320px,90vw)]"
+                value={snapLabel}
+                onChange={(e) => setSnapLabel(e.target.value)}
+                placeholder="Label (e.g., Before pricing tweak)"
+              />
+              <button className="gc-btn gc-btn-primary" type="button" onClick={onSaveSnapshot}>
+                Save Version
+              </button>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setSnapOpen(false)}>
+                Close
+              </button>
+            </div>
+          </div>
+
+          {snapshots.length === 0 ? (
+            <div className="mt-4 text-sm text-neutral-600">No versions yet.</div>
+          ) : (
+            <div className="mt-4 space-y-2">
+              {snapshots.map((s: any) => (
+                <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-white p-4">
+                  <div>
+                    <div className="text-sm font-extrabold">{s.label}</div>
+                    <div className="text-xs text-neutral-500">{new Date(s.createdAt).toLocaleString()}</div>
+                  </div>
+
+                  <div className="flex gap-2">
+                    <button className="gc-btn gc-btn-primary" type="button" onClick={() => applySnapshot(s.payload)}>
+                      Load
+                    </button>
+                    <button
+                      className="gc-btn gc-btn-ghost"
+                      type="button"
+                      onClick={() => {
+                        deleteSnapshot(id, s.id)
+                        setSnapOpen(true)
+                        showToast('Deleted ✅')
+                      }}
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+
       <div className="grid gap-4 lg:grid-cols-2">
-        {/* Description (كلا المودين) */}
         <div className="gc-card p-6">
           <div className="gc-label">DESCRIPTION</div>
           <textarea
@@ -1390,7 +1526,6 @@ export default function RecipeEditor() {
           />
         </div>
 
-        {/* Nutrition (Mgmt فقط) */}
         {isMgmt && (
           <div className="gc-card p-6">
             <div>
@@ -1419,7 +1554,6 @@ export default function RecipeEditor() {
           </div>
         )}
 
-        {/* Pricing (Mgmt فقط) */}
         {isMgmt && (
           <div className="gc-card p-6 lg:col-span-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1478,7 +1612,6 @@ export default function RecipeEditor() {
         )}
       </div>
 
-      {/* Step Builder (كلا المودين) */}
       <div className="gc-card p-6">
         <div className="gc-label">STEP BUILDER (WITH PHOTOS)</div>
 
@@ -1489,7 +1622,9 @@ export default function RecipeEditor() {
             onChange={(e) => setNewStep(e.target.value)}
             placeholder="Write step… (Ctrl/Cmd+Enter to add)"
             onKeyDown={(e) => {
-              if (e.key === 'Enter') {
+              const isMac = navigator.platform.toLowerCase().includes('mac')
+              const mod = isMac ? e.metaKey : e.ctrlKey
+              if (e.key === 'Enter' && mod) {
                 e.preventDefault()
                 addStep()
               }
@@ -1569,7 +1704,6 @@ export default function RecipeEditor() {
         )}
       </div>
 
-      {/* LINES (Mgmt + Kitchen) */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1585,7 +1719,6 @@ export default function RecipeEditor() {
           </div>
         </div>
 
-        {/* Inline Add */}
         <div className="mt-4 grid gap-3 lg:grid-cols-[.7fr_1.6fr_.6fr_1fr_auto]">
           <div>
             <div className="gc-label">TYPE</div>
@@ -1647,7 +1780,6 @@ export default function RecipeEditor() {
           </div>
         </div>
 
-        {/* Add Group (Mgmt فقط — في Kitchen نخليها بسيطة) */}
         {isMgmt && (
           <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
             <div>
@@ -1662,7 +1794,6 @@ export default function RecipeEditor() {
           </div>
         )}
 
-        {/* Table */}
         {lines.length === 0 ? (
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
@@ -1806,7 +1937,6 @@ export default function RecipeEditor() {
                           )}
                         </div>
 
-                        {/* cost info فقط في Mgmt */}
                         {isMgmt && (
                           <div className="mt-1 text-[11px] text-neutral-500 flex items-center justify-between">
                             <span className="truncate">{rightInfo ? 'Line cost computed' : ''}</span>
