@@ -1,16 +1,17 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { HashRouter } from 'react-router-dom'
 import App from './App'
 
-// ✅ CRITICAL — styles must be imported here
 import './styles.css'
-
 import { ModeProvider } from './lib/mode'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <ModeProvider>
-      <App />
-    </ModeProvider>
+    <HashRouter>
+      <ModeProvider>
+        <App />
+      </ModeProvider>
+    </HashRouter>
   </React.StrictMode>
 )
