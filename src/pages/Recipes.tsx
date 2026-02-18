@@ -416,41 +416,61 @@ export default function Recipes() {
             const m = cardMetrics[r.id]
             const warn = m?.warnings?.length ? m.warnings[0] : ''
             const hasWarn = !!warn
+            const portions = Math.max(1, toNum(r.portions, 1))
 
             return (
               <div key={r.id} className="gc-menu-card">
+                {/* HERO */}
                 <div className="gc-menu-hero">
                   {r.photo_url ? (
-                    <img src={r.photo_url} alt={r.name} />
+                    <img src={r.photo_url} alt={r.name} loading="lazy" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
                   )}
 
                   <div className="gc-menu-overlay" />
+
+                  {/* BADGES */}
                   <div className="gc-menu-badges">
-                    <span className="gc-chip gc-chip-dark">{(r.category || 'UNCATEGORIZED').toUpperCase()}</span>
-                    {r.calories != null ? <span className="gc-chip">{r.calories} kcal</span> : null}
-                    {hasWarn ? <span className="gc-chip gc-chip-warn">⚠ {warn}</span> : null}
+                    <span className="gc-chip gc-chip--dark">
+                      {(r.category || 'Uncategorized').toUpperCase()}
+                    </span>
+
+                    {r.calories != null ? (
+                      <span className="gc-chip gc-chip--accent">{Math.round(toNum(r.calories, 0))} kcal</span>
+                    ) : null}
+
+                    {hasWarn ? (
+                      <span className="gc-chip gc-chip--warn">⚠ {warn}</span>
+                    ) : null}
                   </div>
                 </div>
 
-                <div className="p-4">
-                  <div className="text-lg font-extrabold leading-tight">{r.name}</div>
-                  <div className="mt-1 text-xs text-neutral-500">Portions: {Math.max(1, toNum(r.portions, 1))}</div>
+                {/* BODY */}
+                <div className="gc-menu-body">
+                  <h3 className="gc-menu-title">{r.name || 'Untitled recipe'}</h3>
+                  <div className="gc-menu-sub">
+                    Portions: <b>{portions}</b>
+                    {r.yield_qty ? (
+                      <>
+                        {' '}• Yield: <b>{toNum(r.yield_qty, 0)}</b> {r.yield_unit || ''}
+                      </>
+                    ) : null}
+                  </div>
 
-                  <div className="mt-2 text-sm text-neutral-700">
+                  <div className="gc-menu-desc">
                     {r.description?.trim() ? clampStr(r.description, 120) : 'Add a short menu description…'}
                   </div>
 
-                  {(r.protein_g != null || r.carbs_g != null || r.fat_g != null) && (
+                  {(r.protein_g != null || r.carbs_g != null || r.fat_g != null) ? (
                     <div className="mt-3 flex flex-wrap gap-2">
-                      {r.protein_g != null ? <span className="gc-chip">P {toNum(r.protein_g, 0)}g</span> : null}
-                      {r.carbs_g != null ? <span className="gc-chip">C {toNum(r.carbs_g, 0)}g</span> : null}
-                      {r.fat_g != null ? <span className="gc-chip">F {toNum(r.fat_g, 0)}g</span> : null}
+                      {r.protein_g != null ? <span className="gc-chip gc-chip--dark">P {toNum(r.protein_g, 0)}g</span> : null}
+                      {r.carbs_g != null ? <span className="gc-chip gc-chip--dark">C {toNum(r.carbs_g, 0)}g</span> : null}
+                      {r.fat_g != null ? <span className="gc-chip gc-chip--dark">F {toNum(r.fat_g, 0)}g</span> : null}
                     </div>
-                  )}
+                  ) : null}
 
-                  {/* ✅ NEW: Stats bar (Mgmt only) */}
+                  {/* MGMT STATS (kept exactly as your logic, just styled) */}
                   <div className="gc-card-stats gc-mgmt-only">
                     <span className="gc-stat">
                       Cost/portion: <span className="ml-2">{fmtMoney(m?.cpp ?? 0, cur)}</span>
@@ -459,7 +479,10 @@ export default function Recipes() {
                     {r.selling_price != null ? (
                       <>
                         <span className="gc-stat">
-                          FC%: <span className="ml-2">{m?.fcPct == null ? '—' : `${Math.round(m.fcPct * 10) / 10}%`}</span>
+                          FC%:{' '}
+                          <span className="ml-2">
+                            {m?.fcPct == null ? '—' : `${Math.round(m.fcPct * 10) / 10}%`}
+                          </span>
                         </span>
                         <span className="gc-stat">
                           Margin: <span className="ml-2">{m?.margin == null ? '—' : fmtMoney(m.margin, cur)}</span>
@@ -470,16 +493,17 @@ export default function Recipes() {
                     )}
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
-                    <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${r.id}`}>
+                  {/* ACTIONS (same routes, no logic change) */}
+                  <div className="gc-menu-actions">
+                    <NavLink className="gc-btn-primary-lite" to={`/recipe?id=${r.id}`}>
                       Open Editor
                     </NavLink>
 
-                    <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${r.id}`}>
+                    <NavLink className="gc-btn-lite" to={`/cook?id=${r.id}`}>
                       🍳 Cook
                     </NavLink>
 
-                    <button className="gc-btn gc-btn-ghost" onClick={() => archive(r.id)} type="button">
+                    <button className="gc-btn-lite" onClick={() => archive(r.id)} type="button">
                       Archive
                     </button>
                   </div>
