@@ -1,507 +1,121 @@
 /* =========================================================
-   GastroChef v4 — Core Styles + Tailwind + Pack D+ Print
-   PREMIUM GLOBAL EDITION (Luxury Minimal) — STYLE A
-   IMPORTANT: This file MUST include Tailwind directives.
+   Recipe Library — Premium Cards (used by Recipes.tsx)
+   Classes: gc-menu-card, gc-menu-hero, gc-menu-overlay, gc-menu-badges, gc-chip...
    ========================================================= */
 
-/* ✅ Tailwind */
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* =========================================================
-   Base layout helpers
-   ========================================================= */
-
-:root {
-  color-scheme: light;
-
-  /* A tokens */
-  --gc-bg: #fbfaf7;                 /* warm white (luxury) */
-  --gc-text: #141414;               /* charcoal */
-  --gc-muted: rgba(20, 20, 20, 0.62);
-
-  --gc-card: #ffffff;
-  --gc-border: rgba(20, 20, 20, 0.10);
-  --gc-border-strong: rgba(20, 20, 20, 0.16);
-
-  --gc-primary: #141414;
-  --gc-primary-hover: #0b0b0b;
-
-  --gc-olive: #6b7f2a;              /* chef olive */
-  --gc-olive-soft: rgba(107, 127, 42, 0.14);
-
-  --gc-shadow: 0 10px 30px rgba(20, 20, 20, 0.08);
-  --gc-shadow-soft: 0 6px 18px rgba(20, 20, 20, 0.06);
-
-  --gc-radius: 18px;
-}
-
-html,
-body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  background: var(--gc-bg);
-  color: var(--gc-text);
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
-    "Apple Color Emoji", "Segoe UI Emoji";
-}
-
-.container-app {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 18px;
-}
-
-/* =========================================================
-   Core tokens
-   ========================================================= */
-
-.gc-label {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: rgba(20, 20, 20, 0.55);
-}
-
-.gc-card {
-  background: var(--gc-card);
+.gc-menu-card {
+  background: #fff;
   border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius);
+  border-radius: 22px;
+  overflow: hidden;
   box-shadow: var(--gc-shadow-soft);
+  transition: transform 0.12s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 
-/* =========================================================
-   Inputs
-   ========================================================= */
-
-.gc-input {
-  border: 1px solid var(--gc-border);
-  border-radius: 14px;
-  padding: 12px 12px;
-  background: #fff;
-  outline: none;
-  font-size: 14px;
-  color: var(--gc-text);
-  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
-}
-
-.gc-input::placeholder {
-  color: rgba(20, 20, 20, 0.35);
-}
-
-.gc-input:focus {
-  border-color: rgba(107, 127, 42, 0.45);
-  box-shadow: 0 0 0 4px var(--gc-olive-soft);
-}
-
-/* Nicer disabled look (Premium) */
-.gc-input:disabled {
-  background: #f9fafb;
-  color: rgba(20, 20, 20, 0.55);
-  cursor: not-allowed;
-}
-
-/* =========================================================
-   Buttons (Premium interactions)
-   ========================================================= */
-
-.gc-btn {
-  border: 1px solid var(--gc-border);
-  background: #fff;
-  color: var(--gc-text);
-  border-radius: 999px;
-  padding: 10px 14px;
-  font-weight: 850;
-  font-size: 14px;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.05s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
-}
-
-.gc-btn:hover {
+.gc-menu-card:hover {
+  transform: translateY(-2px);
   border-color: var(--gc-border-strong);
-  box-shadow: 0 10px 22px rgba(20, 20, 20, 0.08);
+  box-shadow: var(--gc-shadow);
 }
 
-.gc-btn:active {
-  transform: translateY(1px);
+.gc-menu-hero {
+  position: relative;
+  height: 190px;
+  background: #f3f4f6;
+  overflow: hidden;
 }
 
-/* ✅ Accessibility */
-.gc-btn:focus-visible,
-.gc-input:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(107, 127, 42, 0.16);
-  border-color: rgba(107, 127, 42, 0.55);
+.gc-menu-hero img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.02);
 }
 
-.gc-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
+.gc-menu-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to top,
+    rgba(20, 20, 20, 0.68) 0%,
+    rgba(20, 20, 20, 0.18) 45%,
+    rgba(20, 20, 20, 0.00) 80%
+  );
+  pointer-events: none;
 }
 
-.gc-btn-primary {
-  background: var(--gc-primary);
-  color: #fff;
-  border-color: var(--gc-primary);
-  box-shadow: 0 10px 25px rgba(20, 20, 20, 0.14);
-}
-
-.gc-btn-primary:hover {
-  background: var(--gc-primary-hover);
-  border-color: var(--gc-primary-hover);
-}
-
-.gc-btn-ghost {
-  background: transparent;
-  box-shadow: none;
-}
-
-/* Link buttons */
-a.gc-btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
+.gc-menu-badges {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
+  align-items: center;
 }
 
-/* =========================================================
-   ✅ Badges (needed for Recipe cards: kcal / category)
-   ========================================================= */
-
-.gc-badge {
+.gc-chip {
   display: inline-flex;
   align-items: center;
   gap: 8px;
   padding: 6px 10px;
   border-radius: 999px;
-  border: 1px solid var(--gc-border);
-  background: rgba(255, 255, 255, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.88);
+  color: rgba(20, 20, 20, 0.92);
   font-size: 12px;
   font-weight: 900;
-  color: rgba(20, 20, 20, 0.80);
+  letter-spacing: 0.02em;
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+  max-width: 100%;
 }
 
-.gc-badge-olive {
-  border-color: rgba(107, 127, 42, 0.35);
-  background: rgba(107, 127, 42, 0.10);
-  color: rgba(107, 127, 42, 1);
+.gc-chip-dark {
+  background: rgba(20, 20, 20, 0.82);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.22);
 }
 
-/* =========================================================
-   KPI cards
-   ========================================================= */
-
-.gc-kpi {
-  border: 1px solid var(--gc-border);
-  border-radius: 18px;
-  background: #fff;
-  padding: 14px;
+.gc-chip-warn {
+  background: rgba(255, 244, 214, 0.92);
+  color: rgba(146, 64, 14, 1);
+  border-color: rgba(146, 64, 14, 0.22);
 }
 
-.gc-kpi-label {
-  font-size: 11px;
-  font-weight: 900;
-  letter-spacing: 0.10em;
-  text-transform: uppercase;
-  color: rgba(20, 20, 20, 0.55);
-}
-
-.gc-kpi-value {
-  margin-top: 8px;
-  font-size: 20px;
-  font-weight: 950;
-  color: var(--gc-text);
-  letter-spacing: -0.02em;
-}
-
-/* =========================================================
-   Mode pill styling (optional)
-   ========================================================= */
-
-.gc-mode-pill {
-  border: 1px solid var(--gc-border);
-  border-radius: 18px;
+/* Stats bar (Mgmt only placeholder) */
+.gc-card-stats {
+  margin-top: 14px;
   padding: 12px;
-  background: #fff;
-}
-
-.gc-mode-switch {
-  margin-top: 10px;
+  border-radius: 16px;
+  border: 1px solid var(--gc-border);
+  background: rgba(20, 20, 20, 0.02);
   display: grid;
-  grid-template-columns: 1fr 1fr;
   gap: 8px;
 }
 
-.gc-mode-btn {
-  border: 1px solid var(--gc-border);
-  border-radius: 999px;
-  padding: 10px 10px;
-  font-weight: 900;
-  font-size: 13px;
-  background: #fff;
-  cursor: pointer;
-  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
-}
-
-.gc-mode-btn:hover {
-  background: rgba(20, 20, 20, 0.03);
-}
-
-.gc-mode-btn-active {
-  background: var(--gc-primary);
-  color: #fff;
-  border-color: var(--gc-primary);
-}
-
-/* Small helper for step buttons */
-.gc-step .gc-btn {
-  padding: 8px 10px;
-  font-size: 13px;
-}
-
-/* =========================================================
-   ✅ PREMIUM TOAST (kept)
-   ========================================================= */
-
-.gc-toast {
+.gc-stat {
   display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px;
-
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(20, 20, 20, 0.12);
-  border-radius: 18px;
-  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
-
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
-
-  transform: translateY(6px);
-  opacity: 0;
-  animation: gcToastIn 160ms ease-out forwards;
-}
-
-@keyframes gcToastIn {
-  to {
-    transform: translateY(0);
-    opacity: 1;
-  }
-}
-
-.gc-toast-close {
-  border: 1px solid rgba(20, 20, 20, 0.14);
-  background: transparent;
-  color: var(--gc-text);
-
-  width: 30px;
-  height: 30px;
-  border-radius: 999px;
-
-  font-weight: 900;
-  font-size: 13px;
-  cursor: pointer;
-
-  display: inline-grid;
-  place-items: center;
-
-  transition: background 0.15s ease, transform 0.05s ease;
-}
-
-.gc-toast-close:hover {
-  background: rgba(20, 20, 20, 0.06);
-}
-
-.gc-toast-close:active {
-  transform: translateY(1px);
-}
-
-.gc-toast-close:focus-visible {
-  outline: none;
-  box-shadow: 0 0 0 4px rgba(107, 127, 42, 0.16);
-  border-color: rgba(107, 127, 42, 0.55);
-}
-
-/* =========================================================
-   Pack D+ — Print Premium (your exact CSS, preserved)
-   ========================================================= */
-
-.gc-print-only { display: none; }
-
-@media print {
-  body * { visibility: hidden !important; }
-
-  .gc-print-only,
-  .gc-print-only * { visibility: visible !important; }
-
-  .gc-print-only {
-    display: block !important;
-    position: absolute;
-    left: 0; top: 0;
-    width: 100%;
-  }
-
-  @page { size: A4; margin: 12mm; }
-}
-
-.gc-print-page {
-  width: 100%;
-  background: #fff;
-  color: #111;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
-}
-
-.gc-print-header {
-  display: grid;
-  grid-template-columns: 1fr 210px;
-  gap: 14px;
-  align-items: start;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 10px;
-}
-
-.gc-print-name { font-size: 22px; font-weight: 800; line-height: 1.1; }
-.gc-print-sub { margin-top: 6px; font-size: 12px; color: #6b7280; font-weight: 600; }
-
-.gc-print-right { display: grid; gap: 10px; justify-items: end; }
-
-.gc-print-photo {
-  width: 210px;
-  height: 130px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  overflow: hidden;
-  background: #f3f4f6;
-}
-.gc-print-photo img { width: 100%; height: 100%; object-fit: cover; }
-.gc-print-photo-empty { width: 100%; height: 100%; display: grid; place-items: center; font-size: 12px; color: #6b7280; font-weight: 700; }
-
-.gc-print-qr {
-  width: 210px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 10px;
-  display: grid;
-  justify-items: center;
-  gap: 6px;
-}
-.gc-print-qr img { width: 140px; height: 140px; }
-.gc-print-qr-cap { font-size: 11px; color: #6b7280; font-weight: 700; }
-
-.gc-print-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
-.gc-print-tag {
-  border: 1px solid #e5e7eb;
-  background: #f9fafb;
-  padding: 4px 8px;
-  border-radius: 999px;
-  font-size: 11px;
-  font-weight: 800;
-  color: #111;
-}
-
-.gc-print-block {
-  margin-top: 14px;
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 12px;
-}
-
-.gc-print-label {
-  font-size: 11px;
-  font-weight: 800;
-  color: #6b7280;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-
-.gc-print-text { margin-top: 8px; font-size: 13px; line-height: 1.35; }
-.gc-print-muted { margin-top: 10px; font-size: 12px; color: #6b7280; font-weight: 600; }
-
-.gc-print-grid {
-  margin-top: 14px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px;
-}
-
-.gc-print-list { margin-top: 10px; display: grid; gap: 8px; }
-
-.gc-print-row {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items: start;
-  border: 1px solid #eef2f7;
-  background: #f9fafb;
-  border-radius: 12px;
-  padding: 10px;
-}
-
-.gc-print-row-name { font-size: 13px; font-weight: 800; color: #111; }
-.gc-print-row-note { margin-top: 3px; font-size: 11px; color: #6b7280; font-weight: 600; }
-.gc-print-row-right { font-size: 13px; font-weight: 900; color: #111; white-space: nowrap; }
-
-.gc-print-steps { margin-top: 10px; display: grid; gap: 10px; }
-
-.gc-print-step2 {
-  border: 1px solid #eef2f7;
-  background: #fff;
-  border-radius: 12px;
-  padding: 10px;
-  display: grid;
-  gap: 8px;
-}
-.gc-print-step2-head { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
-.gc-print-step-n {
-  width: 22px; height: 22px;
-  border-radius: 8px;
-  background: #111;
-  color: #fff;
-  display: grid;
-  place-items: center;
-  font-weight: 900;
+  justify-content: space-between;
+  align-items: baseline;
   font-size: 12px;
-}
-.gc-print-step-t { font-size: 13px; line-height: 1.35; color: #111; font-weight: 600; }
-.gc-print-step2-photo {
-  border: 1px solid #e5e7eb;
-  border-radius: 12px;
-  overflow: hidden;
-  background: #f3f4f6;
-}
-.gc-print-step2-photo img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
-
-.gc-print-footer {
-  margin-top: 14px;
-  display: grid;
-  gap: 10px;
-  border-top: 1px solid #e5e7eb;
-  padding-top: 10px;
-}
-.gc-print-brand { font-size: 12px; font-weight: 900; color: #111; letter-spacing: 0.08em; text-transform: uppercase; }
-.gc-print-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
-
-.gc-print-kpi {
-  border: 1px solid #e5e7eb;
-  border-radius: 14px;
-  padding: 10px 12px;
-  background: #fff;
-}
-.gc-print-kpi-l {
-  font-size: 11px;
-  color: #6b7280;
   font-weight: 800;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  color: rgba(20, 20, 20, 0.78);
 }
-.gc-print-kpi-v { margin-top: 6px; font-size: 16px; font-weight: 900; color: #111; }
+
+.gc-stat span {
+  font-weight: 950;
+  color: rgba(20, 20, 20, 0.92);
+}
+
+.gc-stat-muted {
+  color: rgba(20, 20, 20, 0.55);
+  font-weight: 800;
+}
+
+/* Optional: hide mgmt-only areas via html attr if you later add it */
+html[data-gc-mode="kitchen"] .gc-mgmt-only {
+  display: none !important;
+}
