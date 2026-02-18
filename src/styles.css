@@ -1,234 +1,231 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* =========================
+   Pack D — Print / PDF Card
+   ========================= */
 
-/* === GastroChef Visual System v2 — Ultimate Lock === */
-
-:root {
-  --gc-bg: #fafafa;
-  --gc-card: #ffffff;
-  --gc-text: #0b1220;
-  --gc-muted: #667085;
-  --gc-border: rgba(15, 23, 42, 0.10);
-
-  --gc-primary: #0b1220;
-  --gc-accent: #6b8f3a;
-  --gc-gold: #c9a227;
-
-  --gc-shadow: 0 18px 45px rgba(15, 23, 42, 0.08);
-  --gc-shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.06);
+.gc-print-only {
+  display: none;
 }
 
-/* Base */
-html, body { height: 100%; }
-body {
-  background:
-    radial-gradient(1200px 600px at 20% -10%, rgba(107, 143, 58, 0.10), rgba(255, 255, 255, 0)),
-    radial-gradient(900px 450px at 90% 0%, rgba(201, 162, 39, 0.10), rgba(255, 255, 255, 0)),
-    var(--gc-bg);
-  color: var(--gc-text);
+@media print {
+  /* hide everything */
+  body * {
+    visibility: hidden !important;
+  }
+
+  /* show print card only */
+  .gc-print-only,
+  .gc-print-only * {
+    visibility: visible !important;
+  }
+
+  .gc-print-only {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+  }
+
+  /* remove app chrome spacing */
+  .container-app,
+  .gc-card,
+  .gc-btn {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 12mm;
+  }
 }
 
-.container-app { max-width: 1240px; margin: 0 auto; padding: 18px; }
-
-.gc-card {
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: 24px;
-  box-shadow: var(--gc-shadow-soft);
-}
-
-.gc-label {
-  font-size: 11px;
-  letter-spacing: 0.12em;
-  font-weight: 800;
-  color: var(--gc-muted);
-}
-
-.gc-input {
-  border: 1px solid var(--gc-border);
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: #fff;
-  outline: none;
-}
-
-.gc-input:focus {
-  border-color: rgba(15, 23, 42, 0.28);
-  box-shadow: 0 0 0 4px rgba(15, 23, 42, 0.08);
-}
-
-.gc-btn {
-  border-radius: 16px;
-  padding: 10px 14px;
-  font-weight: 800;
-  font-size: 14px;
-  border: 1px solid var(--gc-border);
-  background: #fff;
-  transition: transform 0.05s ease, box-shadow 0.2s ease, border-color 0.2s ease;
-  white-space: nowrap;
-}
-
-.gc-btn:hover {
-  box-shadow: var(--gc-shadow);
-  border-color: rgba(15, 23, 42, 0.18);
-}
-
-.gc-btn:active { transform: translateY(1px); }
-
-.gc-btn-primary {
-  background: var(--gc-primary);
-  border-color: var(--gc-primary);
-  color: white;
-  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.22);
-}
-
-.gc-btn-ghost {
-  background: #fff;
-  color: var(--gc-text);
-}
-
-/* Premium Menu Preview */
-.gc-menu-card {
-  border: 1px solid var(--gc-border);
-  border-radius: 24px;
-  overflow: hidden;
-  background: #fff;
-  box-shadow: var(--gc-shadow);
-  display: flex;
-  flex-direction: column;
-  min-height: 360px;
-}
-
-.gc-menu-hero {
-  position: relative;
+.gc-print-page {
   width: 100%;
-  background: #f3f4f6;
-  overflow: hidden;
+  background: #fff;
+  color: #111;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji",
+    "Segoe UI Emoji";
 }
 
-.gc-menu-hero img {
-  display: block;
+.gc-print-header {
+  display: grid;
+  grid-template-columns: 1fr 140px;
+  gap: 14px;
+  align-items: start;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.gc-print-name {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.gc-print-sub {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.gc-print-photo {
+  width: 140px;
+  height: 110px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+
+.gc-print-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.gc-menu-overlay {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(to top, rgba(11, 18, 32, 0.55), rgba(11, 18, 32, 0));
-}
-
-.gc-menu-badges {
-  position: absolute;
-  left: 14px;
-  top: 14px;
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  z-index: 2;
-}
-
-.gc-chip {
-  display: inline-flex;
-  align-items: center;
-  height: 28px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  background: rgba(255, 255, 255, 0.88);
-  color: rgba(11, 18, 32, 0.92);
-  font-weight: 900;
-  font-size: 12px;
-  letter-spacing: 0.02em;
-  backdrop-filter: blur(10px);
-}
-
-.gc-chip-dark {
-  background: rgba(11, 18, 32, 0.85);
-  color: #fff;
-  border-color: rgba(255, 255, 255, 0.15);
-}
-
-.gc-kpi {
-  border: 1px solid var(--gc-border);
-  border-radius: 18px;
-  padding: 10px 12px;
-  background: linear-gradient(180deg, rgba(250, 250, 250, 1), rgba(255, 255, 255, 1));
-}
-
-.gc-kpi-label {
-  font-size: 11px;
-  color: var(--gc-muted);
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.gc-kpi-value {
-  margin-top: 4px;
-  font-size: 14px;
-  font-weight: 900;
-  color: var(--gc-text);
-}
-
-/* Cook Mode Pro */
-.gc-range {
-  width: min(520px, 60vw);
-  height: 38px;
-  accent-color: var(--gc-primary);
-}
-
-.gc-cook-wrap { max-width: 980px; margin: 0 auto; }
-
-.gc-step {
-  display: flex;
-  gap: 14px;
-  padding: 14px;
-  border-radius: 20px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: #fff;
-  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.05);
-}
-
-.gc-step-done { opacity: 0.72; }
-
-.gc-step-check {
-  width: 44px;
-  height: 44px;
-  border-radius: 16px;
-  border: 1px solid rgba(15, 23, 42, 0.10);
-  background: rgba(11, 18, 32, 0.04);
+.gc-print-photo-empty {
+  width: 100%;
+  height: 100%;
   display: grid;
   place-items: center;
-}
-
-.gc-step-dot {
-  width: 16px;
-  height: 16px;
-  border-radius: 999px;
-  background: rgba(11, 18, 32, 0.20);
-}
-
-.gc-step-done .gc-step-dot { background: rgba(107, 143, 58, 0.90); }
-
-.gc-step-title {
   font-size: 12px;
-  letter-spacing: 0.12em;
-  font-weight: 900;
-  color: rgba(11, 18, 32, 0.65);
-  text-transform: uppercase;
+  color: #6b7280;
+  font-weight: 700;
 }
 
-.gc-step-badges { display: flex; gap: 8px; }
+.gc-print-block {
+  margin-top: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
+}
 
-/* Print */
-@media print {
-  body { background: #fff !important; }
-  .container-app { max-width: none !important; padding: 0 !important; }
-  aside { display: none !important; }
-  .gc-btn, .gc-input, .gc-range { display: none !important; }
-  .gc-card { box-shadow: none !important; border: 1px solid #ddd !important; }
-  .gc-print-surface { page-break-inside: avoid; }
+.gc-print-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.gc-print-text {
+  margin-top: 8px;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.gc-print-muted {
+  margin-top: 10px;
+  font-size: 12px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.gc-print-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+
+.gc-print-list {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.gc-print-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid #eef2f7;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.gc-print-row-name {
+  font-size: 13px;
+  font-weight: 800;
+  color: #111;
+}
+
+.gc-print-row-note {
+  margin-top: 3px;
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 600;
+}
+
+.gc-print-row-right {
+  font-size: 13px;
+  font-weight: 900;
+  color: #111;
+  white-space: nowrap;
+}
+
+.gc-print-steps {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+}
+
+.gc-print-step {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 10px;
+  border: 1px solid #eef2f7;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.gc-print-step-n {
+  width: 22px;
+  height: 22px;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 12px;
+}
+
+.gc-print-step-t {
+  font-size: 13px;
+  line-height: 1.35;
+  color: #111;
+  font-weight: 600;
+}
+
+.gc-print-footer {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.gc-print-kpi {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #fff;
+}
+
+.gc-print-kpi-l {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.gc-print-kpi-v {
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 900;
+  color: #111;
 }
