@@ -3,7 +3,7 @@ import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
-import { listSnapshots, saveSnapshot, deleteSnapshot } from '../lib/recipeSnapshots'
+import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 
 type Recipe = {
   id: string
@@ -114,6 +114,7 @@ type EditRow = {
 type MetaStatus = 'saved' | 'saving' | 'dirty'
 
 export default function RecipeEditor() {
+  // ✅ Mode Engine (UI only — no logic changes)
   const { isKitchen, isMgmt } = useMode()
 
   const location = useLocation()
@@ -129,35 +130,45 @@ export default function RecipeEditor() {
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
+  // Meta saving
   const [savingMeta, setSavingMeta] = useState(false)
   const [uploading, setUploading] = useState(false)
+
+  // upload state for step photos
   const [stepUploading, setStepUploading] = useState(false)
 
+  // Form fields
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [portions, setPortions] = useState('1')
   const [description, setDescription] = useState('')
 
+  // Steps
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
 
+  // step photos aligned to steps
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
 
+  // Nutrition per portion (manual only)
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
 
+  // Pricing per portion
   const [currency, setCurrency] = useState('USD')
   const [sellingPrice, setSellingPrice] = useState('')
   const [targetFC, setTargetFC] = useState('30')
 
+  // Sub-recipe settings
   const [isSubRecipe, setIsSubRecipe] = useState(false)
   const [yieldQty, setYieldQty] = useState('')
   const [yieldUnit, setYieldUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
   const [yieldSmartLoading, setYieldSmartLoading] = useState(false)
 
+  // Toast
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const showToast = (msg: string) => {
@@ -165,6 +176,7 @@ export default function RecipeEditor() {
     setToastOpen(true)
   }
 
+  // Inline Add
   const [ingSearch, setIngSearch] = useState('')
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [addIngredientId, setAddIngredientId] = useState('')
@@ -174,20 +186,29 @@ export default function RecipeEditor() {
   const [addNote, setAddNote] = useState('')
   const [savingAdd, setSavingAdd] = useState(false)
 
+  // Add Group
   const [groupTitle, setGroupTitle] = useState('')
   const [savingGroup, setSavingGroup] = useState(false)
 
+  // Inline edit per row
   const [edit, setEdit] = useState<Record<string, EditRow>>({})
   const [rowSaving, setRowSaving] = useState<Record<string, boolean>>({})
   const [reorderSaving, setReorderSaving] = useState(false)
 
+  // Expand breakdown
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
   const toggleExpand = (lineId: string) => setExpanded((p) => ({ ...p, [lineId]: !p[lineId] }))
 
+  // Recursive cache of recipe_lines for referenced subrecipes
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
 
+  // --------- Smart Back + Autosave Tracking ----------
   const [metaStatus, setMetaStatus] = useState<MetaStatus>('saved')
   const lastSavedSnapshotRef = useRef<string>('')
+
+  // Pack D: Print / Cost History UI
+  const [printOpen, setPrintOpen] = useState(false)
+  const [costOpen, setCostOpen] = useState(false)
 
   const alignStepPhotos = (cleanSteps: string[], photos: string[] | null | undefined) => {
     const p = (photos ?? []).map((x) => (x ?? '').trim())
@@ -223,6 +244,7 @@ export default function RecipeEditor() {
     else navigate('/recipes', { replace: true })
   }
 
+  // mark dirty when user changes meta
   useEffect(() => {
     if (loading) return
     if (savingMeta) return
@@ -413,6 +435,9 @@ export default function RecipeEditor() {
 
   const portionsN = Math.max(1, toNum(portions, 1))
 
+  // -------------------------
+  // Recursive cost (multi-level)
+  // -------------------------
   const ensureRecipeLinesLoaded = async (rootRecipeId: string) => {
     const seen = new Set<string>()
     const queue: string[] = [rootRecipeId]
@@ -536,6 +561,7 @@ export default function RecipeEditor() {
   const totalCost = totalCostRes.cost
   const cpp = totalCost / portionsN
 
+  // Pricing metrics
   const sell = Math.max(0, toNum(sellingPrice, 0))
   const fcPct = sell > 0 ? (cpp / sell) * 100 : null
   const margin = sell - cpp
@@ -549,6 +575,9 @@ export default function RecipeEditor() {
     showToast('Suggested price applied ✅ (remember Save)')
   }
 
+  // -------------------------
+  // Save recipe meta (includes sub-recipe + yield + step photos)
+  // -------------------------
   const saveMeta = async (opts?: { silent?: boolean; skipReload?: boolean; isAuto?: boolean }) => {
     if (!id) return
     if (opts?.isAuto && metaStatus !== 'dirty') return
@@ -594,6 +623,14 @@ export default function RecipeEditor() {
 
       if (error) throw error
 
+      // Pack D: Cost history point (only after successful save)
+      addCostPoint(id, {
+        totalCost,
+        cpp,
+        portions: Math.max(1, toNum(portions, 1)),
+        currency: (currency || 'USD').toUpperCase(),
+      })
+
       lastSavedSnapshotRef.current = currentMetaSnapshot()
       setMetaStatus('saved')
 
@@ -607,6 +644,9 @@ export default function RecipeEditor() {
     }
   }
 
+  // -------------------------
+  // Auto-save (every 10s if dirty)
+  // -------------------------
   useEffect(() => {
     const t = setInterval(() => {
       if (!id) return
@@ -622,6 +662,9 @@ export default function RecipeEditor() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id, loading, savingMeta, uploading, stepUploading, metaStatus])
 
+  // -------------------------
+  // Keyboard shortcuts
+  // -------------------------
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toLowerCase().includes('mac')
@@ -666,6 +709,9 @@ export default function RecipeEditor() {
     metaStatus,
   ])
 
+  // -------------------------
+  // Yield Smart
+  // -------------------------
   const yieldSmart = async () => {
     if (!recipe) return
     setYieldSmartLoading(true)
@@ -740,6 +786,9 @@ export default function RecipeEditor() {
     }
   }
 
+  // -------------------------
+  // Steps
+  // -------------------------
   const addStep = () => {
     const s = (newStep ?? '').trim()
     if (!s) return
@@ -769,6 +818,9 @@ export default function RecipeEditor() {
     })
   }
 
+  // -------------------------
+  // Upload main recipe photo
+  // -------------------------
   const uploadPhoto = async (file: File) => {
     if (!id) return
     setUploading(true)
@@ -797,6 +849,7 @@ export default function RecipeEditor() {
     }
   }
 
+  // Upload step photo (one per step)
   const uploadStepPhoto = async (stepIdx: number, file: File) => {
     if (!id) return
     setStepUploading(true)
@@ -828,6 +881,9 @@ export default function RecipeEditor() {
     showToast(`Step ${stepIdx + 1} photo removed (press Save)`)
   }
 
+  // -------------------------
+  // Lines CRUD
+  // -------------------------
   const addLineInline = async () => {
     if (!id) return
     const qty = Math.max(0, toNum(addQty, 0))
@@ -1062,6 +1118,9 @@ export default function RecipeEditor() {
     await persistOrder(next)
   }
 
+  // -------------------------
+  // Breakdown render (depth up to 2)
+  // -------------------------
   const renderBreakdown = (subRecipeId: string, depth: number) => {
     const r = recipeById.get(subRecipeId)
     const rLines = recipeLinesCache[subRecipeId] ?? []
@@ -1102,7 +1161,11 @@ export default function RecipeEditor() {
                 const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : undefined
                 const label = ing?.name ?? 'Ingredient'
                 return (
-                  <div key={l.id} className="flex items-center justify-between gap-2 text-sm" style={{ paddingLeft: depth * 12 }}>
+                  <div
+                    key={l.id}
+                    className="flex items-center justify-between gap-2 text-sm"
+                    style={{ paddingLeft: depth * 12 }}
+                  >
                     <div className="text-neutral-700">
                       • {label} — {l.qty} {safeUnit(l.unit)}
                     </div>
@@ -1131,66 +1194,10 @@ export default function RecipeEditor() {
     )
   }
 
-  const [snapOpen, setSnapOpen] = useState(false)
-  const [snapLabel, setSnapLabel] = useState('')
-  const [prepOpen, setPrepOpen] = useState(false)
-
-  const snapshots = useMemo(() => {
-    if (!id) return []
-    return listSnapshots(id)
-  }, [id, snapOpen, metaStatus])
-
-  const makeSnapshotPayload = () => ({
-    name,
-    category,
-    portions,
-    description,
-    methodLegacy,
-    steps,
-    stepPhotos,
-    calories,
-    protein,
-    carbs,
-    fat,
-    currency,
-    sellingPrice,
-    targetFC,
-    isSubRecipe,
-    yieldQty,
-    yieldUnit,
-  })
-
-  const onSaveSnapshot = () => {
-    if (!id) return
-    const label = snapLabel.trim() || `v${new Date().toLocaleString()}`
-    saveSnapshot(id, label, makeSnapshotPayload())
-    setSnapLabel('')
-    setSnapOpen(false)
-    showToast('Version saved ✅')
-  }
-
-  const applySnapshot = (payload: any) => {
-    setName(payload?.name ?? '')
-    setCategory(payload?.category ?? '')
-    setPortions(payload?.portions ?? '1')
-    setDescription(payload?.description ?? '')
-    setMethodLegacy(payload?.methodLegacy ?? '')
-    setSteps(Array.isArray(payload?.steps) ? payload.steps : [])
-    setStepPhotos(Array.isArray(payload?.stepPhotos) ? payload.stepPhotos : [])
-    setCalories(payload?.calories ?? '')
-    setProtein(payload?.protein ?? '')
-    setCarbs(payload?.carbs ?? '')
-    setFat(payload?.fat ?? '')
-    setCurrency((payload?.currency ?? 'USD').toUpperCase())
-    setSellingPrice(payload?.sellingPrice ?? '')
-    setTargetFC(payload?.targetFC ?? '30')
-    setIsSubRecipe(!!payload?.isSubRecipe)
-    setYieldQty(payload?.yieldQty ?? '')
-    setYieldUnit(payload?.yieldUnit ?? 'g')
-    showToast('Version loaded ✅ (press Save to store)')
-  }
-
-  const prepPreview = useMemo(() => {
+  // -------------------------
+  // Pack D: Prep list for print (scaled)
+  // -------------------------
+  const prepPrint = useMemo(() => {
     const p = Math.max(1, toNum(portions, 1))
     const base = Math.max(1, toNum(recipe?.portions, 1))
     const scale = p / base
@@ -1221,6 +1228,26 @@ export default function RecipeEditor() {
     return Array.from(m.values()).sort((a, b) => a.label.localeCompare(b.label))
   }, [lines, ingById, portions, recipe?.portions])
 
+  // -------------------------
+  // Pack D: Cost history memo
+  // -------------------------
+  const costPoints = useMemo(() => {
+    if (!id) return []
+    return listCostPoints(id)
+  }, [id, savingMeta, metaStatus, costOpen])
+
+  const printNow = () => {
+    setPrintOpen(true)
+    setTimeout(() => {
+      try {
+        window.print()
+      } catch {}
+    }, 50)
+  }
+
+  // -------------------------
+  // Guards
+  // -------------------------
   if (loading) return <div className="gc-card p-6">Loading editor…</div>
   if (err) {
     return (
@@ -1252,6 +1279,7 @@ export default function RecipeEditor() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
@@ -1316,13 +1344,16 @@ export default function RecipeEditor() {
 
                   <span className="text-xs font-semibold text-neutral-500">{metaBadge}</span>
 
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen((v) => !v)}>
-                    Prep List
+                  {/* Pack D */}
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={printNow}>
+                    Print Card
                   </button>
 
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setSnapOpen((v) => !v)}>
-                    Versions
-                  </button>
+                  {isMgmt && (
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen((v) => !v)}>
+                      Cost History
+                    </button>
+                  )}
 
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
                     🍳 Cook Mode
@@ -1334,6 +1365,7 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
+              {/* Sub-Recipe Settings (Mgmt only) */}
               {isMgmt && (
                 <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1394,6 +1426,7 @@ export default function RecipeEditor() {
             </div>
           </div>
 
+          {/* Cost box (Mgmt only) */}
           {isMgmt && (
             <div className="text-right">
               <div className="gc-label">COST (RECURSIVE)</div>
@@ -1414,108 +1447,81 @@ export default function RecipeEditor() {
         </div>
       </div>
 
-      {isMgmt && totalCostRes.warnings.length > 0 ? (
-        <div className="gc-card p-6">
-          <div className="gc-label">QUICK WARNINGS</div>
-          <div className="mt-3 text-sm text-amber-800 space-y-1">
-            {totalCostRes.warnings.slice(0, 6).map((w, i) => (
-              <div key={i}>• {w}</div>
-            ))}
-          </div>
-        </div>
-      ) : null}
-
-      {prepOpen ? (
+      {/* Pack D: Cost History (Mgmt only) */}
+      {isMgmt && costOpen && id ? (
         <div className="gc-card p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <div className="gc-label">PREP LIST (SCALED)</div>
-              <div className="mt-1 text-xs text-neutral-500">Uses current Portions vs base recipe portions. Ingredient lines only.</div>
+              <div className="gc-label">COST HISTORY (LOCAL)</div>
+              <div className="mt-1 text-xs text-neutral-500">
+                Logged on successful Save. Auto-save is de-duped to avoid spam.
+              </div>
             </div>
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen(false)}>
-              Close
-            </button>
-          </div>
-
-          {prepPreview.length === 0 ? (
-            <div className="mt-4 text-sm text-neutral-600">No ingredient lines yet.</div>
-          ) : (
-            <div className="mt-4 space-y-2">
-              {prepPreview.map((it, i) => (
-                <div key={i} className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-                  <div className="min-w-0">
-                    <div className="text-sm font-extrabold truncate">{it.label}</div>
-                    {it.note ? <div className="text-xs text-neutral-500 truncate">{it.note}</div> : null}
-                  </div>
-                  <div className="text-sm font-extrabold">
-                    {Math.round(it.qty * 100) / 100} {it.unit}
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      ) : null}
-
-      {snapOpen && id ? (
-        <div className="gc-card p-6">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <div className="gc-label">RECIPE VERSIONS (LOCAL)</div>
-              <div className="mt-1 text-xs text-neutral-500">Saves locally. Load a version then press Save to store in Supabase.</div>
-            </div>
-
-            <div className="flex flex-wrap gap-2">
-              <input
-                className="gc-input w-[min(320px,90vw)]"
-                value={snapLabel}
-                onChange={(e) => setSnapLabel(e.target.value)}
-                placeholder="Label (e.g., Before pricing tweak)"
-              />
-              <button className="gc-btn gc-btn-primary" type="button" onClick={onSaveSnapshot}>
-                Save Version
+            <div className="flex gap-2">
+              <button
+                className="gc-btn gc-btn-ghost"
+                type="button"
+                onClick={() => {
+                  clearCostPoints(id)
+                  showToast('History cleared ✅')
+                  setCostOpen(true)
+                }}
+              >
+                Clear
               </button>
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setSnapOpen(false)}>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen(false)}>
                 Close
               </button>
             </div>
           </div>
 
-          {snapshots.length === 0 ? (
-            <div className="mt-4 text-sm text-neutral-600">No versions yet.</div>
+          {costPoints.length === 0 ? (
+            <div className="mt-4 text-sm text-neutral-600">No points yet.</div>
           ) : (
             <div className="mt-4 space-y-2">
-              {snapshots.map((s: any) => (
-                <div key={s.id} className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-neutral-200 bg-white p-4">
-                  <div>
-                    <div className="text-sm font-extrabold">{s.label}</div>
-                    <div className="text-xs text-neutral-500">{new Date(s.createdAt).toLocaleString()}</div>
-                  </div>
+              {costPoints.slice(0, 12).map((p, idx) => {
+                const prev = costPoints[idx + 1]
+                const delta = prev ? p.totalCost - prev.totalCost : null
+                return (
+                  <div key={p.id} className="rounded-2xl border border-neutral-200 bg-white p-4 flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="text-sm font-extrabold">
+                        {fmtMoney(p.totalCost, p.currency)} <span className="text-xs text-neutral-500">({p.portions} portions)</span>
+                      </div>
+                      <div className="text-xs text-neutral-500">
+                        {new Date(p.createdAt).toLocaleString()} · CPP {fmtMoney(p.cpp, p.currency)}
+                      </div>
+                      {delta != null ? (
+                        <div className="text-xs">
+                          Δ Total: <span className="font-semibold">{fmtMoney(delta, p.currency)}</span>
+                        </div>
+                      ) : null}
+                    </div>
 
-                  <div className="flex gap-2">
-                    <button className="gc-btn gc-btn-primary" type="button" onClick={() => applySnapshot(s.payload)}>
-                      Load
-                    </button>
-                    <button
-                      className="gc-btn gc-btn-ghost"
-                      type="button"
-                      onClick={() => {
-                        deleteSnapshot(id, s.id)
-                        setSnapOpen(true)
-                        showToast('Deleted ✅')
-                      }}
-                    >
-                      Delete
-                    </button>
+                    <div className="flex gap-2">
+                      <button
+                        className="gc-btn gc-btn-ghost"
+                        type="button"
+                        onClick={() => {
+                          deleteCostPoint(id, p.id)
+                          showToast('Deleted ✅')
+                          setCostOpen(true)
+                        }}
+                      >
+                        Delete
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </div>
       ) : null}
 
+      {/* Premium Panels */}
       <div className="grid gap-4 lg:grid-cols-2">
+        {/* Description */}
         <div className="gc-card p-6">
           <div className="gc-label">DESCRIPTION</div>
           <textarea
@@ -1526,6 +1532,7 @@ export default function RecipeEditor() {
           />
         </div>
 
+        {/* Nutrition (Mgmt only) */}
         {isMgmt && (
           <div className="gc-card p-6">
             <div>
@@ -1554,6 +1561,7 @@ export default function RecipeEditor() {
           </div>
         )}
 
+        {/* Pricing (Mgmt only) */}
         {isMgmt && (
           <div className="gc-card p-6 lg:col-span-2">
             <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1612,6 +1620,7 @@ export default function RecipeEditor() {
         )}
       </div>
 
+      {/* Step Builder */}
       <div className="gc-card p-6">
         <div className="gc-label">STEP BUILDER (WITH PHOTOS)</div>
 
@@ -1622,9 +1631,7 @@ export default function RecipeEditor() {
             onChange={(e) => setNewStep(e.target.value)}
             placeholder="Write step… (Ctrl/Cmd+Enter to add)"
             onKeyDown={(e) => {
-              const isMac = navigator.platform.toLowerCase().includes('mac')
-              const mod = isMac ? e.metaKey : e.ctrlKey
-              if (e.key === 'Enter' && mod) {
+              if (e.key === 'Enter') {
                 e.preventDefault()
                 addStep()
               }
@@ -1704,6 +1711,7 @@ export default function RecipeEditor() {
         )}
       </div>
 
+      {/* LINES */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -1719,6 +1727,7 @@ export default function RecipeEditor() {
           </div>
         </div>
 
+        {/* Inline Add */}
         <div className="mt-4 grid gap-3 lg:grid-cols-[.7fr_1.6fr_.6fr_1fr_auto]">
           <div>
             <div className="gc-label">TYPE</div>
@@ -1780,6 +1789,7 @@ export default function RecipeEditor() {
           </div>
         </div>
 
+        {/* Add Group (Mgmt only) */}
         {isMgmt && (
           <div className="mt-3 grid gap-3 lg:grid-cols-[1fr_auto]">
             <div>
@@ -1794,6 +1804,7 @@ export default function RecipeEditor() {
           </div>
         )}
 
+        {/* Table */}
         {lines.length === 0 ? (
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
@@ -1994,6 +2005,87 @@ export default function RecipeEditor() {
             </div>
           </div>
         )}
+      </div>
+
+      {/* Pack D: Print Card (hidden UI, print-only) */}
+      <div className="gc-print-only">
+        <div className="gc-print-page">
+          <div className="gc-print-header">
+            <div className="gc-print-title">
+              <div className="gc-print-name">{(name || 'Untitled').trim()}</div>
+              <div className="gc-print-sub">
+                {(category || '').trim() ? `Category: ${category.trim()} · ` : ''}
+                Portions: {Math.max(1, toNum(portions, 1))}
+              </div>
+            </div>
+            <div className="gc-print-photo">
+              {recipe.photo_url ? <img src={recipe.photo_url} alt={name} /> : <div className="gc-print-photo-empty">No Photo</div>}
+            </div>
+          </div>
+
+          {(description || '').trim() ? (
+            <div className="gc-print-block">
+              <div className="gc-print-label">Description</div>
+              <div className="gc-print-text">{description.trim()}</div>
+            </div>
+          ) : null}
+
+          <div className="gc-print-grid">
+            <div className="gc-print-block">
+              <div className="gc-print-label">Prep List (Scaled)</div>
+              {prepPrint.length === 0 ? (
+                <div className="gc-print-muted">No ingredient lines.</div>
+              ) : (
+                <div className="gc-print-list">
+                  {prepPrint.map((it, i) => (
+                    <div key={i} className="gc-print-row">
+                      <div className="gc-print-row-left">
+                        <div className="gc-print-row-name">{it.label}</div>
+                        {it.note ? <div className="gc-print-row-note">{it.note}</div> : null}
+                      </div>
+                      <div className="gc-print-row-right">
+                        {Math.round(it.qty * 100) / 100} {it.unit}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="gc-print-block">
+              <div className="gc-print-label">Steps</div>
+              {steps.length === 0 ? (
+                <div className="gc-print-muted">No steps.</div>
+              ) : (
+                <div className="gc-print-steps">
+                  {steps.map((s, idx) => (
+                    <div key={idx} className="gc-print-step">
+                      <div className="gc-print-step-n">{idx + 1}</div>
+                      <div className="gc-print-step-t">{s}</div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {isMgmt ? (
+            <div className="gc-print-footer">
+              <div className="gc-print-kpi">
+                <div className="gc-print-kpi-l">Total Cost</div>
+                <div className="gc-print-kpi-v">{fmtMoney(totalCost, currency)}</div>
+              </div>
+              <div className="gc-print-kpi">
+                <div className="gc-print-kpi-l">CPP</div>
+                <div className="gc-print-kpi-v">{fmtMoney(cpp, currency)}</div>
+              </div>
+              <div className="gc-print-kpi">
+                <div className="gc-print-kpi-l">Selling</div>
+                <div className="gc-print-kpi-v">{sellingPrice ? fmtMoney(toNum(sellingPrice, 0), currency) : '—'}</div>
+              </div>
+            </div>
+          ) : null}
+        </div>
       </div>
 
       <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
