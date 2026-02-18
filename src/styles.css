@@ -1,6 +1,6 @@
 /* =========================================================
    GastroChef v4 — Core Styles + Tailwind + Pack D+ Print
-   PREMIUM GLOBAL EDITION (Luxury Minimal)
+   PREMIUM GLOBAL EDITION (Luxury Minimal) — STYLE A
    IMPORTANT: This file MUST include Tailwind directives.
    ========================================================= */
 
@@ -10,11 +10,31 @@
 @tailwind utilities;
 
 /* =========================================================
-   Base layout helpers (works with Tailwind classes too)
+   Base layout helpers
    ========================================================= */
 
 :root {
   color-scheme: light;
+
+  /* A tokens */
+  --gc-bg: #fbfaf7;                 /* warm white (luxury) */
+  --gc-text: #141414;               /* charcoal */
+  --gc-muted: rgba(20, 20, 20, 0.62);
+
+  --gc-card: #ffffff;
+  --gc-border: rgba(20, 20, 20, 0.10);
+  --gc-border-strong: rgba(20, 20, 20, 0.16);
+
+  --gc-primary: #141414;
+  --gc-primary-hover: #0b0b0b;
+
+  --gc-olive: #6b7f2a;              /* chef olive */
+  --gc-olive-soft: rgba(107, 127, 42, 0.14);
+
+  --gc-shadow: 0 10px 30px rgba(20, 20, 20, 0.08);
+  --gc-shadow-soft: 0 6px 18px rgba(20, 20, 20, 0.06);
+
+  --gc-radius: 18px;
 }
 
 html,
@@ -24,8 +44,8 @@ body {
 
 body {
   margin: 0;
-  background: #f5f5f5;
-  color: #111;
+  background: var(--gc-bg);
+  color: var(--gc-text);
   font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
     "Apple Color Emoji", "Segoe UI Emoji";
 }
@@ -37,43 +57,52 @@ body {
 }
 
 /* =========================================================
-   Core tokens (Premium feel without changing your palette)
+   Core tokens
    ========================================================= */
 
 .gc-label {
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: rgba(20, 20, 20, 0.55);
 }
 
 .gc-card {
-  background: #ffffff;
-  border: 1px solid #e5e7eb;
-  border-radius: 18px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius);
+  box-shadow: var(--gc-shadow-soft);
 }
 
+/* =========================================================
+   Inputs
+   ========================================================= */
+
 .gc-input {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gc-border);
   border-radius: 14px;
   padding: 12px 12px;
   background: #fff;
   outline: none;
   font-size: 14px;
+  color: var(--gc-text);
   transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 }
 
+.gc-input::placeholder {
+  color: rgba(20, 20, 20, 0.35);
+}
+
 .gc-input:focus {
-  border-color: #111;
-  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
+  border-color: rgba(107, 127, 42, 0.45);
+  box-shadow: 0 0 0 4px var(--gc-olive-soft);
 }
 
 /* Nicer disabled look (Premium) */
 .gc-input:disabled {
   background: #f9fafb;
-  color: #6b7280;
+  color: rgba(20, 20, 20, 0.55);
   cursor: not-allowed;
 }
 
@@ -82,12 +111,12 @@ body {
    ========================================================= */
 
 .gc-btn {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gc-border);
   background: #fff;
-  color: #111;
+  color: var(--gc-text);
   border-radius: 999px;
   padding: 10px 14px;
-  font-weight: 800;
+  font-weight: 850;
   font-size: 14px;
   cursor: pointer;
   user-select: none;
@@ -95,39 +124,44 @@ body {
 }
 
 .gc-btn:hover {
-  background: #f9fafb;
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 10px 22px rgba(20, 20, 20, 0.08);
 }
 
 .gc-btn:active {
   transform: translateY(1px);
 }
 
-/* ✅ Accessibility: visible focus for keyboard users */
+/* ✅ Accessibility */
 .gc-btn:focus-visible,
 .gc-input:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
-  border-color: #111;
+  box-shadow: 0 0 0 4px rgba(107, 127, 42, 0.16);
+  border-color: rgba(107, 127, 42, 0.55);
 }
 
 .gc-btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 .gc-btn-primary {
-  background: #111;
+  background: var(--gc-primary);
   color: #fff;
-  border-color: #111;
+  border-color: var(--gc-primary);
+  box-shadow: 0 10px 25px rgba(20, 20, 20, 0.14);
 }
 
 .gc-btn-primary:hover {
-  background: #000;
+  background: var(--gc-primary-hover);
+  border-color: var(--gc-primary-hover);
 }
 
 .gc-btn-ghost {
   background: transparent;
+  box-shadow: none;
 }
 
 /* Link buttons */
@@ -139,11 +173,36 @@ a.gc-btn {
 }
 
 /* =========================================================
+   ✅ Badges (needed for Recipe cards: kcal / category)
+   ========================================================= */
+
+.gc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255, 255, 255, 0.85);
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(20, 20, 20, 0.80);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.gc-badge-olive {
+  border-color: rgba(107, 127, 42, 0.35);
+  background: rgba(107, 127, 42, 0.10);
+  color: rgba(107, 127, 42, 1);
+}
+
+/* =========================================================
    KPI cards
    ========================================================= */
 
 .gc-kpi {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gc-border);
   border-radius: 18px;
   background: #fff;
   padding: 14px;
@@ -152,16 +211,17 @@ a.gc-btn {
 .gc-kpi-label {
   font-size: 11px;
   font-weight: 900;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.10em;
   text-transform: uppercase;
-  color: #6b7280;
+  color: rgba(20, 20, 20, 0.55);
 }
 
 .gc-kpi-value {
   margin-top: 8px;
-  font-size: 18px;
+  font-size: 20px;
   font-weight: 950;
-  color: #111;
+  color: var(--gc-text);
+  letter-spacing: -0.02em;
 }
 
 /* =========================================================
@@ -169,7 +229,7 @@ a.gc-btn {
    ========================================================= */
 
 .gc-mode-pill {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gc-border);
   border-radius: 18px;
   padding: 12px;
   background: #fff;
@@ -183,7 +243,7 @@ a.gc-btn {
 }
 
 .gc-mode-btn {
-  border: 1px solid #e5e7eb;
+  border: 1px solid var(--gc-border);
   border-radius: 999px;
   padding: 10px 10px;
   font-weight: 900;
@@ -194,28 +254,23 @@ a.gc-btn {
 }
 
 .gc-mode-btn:hover {
-  background: #f9fafb;
+  background: rgba(20, 20, 20, 0.03);
 }
 
 .gc-mode-btn-active {
-  background: #111;
+  background: var(--gc-primary);
   color: #fff;
-  border-color: #111;
+  border-color: var(--gc-primary);
 }
 
-/* Optional mode hook for future styling */
-html[data-gc-mode="kitchen"] .gc-label {}
-html[data-gc-mode="mgmt"] .gc-label {}
-
-/* Small helper for step buttons (from Pack C suggestion) */
+/* Small helper for step buttons */
 .gc-step .gc-btn {
   padding: 8px 10px;
   font-size: 13px;
 }
 
 /* =========================================================
-   ✅ PREMIUM TOAST (new)
-   - Used by Toast.tsx as: gc-toast + gc-toast-close
+   ✅ PREMIUM TOAST (kept)
    ========================================================= */
 
 .gc-toast {
@@ -225,7 +280,7 @@ html[data-gc-mode="mgmt"] .gc-label {}
   padding: 12px 14px;
 
   background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(17, 17, 17, 0.12);
+  border: 1px solid rgba(20, 20, 20, 0.12);
   border-radius: 18px;
   box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
 
@@ -245,9 +300,9 @@ html[data-gc-mode="mgmt"] .gc-label {}
 }
 
 .gc-toast-close {
-  border: 1px solid rgba(17, 17, 17, 0.14);
+  border: 1px solid rgba(20, 20, 20, 0.14);
   background: transparent;
-  color: #111;
+  color: var(--gc-text);
 
   width: 30px;
   height: 30px;
@@ -264,7 +319,7 @@ html[data-gc-mode="mgmt"] .gc-label {}
 }
 
 .gc-toast-close:hover {
-  background: rgba(17, 17, 17, 0.06);
+  background: rgba(20, 20, 20, 0.06);
 }
 
 .gc-toast-close:active {
@@ -273,7 +328,8 @@ html[data-gc-mode="mgmt"] .gc-label {}
 
 .gc-toast-close:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.14);
+  box-shadow: 0 0 0 4px rgba(107, 127, 42, 0.16);
+  border-color: rgba(107, 127, 42, 0.55);
 }
 
 /* =========================================================
