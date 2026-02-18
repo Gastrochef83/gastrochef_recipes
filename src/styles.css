@@ -1,97 +1,78 @@
 /* =========================
-   Pack D — Print / PDF Card
+   Pack D+ — Print Premium
    ========================= */
 
-.gc-print-only {
-  display: none;
-}
+.gc-print-only { display: none; }
 
 @media print {
-  /* hide everything */
-  body * {
-    visibility: hidden !important;
-  }
+  body * { visibility: hidden !important; }
 
-  /* show print card only */
   .gc-print-only,
-  .gc-print-only * {
-    visibility: visible !important;
-  }
+  .gc-print-only * { visibility: visible !important; }
 
   .gc-print-only {
     display: block !important;
     position: absolute;
-    left: 0;
-    top: 0;
+    left: 0; top: 0;
     width: 100%;
   }
 
-  /* remove app chrome spacing */
-  .container-app,
-  .gc-card,
-  .gc-btn {
-    display: none !important;
-  }
-
-  @page {
-    size: A4;
-    margin: 12mm;
-  }
+  @page { size: A4; margin: 12mm; }
 }
 
 .gc-print-page {
   width: 100%;
   background: #fff;
   color: #111;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji",
-    "Segoe UI Emoji";
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
 }
 
 .gc-print-header {
   display: grid;
-  grid-template-columns: 1fr 140px;
+  grid-template-columns: 1fr 210px;
   gap: 14px;
   align-items: start;
   border-bottom: 1px solid #e5e7eb;
   padding-bottom: 10px;
 }
 
-.gc-print-name {
-  font-size: 22px;
-  font-weight: 800;
-  line-height: 1.1;
-}
+.gc-print-name { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.gc-print-sub { margin-top: 6px; font-size: 12px; color: #6b7280; font-weight: 600; }
 
-.gc-print-sub {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 600;
-}
+.gc-print-right { display: grid; gap: 10px; justify-items: end; }
 
 .gc-print-photo {
-  width: 140px;
-  height: 110px;
+  width: 210px;
+  height: 130px;
   border: 1px solid #e5e7eb;
   border-radius: 14px;
   overflow: hidden;
   background: #f3f4f6;
 }
+.gc-print-photo img { width: 100%; height: 100%; object-fit: cover; }
+.gc-print-photo-empty { width: 100%; height: 100%; display: grid; place-items: center; font-size: 12px; color: #6b7280; font-weight: 700; }
 
-.gc-print-photo img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.gc-print-photo-empty {
-  width: 100%;
-  height: 100%;
+.gc-print-qr {
+  width: 210px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px;
   display: grid;
-  place-items: center;
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 700;
+  justify-items: center;
+  gap: 6px;
+}
+.gc-print-qr img { width: 140px; height: 140px; }
+.gc-print-qr-cap { font-size: 11px; color: #6b7280; font-weight: 700; }
+
+.gc-print-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.gc-print-tag {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  color: #111;
 }
 
 .gc-print-block {
@@ -109,18 +90,8 @@
   letter-spacing: 0.06em;
 }
 
-.gc-print-text {
-  margin-top: 8px;
-  font-size: 13px;
-  line-height: 1.35;
-}
-
-.gc-print-muted {
-  margin-top: 10px;
-  font-size: 12px;
-  color: #6b7280;
-  font-weight: 600;
-}
+.gc-print-text { margin-top: 8px; font-size: 13px; line-height: 1.35; }
+.gc-print-muted { margin-top: 10px; font-size: 12px; color: #6b7280; font-weight: 600; }
 
 .gc-print-grid {
   margin-top: 14px;
@@ -129,11 +100,7 @@
   gap: 14px;
 }
 
-.gc-print-list {
-  margin-top: 10px;
-  display: grid;
-  gap: 8px;
-}
+.gc-print-list { margin-top: 10px; display: grid; gap: 8px; }
 
 .gc-print-row {
   display: grid;
@@ -146,45 +113,23 @@
   padding: 10px;
 }
 
-.gc-print-row-name {
-  font-size: 13px;
-  font-weight: 800;
-  color: #111;
-}
+.gc-print-row-name { font-size: 13px; font-weight: 800; color: #111; }
+.gc-print-row-note { margin-top: 3px; font-size: 11px; color: #6b7280; font-weight: 600; }
+.gc-print-row-right { font-size: 13px; font-weight: 900; color: #111; white-space: nowrap; }
 
-.gc-print-row-note {
-  margin-top: 3px;
-  font-size: 11px;
-  color: #6b7280;
-  font-weight: 600;
-}
+.gc-print-steps { margin-top: 10px; display: grid; gap: 10px; }
 
-.gc-print-row-right {
-  font-size: 13px;
-  font-weight: 900;
-  color: #111;
-  white-space: nowrap;
-}
-
-.gc-print-steps {
-  margin-top: 10px;
-  display: grid;
-  gap: 8px;
-}
-
-.gc-print-step {
-  display: grid;
-  grid-template-columns: 22px 1fr;
-  gap: 10px;
+.gc-print-step2 {
   border: 1px solid #eef2f7;
   background: #fff;
   border-radius: 12px;
   padding: 10px;
+  display: grid;
+  gap: 8px;
 }
-
+.gc-print-step2-head { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
 .gc-print-step-n {
-  width: 22px;
-  height: 22px;
+  width: 22px; height: 22px;
   border-radius: 8px;
   background: #111;
   color: #fff;
@@ -193,20 +138,24 @@
   font-weight: 900;
   font-size: 12px;
 }
-
-.gc-print-step-t {
-  font-size: 13px;
-  line-height: 1.35;
-  color: #111;
-  font-weight: 600;
+.gc-print-step-t { font-size: 13px; line-height: 1.35; color: #111; font-weight: 600; }
+.gc-print-step2-photo {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3f4f6;
 }
+.gc-print-step2-photo img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
 
 .gc-print-footer {
   margin-top: 14px;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
+  gap: 10px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
 }
+.gc-print-brand { font-size: 12px; font-weight: 900; color: #111; letter-spacing: 0.08em; text-transform: uppercase; }
+.gc-print-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
 
 .gc-print-kpi {
   border: 1px solid #e5e7eb;
@@ -214,7 +163,6 @@
   padding: 10px 12px;
   background: #fff;
 }
-
 .gc-print-kpi-l {
   font-size: 11px;
   color: #6b7280;
@@ -222,10 +170,4 @@
   text-transform: uppercase;
   letter-spacing: 0.06em;
 }
-
-.gc-print-kpi-v {
-  margin-top: 6px;
-  font-size: 16px;
-  font-weight: 900;
-  color: #111;
-}
+.gc-print-kpi-v { margin-top: 6px; font-size: 16px; font-weight: 900; color: #111; }
