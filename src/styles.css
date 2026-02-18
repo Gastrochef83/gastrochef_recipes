@@ -1,180 +1,451 @@
-/* =========================
-   GASTROCHEF — LUXURY MINIMAL (A)
-   Black + Chef Olive
-   ========================= */
+/* =========================================================
+   GastroChef v4 — Core Styles + Tailwind + Pack D+ Print
+   PREMIUM GLOBAL EDITION (Luxury Minimal)
+   IMPORTANT: This file MUST include Tailwind directives.
+   ========================================================= */
 
-:root{
-  --gc-bg: #fbfaf7;
-  --gc-card: #ffffff;
-  --gc-border: rgba(20,20,20,0.10);
-  --gc-border-strong: rgba(20,20,20,0.16);
-  --gc-text: #141414;
-  --gc-muted: rgba(20,20,20,0.62);
+/* ✅ Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  --gc-primary: #141414;         /* charcoal */
-  --gc-primary-hover: #0b0b0b;
+/* =========================================================
+   Base layout helpers (works with Tailwind classes too)
+   ========================================================= */
 
-  --gc-olive: #6b7f2a;           /* chef olive */
-  --gc-olive-soft: rgba(107,127,42,0.14);
-
-  --gc-shadow: 0 10px 30px rgba(20,20,20,0.08);
-  --gc-shadow-soft: 0 6px 18px rgba(20,20,20,0.06);
-
-  --gc-radius: 18px;
+:root {
+  color-scheme: light;
 }
 
-/* base */
-body{
-  background: var(--gc-bg);
-  color: var(--gc-text);
+html,
+body {
+  height: 100%;
 }
 
-/* =========================
-   CARDS / SECTIONS
-   ========================= */
-.gc-card{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius);
-  box-shadow: var(--gc-shadow-soft);
+body {
+  margin: 0;
+  background: #f5f5f5;
+  color: #111;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji";
 }
 
-.gc-label{
+.container-app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+/* =========================================================
+   Core tokens (Premium feel without changing your palette)
+   ========================================================= */
+
+.gc-label {
   font-size: 11px;
-  letter-spacing: .12em;
+  font-weight: 900;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: rgba(20,20,20,0.60);
-  font-weight: 800;
+  color: #6b7280;
 }
 
-/* =========================
-   INPUTS
-   ========================= */
-.gc-input{
-  width: 100%;
-  background: #fff;
-  border: 1px solid var(--gc-border);
+.gc-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.gc-input {
+  border: 1px solid #e5e7eb;
   border-radius: 14px;
-  padding: 10px 12px;
+  padding: 12px 12px;
+  background: #fff;
   outline: none;
-  transition: box-shadow .15s ease, border-color .15s ease, transform .06s ease;
-  color: var(--gc-text);
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 }
 
-.gc-input::placeholder{
-  color: rgba(20,20,20,0.35);
+.gc-input:focus {
+  border-color: #111;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
 }
 
-.gc-input:focus{
-  border-color: rgba(107,127,42,0.45);
-  box-shadow: 0 0 0 4px var(--gc-olive-soft);
+/* Nicer disabled look (Premium) */
+.gc-input:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
 }
 
-/* =========================
-   BUTTONS
-   ========================= */
-.gc-btn{
+/* =========================================================
+   Buttons (Premium interactions)
+   ========================================================= */
+
+.gc-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111;
   border-radius: 999px;
   padding: 10px 14px;
   font-weight: 800;
-  border: 1px solid transparent;
-  transition: transform .06s ease, box-shadow .15s ease, background .15s ease, border-color .15s ease, color .15s ease;
+  font-size: 14px;
+  cursor: pointer;
   user-select: none;
+  transition: transform 0.05s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
-.gc-btn:active{
+.gc-btn:hover {
+  background: #f9fafb;
+}
+
+.gc-btn:active {
   transform: translateY(1px);
 }
 
-.gc-btn-primary{
-  background: var(--gc-primary);
+/* ✅ Accessibility: visible focus for keyboard users */
+.gc-btn:focus-visible,
+.gc-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+  border-color: #111;
+}
+
+.gc-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.gc-btn-primary {
+  background: #111;
   color: #fff;
-  box-shadow: 0 10px 25px rgba(20,20,20,0.14);
+  border-color: #111;
 }
 
-.gc-btn-primary:hover{
-  background: var(--gc-primary-hover);
+.gc-btn-primary:hover {
+  background: #000;
 }
 
-.gc-btn-ghost{
-  background: #fff;
-  border-color: var(--gc-border);
-  color: var(--gc-text);
+.gc-btn-ghost {
+  background: transparent;
 }
 
-.gc-btn-ghost:hover{
-  border-color: var(--gc-border-strong);
-  box-shadow: 0 10px 22px rgba(20,20,20,0.08);
+/* Link buttons */
+a.gc-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.gc-btn-olive{
-  background: var(--gc-olive);
-  color: #fff;
-  box-shadow: 0 10px 25px rgba(107,127,42,0.18);
-}
+/* =========================================================
+   KPI cards
+   ========================================================= */
 
-.gc-btn-olive:hover{
-  filter: brightness(0.95);
-}
-
-/* =========================
-   KPI
-   ========================= */
-.gc-kpi{
-  border: 1px solid var(--gc-border);
-  border-radius: 16px;
+.gc-kpi {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
   background: #fff;
   padding: 14px;
 }
 
-.gc-kpi-label{
-  font-size: 12px;
-  color: rgba(20,20,20,0.55);
-  font-weight: 700;
-}
-
-.gc-kpi-value{
-  margin-top: 6px;
-  font-size: 22px;
+.gc-kpi-label {
+  font-size: 11px;
   font-weight: 900;
-  letter-spacing: -0.02em;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
 }
 
-/* =========================
-   BADGES / TAGS
-   ========================= */
-.gc-badge{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid var(--gc-border);
+.gc-kpi-value {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 950;
+  color: #111;
+}
+
+/* =========================================================
+   Mode pill styling (optional)
+   ========================================================= */
+
+.gc-mode-pill {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 12px;
   background: #fff;
-  font-size: 12px;
+}
+
+.gc-mode-switch {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gc-mode-btn {
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 10px 10px;
+  font-weight: 900;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gc-mode-btn:hover {
+  background: #f9fafb;
+}
+
+.gc-mode-btn-active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Optional mode hook for future styling */
+html[data-gc-mode="kitchen"] .gc-label {}
+html[data-gc-mode="mgmt"] .gc-label {}
+
+/* Small helper for step buttons (from Pack C suggestion) */
+.gc-step .gc-btn {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* =========================================================
+   ✅ PREMIUM TOAST (new)
+   - Used by Toast.tsx as: gc-toast + gc-toast-close
+   ========================================================= */
+
+.gc-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  transform: translateY(6px);
+  opacity: 0;
+  animation: gcToastIn 160ms ease-out forwards;
+}
+
+@keyframes gcToastIn {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.gc-toast-close {
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  background: transparent;
+  color: #111;
+
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+
+  display: inline-grid;
+  place-items: center;
+
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.gc-toast-close:hover {
+  background: rgba(17, 17, 17, 0.06);
+}
+
+.gc-toast-close:active {
+  transform: translateY(1px);
+}
+
+.gc-toast-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.14);
+}
+
+/* =========================================================
+   Pack D+ — Print Premium (your exact CSS, preserved)
+   ========================================================= */
+
+.gc-print-only { display: none; }
+
+@media print {
+  body * { visibility: hidden !important; }
+
+  .gc-print-only,
+  .gc-print-only * { visibility: visible !important; }
+
+  .gc-print-only {
+    display: block !important;
+    position: absolute;
+    left: 0; top: 0;
+    width: 100%;
+  }
+
+  @page { size: A4; margin: 12mm; }
+}
+
+.gc-print-page {
+  width: 100%;
+  background: #fff;
+  color: #111;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+}
+
+.gc-print-header {
+  display: grid;
+  grid-template-columns: 1fr 210px;
+  gap: 14px;
+  align-items: start;
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 10px;
+}
+
+.gc-print-name { font-size: 22px; font-weight: 800; line-height: 1.1; }
+.gc-print-sub { margin-top: 6px; font-size: 12px; color: #6b7280; font-weight: 600; }
+
+.gc-print-right { display: grid; gap: 10px; justify-items: end; }
+
+.gc-print-photo {
+  width: 210px;
+  height: 130px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+.gc-print-photo img { width: 100%; height: 100%; object-fit: cover; }
+.gc-print-photo-empty { width: 100%; height: 100%; display: grid; place-items: center; font-size: 12px; color: #6b7280; font-weight: 700; }
+
+.gc-print-qr {
+  width: 210px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px;
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+}
+.gc-print-qr img { width: 140px; height: 140px; }
+.gc-print-qr-cap { font-size: 11px; color: #6b7280; font-weight: 700; }
+
+.gc-print-tags { margin-top: 10px; display: flex; flex-wrap: wrap; gap: 6px; }
+.gc-print-tag {
+  border: 1px solid #e5e7eb;
+  background: #f9fafb;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
   font-weight: 800;
-  color: rgba(20,20,20,0.8);
+  color: #111;
 }
 
-.gc-badge-olive{
-  border-color: rgba(107,127,42,0.35);
-  background: rgba(107,127,42,0.08);
-  color: rgba(107,127,42,1);
+.gc-print-block {
+  margin-top: 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px;
 }
 
-/* =========================
-   TABLE HEADER (lines)
-   ========================= */
-.gc-table-head{
-  background: rgba(20,20,20,0.03);
-  border-bottom: 1px solid var(--gc-border);
+.gc-print-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-/* =========================
-   PRINT
-   ========================= */
-@media print{
-  body{ background: #fff; }
-  .gc-card{ box-shadow: none; }
-  .gc-btn, nav, .gc-hide-print{ display: none !important; }
+.gc-print-text { margin-top: 8px; font-size: 13px; line-height: 1.35; }
+.gc-print-muted { margin-top: 10px; font-size: 12px; color: #6b7280; font-weight: 600; }
+
+.gc-print-grid {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
 }
+
+.gc-print-list { margin-top: 10px; display: grid; gap: 8px; }
+
+.gc-print-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items: start;
+  border: 1px solid #eef2f7;
+  background: #f9fafb;
+  border-radius: 12px;
+  padding: 10px;
+}
+
+.gc-print-row-name { font-size: 13px; font-weight: 800; color: #111; }
+.gc-print-row-note { margin-top: 3px; font-size: 11px; color: #6b7280; font-weight: 600; }
+.gc-print-row-right { font-size: 13px; font-weight: 900; color: #111; white-space: nowrap; }
+
+.gc-print-steps { margin-top: 10px; display: grid; gap: 10px; }
+
+.gc-print-step2 {
+  border: 1px solid #eef2f7;
+  background: #fff;
+  border-radius: 12px;
+  padding: 10px;
+  display: grid;
+  gap: 8px;
+}
+.gc-print-step2-head { display: grid; grid-template-columns: 22px 1fr; gap: 10px; align-items: start; }
+.gc-print-step-n {
+  width: 22px; height: 22px;
+  border-radius: 8px;
+  background: #111;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-weight: 900;
+  font-size: 12px;
+}
+.gc-print-step-t { font-size: 13px; line-height: 1.35; color: #111; font-weight: 600; }
+.gc-print-step2-photo {
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+.gc-print-step2-photo img { width: 100%; max-height: 220px; object-fit: cover; display: block; }
+
+.gc-print-footer {
+  margin-top: 14px;
+  display: grid;
+  gap: 10px;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 10px;
+}
+.gc-print-brand { font-size: 12px; font-weight: 900; color: #111; letter-spacing: 0.08em; text-transform: uppercase; }
+.gc-print-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+.gc-print-kpi {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.gc-print-kpi-l {
+  font-size: 11px;
+  color: #6b7280;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.gc-print-kpi-v { margin-top: 6px; font-size: 16px; font-weight: 900; color: #111; }
