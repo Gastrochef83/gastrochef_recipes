@@ -68,17 +68,21 @@ function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
+
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
+
 function normalizeSteps(steps: string[] | null | undefined) {
   return (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
 }
+
 function extFromType(mime: string) {
   if (mime === 'image/png') return 'png'
   if (mime === 'image/webp') return 'webp'
   return 'jpg'
 }
+
 function fmtMoney(n: number, currency: string) {
   const v = Number.isFinite(n) ? n : 0
   const cur = (currency || 'USD').toUpperCase()
@@ -567,7 +571,7 @@ export default function RecipeEditor() {
     return { cost: sum, warnings }
   }
 
-  // ✅ Premium: memo cache for cost results within the same render (no logic change)
+  // ✅ Premium: memo cache for cost results within the same render
   const costMemo = useMemo(() => {
     const cache = new Map<string, { cost: number; warnings: string[] }>()
     const get = (rid: string) => {
@@ -604,7 +608,7 @@ export default function RecipeEditor() {
   }
 
   // -------------------------
-  // Save recipe meta (includes sub-recipe + yield + step photos)
+  // Save recipe meta
   // -------------------------
   const saveMeta = async (opts?: { silent?: boolean; skipReload?: boolean; isAuto?: boolean }) => {
     if (!id) return
@@ -673,7 +677,7 @@ export default function RecipeEditor() {
     }
   }
 
-  // ✅ Premium Autosave: debounce after last change (no logic change)
+  // ✅ Autosave debounce
   useEffect(() => {
     if (!id) return
     if (loading) return
@@ -694,21 +698,19 @@ export default function RecipeEditor() {
   }, [id, loading, savingMeta, uploading, stepUploading, metaStatus, currentMetaSnapshot()])
 
   // -------------------------
-  // Keyboard shortcuts (Premium-safe)
+  // Keyboard shortcuts
   // -------------------------
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toLowerCase().includes('mac')
       const mod = isMac ? e.metaKey : e.ctrlKey
 
-      // Save
       if (mod && e.key.toLowerCase() === 's') {
         e.preventDefault()
         saveMeta().catch(() => {})
         return
       }
 
-      // Add step ONLY on Ctrl/Cmd+Enter when focused on newStep input
       if (mod && e.key === 'Enter') {
         const active = document.activeElement
         if (active && newStepInputRef.current && active === newStepInputRef.current) {
@@ -810,11 +812,14 @@ export default function RecipeEditor() {
     setStepPhotos((prev) => [...prev, ''])
     setNewStep('')
   }
+
   const updateStep = (idx: number, value: string) => setSteps((prev) => prev.map((x, i) => (i === idx ? value : x)))
+
   const removeStep = (idx: number) => {
     setSteps((prev) => prev.filter((_, i) => i !== idx))
     setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
   }
+
   const moveStep = (idx: number, dir: -1 | 1) => {
     setSteps((prev) => {
       const next = [...prev]
@@ -1185,11 +1190,7 @@ export default function RecipeEditor() {
                 const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : undefined
                 const label = ing?.name ?? 'Ingredient'
                 return (
-                  <div
-                    key={l.id}
-                    className="flex items-center justify-between gap-2 text-sm"
-                    style={{ paddingLeft: depth * 12 }}
-                  >
+                  <div key={l.id} className="flex items-center justify-between gap-2 text-sm" style={{ paddingLeft: depth * 12 }}>
                     <div className="text-neutral-700">
                       • {label} — {l.qty} {safeUnit(l.unit)}
                     </div>
@@ -1304,10 +1305,10 @@ export default function RecipeEditor() {
     metaStatus === 'saving'
       ? 'Saving…'
       : metaStatus === 'dirty'
-      ? 'Unsaved'
-      : lastSavedAt
-      ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString()}`
-      : 'Saved'
+        ? 'Unsaved'
+        : lastSavedAt
+          ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString()}`
+          : 'Saved'
 
   // =========================
   // UI
@@ -1521,8 +1522,7 @@ export default function RecipeEditor() {
                   >
                     <div>
                       <div className="text-sm font-extrabold">
-                        {fmtMoney(p.totalCost, p.currency)}{' '}
-                        <span className="text-xs text-neutral-500">({p.portions} portions)</span>
+                        {fmtMoney(p.totalCost, p.currency)} <span className="text-xs text-neutral-500">({p.portions} portions)</span>
                       </div>
                       <div className="text-xs text-neutral-500">
                         {new Date(p.createdAt).toLocaleString()} · CPP {fmtMoney(p.cpp, p.currency)}
@@ -2038,7 +2038,7 @@ export default function RecipeEditor() {
         )}
       </div>
 
-      {/* ✅ Print Card (kept exactly like your structure) */}
+      {/* ✅ Print Card (kept like your structure) */}
       <div className="gc-print-only">
         <div className="gc-print-page">
           <div className="gc-print-header">
