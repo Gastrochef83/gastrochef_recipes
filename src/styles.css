@@ -1,6 +1,173 @@
-/* =========================
-   Pack D+ — Print Premium
-   ========================= */
+/* =========================================================
+   GastroChef v4 — Core Styles + Tailwind + Pack D+ Print
+   IMPORTANT: This file MUST include Tailwind directives.
+   ========================================================= */
+
+/* ✅ Tailwind */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* =========================================================
+   Base layout helpers (works with Tailwind classes too)
+   ========================================================= */
+
+:root {
+  color-scheme: light;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: #f5f5f5;
+  color: #111;
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Noto Sans",
+    "Apple Color Emoji", "Segoe UI Emoji";
+}
+
+.container-app {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 18px;
+}
+
+.gc-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.gc-card {
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
+}
+
+.gc-input {
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  padding: 12px 12px;
+  background: #fff;
+  outline: none;
+  font-size: 14px;
+}
+
+.gc-input:focus {
+  border-color: #111;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
+}
+
+.gc-btn {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111;
+  border-radius: 999px;
+  padding: 10px 14px;
+  font-weight: 800;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform 0.05s ease, box-shadow 0.15s ease, background 0.15s ease;
+}
+
+.gc-btn:hover {
+  background: #f9fafb;
+}
+
+.gc-btn:active {
+  transform: translateY(1px);
+}
+
+.gc-btn-primary {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.gc-btn-primary:hover {
+  background: #000;
+}
+
+.gc-btn-ghost {
+  background: transparent;
+}
+
+.gc-kpi {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  background: #fff;
+  padding: 14px;
+}
+
+.gc-kpi-label {
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #6b7280;
+}
+
+.gc-kpi-value {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 950;
+  color: #111;
+}
+
+a.gc-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Mode pill styling (optional) */
+.gc-mode-pill {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 12px;
+  background: #fff;
+}
+
+.gc-mode-switch {
+  margin-top: 10px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.gc-mode-btn {
+  border: 1px solid #e5e7eb;
+  border-radius: 999px;
+  padding: 10px 10px;
+  font-weight: 900;
+  font-size: 13px;
+  background: #fff;
+  cursor: pointer;
+}
+
+.gc-mode-btn-active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* Small helper for step buttons (from Pack C suggestion) */
+.gc-step .gc-btn {
+  padding: 8px 10px;
+  font-size: 13px;
+}
+
+/* =========================================================
+   Pack D+ — Print Premium (your exact CSS)
+   ========================================================= */
 
 .gc-print-only { display: none; }
 
