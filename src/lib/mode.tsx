@@ -1,4 +1,4 @@
-import { createContext, useContext, useState } from 'react'
+import { createContext, useContext, useEffect, useState } from 'react'
 
 type Mode = 'kitchen' | 'mgmt'
 
@@ -7,21 +7,35 @@ type ModeContextType = {
   isKitchen: boolean
   isMgmt: boolean
   setMode: (m: Mode) => void
-  toggleMode: () => void
+
+  dark: boolean
+  toggleDark: () => void
 }
 
 const ModeContext = createContext<ModeContextType | null>(null)
 
 export function ModeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<Mode>('mgmt')
 
-  const setMode = (m: Mode) => {
-    setModeState(m)
-  }
+  const [mode, setModeState] = useState<Mode>(() => {
+    return (localStorage.getItem('gc_mode') as Mode) || 'mgmt'
+  })
 
-  const toggleMode = () => {
-    setModeState((prev) => (prev === 'kitchen' ? 'mgmt' : 'kitchen'))
-  }
+  const [dark, setDark] = useState(() => {
+    return localStorage.getItem('gc_dark') === 'true'
+  })
+
+  useEffect(() => {
+    localStorage.setItem('gc_mode', mode)
+  }, [mode])
+
+  useEffect(() => {
+    localStorage.setItem('gc_dark', String(dark))
+    if (dark) {
+      document.documentElement.classList.add('dark')
+    } else {
+      document.documentElement.classList.remove('dark')
+    }
+  }, [dark])
 
   return (
     <ModeContext.Provider
@@ -29,8 +43,9 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
         mode,
         isKitchen: mode === 'kitchen',
         isMgmt: mode === 'mgmt',
-        setMode,
-        toggleMode,
+        setMode: setModeState,
+        dark,
+        toggleDark: () => setDark((d) => !d),
       }}
     >
       {children}
@@ -40,8 +55,6 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
 
 export function useMode() {
   const ctx = useContext(ModeContext)
-  if (!ctx) {
-    throw new Error('useMode must be used inside ModeProvider')
-  }
+  if (!ctx) throw new Error('useMode must be used inside ModeProvider')
   return ctx
 }
