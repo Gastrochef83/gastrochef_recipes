@@ -333,6 +333,193 @@ a.gc-btn {
 }
 
 /* =========================================================
+   ✅ RECIPE LIBRARY — PREMIUM CARDS (UI ONLY, NO LOGIC)
+   These classes only affect the look of cards.
+   ========================================================= */
+
+.gc-menu-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.gc-menu-card {
+  background: #fff;
+  border: 1px solid var(--gc-border);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--gc-shadow-soft);
+  transition: transform 0.14s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.gc-menu-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow);
+}
+
+.gc-menu-hero {
+  position: relative;
+  height: 190px;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+/* ✅ prevents white image flash by keeping a stable box + background */
+.gc-menu-hero img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+  background: #f3f4f6;
+  transform: scale(1.02);
+  transition: transform 0.25s ease;
+}
+
+.gc-menu-card:hover .gc-menu-hero img {
+  transform: scale(1.06);
+}
+
+/* overlay gradient */
+.gc-menu-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.05) 0%,
+    rgba(0, 0, 0, 0.18) 40%,
+    rgba(0, 0, 0, 0.55) 100%
+  );
+  pointer-events: none;
+}
+
+.gc-menu-badges {
+  position: absolute;
+  inset: 12px 12px auto 12px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  z-index: 2;
+}
+
+.gc-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: #fff;
+}
+
+.gc-chip--dark {
+  background: rgba(17, 24, 39, 0.55);
+}
+
+.gc-chip--accent {
+  background: rgba(107, 127, 42, 0.35); /* olive tint */
+}
+
+.gc-chip--warn {
+  background: rgba(245, 158, 11, 0.35); /* amber tint */
+}
+
+.gc-menu-body {
+  padding: 14px 14px 12px;
+}
+
+.gc-menu-title {
+  font-weight: 800;
+  font-size: 16px;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+.gc-menu-sub {
+  margin-top: 4px;
+  color: #6b7280;
+  font-size: 12.5px;
+}
+
+.gc-menu-desc {
+  margin-top: 10px;
+  color: #374151;
+  font-size: 13px;
+  line-height: 1.4;
+  min-height: 34px;
+}
+
+.gc-menu-metrics {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gc-border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.gc-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gc-metric .k {
+  font-size: 11.5px;
+  color: #6b7280;
+}
+
+.gc-metric .v {
+  font-size: 13.5px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.gc-menu-actions {
+  margin-top: 12px;
+  display: flex;
+  gap: 8px;
+}
+
+.gc-btn-lite {
+  border: 1px solid var(--gc-border);
+  background: #fff;
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
+}
+
+.gc-btn-lite:hover {
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
+  transform: translateY(-1px);
+}
+
+.gc-btn-primary-lite {
+  border: 1px solid rgba(107, 127, 42, 0.35);
+  background: rgba(107, 127, 42, 0.14);
+  padding: 9px 10px;
+  border-radius: 12px;
+  font-weight: 900;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: box-shadow 0.18s ease, transform 0.12s ease, border-color 0.18s ease;
+}
+
+.gc-btn-primary-lite:hover {
+  border-color: rgba(107, 127, 42, 0.55);
+  box-shadow: var(--gc-shadow-soft);
+  transform: translateY(-1px);
+}
+
+/* =========================================================
    Pack D+ — Print Premium (your exact CSS, preserved)
    ========================================================= */
 
