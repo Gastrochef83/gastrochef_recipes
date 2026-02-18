@@ -1798,13 +1798,13 @@ export default function RecipeEditor() {
             <div className="gc-label">QTY + UNIT</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
               <input className="gc-input" type="number" min={0} step="0.01" value={addQty} onChange={(e) => setAddQty(e.target.value)} />
-              <select className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value as any)}>
-                <option value="g">g</option>
-                <option value="kg">kg</option>
-                <option value="ml">ml</option>
-                <option value="l">l</option>
-                <option value="pcs">pcs</option>
-              </select>
+              <select className="gc-input font-semibold text-neutral-900" value={addUnit} onChange={(e) => setAddUnit(e.target.value as any)}>
+  <option value="g">g — grams</option>
+  <option value="kg">kg — kilograms</option>
+  <option value="ml">ml — milliliters</option>
+  <option value="l">l — liters</option>
+  <option value="pcs">pcs — pieces</option>
+</select>
             </div>
           </div>
 
