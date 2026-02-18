@@ -37,9 +37,18 @@ export function ModeProvider({ children }: { children: React.ReactNode }) {
     } catch {}
   }
 
-  const toggle = () => setMode(mode === 'kitchen' ? 'mgmt' : 'kitchen')
+  // ✅ Functional toggle to avoid stale state bugs
+  const toggle = () => {
+    setModeState((prev) => {
+      const next: AppMode = prev === 'kitchen' ? 'mgmt' : 'kitchen'
+      try {
+        localStorage.setItem(STORAGE_KEY, next)
+      } catch {}
+      return next
+    })
+  }
 
-  // Optional: put a data attribute on <html> for mode-based styling later
+  // Optional: data attribute for styling
   useEffect(() => {
     try {
       document.documentElement.setAttribute('data-gc-mode', mode)
