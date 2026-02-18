@@ -52,6 +52,18 @@ type Ingredient = {
   is_active?: boolean
 }
 
+type EditRow = {
+  line_type: LineType
+  ingredient_id: string
+  sub_recipe_id: string
+  qty: string
+  unit: string
+  note: string
+  group_title: string
+}
+
+type MetaStatus = 'saved' | 'saving' | 'dirty'
+
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
@@ -101,18 +113,6 @@ function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
   return conv
 }
 
-type EditRow = {
-  line_type: LineType
-  ingredient_id: string
-  sub_recipe_id: string
-  qty: string
-  unit: string
-  note: string
-  group_title: string
-}
-
-type MetaStatus = 'saved' | 'saving' | 'dirty'
-
 export default function RecipeEditor() {
   // ✅ Mode Engine (UI only — no logic changes)
   const { isKitchen, isMgmt } = useMode()
@@ -133,8 +133,6 @@ export default function RecipeEditor() {
   // Meta saving
   const [savingMeta, setSavingMeta] = useState(false)
   const [uploading, setUploading] = useState(false)
-
-  // upload state for step photos
   const [stepUploading, setStepUploading] = useState(false)
 
   // Form fields
@@ -147,8 +145,6 @@ export default function RecipeEditor() {
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
-
-  // step photos aligned to steps
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
 
   // Nutrition per portion (manual only)
@@ -197,7 +193,6 @@ export default function RecipeEditor() {
 
   // Expand breakdown
   const [expanded, setExpanded] = useState<Record<string, boolean>>({})
-  const toggleExpand = (lineId: string) => setExpanded((p) => ({ ...p, [lineId]: !p[lineId] }))
 
   // Recursive cache of recipe_lines for referenced subrecipes
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
@@ -205,6 +200,11 @@ export default function RecipeEditor() {
   // --------- Smart Back + Autosave Tracking ----------
   const [metaStatus, setMetaStatus] = useState<MetaStatus>('saved')
   const lastSavedSnapshotRef = useRef<string>('')
+  const autoSaveTimerRef = useRef<number | null>(null)
+  const newStepInputRef = useRef<HTMLInputElement | null>(null)
+
+  // Premium: last saved time
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null)
 
   // Pack D: Print / Cost History UI
   const [costOpen, setCostOpen] = useState(false)
@@ -239,9 +239,24 @@ export default function RecipeEditor() {
   }
 
   const smartBack = () => {
+    if (metaStatus === 'dirty') {
+      const ok = window.confirm('You have unsaved changes. Leave anyway?')
+      if (!ok) return
+    }
     if (window.history.length > 1) navigate(-1)
     else navigate('/recipes', { replace: true })
   }
+
+  // Unsaved guard on tab close
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (metaStatus !== 'dirty') return
+      e.preventDefault()
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [metaStatus])
 
   // mark dirty when user changes meta
   useEffect(() => {
@@ -387,6 +402,7 @@ export default function RecipeEditor() {
       })
       lastSavedSnapshotRef.current = snap
       setMetaStatus('saved')
+      setLastSavedAt(Date.now())
     }, 0)
   }
 
@@ -551,11 +567,24 @@ export default function RecipeEditor() {
     return { cost: sum, warnings }
   }
 
+  // ✅ Premium: memo cache for cost results within the same render (no logic change)
+  const costMemo = useMemo(() => {
+    const cache = new Map<string, { cost: number; warnings: string[] }>()
+    const get = (rid: string) => {
+      const hit = cache.get(rid)
+      if (hit) return hit
+      const res = getRecipeTotalCost(rid, new Set<string>())
+      cache.set(rid, res)
+      return res
+    }
+    return { get }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipeLinesCache, ingById, recipeById])
+
   const totalCostRes = useMemo(() => {
     if (!recipe) return { cost: 0, warnings: [] as string[] }
-    return getRecipeTotalCost(recipe.id, new Set<string>())
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipe?.id, recipeLinesCache, ingById, recipeById])
+    return costMemo.get(recipe.id)
+  }, [recipe?.id, costMemo])
 
   const totalCost = totalCostRes.cost
   const cpp = totalCost / portionsN
@@ -632,6 +661,7 @@ export default function RecipeEditor() {
 
       lastSavedSnapshotRef.current = currentMetaSnapshot()
       setMetaStatus('saved')
+      setLastSavedAt(Date.now())
 
       if (!opts?.silent) showToast('Saved ✅')
       if (!opts?.skipReload) await loadAll(id)
@@ -643,70 +673,55 @@ export default function RecipeEditor() {
     }
   }
 
-  // -------------------------
-  // Auto-save (every 10s if dirty)
-  // -------------------------
+  // ✅ Premium Autosave: debounce after last change (no logic change)
   useEffect(() => {
-    const t = setInterval(() => {
-      if (!id) return
-      if (loading) return
-      if (savingMeta) return
-      if (uploading) return
-      if (stepUploading) return
-      if (metaStatus !== 'dirty') return
-      saveMeta({ silent: true, skipReload: true, isAuto: true }).catch(() => {})
-    }, 10_000)
+    if (!id) return
+    if (loading) return
+    if (savingMeta) return
+    if (uploading) return
+    if (stepUploading) return
+    if (metaStatus !== 'dirty') return
 
-    return () => clearInterval(t)
+    if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current)
+    autoSaveTimerRef.current = window.setTimeout(() => {
+      saveMeta({ silent: true, skipReload: true, isAuto: true }).catch(() => {})
+    }, 2500)
+
+    return () => {
+      if (autoSaveTimerRef.current) window.clearTimeout(autoSaveTimerRef.current)
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id, loading, savingMeta, uploading, stepUploading, metaStatus])
+  }, [id, loading, savingMeta, uploading, stepUploading, metaStatus, currentMetaSnapshot()])
 
   // -------------------------
-  // Keyboard shortcuts
+  // Keyboard shortcuts (Premium-safe)
   // -------------------------
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
       const isMac = navigator.platform.toLowerCase().includes('mac')
       const mod = isMac ? e.metaKey : e.ctrlKey
-      if (!mod) return
 
-      if (e.key.toLowerCase() === 's') {
+      // Save
+      if (mod && e.key.toLowerCase() === 's') {
         e.preventDefault()
         saveMeta().catch(() => {})
         return
       }
 
-      if (e.key === 'Enter') {
-        e.preventDefault()
-        addStep()
-        return
+      // Add step ONLY on Ctrl/Cmd+Enter when focused on newStep input
+      if (mod && e.key === 'Enter') {
+        const active = document.activeElement
+        if (active && newStepInputRef.current && active === newStepInputRef.current) {
+          e.preventDefault()
+          addStep()
+        }
       }
     }
 
     window.addEventListener('keydown', onKeyDown)
     return () => window.removeEventListener('keydown', onKeyDown)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    newStep,
-    steps,
-    stepPhotos,
-    name,
-    category,
-    portions,
-    description,
-    methodLegacy,
-    calories,
-    protein,
-    carbs,
-    fat,
-    currency,
-    sellingPrice,
-    targetFC,
-    isSubRecipe,
-    yieldQty,
-    yieldUnit,
-    metaStatus,
-  ])
+  }, [newStep, steps, stepPhotos, metaStatus])
 
   // -------------------------
   // Yield Smart
@@ -1118,14 +1133,24 @@ export default function RecipeEditor() {
   }
 
   // -------------------------
-  // Breakdown render (depth up to 2)
+  // Breakdown render (depth up to 2) + lazy ensure
   // -------------------------
+  const toggleExpand = async (lineId: string, subRecipeId?: string | null) => {
+    const next = !expanded[lineId]
+    if (next && subRecipeId) {
+      try {
+        await ensureRecipeLinesLoaded(subRecipeId)
+      } catch {}
+    }
+    setExpanded((p) => ({ ...p, [lineId]: next }))
+  }
+
   const renderBreakdown = (subRecipeId: string, depth: number) => {
     const r = recipeById.get(subRecipeId)
     const rLines = recipeLinesCache[subRecipeId] ?? []
     if (!r) return null
 
-    const res = getRecipeTotalCost(subRecipeId, new Set<string>())
+    const res = costMemo.get(subRecipeId)
     const yq = toNum(r.yield_qty, 0)
     const yu = safeUnit(r.yield_unit ?? '')
     const perUnit = yq > 0 ? res.cost / yq : 0
@@ -1247,6 +1272,7 @@ export default function RecipeEditor() {
   // Guards
   // -------------------------
   if (loading) return <div className="gc-card p-6">Loading editor…</div>
+
   if (err) {
     return (
       <div className="gc-card p-6 space-y-3">
@@ -1261,6 +1287,7 @@ export default function RecipeEditor() {
       </div>
     )
   }
+
   if (!recipe) {
     return (
       <div className="gc-card p-6 space-y-3">
@@ -1273,8 +1300,18 @@ export default function RecipeEditor() {
     )
   }
 
-  const metaBadge = metaStatus === 'saving' ? 'Saving…' : metaStatus === 'dirty' ? 'Unsaved' : 'Saved'
+  const metaBadge =
+    metaStatus === 'saving'
+      ? 'Saving…'
+      : metaStatus === 'dirty'
+      ? 'Unsaved'
+      : lastSavedAt
+      ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString()}`
+      : 'Saved'
 
+  // =========================
+  // UI
+  // =========================
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -1342,7 +1379,6 @@ export default function RecipeEditor() {
 
                   <span className="text-xs font-semibold text-neutral-500">{metaBadge}</span>
 
-                  {/* Pack D */}
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={printNow}>
                     Print Card
                   </button>
@@ -1614,7 +1650,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="mt-3 text-xs text-neutral-500">
-              Tip: Use <span className="font-semibold">Ctrl/Cmd+S</span> to save quickly.
+              Tip: Use <span className="font-semibold">Ctrl/Cmd+S</span> to save quickly. Use <span className="font-semibold">Ctrl/Cmd+Enter</span> to add a step.
             </div>
           </div>
         )}
@@ -1626,16 +1662,11 @@ export default function RecipeEditor() {
 
         <div className="mt-4 grid gap-3 md:grid-cols-[1fr_auto]">
           <input
+            ref={newStepInputRef}
             className="gc-input"
             value={newStep}
             onChange={(e) => setNewStep(e.target.value)}
             placeholder="Write step… (Ctrl/Cmd+Enter to add)"
-            onKeyDown={(e) => {
-              if (e.key === 'Enter') {
-                e.preventDefault()
-                addStep()
-              }
-            }}
           />
           <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
             + Add Step
@@ -1903,7 +1934,7 @@ export default function RecipeEditor() {
                   rightInfo = fmtMoney(conv * net, currency)
                 } else if (r.line_type === 'subrecipe' && r.sub_recipe_id) {
                   const child = recipeById.get(r.sub_recipe_id)
-                  const childRes = child ? getRecipeTotalCost(child.id, new Set<string>()) : { cost: 0, warnings: [] as string[] }
+                  const childRes = child ? costMemo.get(child.id) : { cost: 0, warnings: [] as string[] }
                   const yq = child ? toNum(child.yield_qty, 0) : 0
                   const yu = child ? safeUnit(child.yield_unit ?? '') : ''
                   const conv = child ? convertQty(toNum(r.qty, 0), r.unit, yu) : { ok: false, value: 0 }
@@ -1976,7 +2007,7 @@ export default function RecipeEditor() {
 
                       <div className="flex justify-end gap-2">
                         {canExpand && (
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleExpand(l.id)}>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleExpand(l.id, r.sub_recipe_id)}>
                             {expanded[l.id] ? 'Hide' : 'Expand'}
                           </button>
                         )}
@@ -2007,7 +2038,7 @@ export default function RecipeEditor() {
         )}
       </div>
 
-      {/* ✅ Pack D+ Print Card (Premium, matches your CSS exactly) */}
+      {/* ✅ Print Card (kept exactly like your structure) */}
       <div className="gc-print-only">
         <div className="gc-print-page">
           <div className="gc-print-header">
