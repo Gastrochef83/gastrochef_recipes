@@ -1,5 +1,6 @@
 /* =========================================================
    GastroChef v4 — Core Styles + Tailwind + Pack D+ Print
+   PREMIUM GLOBAL EDITION (Luxury Minimal)
    IMPORTANT: This file MUST include Tailwind directives.
    ========================================================= */
 
@@ -35,6 +36,10 @@ body {
   padding: 18px;
 }
 
+/* =========================================================
+   Core tokens (Premium feel without changing your palette)
+   ========================================================= */
+
 .gc-label {
   font-size: 11px;
   font-weight: 900;
@@ -57,12 +62,24 @@ body {
   background: #fff;
   outline: none;
   font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease, transform 0.05s ease;
 }
 
 .gc-input:focus {
   border-color: #111;
   box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.08);
 }
+
+/* Nicer disabled look (Premium) */
+.gc-input:disabled {
+  background: #f9fafb;
+  color: #6b7280;
+  cursor: not-allowed;
+}
+
+/* =========================================================
+   Buttons (Premium interactions)
+   ========================================================= */
 
 .gc-btn {
   border: 1px solid #e5e7eb;
@@ -74,7 +91,7 @@ body {
   font-size: 14px;
   cursor: pointer;
   user-select: none;
-  transition: transform 0.05s ease, box-shadow 0.15s ease, background 0.15s ease;
+  transition: transform 0.05s ease, box-shadow 0.15s ease, background 0.15s ease, border-color 0.15s ease;
 }
 
 .gc-btn:hover {
@@ -83,6 +100,20 @@ body {
 
 .gc-btn:active {
   transform: translateY(1px);
+}
+
+/* ✅ Accessibility: visible focus for keyboard users */
+.gc-btn:focus-visible,
+.gc-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.12);
+  border-color: #111;
+}
+
+.gc-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  transform: none;
 }
 
 .gc-btn-primary {
@@ -98,6 +129,18 @@ body {
 .gc-btn-ghost {
   background: transparent;
 }
+
+/* Link buttons */
+a.gc-btn {
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* =========================================================
+   KPI cards
+   ========================================================= */
 
 .gc-kpi {
   border: 1px solid #e5e7eb;
@@ -121,14 +164,10 @@ body {
   color: #111;
 }
 
-a.gc-btn {
-  text-decoration: none;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
+/* =========================================================
+   Mode pill styling (optional)
+   ========================================================= */
 
-/* Mode pill styling (optional) */
 .gc-mode-pill {
   border: 1px solid #e5e7eb;
   border-radius: 18px;
@@ -151,6 +190,11 @@ a.gc-btn {
   font-size: 13px;
   background: #fff;
   cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.gc-mode-btn:hover {
+  background: #f9fafb;
 }
 
 .gc-mode-btn-active {
@@ -159,6 +203,10 @@ a.gc-btn {
   border-color: #111;
 }
 
+/* Optional mode hook for future styling */
+html[data-gc-mode="kitchen"] .gc-label {}
+html[data-gc-mode="mgmt"] .gc-label {}
+
 /* Small helper for step buttons (from Pack C suggestion) */
 .gc-step .gc-btn {
   padding: 8px 10px;
@@ -166,7 +214,70 @@ a.gc-btn {
 }
 
 /* =========================================================
-   Pack D+ — Print Premium (your exact CSS)
+   ✅ PREMIUM TOAST (new)
+   - Used by Toast.tsx as: gc-toast + gc-toast-close
+   ========================================================= */
+
+.gc-toast {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(17, 17, 17, 0.12);
+  border-radius: 18px;
+  box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18);
+
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+
+  transform: translateY(6px);
+  opacity: 0;
+  animation: gcToastIn 160ms ease-out forwards;
+}
+
+@keyframes gcToastIn {
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.gc-toast-close {
+  border: 1px solid rgba(17, 17, 17, 0.14);
+  background: transparent;
+  color: #111;
+
+  width: 30px;
+  height: 30px;
+  border-radius: 999px;
+
+  font-weight: 900;
+  font-size: 13px;
+  cursor: pointer;
+
+  display: inline-grid;
+  place-items: center;
+
+  transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.gc-toast-close:hover {
+  background: rgba(17, 17, 17, 0.06);
+}
+
+.gc-toast-close:active {
+  transform: translateY(1px);
+}
+
+.gc-toast-close:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(17, 17, 17, 0.14);
+}
+
+/* =========================================================
+   Pack D+ — Print Premium (your exact CSS, preserved)
    ========================================================= */
 
 .gc-print-only { display: none; }
