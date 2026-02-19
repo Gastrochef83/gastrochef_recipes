@@ -1,5 +1,5 @@
 // src/pages/RecipeEditor.tsx
-import { useDeferredValue, useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useDeferredValue } from 'react'
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -139,12 +139,16 @@ export default function RecipeEditor() {
   const id = sp.get('id')
 
   const [loading, setLoading] = useState(true)
-  const [softLoading, setSoftLoading] = useState(false)
   const [err, setErr] = useState<string | null>(null)
 
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
+
+  // OMEGA V9: defer huge arrays to keep typing/scroll smooth
+  const linesView = useDeferredValue(lines)
+  const ingredientsView = useDeferredValue(ingredients)
+
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
   // Meta saving
@@ -191,7 +195,6 @@ export default function RecipeEditor() {
 
   // Inline Add
   const [ingSearch, setIngSearch] = useState('')
-  const deferredIngSearch = useDeferredValue(ingSearch)
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [addIngredientId, setAddIngredientId] = useState('')
   const [addSubRecipeId, setAddSubRecipeId] = useState('')
@@ -423,14 +426,6 @@ export default function RecipeEditor() {
     }, 0)
   }
 
-
-  const fireReload = (rid: string) => {
-    setSoftLoading(true)
-    loadAll(rid)
-      .catch(() => {})
-      .finally(() => setSoftLoading(false))
-  }
-
   useEffect(() => {
     if (!id) {
       setErr('Missing recipe id in URL (?id=...)')
@@ -460,13 +455,13 @@ export default function RecipeEditor() {
     return m
   }, [allRecipes])
 
-  const activeIngredients = useMemo(() => ingredients.filter((i) => i.is_active !== false), [ingredients])
+  const activeIngredients = useMemo(() => ingredientsView.filter((i) => i.is_active !== false), [ingredients])
 
   const filteredIngredients = useMemo(() => {
-    const q = deferredIngSearch.trim().toLowerCase()
+    const q = ingSearch.trim().toLowerCase()
     if (!q) return activeIngredients
     return activeIngredients.filter((x) => (x.name ?? '').toLowerCase().includes(q))
-  }, [activeIngredients, deferredIngSearch])
+  }, [activeIngredients, ingSearch])
 
   const subRecipeOptions = useMemo(() => {
     if (!recipe) return []
@@ -930,7 +925,7 @@ export default function RecipeEditor() {
 
     setSavingAdd(true)
     try {
-      const maxSort = lines.length ? Math.max(...lines.map((x) => toNum(x.sort_order, 0))) : 0
+      const maxSort = lines.length ? Math.max(...linesView.map((x) => toNum(x.sort_order, 0))) : 0
       const base: any = {
         recipe_id: id,
         sort_order: maxSort + 10,
@@ -971,7 +966,7 @@ export default function RecipeEditor() {
       setAddUnit('g')
       setAddNote('')
       showToast('Added ✅')
-      fireReload(id)
+      await loadAll(id)
     } catch (e: any) {
       showToast(e?.message ?? 'Add failed')
     } finally {
@@ -986,7 +981,7 @@ export default function RecipeEditor() {
 
     setSavingGroup(true)
     try {
-      const maxSort = lines.length ? Math.max(...lines.map((x) => toNum(x.sort_order, 0))) : 0
+      const maxSort = lines.length ? Math.max(...linesView.map((x) => toNum(x.sort_order, 0))) : 0
       const payload = {
         recipe_id: id,
         ingredient_id: null,
@@ -1002,7 +997,7 @@ export default function RecipeEditor() {
       if (error) throw error
       setGroupTitle('')
       showToast('Group added ✅')
-      fireReload(id)
+      await loadAll(id)
     } catch (e: any) {
       showToast(e?.message ?? 'Add group failed')
     } finally {
@@ -1036,7 +1031,7 @@ export default function RecipeEditor() {
           .eq('recipe_id', id)
         if (error) throw error
         showToast('Saved ✅')
-        fireReload(id)
+        await loadAll(id)
         return
       }
 
@@ -1082,7 +1077,7 @@ export default function RecipeEditor() {
       }
 
       showToast('Saved ✅')
-      fireReload(id)
+      await loadAll(id)
     } catch (e: any) {
       showToast(e?.message ?? 'Save failed')
     } finally {
@@ -1096,7 +1091,7 @@ export default function RecipeEditor() {
       const { error } = await supabase.from('recipe_lines').delete().eq('id', lineId).eq('recipe_id', id)
       if (error) throw error
       showToast('Deleted ✅')
-      fireReload(id)
+      await loadAll(id)
     } catch (e: any) {
       showToast(e?.message ?? 'Delete failed')
     }
@@ -1121,7 +1116,7 @@ export default function RecipeEditor() {
       const { error } = await supabase.from('recipe_lines').insert(payload)
       if (error) throw error
       showToast('Duplicated ✅')
-      fireReload(id)
+      await loadAll(id)
     } catch (e: any) {
       showToast(e?.message ?? 'Duplicate failed')
     }
@@ -1138,7 +1133,7 @@ export default function RecipeEditor() {
       const bad = results.find((r) => r.error)
       if (bad?.error) throw bad.error
       showToast('Order saved ✅')
-      fireReload(id)
+      await loadAll(id)
     } catch (e: any) {
       showToast(e?.message ?? 'Reorder failed')
     } finally {
@@ -1347,8 +1342,6 @@ export default function RecipeEditor() {
       ? `Saved · ${new Date(lastSavedAt).toLocaleTimeString()}`
       : 'Saved'
 
-  const globalBusy = loading || savingMeta || uploading || stepUploading || savingAdd || savingGroup || reorderSaving || softLoading
-
   // =========================
   // UI
   // =========================
@@ -1379,7 +1372,7 @@ export default function RecipeEditor() {
                         : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                     }`}
                   >
-                    {metaBadge}{globalBusy ? ' · Working…' : ''}
+                    {metaBadge}
                   </span>
                 </div>
               </div>
@@ -1967,7 +1960,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="divide-y divide-neutral-200">
-              {lines.map((l) => {
+              {linesView.map((l) => {
                 const row = edit[l.id]
                 const saving = rowSaving[l.id] === true
 
