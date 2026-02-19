@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useDeferredValue } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -124,6 +124,15 @@ type Density = 'comfortable' | 'dense'
 
 export default function Recipes() {
   const nav = useNavigate()
+
+  // OMEGA V9: auth guard (RLS-safe)
+  async function requireAuth() {
+    const { data } = await supabase.auth.getUser()
+    const user = data?.user
+    if (!user) throw new Error('Not signed in. Click “Sign in” first.')
+    return user
+  }
+
   const { isKitchen } = useMode()
   const isMgmt = !isKitchen
 
@@ -134,7 +143,11 @@ export default function Recipes() {
   const [q, setQ] = useState('')
   const [showArchived, setShowArchived] = useState(false)
 
-  const [recipes, setRecipes] = useState<RecipeRow[]>([])
+  const [recipesView, setRecipes] = useState<RecipeRow[]>([])
+
+  // OMEGA V9: defer huge lists to keep UI responsive
+  const recipesView = useDeferredValue(recipes)
+
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
 
   const [selected, setSelected] = useState<Record<string, boolean>>({})
