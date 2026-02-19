@@ -21,10 +21,8 @@ export default function AppLayout() {
     return 'Dashboard'
   }, [loc.pathname])
 
-  const modeClass = isKitchen ? 'gc-mode-kitchen' : 'gc-mode-mgmt'
-
   return (
-    <div className={cx('gc-root', dark ? 'gc-dark' : '', modeClass)}>
+    <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
         {/* Sidebar */}
         <aside className="gc-side">
@@ -63,24 +61,38 @@ export default function AppLayout() {
               <div className="gc-label">NAVIGATION</div>
 
               <nav className="gc-nav mt-2">
-                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Dashboard
                 </NavLink>
 
-                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/ingredients"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Ingredients
                 </NavLink>
 
-                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/recipes"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Recipes
                 </NavLink>
 
-                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Settings
                 </NavLink>
               </nav>
 
-              <div className="gc-side-tip mt-3">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
+              <div className="gc-side-tip mt-3">
+                Tip: Kitchen for cooking · Mgmt for costing & pricing.
+              </div>
             </div>
           </div>
         </aside>
