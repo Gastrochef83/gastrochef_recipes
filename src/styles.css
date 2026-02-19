@@ -1,10 +1,13 @@
 /* =========================================================
-   GastroChef — KITOPI-LIKE UI THEME (OMEGA)
+   GastroChef — KITOPI-LIKE UI THEME (OMEGA + ULTRA BUTTONS)
    ✅ UI only (no logic change)
-   Includes: PRO action buttons for Open Editor / Cook / Archive / Delete
+   - Kitopi background
+   - Premium cards
+   - Remove badges/overlay above recipe image
+   - ULTRA action buttons (Open Editor / Cook / Archive / Delete)
    ========================================================= */
 
-/* ---------- Design Tokens (Kitopi-like: clean + teal) ---------- */
+/* ---------- Tokens ---------- */
 :root{
   --gc-bg: #f7f9fb;
   --gc-bg-2: #eef3f6;
@@ -15,6 +18,7 @@
 
   --gc-border: rgba(15, 23, 42, .10);
   --gc-border-strong: rgba(15, 23, 42, .14);
+
   --gc-shadow: 0 18px 45px rgba(2, 6, 23, .08);
   --gc-shadow-soft: 0 10px 24px rgba(2, 6, 23, .06);
 
@@ -22,9 +26,9 @@
   --gc-radius-lg: 18px;
   --gc-radius-xl: 20px;
 
-  --gc-ink: #0b1220;
   --gc-accent: #0f766e;
   --gc-accent-2: #14b8a6;
+
   --gc-success: #16a34a;
   --gc-warn: #f59e0b;
   --gc-danger: #ef4444;
@@ -33,13 +37,19 @@
   --gc-max: 1240px;
 
   --gc-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-  --gc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-
   --gc-focus: 0 0 0 4px rgba(20, 184, 166, .18);
+
   --gc-grad: linear-gradient(180deg, #f7f9fb 0%, #eef3f6 100%);
+
+  /* Ultra buttons tuning */
+  --gc-btn-h: 34px;
+  --gc-btn-r: 12px;
+  --gc-btn-fs: 12.25px;
+  --gc-btn-fw: 900;
+  --gc-btn-gap: 8px;
 }
 
-/* ---------- Dark Mode ---------- */
+/* ---------- Dark ---------- */
 .gc-dark{
   --gc-bg: #0b1220;
   --gc-bg-2: #0f172a;
@@ -76,7 +86,6 @@ a{ color: inherit; text-decoration:none; }
 button, input, textarea, select{ font-family: inherit; }
 ::selection{ background: rgba(20,184,166,.22); }
 
-/* scrollbar */
 *::-webkit-scrollbar{ width: 10px; height: 10px; }
 *::-webkit-scrollbar-thumb{
   background: rgba(15,23,42,.18);
@@ -164,6 +173,7 @@ button, input, textarea, select{ font-family: inherit; }
 }
 .gc-brand-sub{ font-size: 12px; color: var(--gc-muted); }
 
+/* ---------- Segmented ---------- */
 .gc-seg{
   display:flex;
   background: rgba(15,23,42,.04);
@@ -193,6 +203,7 @@ button, input, textarea, select{ font-family: inherit; }
   box-shadow: 0 10px 22px rgba(2,6,23,.08);
 }
 
+/* ---------- Nav ---------- */
 .gc-nav{ display:flex; flex-direction: column; gap: 10px; }
 .gc-nav-item{
   padding: 12px 14px;
@@ -220,7 +231,7 @@ button, input, textarea, select{ font-family: inherit; }
   border-color: rgba(94,234,212,.35);
 }
 
-/* ---------- Inputs / Buttons (generic) ---------- */
+/* ---------- Inputs ---------- */
 .gc-input{
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.92);
@@ -237,6 +248,7 @@ button, input, textarea, select{ font-family: inherit; }
   box-shadow: var(--gc-focus);
 }
 
+/* ---------- Generic Buttons ---------- */
 .gc-btn{
   border: 1px solid var(--gc-border);
   background: var(--gc-card);
@@ -246,7 +258,7 @@ button, input, textarea, select{ font-family: inherit; }
   font-weight: 900;
   cursor: pointer;
   box-shadow: 0 12px 24px rgba(2,6,23,.06);
-  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease, filter .16s ease;
 }
 .gc-btn:hover{
   transform: translateY(-1px);
@@ -261,8 +273,27 @@ button, input, textarea, select{ font-family: inherit; }
   color: #fff;
 }
 
+/* ---------- Toast ---------- */
+.gc-toast{
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  box-shadow: var(--gc-shadow);
+  border-radius: 16px;
+  padding: 12px 12px;
+  min-width: 220px;
+}
+.gc-toast-close{
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  opacity: .7;
+}
+.gc-toast-close:hover{ opacity: 1; }
+
 /* =========================================================
-   Recipes Cards — gc-menu-*
+   Recipe Library Cards — gc-menu-*
    ========================================================= */
 .gc-menu-card{
   background: var(--gc-card);
@@ -310,15 +341,14 @@ button, input, textarea, select{ font-family: inherit; }
 }
 
 /* =========================================================
-   ✅ FIX YOUR SCREENSHOT:
-   Make "Open Editor / Cook / Archive / Delete" REAL PRO BUTTONS
-   Works even if they are <a> or <button> بدون كلاسات
+   ✅ ULTRA BUTTONS (NO LOGIC CHANGE)
+   Styles ANY a/button inside .gc-menu-actions + gives them premium look
+   Works with your current markup exactly.
    ========================================================= */
 
-/* make actions row look like a toolbar */
 .gc-menu-actions{
   display:flex;
-  gap: 10px;
+  gap: var(--gc-btn-gap);
   align-items:center;
   justify-content: space-between;
   margin-top: 12px;
@@ -326,86 +356,163 @@ button, input, textarea, select{ font-family: inherit; }
   border-top: 1px solid var(--gc-border);
 }
 
-/* style ANY clickable inside actions:
-   a, button, .gc-btn, or plain elements */
+/* clickable targets */
 .gc-menu-actions a,
 .gc-menu-actions button,
 .gc-menu-actions .gc-btn{
-  flex: 1 1 0;
-  min-height: 40px;
-  padding: 10px 12px;
-  border-radius: 14px;
+  appearance: none;
+  -webkit-appearance: none;
 
-  font-weight: 950;
-  letter-spacing: -0.01em;
-  text-align: center;
+  flex: 1 1 0;
+  min-width: 0;
+
+  height: var(--gc-btn-h);
+  padding: 0 10px;
+
+  border-radius: var(--gc-btn-r);
+
+  font-size: var(--gc-btn-fs);
+  font-weight: var(--gc-btn-fw);
+  letter-spacing: .01em;
   line-height: 1;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
 
   border: 1px solid var(--gc-border);
   background: linear-gradient(180deg, rgba(255,255,255,.98), rgba(255,255,255,.90));
   color: var(--gc-text);
 
-  box-shadow: 0 10px 18px rgba(2,6,23,.08);
+  box-shadow:
+    0 10px 18px rgba(2,6,23,.08),
+    inset 0 1px 0 rgba(255,255,255,.65);
+
+  position: relative;
   cursor: pointer;
   user-select: none;
 
-  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, filter .16s ease;
+  transition:
+    transform .10s ease,
+    box-shadow .16s ease,
+    border-color .16s ease,
+    filter .16s ease;
 }
 
-/* remove default button styles */
-.gc-menu-actions button{
-  appearance: none;
-  -webkit-appearance: none;
+/* glossy micro-sheen */
+.gc-menu-actions a::before,
+.gc-menu-actions button::before,
+.gc-menu-actions .gc-btn::before{
+  content:"";
+  position:absolute;
+  inset:-40% -60%;
+  background: radial-gradient(circle at 20% 20%, rgba(20,184,166,.16), rgba(255,255,255,0) 58%);
+  transform: rotate(10deg);
+  opacity: .9;
+  pointer-events:none;
 }
 
-/* hover / focus */
+/* bottom separator line inside button (gives crisp UI) */
+.gc-menu-actions a::after,
+.gc-menu-actions button::after,
+.gc-menu-actions .gc-btn::after{
+  content:"";
+  position:absolute;
+  left:10px;
+  right:10px;
+  bottom:7px;
+  height: 1px;
+  background: rgba(15,23,42,.08);
+  opacity: .55;
+  pointer-events:none;
+}
+
+.gc-dark .gc-menu-actions a::after,
+.gc-dark .gc-menu-actions button::after,
+.gc-dark .gc-menu-actions .gc-btn::after{
+  background: rgba(255,255,255,.10);
+}
+
+/* hover */
 .gc-menu-actions a:hover,
 .gc-menu-actions button:hover,
 .gc-menu-actions .gc-btn:hover{
   transform: translateY(-1px);
   border-color: var(--gc-border-strong);
-  box-shadow: 0 16px 30px rgba(2,6,23,.10);
+  filter: saturate(1.02);
+  box-shadow:
+    0 16px 30px rgba(2,6,23,.10),
+    inset 0 1px 0 rgba(255,255,255,.65);
 }
+.gc-menu-actions a:active,
+.gc-menu-actions button:active,
+.gc-menu-actions .gc-btn:active{
+  transform: translateY(0);
+  box-shadow:
+    0 10px 18px rgba(2,6,23,.08),
+    inset 0 2px 6px rgba(2,6,23,.12);
+}
+
+/* focus */
 .gc-menu-actions a:focus,
 .gc-menu-actions button:focus,
 .gc-menu-actions .gc-btn:focus{
   outline: none;
-  box-shadow: var(--gc-focus), 0 18px 36px rgba(2,6,23,.12);
+  box-shadow: var(--gc-focus), 0 16px 34px rgba(2,6,23,.12);
 }
 
-/* ✅ Color mapping by ORDER (matches your screenshot):
-   1) Open Editor = Primary teal
-   2) Cook       = Teal outline
-   3) Archive    = Neutral
-   4) Delete     = Danger
+/* ✅ Color mapping by order (your current UI):
+   1: Open Editor (Primary)
+   2: Cook (Teal Outline)
+   3: Archive (Neutral)
+   4: Delete (Danger)
 */
 .gc-menu-actions > :nth-child(1){
   background: linear-gradient(180deg, rgba(15,118,110,1), rgba(15,118,110,.86));
   border-color: rgba(15,118,110,.35);
   color: #fff;
+  box-shadow:
+    0 16px 32px rgba(15,118,110,.20),
+    0 10px 18px rgba(2,6,23,.08),
+    inset 0 1px 0 rgba(255,255,255,.22);
 }
+.gc-menu-actions > :nth-child(1)::before{
+  background: radial-gradient(circle at 20% 20%, rgba(255,255,255,.22), rgba(255,255,255,0) 58%);
+}
+.gc-menu-actions > :nth-child(1)::after{
+  background: rgba(255,255,255,.18);
+  opacity: .55;
+}
+
 .gc-menu-actions > :nth-child(2){
   background: linear-gradient(180deg, rgba(20,184,166,.10), rgba(20,184,166,.06));
   border-color: rgba(20,184,166,.30);
   color: rgba(15,118,110,.98);
 }
+.gc-menu-actions > :nth-child(2)::before{
+  background: radial-gradient(circle at 20% 20%, rgba(20,184,166,.20), rgba(255,255,255,0) 60%);
+}
+
 .gc-menu-actions > :nth-child(3){
   background: linear-gradient(180deg, rgba(15,23,42,.05), rgba(15,23,42,.03));
   border-color: rgba(15,23,42,.14);
   color: rgba(15,23,42,.92);
 }
+
 .gc-menu-actions > :nth-child(4){
   background: linear-gradient(180deg, rgba(239,68,68,.10), rgba(239,68,68,.06));
   border-color: rgba(239,68,68,.22);
   color: rgba(127,29,29,.95);
 }
+.gc-menu-actions > :nth-child(4)::before{
+  background: radial-gradient(circle at 20% 20%, rgba(239,68,68,.18), rgba(255,255,255,0) 60%);
+}
 
-/* dark adjustments */
+/* dark mode buttons */
 .gc-dark .gc-menu-actions{ border-top-color: rgba(148,163,184,.14); }
 
 .gc-dark .gc-menu-actions a,
@@ -414,12 +521,19 @@ button, input, textarea, select{ font-family: inherit; }
   background: linear-gradient(180deg, rgba(255,255,255,.06), rgba(255,255,255,.03));
   border-color: rgba(148,163,184,.18);
   color: rgba(229,231,235,.92);
+  box-shadow:
+    0 12px 26px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.06);
 }
 
 .gc-dark .gc-menu-actions > :nth-child(1){
   background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
   border-color: rgba(94,234,212,.35);
   color: #071a18;
+  box-shadow:
+    0 18px 36px rgba(20,184,166,.18),
+    0 12px 26px rgba(0,0,0,.35),
+    inset 0 1px 0 rgba(255,255,255,.10);
 }
 .gc-dark .gc-menu-actions > :nth-child(2){
   background: linear-gradient(180deg, rgba(94,234,212,.12), rgba(94,234,212,.06));
@@ -437,8 +551,11 @@ button, input, textarea, select{ font-family: inherit; }
   color: rgba(254,202,202,.95);
 }
 
-/* little spacing safety: prevent actions wrapping ugly */
-.gc-menu-actions > *{ min-width: 0; }
+/* responsive: if 4 buttons get tight, allow wrap gracefully */
+@media (max-width: 420px){
+  .gc-menu-actions{ flex-wrap: wrap; }
+  .gc-menu-actions > *{ flex: 1 1 calc(50% - 6px); }
+}
 
 /* helper */
 .gc-divider{ height: 1px; background: var(--gc-border); }
