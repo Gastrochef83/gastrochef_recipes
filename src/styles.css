@@ -1,75 +1,79 @@
 /* =========================================================
-   GastroChef V5 — GLOBAL UI POLISH (Paprika Killer)
+   GastroChef — KITOPI-LIKE UI THEME (OMEGA)
    ✅ UI only (no logic change)
-   Covers: AppLayout + Recipes + RecipeEditor + RecipeLinesPro + Toast + Print A4
+   Keeps your existing class names from Style.docx
    ========================================================= */
 
-/* ---------- Design Tokens ---------- */
+/* ---------- Design Tokens (Kitopi-like: clean + teal) ---------- */
 :root{
   /* surfaces */
-  --gc-bg: #f6f8fb;
-  --gc-bg-2: #eef2f8;
+  --gc-bg: #f3f6f8;
+  --gc-bg-2: #eef3f6;
   --gc-card: #ffffff;
-  --gc-text: #0b1220;
-  --gc-muted: #64748b;
 
-  /* borders / shadows */
+  /* text */
+  --gc-text: #0b1220;
+  --gc-muted: #6b7a90;
+
+  /* borders / shadows (lighter, admin-like) */
   --gc-border: rgba(15, 23, 42, .10);
-  --gc-border-strong: rgba(15, 23, 42, .16);
-  --gc-shadow: 0 22px 65px rgba(2, 6, 23, .12);
-  --gc-shadow-soft: 0 12px 32px rgba(2, 6, 23, .10);
+  --gc-border-strong: rgba(15, 23, 42, .14);
+  --gc-shadow: 0 18px 45px rgba(2, 6, 23, .08);
+  --gc-shadow-soft: 0 10px 24px rgba(2, 6, 23, .06);
 
   /* radius */
-  --gc-radius: 18px;
-  --gc-radius-lg: 22px;
-  --gc-radius-xl: 26px;
+  --gc-radius: 16px;
+  --gc-radius-lg: 18px;
+  --gc-radius-xl: 20px;
 
-  /* brand */
-  --gc-ink: #111827;            /* ink black */
-  --gc-accent: #2563eb;         /* blue */
-  --gc-success: #10b981;
+  /* brand (Kitopi teal) */
+  --gc-ink: #0b1220;
+  --gc-accent: #0f766e;     /* teal 700 */
+  --gc-accent-2: #14b8a6;   /* teal 500 */
+  --gc-success: #16a34a;
   --gc-warn: #f59e0b;
   --gc-danger: #ef4444;
 
   /* layout */
   --gc-side-w: 300px;
-  --gc-max: 1200px;
+  --gc-max: 1240px;
 
   /* typography */
-  --gc-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  --gc-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
   --gc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
   /* focus */
-  --gc-focus: 0 0 0 4px rgba(37, 99, 235, .18);
+  --gc-focus: 0 0 0 4px rgba(20, 184, 166, .18);
 
-  /* page gradient */
+  /* page gradient (very subtle like dashboards) */
   --gc-grad:
-    radial-gradient(1200px 700px at 70% 0%, rgba(99,102,241,.14), transparent 60%),
-    radial-gradient(1000px 700px at 100% 10%, rgba(16,185,129,.12), transparent 55%),
-    radial-gradient(900px 700px at 0% 20%, rgba(56,189,248,.10), transparent 55%),
+    radial-gradient(1200px 700px at 70% 0%, rgba(20,184,166,.12), transparent 60%),
+    radial-gradient(900px 700px at 0% 20%, rgba(59,130,246,.08), transparent 55%),
     linear-gradient(180deg, var(--gc-bg), var(--gc-bg-2));
 }
 
 /* ---------- Dark Mode ---------- */
 .gc-dark{
-  --gc-bg: #070b13;
-  --gc-bg-2: #0b1020;
+  --gc-bg: #0b1220;
+  --gc-bg-2: #0f172a;
   --gc-card: #0f172a;
   --gc-text: #e5e7eb;
-  --gc-muted: rgba(229, 231, 235, .68);
+  --gc-muted: rgba(229, 231, 235, .70);
 
   --gc-border: rgba(148, 163, 184, .14);
   --gc-border-strong: rgba(148, 163, 184, .22);
 
-  --gc-shadow: 0 26px 80px rgba(0,0,0,.45);
-  --gc-shadow-soft: 0 16px 44px rgba(0,0,0,.36);
+  --gc-shadow: 0 22px 70px rgba(0,0,0,.45);
+  --gc-shadow-soft: 0 12px 30px rgba(0,0,0,.30);
 
-  --gc-focus: 0 0 0 4px rgba(96, 165, 250, .20);
+  --gc-accent: #14b8a6;
+  --gc-accent-2: #5eead4;
+
+  --gc-focus: 0 0 0 4px rgba(94, 234, 212, .18);
 
   --gc-grad:
-    radial-gradient(1200px 700px at 70% 0%, rgba(99,102,241,.18), transparent 60%),
-    radial-gradient(1000px 700px at 100% 10%, rgba(16,185,129,.14), transparent 55%),
-    radial-gradient(900px 700px at 0% 20%, rgba(56,189,248,.12), transparent 55%),
+    radial-gradient(1200px 700px at 70% 0%, rgba(20,184,166,.18), transparent 60%),
+    radial-gradient(900px 700px at 0% 20%, rgba(59,130,246,.10), transparent 55%),
     linear-gradient(180deg, var(--gc-bg), var(--gc-bg-2));
 }
 
@@ -87,33 +91,33 @@ body{
 a{ color: inherit; text-decoration:none; }
 button, input, textarea, select{ font-family: inherit; }
 
-::selection{ background: rgba(37,99,235,.22); }
+::selection{ background: rgba(20,184,166,.22); }
 
 /* tasteful scrollbar */
-*::-webkit-scrollbar{ width: 11px; height: 11px; }
+*::-webkit-scrollbar{ width: 10px; height: 10px; }
 *::-webkit-scrollbar-thumb{
-  background: rgba(100,116,139,.35);
+  background: rgba(15,23,42,.18);
   border-radius: 99px;
-  border: 3px solid rgba(0,0,0,0);
+  border: 2px solid rgba(0,0,0,0);
   background-clip: padding-box;
 }
 .gc-dark *::-webkit-scrollbar-thumb{
-  background: rgba(148,163,184,.28);
-  border: 3px solid rgba(0,0,0,0);
+  background: rgba(255,255,255,.16);
+  border: 2px solid rgba(0,0,0,0);
   background-clip: padding-box;
 }
 
 /* Tailwind neutral helpers alignment */
 .text-neutral-600{ color: var(--gc-muted) !important; }
-.text-neutral-500{ color: rgba(100,116,139,.85) !important; }
+.text-neutral-500{ color: rgba(107,122,144,.88) !important; }
 .gc-dark .text-neutral-500{ color: rgba(148,163,184,.74) !important; }
 
 /* ---------- Layout (AppLayout) ---------- */
 .gc-root{ min-height: 100vh; background: var(--gc-grad); }
 .gc-shell{
   display:flex;
-  gap: 18px;
-  padding: 18px;
+  gap: 16px;
+  padding: 16px;
   max-width: calc(var(--gc-max) + var(--gc-side-w) + 60px);
   margin: 0 auto;
 }
@@ -121,7 +125,7 @@ button, input, textarea, select{ font-family: inherit; }
   width: var(--gc-side-w);
   flex: 0 0 var(--gc-side-w);
   position: sticky;
-  top: 18px;
+  top: 16px;
   align-self: flex-start;
 }
 .gc-main{ flex: 1 1 auto; min-width: 0; }
@@ -148,9 +152,9 @@ button, input, textarea, select{ font-family: inherit; }
 
 .gc-label{
   font-size: 11px;
-  letter-spacing: .18em;
+  letter-spacing: .14em;
   font-weight: 800;
-  color: rgba(100,116,139,.92);
+  color: rgba(107,122,144,.92);
   text-transform: uppercase;
 }
 .gc-dark .gc-label{ color: rgba(148,163,184,.78); }
@@ -184,26 +188,26 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-side-tip{
   font-size: 12.5px;
   color: var(--gc-muted);
-  background: rgba(99,102,241,.08);
-  border: 1px solid rgba(99,102,241,.14);
+  background: rgba(20,184,166,.08);
+  border: 1px solid rgba(20,184,166,.14);
   padding: 10px 12px;
   border-radius: 14px;
 }
 .gc-dark .gc-side-tip{
-  background: rgba(99,102,241,.12);
-  border-color: rgba(99,102,241,.20);
+  background: rgba(20,184,166,.12);
+  border-color: rgba(94,234,212,.18);
 }
 
 /* Segmented (Kitchen/Mgmt) */
 .gc-seg{
   display:flex;
-  background: rgba(148,163,184,.12);
+  background: rgba(15,23,42,.04);
   border: 1px solid var(--gc-border);
   border-radius: 16px;
   padding: 6px;
   gap: 6px;
 }
-.gc-dark .gc-seg{ background: rgba(148,163,184,.10); }
+.gc-dark .gc-seg{ background: rgba(255,255,255,.04); }
 
 .gc-seg-btn{
   flex: 1 1 0;
@@ -221,7 +225,7 @@ button, input, textarea, select{ font-family: inherit; }
   background: var(--gc-card);
   color: var(--gc-text);
   border-color: var(--gc-border-strong);
-  box-shadow: 0 10px 22px rgba(2,6,23,.10);
+  box-shadow: 0 10px 22px rgba(2,6,23,.08);
 }
 
 /* Nav */
@@ -230,7 +234,7 @@ button, input, textarea, select{ font-family: inherit; }
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.40);
+  background: rgba(255,255,255,.55);
   color: var(--gc-text);
   font-weight: 900;
   transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
@@ -242,33 +246,32 @@ button, input, textarea, select{ font-family: inherit; }
   box-shadow: var(--gc-shadow-soft);
 }
 .gc-nav-item.is-active{
-  background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(17,24,39,.90));
+  background: linear-gradient(180deg, rgba(15,118,110,1), rgba(15,118,110,.86));
   color: #fff;
-  border-color: rgba(17,24,39,.35);
+  border-color: rgba(15,118,110,.35);
 }
 .gc-dark .gc-nav-item.is-active{
-  background: linear-gradient(180deg, rgba(37,99,235,.95), rgba(37,99,235,.82));
-  border-color: rgba(96,165,250,.35);
+  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
+  color: #071a18;
+  border-color: rgba(94,234,212,.35);
 }
 
 /* ---------- Inputs / Buttons ---------- */
 .gc-input{
   border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.76);
+  background: rgba(255,255,255,.92);
   color: var(--gc-text);
   border-radius: 14px;
   padding: 12px 14px;
   outline: none;
-  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+  box-shadow: 0 10px 22px rgba(2,6,23,.05);
   transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
-.gc-dark .gc-input{ background: rgba(15,23,42,.62); }
+.gc-dark .gc-input{ background: rgba(15,23,42,.72); }
 .gc-input:focus{
-  border-color: rgba(37,99,235,.35);
+  border-color: rgba(20,184,166,.45);
   box-shadow: var(--gc-focus);
 }
-
-/* nicer textarea */
 textarea.gc-input{ line-height: 1.45; resize: vertical; }
 
 .gc-btn{
@@ -279,7 +282,7 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
   padding: 11px 14px;
   font-weight: 950;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+  box-shadow: 0 10px 22px rgba(2,6,23,.07);
   transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease;
 }
 .gc-btn:hover{
@@ -291,13 +294,14 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
 .gc-btn:disabled{ opacity: .55; cursor: not-allowed; transform:none; box-shadow:none; }
 
 .gc-btn-primary{
-  background: linear-gradient(180deg, rgba(17,24,39,1), rgba(17,24,39,.88));
+  background: linear-gradient(135deg, var(--gc-accent), var(--gc-accent-2));
   color: #fff;
-  border-color: rgba(17,24,39,.35);
+  border-color: rgba(0,0,0,.06);
+  box-shadow: 0 14px 26px rgba(15,118,110,.18);
 }
 .gc-dark .gc-btn-primary{
-  background: linear-gradient(180deg, rgba(37,99,235,.98), rgba(37,99,235,.82));
-  border-color: rgba(96,165,250,.35);
+  color: #071a18;
+  box-shadow: 0 14px 26px rgba(94,234,212,.12);
 }
 .gc-btn-soft{
   background: rgba(239,68,68,.08);
@@ -310,7 +314,7 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
   color: rgba(254,202,202,.92);
 }
 .gc-btn-ghost{ background: transparent; box-shadow:none; }
-.gc-btn-ghost:hover{ background: rgba(99,102,241,.08); }
+.gc-btn-ghost:hover{ background: rgba(20,184,166,.08); }
 
 /* focus ring */
 .gc-btn:focus-visible,
@@ -324,7 +328,7 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
 
 /* ---------- Toast ---------- */
 .gc-toast{
-  background: var(--gc-card);
+  background: rgba(255,255,255,.92);
   border: 1px solid var(--gc-border);
   border-radius: 16px;
   box-shadow: var(--gc-shadow);
@@ -333,7 +337,10 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
   align-items:center;
   gap: 12px;
   min-width: 260px;
+  backdrop-filter: blur(10px);
 }
+.gc-dark .gc-toast{ background: rgba(15,23,42,.85); }
+
 .gc-toast-close{
   margin-left:auto;
   border: 1px solid var(--gc-border);
@@ -371,15 +378,15 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
 
 .gc-menu-hero{
   position: relative;
-  height: 190px;
+  height: 185px;
   background:
-    radial-gradient(500px 220px at 30% 20%, rgba(99,102,241,.18), transparent 55%),
-    linear-gradient(180deg, rgba(148,163,184,.20), rgba(148,163,184,.06));
+    radial-gradient(520px 240px at 25% 25%, rgba(20,184,166,.18), transparent 58%),
+    linear-gradient(180deg, rgba(148,163,184,.18), rgba(148,163,184,.06));
   overflow: hidden;
 }
 .gc-dark .gc-menu-hero{
   background:
-    radial-gradient(500px 220px at 30% 20%, rgba(99,102,241,.18), transparent 55%),
+    radial-gradient(520px 240px at 25% 25%, rgba(20,184,166,.18), transparent 58%),
     linear-gradient(180deg, rgba(148,163,184,.10), rgba(148,163,184,.04));
 }
 .gc-menu-hero img{
@@ -393,11 +400,11 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
 .gc-menu-overlay{
   position:absolute;
   inset:0;
-  background: linear-gradient(180deg, rgba(2,6,23,.00) 25%, rgba(2,6,23,.46) 100%);
+  background: linear-gradient(180deg, rgba(2,6,23,.00) 28%, rgba(2,6,23,.44) 100%);
   pointer-events:none;
 }
 .gc-dark .gc-menu-overlay{
-  background: linear-gradient(180deg, rgba(2,6,23,.00) 25%, rgba(2,6,23,.60) 100%);
+  background: linear-gradient(180deg, rgba(2,6,23,.00) 28%, rgba(2,6,23,.60) 100%);
 }
 
 .gc-menu-badges{
@@ -438,7 +445,7 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
   font-size: 11px;
   letter-spacing: .18em;
   font-weight: 950;
-  color: rgba(100,116,139,.90);
+  color: rgba(107,122,144,.90);
   text-transform: uppercase;
   margin-bottom: 6px;
 }
@@ -474,50 +481,43 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
 }
 .gc-action{
   border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.72);
+  background: rgba(255,255,255,.86);
   color: var(--gc-text);
   border-radius: 14px;
   padding: 10px 12px;
   font-weight: 950;
   cursor: pointer;
-  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+  box-shadow: 0 10px 22px rgba(2,6,23,.06);
   transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
-.gc-dark .gc-action{ background: rgba(15,23,42,.62); }
+.gc-dark .gc-action{ background: rgba(15,23,42,.66); }
 .gc-action:hover{
   transform: translateY(-1px);
   border-color: var(--gc-border-strong);
   box-shadow: var(--gc-shadow-soft);
 }
 .gc-action.primary{
-  background: linear-gradient(180deg, rgba(17,24,39,1), rgba(17,24,39,.88));
+  background: linear-gradient(135deg, var(--gc-accent), var(--gc-accent-2));
   color: #fff;
-  border-color: rgba(17,24,39,.35);
+  border-color: rgba(0,0,0,.06);
 }
-.gc-dark .gc-action.primary{
-  background: linear-gradient(180deg, rgba(37,99,235,.98), rgba(37,99,235,.82));
-  border-color: rgba(96,165,250,.35);
-}
+.gc-dark .gc-action.primary{ color: #071a18; }
 
-/* =========================================================
-   RecipeEditor — GLOBAL POLISH (gc-kpi + spacing + print hooks)
-   ========================================================= */
-
-/* KPI blocks used in RecipeEditor */
+/* ---------- RecipeEditor KPI ---------- */
 .gc-kpi{
   border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.62);
+  background: rgba(255,255,255,.72);
   border-radius: 16px;
   padding: 12px 12px;
-  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+  box-shadow: 0 10px 22px rgba(2,6,23,.05);
 }
-.gc-dark .gc-kpi{ background: rgba(15,23,42,.60); }
+.gc-dark .gc-kpi{ background: rgba(15,23,42,.62); }
 .gc-kpi-label{
   font-size: 11px;
   letter-spacing: .16em;
   font-weight: 950;
   text-transform: uppercase;
-  color: rgba(100,116,139,.88);
+  color: rgba(107,122,144,.88);
 }
 .gc-dark .gc-kpi-label{ color: rgba(148,163,184,.76); }
 .gc-kpi-value{
@@ -527,228 +527,22 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
   letter-spacing: -0.02em;
 }
 
-/* Make editor cards feel “app-like” */
-.gc-card.p-6{ padding: 18px !important; }
-@media (min-width: 1024px){
-  .gc-card.p-6{ padding: 22px !important; }
-}
-
-/* Dividers look nicer */
+/* Dividers */
 .divide-neutral-200 > :not([hidden]) ~ :not([hidden]){
   border-color: var(--gc-border) !important;
 }
 
-/* =========================================================
-   PRINT — A4 Recipe Card (classes already in RecipeEditor)
-   ========================================================= */
-
-.gc-print-only{ display: none; }
-
+/* ---------- Print safety stays (no logic change) ---------- */
+.gc-print-only{ display:none; }
 @media print{
-  /* hide app chrome */
   .gc-side, .gc-nav, .gc-seg, .gc-toast, button, .gc-btn, .gc-action, input, textarea, select{
-    display: none !important;
+    display:none !important;
   }
-  .gc-shell{ padding: 0 !important; max-width: none !important; }
-  .gc-main, .gc-content{ padding: 0 !important; }
-  .gc-card{ box-shadow: none !important; }
-
-  /* show print layout */
-  .gc-print-only{ display: block !important; }
-  .gc-print-page{
-    width: 210mm;
-    min-height: 297mm;
-    padding: 14mm 14mm 12mm;
-    margin: 0 auto;
-    background: #fff;
-    color: #111;
-    font-family: var(--gc-font);
-  }
-
-  .gc-print-header{
-    display:flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 12mm;
-    padding-bottom: 6mm;
-    border-bottom: 1px solid #e5e7eb;
-  }
-  .gc-print-brand{
-    font-weight: 950;
-    letter-spacing: -0.02em;
-    font-size: 18px;
-  }
-  .gc-print-name{
-    font-weight: 950;
-    letter-spacing: -0.02em;
-    font-size: 26px;
-    line-height: 1.15;
-    margin-top: 2mm;
-  }
-  .gc-print-sub{
-    margin-top: 2mm;
-    color: #64748b;
-    font-size: 12.5px;
-  }
-
-  .gc-print-grid{
-    display:grid;
-    grid-template-columns: 1.2fr .8fr;
-    gap: 10mm;
-    margin-top: 8mm;
-  }
-  .gc-print-right{ text-align: right; }
-
-  .gc-print-photo{
-    width: 100%;
-    height: 58mm;
-    border-radius: 12px;
-    overflow: hidden;
-    border: 1px solid #e5e7eb;
-  }
-  .gc-print-photo img{
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-    display:block;
-  }
-  .gc-print-photo-empty{
-    width: 100%;
-    height: 58mm;
-    border-radius: 12px;
-    border: 1px dashed #cbd5e1;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    color:#94a3b8;
-    font-size: 12px;
-  }
-
-  .gc-print-kpis{
-    margin-top: 6mm;
-    display:grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 4mm;
-  }
-  .gc-print-kpi{
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 4mm 4mm;
-  }
-  .gc-print-kpi-l{
-    font-size: 11px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: #64748b;
-    font-weight: 900;
-  }
-  .gc-print-kpi-v{
-    margin-top: 2mm;
-    font-size: 16px;
-    font-weight: 950;
-  }
-
-  .gc-print-block{
-    margin-top: 8mm;
-  }
-  .gc-print-label{
-    font-size: 11px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    font-weight: 950;
-    color: #475569;
-    margin-bottom: 3mm;
-  }
-  .gc-print-text{
-    font-size: 12.5px;
-    line-height: 1.45;
-    color: #0f172a;
-    white-space: pre-wrap;
-  }
-  .gc-print-muted{ color: #64748b; }
-
-  /* ingredients list */
-  .gc-print-list{
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .gc-print-row{
-    display:flex;
-    justify-content: space-between;
-    gap: 8mm;
-    padding: 3.2mm 4mm;
-    border-bottom: 1px solid #eef2f7;
-    font-size: 12.5px;
-  }
-  .gc-print-row:last-child{ border-bottom: 0; }
-  .gc-print-row-name{ font-weight: 700; color:#0f172a; }
-  .gc-print-row-note{ color:#64748b; font-size: 12px; margin-top: 1mm; }
-  .gc-print-row-right{ font-weight: 800; color:#111827; white-space: nowrap; }
-
-  /* steps */
-  .gc-print-steps{
-    border: 1px solid #e5e7eb;
-    border-radius: 12px;
-    padding: 4mm 4mm;
-  }
-  .gc-print-step2{ margin-top: 3.5mm; }
-  .gc-print-step2-head{
-    display:flex;
-    gap: 3mm;
-    align-items: baseline;
-  }
-  .gc-print-step-n{
-    font-weight: 950;
-    color:#2563eb;
-    font-family: var(--gc-mono);
-    font-size: 12px;
-  }
-  .gc-print-step-t{
-    font-weight: 800;
-    color:#0f172a;
-    font-size: 12.5px;
-    line-height: 1.4;
-  }
-  .gc-print-step2-photo{
-    margin-top: 2.5mm;
-    height: 34mm;
-    border-radius: 10px;
-    overflow:hidden;
-    border: 1px solid #e5e7eb;
-  }
-  .gc-print-step2-photo img{
-    width:100%;
-    height:100%;
-    object-fit: cover;
-    display:block;
-  }
-
-  .gc-print-tags{
-    margin-top: 4mm;
-    display:flex;
-    flex-wrap: wrap;
-    gap: 2mm;
-  }
-  .gc-print-tag{
-    border: 1px solid #e5e7eb;
-    border-radius: 999px;
-    padding: 1.8mm 3mm;
-    font-size: 11px;
-    font-weight: 800;
-    color:#0f172a;
-  }
-
-  .gc-print-footer{
-    margin-top: 10mm;
-    padding-top: 4mm;
-    border-top: 1px solid #e5e7eb;
-    color:#94a3b8;
-    font-size: 11px;
-    display:flex;
-    justify-content: space-between;
-  }
+  .gc-shell{ padding:0 !important; max-width:none !important; }
+  .gc-main, .gc-content{ padding:0 !important; }
+  .gc-card{ box-shadow:none !important; }
+  .gc-print-only{ display:block !important; }
 }
 
-/* ---------- Safety for long titles ---------- */
+/* Safety for long titles */
 .gc-menu-title, .gc-brand-name{ word-break: break-word; }
