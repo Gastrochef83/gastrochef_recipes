@@ -1,5 +1,5 @@
 // src/pages/RecipeEditor.tsx
-import { useEffect, useMemo, useRef, useState, useDeferredValue } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -34,13 +34,15 @@ type LineType = 'ingredient' | 'subrecipe' | 'group'
 
 type Line = {
   id: string
+  kitchen_id: string | null
   recipe_id: string
   ingredient_id: string | null
   sub_recipe_id: string | null
+  position: number
   qty: number
   unit: string
-  note: string | null
-  sort_order: number
+  yield_percent: number
+  notes: string | null
   line_type: LineType
   group_title: string | null
 }
@@ -59,7 +61,7 @@ type EditRow = {
   sub_recipe_id: string
   qty: string
   unit: string
-  note: string
+  notes: string
   group_title: string
 }
 
@@ -144,11 +146,6 @@ export default function RecipeEditor() {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
-
-  // OMEGA V9: defer huge arrays to keep typing/scroll smooth
-  const linesView = useDeferredValue(lines)
-  const ingredientsView = useDeferredValue(ingredients)
-
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
   // Meta saving
@@ -332,9 +329,9 @@ export default function RecipeEditor() {
 
     const { data: l, error: lErr } = await supabase
       .from('recipe_lines')
-      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
+      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,position,line_type,group_title')
       .eq('recipe_id', recipeId)
-      .order('sort_order', { ascending: true })
+      .order('position', { ascending: true })
       .order('id', { ascending: true })
     if (lErr) throw lErr
 
@@ -392,7 +389,7 @@ export default function RecipeEditor() {
         sub_recipe_id: x.sub_recipe_id ?? '',
         qty: String(x.qty ?? 0),
         unit: safeUnit(x.unit ?? 'g'),
-        note: x.note ?? '',
+        notes: x.notes ?? '',
         group_title: x.group_title ?? '',
       }
     }
@@ -455,7 +452,7 @@ export default function RecipeEditor() {
     return m
   }, [allRecipes])
 
-  const activeIngredients = useMemo(() => ingredientsView.filter((i) => i.is_active !== false), [ingredients])
+  const activeIngredients = useMemo(() => ingredients.filter((i) => i.is_active !== false), [ingredients])
 
   const filteredIngredients = useMemo(() => {
     const q = ingSearch.trim().toLowerCase()
@@ -504,9 +501,9 @@ export default function RecipeEditor() {
     for (const ids of chunk(needFetch, 50)) {
       const { data, error } = await supabase
         .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
+        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,position,line_type,group_title')
         .in('recipe_id', ids)
-        .order('sort_order', { ascending: true })
+        .order('position', { ascending: true })
         .order('id', { ascending: true })
       if (error) throw error
 
@@ -925,11 +922,12 @@ export default function RecipeEditor() {
 
     setSavingAdd(true)
     try {
-      const maxSort = lines.length ? Math.max(...linesView.map((x) => toNum(x.sort_order, 0))) : 0
+      const maxSort = lines.length ? Math.max(...lines.map((x) => toNum(x.position, 0))) : 0
       const base: any = {
         recipe_id: id,
-        sort_order: maxSort + 10,
-        note: addNote.trim() || null,
+        kitchen_id: recipe?.kitchen_id ?? null,
+        position: maxSort + 10,
+        notes: addNote.trim() || null,
       }
 
       if (addType === 'ingredient') {
@@ -941,6 +939,7 @@ export default function RecipeEditor() {
           sub_recipe_id: null,
           qty,
           unit: safeUnit(addUnit),
+          yield_percent: 100,
           group_title: null,
         }
         const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -954,6 +953,7 @@ export default function RecipeEditor() {
           sub_recipe_id: addSubRecipeId,
           qty,
           unit: safeUnit(addUnit),
+          yield_percent: 100,
           group_title: null,
         }
         const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -981,15 +981,17 @@ export default function RecipeEditor() {
 
     setSavingGroup(true)
     try {
-      const maxSort = lines.length ? Math.max(...linesView.map((x) => toNum(x.sort_order, 0))) : 0
+      const maxSort = lines.length ? Math.max(...lines.map((x) => toNum(x.position, 0))) : 0
       const payload = {
         recipe_id: id,
+        kitchen_id: recipe?.kitchen_id ?? null,
         ingredient_id: null,
         sub_recipe_id: null,
         qty: 0,
         unit: 'g',
-        note: null,
-        sort_order: maxSort + 10,
+        yield_percent: 100,
+        notes: null,
+        position: maxSort + 10,
         line_type: 'group',
         group_title: title,
       }
@@ -1025,7 +1027,8 @@ export default function RecipeEditor() {
             sub_recipe_id: null,
             qty: 0,
             unit: 'g',
-            note: null,
+        yield_percent: 100,
+        notes: null,
           })
           .eq('id', lineId)
           .eq('recipe_id', id)
@@ -1049,7 +1052,7 @@ export default function RecipeEditor() {
             sub_recipe_id: null,
             qty,
             unit: safeUnit(row.unit),
-            note: row.note.trim() || null,
+            notes: row.notes.trim() || null,
             group_title: null,
           })
           .eq('id', lineId)
@@ -1068,7 +1071,7 @@ export default function RecipeEditor() {
             sub_recipe_id,
             qty,
             unit: safeUnit(row.unit),
-            note: row.note.trim() || null,
+            notes: row.notes.trim() || null,
             group_title: null,
           })
           .eq('id', lineId)
@@ -1104,13 +1107,13 @@ export default function RecipeEditor() {
       if (!src) return
       const payload: any = {
         recipe_id: id,
-        sort_order: toNum(src.sort_order, 0) + 5,
+        position: toNum(src.position, 0) + 5,
         line_type: src.line_type,
         ingredient_id: src.line_type === 'ingredient' ? src.ingredient_id : null,
         sub_recipe_id: src.line_type === 'subrecipe' ? src.sub_recipe_id : null,
         qty: src.line_type === 'group' ? 0 : src.qty,
         unit: src.line_type === 'group' ? 'g' : safeUnit(src.unit),
-        note: src.note,
+        notes: src.notes,
         group_title: src.line_type === 'group' ? (src.group_title ?? 'Group') : null,
       }
       const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -1127,7 +1130,7 @@ export default function RecipeEditor() {
     setReorderSaving(true)
     try {
       const tasks = ordered.map((x, idx) =>
-        supabase.from('recipe_lines').update({ sort_order: (idx + 1) * 10 }).eq('id', x.id).eq('recipe_id', id)
+        supabase.from('recipe_lines').update({ position: (idx + 1) * 10 }).eq('id', x.id).eq('recipe_id', id)
       )
       const results = await Promise.all(tasks)
       const bad = results.find((r) => r.error)
@@ -1219,7 +1222,7 @@ export default function RecipeEditor() {
                     <div className="text-neutral-700">
                       • {label} — <span className="font-semibold">{l.qty}</span> <UnitBadge unit={l.unit} />
                     </div>
-                    <div className="text-neutral-500">{l.note ? l.note : ''}</div>
+                    <div className="text-neutral-500">{l.notes ? l.notes : ''}</div>
                   </div>
                 )
               }
@@ -1231,7 +1234,7 @@ export default function RecipeEditor() {
                       <div className="text-neutral-700">
                         • {child?.name ?? 'Sub-recipe'} — <span className="font-semibold">{l.qty}</span> <UnitBadge unit={l.unit} />
                       </div>
-                      <div className="text-neutral-500">{l.note ? l.note : ''}</div>
+                      <div className="text-neutral-500">{l.notes ? l.notes : ''}</div>
                     </div>
                     {depth < 2 ? renderBreakdown(l.sub_recipe_id, depth + 1) : null}
                   </div>
@@ -1252,7 +1255,7 @@ export default function RecipeEditor() {
     const base = Math.max(1, toNum(recipe?.portions, 1))
     const scale = p / base
 
-    const items: { label: string; qty: number; unit: string; note: string }[] = []
+    const items: { label: string; qty: number; unit: string; notes: string }[] = []
 
     for (const l of lines) {
       if (l.line_type !== 'ingredient') continue
@@ -1263,13 +1266,13 @@ export default function RecipeEditor() {
         label,
         qty: Math.max(0, toNum(l.qty, 0) * scale),
         unit: safeUnit(l.unit),
-        note: (l.note ?? '').trim(),
+        notes: (l.notes ?? '').trim(),
       })
     }
 
-    const m = new Map<string, { label: string; qty: number; unit: string; note: string }>()
+    const m = new Map<string, { label: string; qty: number; unit: string; notes: string }>()
     for (const it of items) {
-      const key = `${it.label}__${it.unit}__${it.note}`
+      const key = `${it.label}__${it.unit}__${it.notes}`
       const cur = m.get(key)
       if (!cur) m.set(key, { ...it })
       else m.set(key, { ...cur, qty: cur.qty + it.qty })
@@ -1960,7 +1963,7 @@ export default function RecipeEditor() {
             </div>
 
             <div className="divide-y divide-neutral-200">
-              {linesView.map((l) => {
+              {lines.map((l) => {
                 const row = edit[l.id]
                 const saving = rowSaving[l.id] === true
 
@@ -1984,7 +1987,7 @@ export default function RecipeEditor() {
                                     sub_recipe_id: '',
                                     qty: '0',
                                     unit: 'g',
-                                    note: '',
+                                    notes: '',
                                     group_title: '',
                                   }),
                                   line_type: 'group',
@@ -2026,7 +2029,7 @@ export default function RecipeEditor() {
                     sub_recipe_id: l.sub_recipe_id ?? '',
                     qty: String(l.qty ?? 0),
                     unit: safeUnit(l.unit ?? 'g'),
-                    note: l.note ?? '',
+                    notes: l.notes ?? '',
                     group_title: l.group_title ?? '',
                   } as EditRow)
 
@@ -2115,7 +2118,7 @@ export default function RecipeEditor() {
                       </div>
 
                       <div>
-                        <input className="gc-input w-full" value={r.note} onChange={(ev) => setRow({ note: ev.target.value })} placeholder="e.g., chopped / room temp / to taste…" />
+                        <input className="gc-input w-full" value={r.notes} onChange={(ev) => setRow({ notes: ev.target.value })} placeholder="e.g., chopped / room temp / to taste…" />
                       </div>
 
                       <div className="flex justify-end gap-2">
@@ -2199,7 +2202,7 @@ export default function RecipeEditor() {
                     <div key={i} className="gc-print-row">
                       <div>
                         <div className="gc-print-row-name">{it.label}</div>
-                        {it.note ? <div className="gc-print-row-note">{it.note}</div> : null}
+                        {it.notes ? <div className="gc-print-row-note">{it.notes}</div> : null}
                       </div>
                       <div className="gc-print-row-right">
                         {Math.round(it.qty * 100) / 100} {it.unit}
