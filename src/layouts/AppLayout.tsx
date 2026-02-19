@@ -1,13 +1,13 @@
 // src/layouts/AppLayout.tsx
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import { useMode } from '../lib/mode'
 
 function isActiveClass(isActive: boolean) {
   return isActive ? ' gc-nav-item-active' : ''
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout() {
   const { isKitchen, setKitchen, setMgmt } = useMode()
 
   const toggleDark = () => {
@@ -82,7 +82,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </button>
         </div>
 
-        <div className="gc-content">{children}</div>
+        <div className="gc-content">
+          {/* ✅ CRITICAL: render routed pages here */}
+          <Outlet />
+        </div>
       </main>
     </div>
   )
