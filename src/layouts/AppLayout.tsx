@@ -1,4 +1,3 @@
-// src/layouts/AppLayout.tsx
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useMode } from '../lib/mode'
@@ -22,7 +21,7 @@ export default function AppLayout() {
   }, [loc.pathname])
 
   return (
-    <div className={cx('min-h-screen', dark ? 'gc-dark' : '')}>
+    <div className={cx('gc-root', dark && 'gc-dark')}>
       <div className="gc-shell">
         {/* Sidebar */}
         <aside className="gc-side">
@@ -102,7 +101,7 @@ export default function AppLayout() {
           <div className="gc-topbar">
             <div>
               <div className="gc-top-title">{title}</div>
-              <div className="gc-top-sub">Enterprise UI · Premium SaaS layout</div>
+              <div className="gc-top-sub">Premium UI · Stable layout</div>
             </div>
 
             <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
@@ -110,7 +109,7 @@ export default function AppLayout() {
             </button>
           </div>
 
-          {/* ✅ CRITICAL: this renders your pages */}
+          {/* Pages */}
           <div className="gc-content">
             <Outlet />
           </div>
