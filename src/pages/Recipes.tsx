@@ -5,9 +5,7 @@ import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
 
 /**
- * ✅ IMPORTANT
- * This is your real kitchens.id (FK target).
- * It fixes: "recipes_kitchen_id_fkey" on insert.
+ * ✅ Your kitchens.id (FK target)
  */
 const KITCHEN_ID = '9ca989dc-3115-4cf6-ba0f-af1f25374721'
 
@@ -71,7 +69,6 @@ function fmtMoney(n: number, currency: string) {
     return `${v.toFixed(2)} ${cur}`
   }
 }
-
 function convertQty(qty: number, fromUnit: string, toUnit: string) {
   const f = safeUnit(fromUnit)
   const t = safeUnit(toUnit)
@@ -123,6 +120,8 @@ function saveCostCache(cache: Record<string, CostPoint>) {
   } catch {}
 }
 
+type Density = 'comfortable' | 'dense'
+
 export default function Recipes() {
   const nav = useNavigate()
   const { isKitchen } = useMode()
@@ -140,6 +139,11 @@ export default function Recipes() {
 
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[k]), [selected])
+
+  const [density, setDensity] = useState<Density>(() => {
+    const v = localStorage.getItem('gc_v5_density')
+    return v === 'dense' ? 'dense' : 'comfortable'
+  })
 
   // lines cache like RecipeEditor
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
@@ -179,7 +183,6 @@ export default function Recipes() {
       const selectRecipes =
         'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
 
-      // ✅ IMPORTANT: filter by kitchen_id (so you see your data + avoid cross-kitchen issues)
       const { data: r, error: rErr } = await supabase
         .from('recipes')
         .select(selectRecipes)
@@ -190,15 +193,11 @@ export default function Recipes() {
       if (rErr) throw rErr
       setRecipes((r ?? []) as RecipeRow[])
 
-      // Ingredients (also filter by kitchen_id if your table has it)
-      // If your ingredients table DOESN'T have kitchen_id, remove the .eq(...)
       const { data: i, error: iErr } = await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active')
         .eq('kitchen_id', KITCHEN_ID) as any
 
-      // If your ingredients table has no kitchen_id column, the query above will error.
-      // In that case, fallback to loading without kitchen filter:
       if (iErr && String(iErr.message || '').toLowerCase().includes('kitchen_id')) {
         const { data: i2, error: i2Err } = await supabase
           .from('ingredients')
@@ -326,7 +325,7 @@ export default function Recipes() {
     if (loading) return
     if (!filtered.length) return
 
-    const visible = filtered.slice(0, 24)
+    const visible = filtered.slice(0, 28)
     ensureRecipeLinesLoaded(visible.map((r) => r.id)).catch(() => {})
 
     const subIds: string[] = []
@@ -382,7 +381,7 @@ export default function Recipes() {
     setErr(null)
     try {
       const payload: Partial<RecipeRow> = {
-        kitchen_id: KITCHEN_ID, // ✅ FK SAFE
+        kitchen_id: KITCHEN_ID,
         name: 'New Recipe',
         category: null,
         portions: 1,
@@ -418,24 +417,20 @@ export default function Recipes() {
   function toggleSelect(id: string) {
     setSelected((p) => ({ ...p, [id]: !p[id] }))
   }
-
   function selectVisible() {
-    const ids = filtered.slice(0, 48).map((r) => r.id)
+    const ids = filtered.slice(0, 64).map((r) => r.id)
     setSelected((p) => {
       const next = { ...p }
       ids.forEach((id) => (next[id] = true))
       return next
     })
   }
-
   function clearSelection() {
     setSelected({})
   }
 
   async function deleteOneRecipe(recipeId: string) {
-    const ok = window.confirm(
-      'Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.'
-    )
+    const ok = window.confirm('Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.')
     if (!ok) return
 
     setErr(null)
@@ -457,10 +452,9 @@ export default function Recipes() {
         delete next[recipeId]
         return next
       })
-
       setToast('Deleted.')
     } catch (e: any) {
-      setErr(e?.message || 'Failed to delete recipe (RLS?)')
+      setErr(e?.message || 'Failed to delete recipe')
     }
   }
 
@@ -489,91 +483,111 @@ export default function Recipes() {
       setSelected({})
       setToast(`Deleted ${selectedIds.length} recipe(s).`)
     } catch (e: any) {
-      setErr(e?.message || 'Bulk delete failed (RLS?)')
+      setErr(e?.message || 'Bulk delete failed')
     }
   }
+
+  function toggleDensity() {
+    const next: Density = density === 'dense' ? 'comfortable' : 'dense'
+    setDensity(next)
+    localStorage.setItem('gc_v5_density', next)
+  }
+
+  const gridClass =
+    density === 'dense'
+      ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
+      : 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
 
   return (
     <div className="space-y-4">
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-      <div className="gc-card p-5">
-        <div className="gc-label">RECIPES</div>
+      {/* Sticky top header */}
+      <div
+        className="gc-card"
+        style={{
+          position: 'sticky',
+          top: 12,
+          zIndex: 20,
+          backdropFilter: 'blur(10px)',
+        }}
+      >
+        <div className="p-5">
+          <div className="gc-label">RECIPES</div>
 
-        <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
-            <div className="mt-1 text-sm text-neutral-600">
-              V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
+          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
+              <div className="mt-1 text-sm text-neutral-600">
+                V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
+              </div>
+            </div>
+
+            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+              <input
+                className="gc-input sm:w-[340px]"
+                placeholder="Search by name or category..."
+                value={q}
+                onChange={(e) => setQ(e.target.value)}
+              />
+
+              <button className="gc-btn" type="button" onClick={loadAll} disabled={loading}>
+                Refresh
+              </button>
+
+              <button className="gc-btn gc-btn-primary" type="button" onClick={createNewRecipe}>
+                + New
+              </button>
             </div>
           </div>
 
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-            <input
-              className="gc-input sm:w-[340px]"
-              placeholder="Search by name or category..."
-              value={q}
-              onChange={(e) => setQ(e.target.value)}
-            />
+          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-neutral-600">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Show archived
+              </label>
 
-            <button className="gc-btn" type="button" onClick={loadAll} disabled={loading}>
-              Refresh
-            </button>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={toggleDensity}>
+                Density: {density === 'dense' ? 'Dense' : 'Comfort'}
+              </button>
 
-            <button className="gc-btn gc-btn-primary" type="button" onClick={createNewRecipe}>
-              + New
-            </button>
-          </div>
-        </div>
-
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-3">
-            <label className="text-sm text-neutral-600">
-              <input
-                type="checkbox"
-                checked={showArchived}
-                onChange={(e) => setShowArchived(e.target.checked)}
-                style={{ marginRight: 8 }}
-              />
-              Show archived
-            </label>
+              {isMgmt && (
+                <>
+                  <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
+                    Select visible
+                  </button>
+                  <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
+                    Clear
+                  </button>
+                </>
+              )}
+            </div>
 
             {isMgmt && (
-              <>
-                <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
-                  Select visible
+              <div className="flex items-center gap-2">
+                <div className="text-sm text-neutral-600">
+                  Selected: <b>{selectedIds.length}</b>
+                </div>
+                <button className="gc-btn gc-btn-soft" type="button" onClick={bulkDeleteSelected} disabled={!selectedIds.length}>
+                  Delete Selected
                 </button>
-                <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
-                  Clear
-                </button>
-              </>
+              </div>
             )}
           </div>
 
-          {isMgmt && (
-            <div className="flex items-center gap-2">
-              <div className="text-sm text-neutral-600">
-                Selected: <b>{selectedIds.length}</b>
-              </div>
-              <button
-                className="gc-btn gc-btn-soft"
-                type="button"
-                onClick={bulkDeleteSelected}
-                disabled={!selectedIds.length}
-                title="Deletes recipes + their recipe lines"
-              >
-                Delete Selected
-              </button>
-            </div>
-          )}
+          {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
         </div>
-
-        {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
       </div>
 
-      <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      <div className={gridClass}>
         {loading &&
-          Array.from({ length: 8 }).map((_, i) => (
+          Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="gc-menu-card">
               <div className="gc-menu-hero" />
               <div className="p-4">
@@ -600,17 +614,13 @@ export default function Recipes() {
 
             return (
               <div key={r.id} className="gc-menu-card">
-                <div className="gc-menu-hero">
+                <div className="gc-menu-hero" style={density === 'dense' ? { height: 160 } : undefined}>
                   {r.photo_url ? (
                     <img src={r.photo_url} alt={title} loading="lazy" />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">
-                      No Photo
-                    </div>
+                    <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">No Photo</div>
                   )}
-
                   <div className="gc-menu-overlay" />
-
                   <div className="gc-menu-badges">
                     <span className="gc-chip">{cat}</span>
                     <span className="gc-chip">Portions: {portions}</span>
@@ -619,11 +629,11 @@ export default function Recipes() {
                   </div>
                 </div>
 
-                <div className="gc-menu-body">
+                <div className="gc-menu-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
                   <div className="gc-menu-kicker">Recipe</div>
 
                   <div className="flex items-center justify-between gap-2">
-                    <div className="gc-menu-title" style={{ marginTop: 0 }}>
+                    <div className="gc-menu-title" style={{ marginTop: 0, fontSize: density === 'dense' ? 16 : 18 }}>
                       {title}
                     </div>
 
@@ -639,22 +649,19 @@ export default function Recipes() {
                     )}
                   </div>
 
-                  <div className="gc-menu-desc">
+                  <div className="gc-menu-desc" style={density === 'dense' ? { WebkitLineClamp: 1 } as any : undefined}>
                     {r.description?.trim() ? r.description : 'Add a short menu description…'}
                   </div>
 
-                  <div className="gc-menu-metrics">
+                  <div className="gc-menu-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
                     <div>
-                      <span className="text-neutral-600">Cost/portion:</span>{' '}
-                      <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
+                      <span className="text-neutral-600">Cost/portion:</span> <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
                     </div>
                     <div>
-                      <span className="text-neutral-600">FC%:</span>{' '}
-                      <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
+                      <span className="text-neutral-600">FC%:</span> <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
                     </div>
                     <div>
-                      <span className="text-neutral-600">Margin:</span>{' '}
-                      <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
+                      <span className="text-neutral-600">Margin:</span> <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
                     </div>
                     <div>
                       <span className="text-neutral-600">Price:</span>{' '}
@@ -662,20 +669,12 @@ export default function Recipes() {
                     </div>
                   </div>
 
-                  <div className="gc-menu-actions">
-                    <button
-                      type="button"
-                      className="gc-action primary"
-                      onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}
-                    >
+                  <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
+                    <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
                       Open Editor
                     </button>
 
-                    <button
-                      type="button"
-                      className="gc-action"
-                      onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}
-                    >
+                    <button type="button" className="gc-action" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}>
                       Cook
                     </button>
 
@@ -684,12 +683,7 @@ export default function Recipes() {
                     </button>
 
                     {isMgmt && (
-                      <button
-                        type="button"
-                        className="gc-action"
-                        onClick={() => deleteOneRecipe(r.id)}
-                        title="Delete permanently (also deletes recipe lines)"
-                      >
+                      <button type="button" className="gc-action" onClick={() => deleteOneRecipe(r.id)}>
                         Delete
                       </button>
                     )}
