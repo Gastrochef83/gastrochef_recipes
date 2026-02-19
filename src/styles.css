@@ -563,3 +563,27 @@ button, input, textarea, select{ font-family: inherit; }
   .gc-menu-actions{ flex-wrap: wrap; }
   .gc-menu-actions > *{ flex: 1 1 calc(50% - 6px); }
 }
+/* =========================================================
+   FIX: Open Editor text not fully visible (NO LOGIC CHANGE)
+   ========================================================= */
+
+/* Give the first action button more width */
+.gc-menu-actions > :nth-child(1){
+  flex: 1.55 1 0 !important;   /* wider than others */
+}
+
+/* Keep others normal */
+.gc-menu-actions > :nth-child(2),
+.gc-menu-actions > :nth-child(3),
+.gc-menu-actions > :nth-child(4){
+  flex: 1 1 0 !important;
+}
+
+/* Ensure Open Editor shows full text */
+.gc-menu-actions > :nth-child(1){
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 11.6px !important;  /* tiny shrink so it fits perfectly */
+  padding: 0 12px !important;     /* slightly more horizontal room */
+}
