@@ -1,14 +1,17 @@
 import React,
 {
 useEffect,
-useMemo,
 useState,
-useRef,
+useMemo,
 useCallback
 }
 from "react"
 
-import { NavLink,useSearchParams,useNavigate }
+import {
+NavLink,
+useSearchParams,
+useNavigate
+}
 from "react-router-dom"
 
 import { supabase } from "../lib/supabase"
@@ -34,7 +37,6 @@ photo_url?:string|null
 
 export default function RecipeEditor(){
 
-
 const nav=useNavigate()
 
 const [search]=useSearchParams()
@@ -43,12 +45,15 @@ const id=search.get("id")
 
 const [recipe,setRecipe]=useState<Recipe|null>(null)
 
-const [toast,setToast]=useState<string|null>(null)
+const [loading,setLoading]=useState(true)
 
 const [saving,setSaving]=useState(false)
 
+const [toast,setToast]=useState<string|null>(null)
 
-// ---------- LOAD ----------
+
+
+// ================= LOAD =================
 
 useEffect(()=>{
 
@@ -57,6 +62,8 @@ if(!id)return
 load()
 
 async function load(){
+
+setLoading(true)
 
 const {data,error}=await supabase
 
@@ -72,18 +79,23 @@ if(error){
 
 setToast(error.message)
 
+setLoading(false)
+
 return
 
 }
 
 setRecipe(data)
 
+setLoading(false)
+
 }
 
 },[id])
 
 
-// ---------- FAST HEADER STATE ----------
+
+// ================= FAST UPDATE =================
 
 const updateField=useCallback(
 
@@ -110,7 +122,7 @@ return{
 )
 
 
-// ---------- SAVE ----------
+// ================= SAVE =================
 
 const save=useCallback(async()=>{
 
@@ -146,19 +158,19 @@ setSaving(false)
 
 
 
-// ---------- SMART AUTOSAVE ----------
+// ================= SMART AUTOSAVE =================
 
 useEffect(()=>{
 
 if(!recipe)return
 
-const timer=setTimeout(()=>{
+const t=setTimeout(()=>{
 
 save()
 
-},1100)
+},1200)
 
-return()=>clearTimeout(timer)
+return()=>clearTimeout(t)
 
 },[
 recipe?.name,
@@ -167,21 +179,10 @@ recipe?.portions
 ])
 
 
-// ---------- GPU RECIPE ID ----------
 
-const memoRecipeId=
+// ================= ERROR GUARD =================
 
-useMemo(
-
-()=>recipe?.id,
-
-[recipe?.id]
-
-)
-
-
-
-if(!recipe){
+if(loading){
 
 return(
 
@@ -195,22 +196,47 @@ Loading Recipe...
 
 }
 
+if(!recipe){
+
+return(
+
+<div className="gc-card p-6">
+
+Recipe not found.
+
+</div>
+
+)
+
+}
 
 
-// ---------- UI ----------
+
+// ================= GPU MEMO =================
+
+const memoRecipeId=
+
+useMemo(()=>recipe.id,[recipe.id])
+
+
+
+// ================= UI =================
 
 return(
 
 <div
+
 className="space-y-6 p-6"
+
 style={{
 
 transform:"translateZ(0)"
 
 }}
+
 >
 
-{/* GOD HEADER */}
+{/* ===== HEADER ===== */}
 
 <div
 
@@ -222,7 +248,7 @@ position:"sticky",
 
 top:12,
 
-zIndex:30,
+zIndex:40,
 
 backdropFilter:"blur(14px)",
 
@@ -335,7 +361,7 @@ Number(e.target.value)
 
 
 
-<div className="flex gap-3 mt-4">
+<div className="flex gap-3 mt-5 flex-wrap">
 
 <button
 
@@ -361,9 +387,10 @@ to={`/cook?id=${recipe.id}`}
 
 >
 
-🍳 START COOK MODE
+🍳 Cook Mode
 
 </NavLink>
+
 
 
 <button
@@ -384,7 +411,7 @@ onClick={()=>nav(-1)}
 
 
 
-{/* GPU LINES */}
+{/* ===== LINES ENGINE ===== */}
 
 <div
 
@@ -398,15 +425,11 @@ willChange:"transform"
 
 >
 
-{memoRecipeId &&
-
 <RecipeLinesPro
 
 recipeId={memoRecipeId}
 
 />
-
-}
 
 </div>
 
