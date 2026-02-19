@@ -1306,7 +1306,7 @@ export default function RecipeEditor() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="gc-card p-6">
+      <div  className="gc-card p-6"  style={{    position:'sticky',    top:12,    zIndex:30,    backdropFilter:'blur(10px)'  }} >
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="h-28 w-28 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shrink-0">
