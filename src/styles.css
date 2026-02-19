@@ -1,264 +1,167 @@
-/* =========================================================
-   GastroChef v4 — SaaS Professional Polish (Enterprise UI)
-   This file defines ALL gc-* classes used across the app.
-   Keep it as your single source of truth for styling.
-   ========================================================= */
+/* =========================
+   PHASE 4 — SaaS Layout (NO Tailwind)
+   ========================= */
 
-/* -------------------------
-   Theme Tokens
-------------------------- */
-:root {
-  --gc-bg: #f6f7fb;
-  --gc-bg2: #ffffff;
-
+:root{
+  --gc-bg: #f7f7fb;
   --gc-card: #ffffff;
-  --gc-card2: #fbfbfd;
-
-  --gc-text: #0f172a;
-  --gc-muted: #64748b;
-
+  --gc-text: #111827;
+  --gc-muted: #6b7280;
   --gc-border: #e5e7eb;
   --gc-border-strong: #d1d5db;
-
-  --gc-shadow: 0 18px 50px rgba(15, 23, 42, 0.10);
-  --gc-shadow-soft: 0 10px 26px rgba(15, 23, 42, 0.06);
-
-  --gc-primary: #0b0b0c;        /* enterprise black */
-  --gc-primaryText: #ffffff;
-
-  --gc-accent: #16a34a;         /* success */
-  --gc-warn: #f59e0b;
-  --gc-danger: #ef4444;
-
-  --gc-radius: 18px;
-  --gc-radius-sm: 12px;
-
-  --gc-focus: 0 0 0 4px rgba(37, 99, 235, 0.16);
+  --gc-shadow: 0 12px 40px rgba(0,0,0,.08);
+  --gc-shadow-soft: 0 8px 22px rgba(0,0,0,.06);
+  --gc-radius: 22px;
 }
 
-/* Dark mode support (works with html.dark OR body.dark) */
-html.dark,
-body.dark,
-.dark {
+.gc-dark{
   --gc-bg: #0b1020;
-  --gc-bg2: #0f172a;
-
   --gc-card: #0f172a;
-  --gc-card2: #111c33;
-
   --gc-text: #e5e7eb;
-  --gc-muted: #94a3b8;
-
-  --gc-border: rgba(148, 163, 184, 0.18);
-  --gc-border-strong: rgba(148, 163, 184, 0.28);
-
-  --gc-shadow: 0 22px 60px rgba(0, 0, 0, 0.50);
-  --gc-shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.36);
-
-  --gc-primary: #ffffff;
-  --gc-primaryText: #0b0b0c;
+  --gc-muted: #9ca3af;
+  --gc-border: rgba(255,255,255,.10);
+  --gc-border-strong: rgba(255,255,255,.16);
+  --gc-shadow: 0 18px 60px rgba(0,0,0,.45);
+  --gc-shadow-soft: 0 10px 28px rgba(0,0,0,.35);
 }
 
-/* -------------------------
-   Base
-------------------------- */
-* { box-sizing: border-box; }
-
-html, body {
-  height: 100%;
-}
-
-body {
-  margin: 0;
-  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji",
-    "Segoe UI Emoji";
+html, body{
+  background: var(--gc-bg);
   color: var(--gc-text);
-  background:
-    radial-gradient(1200px 700px at 20% -10%, rgba(37, 99, 235, 0.12), transparent 60%),
-    radial-gradient(1000px 600px at 110% 0%, rgba(22, 163, 74, 0.10), transparent 55%),
-    linear-gradient(180deg, var(--gc-bg), var(--gc-bg2));
 }
 
-/* Links */
-a { color: inherit; text-decoration: none; }
-a:hover { text-decoration: underline; }
-
-/* Utilities */
-.gc-label {
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  font-weight: 800;
-  color: var(--gc-muted);
+/* App shell */
+.gc-app-shell{
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 18px;
+  padding: 18px;
+  background: radial-gradient(1200px 600px at 60% 0%, rgba(99,102,241,.14), transparent 60%),
+              radial-gradient(1000px 600px at 100% 10%, rgba(16,185,129,.10), transparent 55%),
+              var(--gc-bg);
 }
 
-.gc-muted { color: var(--gc-muted); }
-
-.gc-divider {
-  height: 1px;
-  background: var(--gc-border);
+.gc-sidebar{
+  position: sticky;
+  top: 18px;
+  height: calc(100vh - 36px);
 }
 
-/* -------------------------
-   Cards
-------------------------- */
-.gc-card {
-  background: linear-gradient(180deg, var(--gc-card), var(--gc-card2));
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius);
-  box-shadow: var(--gc-shadow-soft);
-}
-
-.gc-card:hover {
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow);
-}
-
-.gc-surface {
+.gc-sidebar-card{
+  height: 100%;
   background: var(--gc-card);
   border: 1px solid var(--gc-border);
   border-radius: var(--gc-radius);
-}
-
-/* -------------------------
-   Inputs
-------------------------- */
-.gc-input {
-  width: 100%;
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,0.72);
-  color: var(--gc-text);
-  border-radius: var(--gc-radius-sm);
-  padding: 10px 12px;
-  outline: none;
-  transition: border-color .15s ease, box-shadow .15s ease, background .15s ease;
-}
-
-.dark .gc-input {
-  background: rgba(15, 23, 42, 0.65);
-}
-
-.gc-input:focus {
-  border-color: rgba(37, 99, 235, 0.55);
-  box-shadow: var(--gc-focus);
-}
-
-textarea.gc-input {
-  resize: vertical;
-  line-height: 1.4;
-}
-
-/* -------------------------
-   Buttons
-------------------------- */
-.gc-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  border-radius: var(--gc-radius-sm);
-  padding: 10px 14px;
-  font-weight: 800;
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,0.65);
-  color: var(--gc-text);
-  cursor: pointer;
-  transition: transform .08s ease, box-shadow .16s ease, background .16s ease, border-color .16s ease, opacity .16s ease;
-  user-select: none;
-}
-
-.dark .gc-btn { background: rgba(15, 23, 42, 0.55); }
-
-.gc-btn:hover {
-  border-color: var(--gc-border-strong);
   box-shadow: var(--gc-shadow-soft);
-  transform: translateY(-1px);
-}
-
-.gc-btn:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.gc-btn-primary {
-  background: var(--gc-primary);
-  color: var(--gc-primaryText);
-  border-color: transparent;
-}
-
-.gc-btn-primary:hover {
-  opacity: 0.92;
-}
-
-.gc-btn-ghost {
-  background: transparent;
-}
-
-/* -------------------------
-   KPI Blocks (used in Pricing)
-------------------------- */
-.gc-kpi {
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius);
   padding: 14px;
-  background: rgba(255,255,255,0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
-.dark .gc-kpi { background: rgba(15, 23, 42, 0.55); }
+/* Brand */
+.gc-brand{ padding: 6px 6px 2px; }
+.gc-brand-name{ font-weight: 900; font-size: 18px; letter-spacing: .2px; }
+.gc-brand-sub{ font-size: 12px; color: var(--gc-muted); margin-top: 2px; }
 
-.gc-kpi-label {
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  font-weight: 800;
+/* Sections */
+.gc-sidebar-section{
+  background: rgba(0,0,0,0.02);
+  border: 1px solid var(--gc-border);
+  border-radius: 18px;
+  padding: 12px;
+}
+.gc-dark .gc-sidebar-section{ background: rgba(255,255,255,0.03); }
+
+.gc-hint{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--gc-muted);
+}
+.gc-tip{
+  margin-top: 10px;
+  font-size: 12px;
   color: var(--gc-muted);
 }
 
-.gc-kpi-value {
-  margin-top: 6px;
-  font-size: 20px;
-  font-weight: 900;
-}
-
-/* -------------------------
-   Sidebar / Layout helpers
-   (safe: won't break if not used)
-------------------------- */
-.gc-app-shell {
-  min-height: 100vh;
+/* Mode switch */
+.gc-mode-switch{
+  margin-top: 10px;
   display: grid;
-  grid-template-columns: 260px 1fr;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
-.gc-sidebar {
-  position: sticky;
-  top: 0;
-  height: 100vh;
-  padding: 16px;
-  border-right: 1px solid var(--gc-border);
-  background: rgba(255,255,255,0.72);
-  backdrop-filter: blur(12px);
+/* Nav */
+.gc-nav{
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.dark .gc-sidebar { background: rgba(15, 23, 42, 0.55); }
-
-.gc-main {
-  padding: 22px;
+.gc-nav-item{
+  display: block;
+  padding: 10px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--gc-border);
+  background: var(--gc-card);
+  color: var(--gc-text);
+  font-weight: 800;
+  text-decoration: none;
+  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
 }
 
-/* -------------------------
-   Print Styles (kept compatible)
-------------------------- */
-.gc-print-only { display: none; }
-@media print {
-  body { background: #fff !important; }
-  .gc-print-only { display: block; }
-  .gc-card, .gc-sidebar, .gc-main, .gc-btn { box-shadow: none !important; }
+.gc-nav-item:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
 }
 
-/* Optional: smooth fonts */
-@supports (font-smooth: always) {
-  body { font-smooth: always; }
+.gc-nav-item-active{
+  background: #0b0b0f;
+  color: #fff;
+  border-color: transparent;
+}
+.gc-dark .gc-nav-item-active{
+  background: #111827;
+  color: #fff;
+}
+
+/* Main */
+.gc-main{
+  min-width: 0;
+}
+
+.gc-topbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.70);
+  border-radius: var(--gc-radius);
+  box-shadow: var(--gc-shadow-soft);
+  backdrop-filter: blur(10px);
+}
+.gc-dark .gc-topbar{
+  background: rgba(15,23,42,.65);
+}
+
+.gc-topbar-title{
+  font-weight: 900;
+  font-size: 14px;
+  color: var(--gc-text);
+}
+
+.gc-content{
+  margin-top: 14px;
+}
+
+/* Responsive */
+@media (max-width: 980px){
+  .gc-app-shell{ grid-template-columns: 1fr; }
+  .gc-sidebar{ position: relative; height: auto; }
 }
