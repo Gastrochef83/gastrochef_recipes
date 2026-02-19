@@ -102,7 +102,7 @@ export default function AppLayout() {
           <div className="gc-topbar">
             <div>
               <div className="gc-top-title">{title}</div>
-              <div className="gc-top-sub">Premium UI · Paprika-like layout</div>
+              {/* removed: Premium UI · Paprika-like layout */}
             </div>
 
             <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
