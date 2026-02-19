@@ -4,6 +4,13 @@ import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
 
+/**
+ * ✅ IMPORTANT
+ * This is your real kitchens.id (FK target).
+ * It fixes: "recipes_kitchen_id_fkey" on insert.
+ */
+const KITCHEN_ID = '9ca989dc-3115-4cf6-ba0f-af1f25374721'
+
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
 type Line = {
@@ -171,20 +178,38 @@ export default function Recipes() {
     try {
       const selectRecipes =
         'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+
+      // ✅ IMPORTANT: filter by kitchen_id (so you see your data + avoid cross-kitchen issues)
       const { data: r, error: rErr } = await supabase
         .from('recipes')
         .select(selectRecipes)
+        .eq('kitchen_id', KITCHEN_ID)
         .order('is_archived', { ascending: true })
         .order('name', { ascending: true })
+
       if (rErr) throw rErr
       setRecipes((r ?? []) as RecipeRow[])
 
+      // Ingredients (also filter by kitchen_id if your table has it)
+      // If your ingredients table DOESN'T have kitchen_id, remove the .eq(...)
       const { data: i, error: iErr } = await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active')
-        .order('name', { ascending: true })
-      if (iErr) throw iErr
-      setIngredients((i ?? []) as Ingredient[])
+        .eq('kitchen_id', KITCHEN_ID) as any
+
+      // If your ingredients table has no kitchen_id column, the query above will error.
+      // In that case, fallback to loading without kitchen filter:
+      if (iErr && String(iErr.message || '').toLowerCase().includes('kitchen_id')) {
+        const { data: i2, error: i2Err } = await supabase
+          .from('ingredients')
+          .select('id,name,pack_unit,net_unit_cost,is_active')
+          .order('name', { ascending: true })
+        if (i2Err) throw i2Err
+        setIngredients((i2 ?? []) as Ingredient[])
+      } else {
+        if (iErr) throw iErr
+        setIngredients((i ?? []) as Ingredient[])
+      }
     } catch (e: any) {
       setErr(e?.message || 'Failed to load')
     } finally {
@@ -353,17 +378,11 @@ export default function Recipes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, filtered, recipeLinesCache, costMemo])
 
-  // ✅ FIX: include kitchen_id for RLS
   async function createNewRecipe() {
     setErr(null)
     try {
-      const { data: u, error: uErr } = await supabase.auth.getUser()
-      if (uErr) throw uErr
-      const user = u?.user
-      if (!user) throw new Error('You are not signed in.')
-
       const payload: Partial<RecipeRow> = {
-        kitchen_id: user.id,
+        kitchen_id: KITCHEN_ID, // ✅ FK SAFE
         name: 'New Recipe',
         category: null,
         portions: 1,
@@ -438,6 +457,7 @@ export default function Recipes() {
         delete next[recipeId]
         return next
       })
+
       setToast('Deleted.')
     } catch (e: any) {
       setErr(e?.message || 'Failed to delete recipe (RLS?)')
