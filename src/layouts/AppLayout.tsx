@@ -1,92 +1,114 @@
-import { NavLink, Outlet } from 'react-router-dom'
+// src/layouts/AppLayout.tsx
+import { NavLink } from 'react-router-dom'
 import { useMode } from '../lib/mode'
-import { useState } from 'react'
 
-export default function AppLayout() {
+function cx(...xs: Array<string | false | null | undefined>) {
+  return xs.filter(Boolean).join(' ')
+}
 
-  const { mode, setMode, dark, toggleDark } = useMode()
-  const [collapsed, setCollapsed] = useState(false)
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const { isKitchen, setKitchen, setMgmt } = useMode()
 
   return (
-    <div className="min-h-screen flex">
-
-      {/* Sidebar */}
-      <aside
-        className={`transition-all duration-300 ${
-          collapsed ? 'w-20' : 'w-64'
-        } bg-[var(--bg-card)] border-r border-[var(--border-main)] flex flex-col`}
-      >
-
-        {/* Top */}
-        <div className="p-4 flex justify-between items-center border-b border-[var(--border-main)]">
-          {!collapsed && <div className="font-bold">GastroChef</div>}
-          <button onClick={() => setCollapsed(!collapsed)}>
-            ☰
-          </button>
-        </div>
-
-        {/* Mode Switch */}
-        {!collapsed && (
-          <div className="p-4 border-b border-[var(--border-main)]">
-            <div className="flex rounded-xl bg-neutral-200 dark:bg-neutral-800 p-1 relative">
-              <div
-                className={`absolute top-1 bottom-1 w-1/2 rounded-lg bg-white dark:bg-black transition-all duration-300 ${
-                  mode === 'kitchen' ? 'left-1' : 'left-1/2'
-                }`}
-              />
-
-              <button
-                onClick={() => setMode('kitchen')}
-                className="relative flex-1 text-sm font-semibold"
-              >
-                Kitchen
-              </button>
-
-              <button
-                onClick={() => setMode('mgmt')}
-                className="relative flex-1 text-sm font-semibold"
-              >
-                Mgmt
-              </button>
+    <div className="gc-app-shell">
+      {/* SIDEBAR */}
+      <aside className="gc-sidebar">
+        <div className="gc-card p-4">
+          <div className="flex items-center justify-between gap-2">
+            <div>
+              <div className="text-lg font-extrabold">GastroChef</div>
+              <div className="text-xs text-neutral-500">v4 MVP</div>
             </div>
           </div>
-        )}
 
-        {/* Navigation */}
-        <nav className="flex-1 p-4 space-y-2">
-          <NavLink to="/dashboard" className="block px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800">
-            Dashboard
-          </NavLink>
-          <NavLink to="/ingredients" className="block px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800">
-            Ingredients
-          </NavLink>
-          <NavLink to="/recipes" className="block px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800">
-            Recipes
-          </NavLink>
-          <NavLink to="/settings" className="block px-3 py-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800">
-            Settings
-          </NavLink>
-        </nav>
+          {/* Mode Switch */}
+          <div className="mt-4">
+            <div className="gc-label">MODE</div>
 
-        {/* Dark Mode Toggle */}
-        {!collapsed && (
-          <div className="p-4 border-t border-[var(--border-main)]">
-            <button
-              onClick={toggleDark}
-              className="w-full py-2 rounded-lg bg-neutral-200 dark:bg-neutral-800"
-            >
-              {dark ? 'Light Mode' : 'Dark Mode'}
-            </button>
+            <div className="mt-2 rounded-2xl border border-neutral-200 bg-white p-1">
+              <div className="grid grid-cols-2 gap-1">
+                <button
+                  type="button"
+                  className={cx('gc-btn', isKitchen ? 'gc-btn-primary' : 'gc-btn-ghost')}
+                  onClick={setKitchen}
+                >
+                  Kitchen
+                </button>
+                <button
+                  type="button"
+                  className={cx('gc-btn', !isKitchen ? 'gc-btn-primary' : 'gc-btn-ghost')}
+                  onClick={setMgmt}
+                >
+                  Mgmt
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-2 text-xs text-neutral-500">
+              {isKitchen ? 'Kitchen mode is active.' : 'Management mode is active.'}
+            </div>
           </div>
-        )}
+        </div>
 
+        {/* NAV */}
+        <div className="mt-4 gc-card p-3">
+          <div className="gc-label mb-2">Navigation</div>
+
+          <nav className="space-y-1">
+            <NavItem to="/dashboard" label="Dashboard" />
+            <NavItem to="/ingredients" label="Ingredients" />
+            <NavItem to="/recipes" label="Recipes" />
+            <NavItem to="/settings" label="Settings" />
+          </nav>
+        </div>
+
+        <div className="mt-4 text-xs text-neutral-500 px-1">
+          Tip: Use Kitchen for cooking view, Mgmt for costing & pricing.
+        </div>
       </aside>
 
-      {/* Main */}
-      <main className="flex-1 p-8 overflow-y-auto bg-[var(--bg-main)]">
-        <Outlet />
-      </main>
+      {/* MAIN */}
+      <main className="gc-main">
+        {/* Topbar (optional, clean) */}
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div className="text-sm text-neutral-600">
+            <span className="font-semibold text-neutral-900">Enterprise UI</span> · Premium SaaS layout
+          </div>
 
+          {/* You can add actions here later (Search / Profile / etc) */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              className="gc-btn gc-btn-ghost"
+              onClick={() => {
+                document.documentElement.classList.toggle('dark')
+              }}
+            >
+              Dark Mode
+            </button>
+          </div>
+        </div>
+
+        {children}
+      </main>
     </div>
+  )
+}
+
+function NavItem({ to, label }: { to: string; label: string }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        cx(
+          'block rounded-2xl px-3 py-2 text-sm font-semibold border',
+          isActive
+            ? 'bg-black text-white border-transparent'
+            : 'bg-white text-neutral-800 border-neutral-200 hover:border-neutral-300'
+        )
+      }
+    >
+      {label}
+    </NavLink>
   )
 }
