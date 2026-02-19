@@ -1,7 +1,8 @@
 /* =========================================================
    GastroChef — KITOPI-LIKE UI THEME (OMEGA)
    ✅ UI only (no logic change)
-   Keeps your existing class names from Style.docx
+   - Kitopi-like clean admin background
+   - Hides text overlays on recipe photos (badges/overlay) without touching logic
    ========================================================= */
 
 /* ---------- Design Tokens (Kitopi-like: clean + teal) ---------- */
@@ -90,7 +91,6 @@ body{
 }
 a{ color: inherit; text-decoration:none; }
 button, input, textarea, select{ font-family: inherit; }
-
 ::selection{ background: rgba(20,184,166,.22); }
 
 /* tasteful scrollbar */
@@ -256,6 +256,28 @@ button, input, textarea, select{ font-family: inherit; }
   border-color: rgba(94,234,212,.35);
 }
 
+/* ---------- Topbar ---------- */
+.gc-topbar{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  background: rgba(255,255,255,.65);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  box-shadow: var(--gc-shadow-soft);
+  backdrop-filter: blur(10px);
+}
+.gc-dark .gc-topbar{
+  background: rgba(15,23,42,.55);
+}
+.gc-top-title{
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
 /* ---------- Inputs / Buttons ---------- */
 .gc-input{
   border: 1px solid var(--gc-border);
@@ -320,7 +342,6 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
 .gc-btn:focus-visible,
 .gc-seg-btn:focus-visible,
 .gc-nav-item:focus-visible,
-.gc-action:focus-visible,
 .gc-input:focus-visible{
   outline: none;
   box-shadow: var(--gc-focus);
@@ -336,213 +357,33 @@ textarea.gc-input{ line-height: 1.45; resize: vertical; }
   display:flex;
   align-items:center;
   gap: 12px;
-  min-width: 260px;
-  backdrop-filter: blur(10px);
 }
-.gc-dark .gc-toast{ background: rgba(15,23,42,.85); }
-
+.gc-dark .gc-toast{
+  background: rgba(15,23,42,.92);
+}
 .gc-toast-close{
-  margin-left:auto;
-  border: 1px solid var(--gc-border);
+  border: 0;
   background: transparent;
-  border-radius: 12px;
-  width: 34px;
-  height: 34px;
-  cursor:pointer;
   font-size: 18px;
   line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
   color: var(--gc-muted);
 }
-.gc-toast-close:hover{
-  border-color: var(--gc-border-strong);
-  color: var(--gc-text);
-}
+.gc-toast-close:hover{ color: var(--gc-text); }
 
 /* =========================================================
-   Recipes — Premium Cards (gc-menu-*)
+   HIDE TEXT ON RECIPE PHOTO (UI overlay)
+   - This removes the badges/labels rendered over hero images.
+   - No logic touched.
    ========================================================= */
-.gc-menu-card{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius-xl);
-  overflow: hidden;
-  box-shadow: var(--gc-shadow-soft);
-  transform: translateZ(0);
-  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
+.gc-menu-overlay,
+.gc-menu-badges,
+.gc-menu-hero .gc-menu-overlay,
+.gc-menu-hero .gc-menu-badges,
+.gc-menu-hero .gc-chip,
+.gc-menu-hero .gc-badge,
+.gc-menu-hero .gc-badges,
+.gc-menu-hero .gc-hero-badges{
+  display: none !important;
 }
-.gc-menu-card:hover{
-  transform: translateY(-2px);
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow);
-}
-
-.gc-menu-hero{
-  position: relative;
-  height: 185px;
-  background:
-    radial-gradient(520px 240px at 25% 25%, rgba(20,184,166,.18), transparent 58%),
-    linear-gradient(180deg, rgba(148,163,184,.18), rgba(148,163,184,.06));
-  overflow: hidden;
-}
-.gc-dark .gc-menu-hero{
-  background:
-    radial-gradient(520px 240px at 25% 25%, rgba(20,184,166,.18), transparent 58%),
-    linear-gradient(180deg, rgba(148,163,184,.10), rgba(148,163,184,.04));
-}
-.gc-menu-hero img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display:block;
-  transform: scale(1.03);
-  filter: saturate(1.05) contrast(1.02);
-}
-.gc-menu-overlay{
-  position:absolute;
-  inset:0;
-  background: linear-gradient(180deg, rgba(2,6,23,.00) 28%, rgba(2,6,23,.44) 100%);
-  pointer-events:none;
-}
-.gc-dark .gc-menu-overlay{
-  background: linear-gradient(180deg, rgba(2,6,23,.00) 28%, rgba(2,6,23,.60) 100%);
-}
-
-.gc-menu-badges{
-  position:absolute;
-  left: 12px;
-  right: 12px;
-  top: 12px;
-  display:flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  align-items:center;
-}
-.gc-chip{
-  background: rgba(255,255,255,.86);
-  border: 1px solid rgba(255,255,255,.55);
-  color: rgba(15,23,42,.92);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 950;
-  box-shadow: 0 10px 22px rgba(2,6,23,.10);
-  backdrop-filter: blur(8px);
-}
-.gc-dark .gc-chip{
-  background: rgba(15,23,42,.62);
-  border-color: rgba(148,163,184,.18);
-  color: rgba(226,232,240,.95);
-}
-.gc-chip.warn{
-  background: rgba(245,158,11,.12);
-  border-color: rgba(245,158,11,.25);
-  color: rgba(161,98,7,.98);
-}
-.gc-dark .gc-chip.warn{ color: rgba(254,243,199,.95); }
-
-.gc-menu-body{ padding: 14px 14px 16px; }
-.gc-menu-kicker{
-  font-size: 11px;
-  letter-spacing: .18em;
-  font-weight: 950;
-  color: rgba(107,122,144,.90);
-  text-transform: uppercase;
-  margin-bottom: 6px;
-}
-.gc-menu-title{
-  font-size: 18px;
-  font-weight: 950;
-  letter-spacing: -0.02em;
-  line-height: 1.15;
-}
-.gc-menu-desc{
-  margin-top: 6px;
-  color: var(--gc-muted);
-  font-size: 13px;
-  line-height: 1.35;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-}
-.gc-menu-metrics{
-  margin-top: 10px;
-  display:grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 10px;
-  font-size: 13px;
-}
-.gc-menu-metrics b{ font-weight: 950; }
-.gc-menu-actions{
-  margin-top: 12px;
-  display:flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-.gc-action{
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.86);
-  color: var(--gc-text);
-  border-radius: 14px;
-  padding: 10px 12px;
-  font-weight: 950;
-  cursor: pointer;
-  box-shadow: 0 10px 22px rgba(2,6,23,.06);
-  transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
-}
-.gc-dark .gc-action{ background: rgba(15,23,42,.66); }
-.gc-action:hover{
-  transform: translateY(-1px);
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow-soft);
-}
-.gc-action.primary{
-  background: linear-gradient(135deg, var(--gc-accent), var(--gc-accent-2));
-  color: #fff;
-  border-color: rgba(0,0,0,.06);
-}
-.gc-dark .gc-action.primary{ color: #071a18; }
-
-/* ---------- RecipeEditor KPI ---------- */
-.gc-kpi{
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.72);
-  border-radius: 16px;
-  padding: 12px 12px;
-  box-shadow: 0 10px 22px rgba(2,6,23,.05);
-}
-.gc-dark .gc-kpi{ background: rgba(15,23,42,.62); }
-.gc-kpi-label{
-  font-size: 11px;
-  letter-spacing: .16em;
-  font-weight: 950;
-  text-transform: uppercase;
-  color: rgba(107,122,144,.88);
-}
-.gc-dark .gc-kpi-label{ color: rgba(148,163,184,.76); }
-.gc-kpi-value{
-  margin-top: 6px;
-  font-size: 18px;
-  font-weight: 950;
-  letter-spacing: -0.02em;
-}
-
-/* Dividers */
-.divide-neutral-200 > :not([hidden]) ~ :not([hidden]){
-  border-color: var(--gc-border) !important;
-}
-
-/* ---------- Print safety stays (no logic change) ---------- */
-.gc-print-only{ display:none; }
-@media print{
-  .gc-side, .gc-nav, .gc-seg, .gc-toast, button, .gc-btn, .gc-action, input, textarea, select{
-    display:none !important;
-  }
-  .gc-shell{ padding:0 !important; max-width:none !important; }
-  .gc-main, .gc-content{ padding:0 !important; }
-  .gc-card{ box-shadow:none !important; }
-  .gc-print-only{ display:block !important; }
-}
-
-/* Safety for long titles */
-.gc-menu-title, .gc-brand-name{ word-break: break-word; }
