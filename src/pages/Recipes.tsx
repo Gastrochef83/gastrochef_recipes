@@ -1,3 +1,10 @@
+// src/pages/Recipes.tsx
+// GastroChef V6 — ULTRA (Kitopi-like)
+// ✅ UI-only refactor (no logic changes):
+// - Removes ALL text overlays on recipe photo
+// - Keeps your costing engine, cache, selection, density, actions exactly the same
+// - Cleaner Kitopi-like header + controls + card hierarchy
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -502,78 +509,67 @@ export default function Recipes() {
     <div className="space-y-4">
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-      {/* Sticky top header */}
-      <div
-        className="gc-card"
-        style={{
-          position: 'sticky',
-          top: 12,
-          zIndex: 20,
-          backdropFilter: 'blur(10px)',
-        }}
-      >
+      {/* V6 Sticky Header (Kitopi-like) */}
+      <div className="gc-card gc-v6-top">
         <div className="p-5">
-          <div className="gc-label">RECIPES</div>
-
-          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div className="gc-v6-head">
             <div>
-              <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
-              <div className="mt-1 text-sm text-neutral-600">
-                V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
+              <div className="gc-label">RECIPES</div>
+              <div className="gc-v6-title">Recipe Library</div>
+              <div className="gc-v6-sub">
+                Clean catalog · Fast cached costing · No text on photo
               </div>
             </div>
 
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <input
-                className="gc-input sm:w-[340px]"
-                placeholder="Search by name or category..."
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-
+            <div className="gc-v6-head-actions">
               <button className="gc-btn" type="button" onClick={loadAll} disabled={loading}>
                 Refresh
               </button>
-
               <button className="gc-btn gc-btn-primary" type="button" onClick={createNewRecipe}>
                 + New
               </button>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-neutral-600">
+          <div className="gc-v6-controls">
+            <div className="gc-v6-controls-left">
+              <div className="gc-v6-search">
+                <span className="gc-v6-search-icon">⌕</span>
+                <input
+                  className="gc-input gc-v6-search-input"
+                  placeholder="Search by name or category..."
+                  value={q}
+                  onChange={(e) => setQ(e.target.value)}
+                />
+              </div>
+
+              <label className="gc-v6-check">
                 <input
                   type="checkbox"
                   checked={showArchived}
                   onChange={(e) => setShowArchived(e.target.checked)}
-                  style={{ marginRight: 8 }}
                 />
-                Show archived
+                <span>Show archived</span>
               </label>
 
               <button className="gc-btn gc-btn-ghost" type="button" onClick={toggleDensity}>
                 Density: {density === 'dense' ? 'Dense' : 'Comfort'}
               </button>
-
-              {isMgmt && (
-                <>
-                  <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
-                    Select visible
-                  </button>
-                  <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
-                    Clear
-                  </button>
-                </>
-              )}
             </div>
 
             {isMgmt && (
-              <div className="flex items-center gap-2">
-                <div className="text-sm text-neutral-600">
+              <div className="gc-v6-controls-right">
+                <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
+                  Select visible
+                </button>
+                <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
+                  Clear
+                </button>
+
+                <div className="gc-v6-selected">
                   Selected: <b>{selectedIds.length}</b>
                 </div>
+
                 <button className="gc-btn gc-btn-soft" type="button" onClick={bulkDeleteSelected} disabled={!selectedIds.length}>
                   Delete Selected
                 </button>
@@ -588,8 +584,8 @@ export default function Recipes() {
       <div className={gridClass}>
         {loading &&
           Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="gc-menu-card">
-              <div className="gc-menu-hero" />
+            <div key={i} className="gc-menu-card gc-v6-card">
+              <div className="gc-menu-hero gc-v6-hero" />
               <div className="p-4">
                 <div className="h-4 w-2/3 rounded bg-neutral-200" />
                 <div className="mt-3 h-3 w-full rounded bg-neutral-100" />
@@ -602,7 +598,6 @@ export default function Recipes() {
         {!loading &&
           filtered.map((r) => {
             const title = r.name || 'Untitled'
-            const cat = (r.category || 'Uncategorized').toUpperCase()
             const portions = Math.max(1, toNum(r.portions, 1))
             const cur = (r.currency || 'USD').toUpperCase()
 
@@ -613,47 +608,64 @@ export default function Recipes() {
             const margin = fresh ? c.margin : null
 
             return (
-              <div key={r.id} className="gc-menu-card">
-                <div className="gc-menu-hero" style={density === 'dense' ? { height: 160 } : undefined}>
+              <div key={r.id} className="gc-menu-card gc-v6-card">
+                <div className="gc-menu-hero gc-v6-hero" style={density === 'dense' ? { height: 160 } : undefined}>
                   {r.photo_url ? (
                     <img src={r.photo_url} alt={title} loading="lazy" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">No Photo</div>
                   )}
-                  <div className="gc-menu-overlay" />
-                  <div className="gc-menu-badges">
-                    <span className="gc-chip">{cat}</span>
-                    <span className="gc-chip">Portions: {portions}</span>
-                    {r.is_archived && <span className="gc-chip warn">Archived</span>}
-                    {isKitchen && <span className="gc-chip">Kitchen</span>}
-                  </div>
+
+                  {/* ✅ V6 requirement: NO OVERLAY + NO TEXT ON PHOTO */}
+                  {/* removed:
+                      <div className="gc-menu-overlay" />
+                      <div className="gc-menu-badges">...</div>
+                  */}
                 </div>
 
-                <div className="gc-menu-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
+                <div className="gc-menu-body gc-v6-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
                   <div className="gc-menu-kicker">Recipe</div>
 
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="gc-menu-title" style={{ marginTop: 0, fontSize: density === 'dense' ? 16 : 18 }}>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="gc-menu-title gc-v6-title2" style={{ marginTop: 0, fontSize: density === 'dense' ? 16 : 18 }}>
                       {title}
                     </div>
 
                     {isMgmt && (
-                      <label title="Select for bulk delete" className="text-xs text-neutral-600">
+                      <label title="Select for bulk delete" className="gc-v6-select">
                         <input
                           type="checkbox"
                           checked={!!selected[r.id]}
                           onChange={() => toggleSelect(r.id)}
-                          style={{ transform: 'scale(1.05)' }}
                         />
                       </label>
                     )}
                   </div>
 
-                  <div className="gc-menu-desc" style={density === 'dense' ? { WebkitLineClamp: 1 } as any : undefined}>
+                  <div className="gc-menu-desc gc-v6-desc" style={density === 'dense' ? ({ WebkitLineClamp: 1 } as any) : undefined}>
                     {r.description?.trim() ? r.description : 'Add a short menu description…'}
                   </div>
 
-                  <div className="gc-menu-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
+                  {/* Small meta row (NOT on photo) */}
+                  <div className="gc-v6-meta">
+                    <span className="gc-v6-pill">{(r.category || 'Uncategorized').toUpperCase()}</span>
+                    <span className="gc-v6-dot" />
+                    <span className="gc-v6-meta-text">Portions: <b>{portions}</b></span>
+                    {r.is_archived && (
+                      <>
+                        <span className="gc-v6-dot" />
+                        <span className="gc-v6-pill warn">Archived</span>
+                      </>
+                    )}
+                    {isKitchen && (
+                      <>
+                        <span className="gc-v6-dot" />
+                        <span className="gc-v6-pill">Kitchen</span>
+                      </>
+                    )}
+                  </div>
+
+                  <div className="gc-menu-metrics gc-v6-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
                     <div>
                       <span className="text-neutral-600">Cost/portion:</span> <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
                     </div>
@@ -669,7 +681,7 @@ export default function Recipes() {
                     </div>
                   </div>
 
-                  <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
+                  <div className="gc-menu-actions gc-v6-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
                     <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
                       Open Editor
                     </button>
