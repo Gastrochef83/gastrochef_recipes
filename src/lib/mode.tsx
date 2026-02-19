@@ -1,60 +1,54 @@
-import { createContext, useContext, useEffect, useState } from 'react'
+// src/lib/mode.tsx
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-type Mode = 'kitchen' | 'mgmt'
+export type AppMode = 'kitchen' | 'mgmt'
 
-type ModeContextType = {
-  mode: Mode
+type ModeCtx = {
+  mode: AppMode
+  setMode: (m: AppMode) => void
+  toggleMode: () => void
   isKitchen: boolean
   isMgmt: boolean
-  setMode: (m: Mode) => void
-
-  dark: boolean
-  toggleDark: () => void
 }
 
-const ModeContext = createContext<ModeContextType | null>(null)
+const ModeContext = createContext<ModeCtx | null>(null)
+
+const KEY = 'gc_mode_v1'
 
 export function ModeProvider({ children }: { children: React.ReactNode }) {
-
-  const [mode, setModeState] = useState<Mode>(() => {
-    return (localStorage.getItem('gc_mode') as Mode) || 'mgmt'
-  })
-
-  const [dark, setDark] = useState(() => {
-    return localStorage.getItem('gc_dark') === 'true'
-  })
+  const [mode, setModeState] = useState<AppMode>('kitchen')
 
   useEffect(() => {
-    localStorage.setItem('gc_mode', mode)
+    try {
+      const saved = (localStorage.getItem(KEY) || '').toLowerCase()
+      if (saved === 'kitchen' || saved === 'mgmt') setModeState(saved)
+    } catch {}
+  }, [])
+
+  const setMode = (m: AppMode) => {
+    setModeState(m)
+    try {
+      localStorage.setItem(KEY, m)
+    } catch {}
+  }
+
+  const toggleMode = () => setMode(mode === 'kitchen' ? 'mgmt' : 'kitchen')
+
+  const value = useMemo<ModeCtx>(() => {
+    return {
+      mode,
+      setMode,
+      toggleMode,
+      isKitchen: mode === 'kitchen',
+      isMgmt: mode === 'mgmt',
+    }
   }, [mode])
 
-  useEffect(() => {
-    localStorage.setItem('gc_dark', String(dark))
-    if (dark) {
-      document.documentElement.classList.add('dark')
-    } else {
-      document.documentElement.classList.remove('dark')
-    }
-  }, [dark])
-
-  return (
-    <ModeContext.Provider
-      value={{
-        mode,
-        isKitchen: mode === 'kitchen',
-        isMgmt: mode === 'mgmt',
-        setMode: setModeState,
-        dark,
-        toggleDark: () => setDark((d) => !d),
-      }}
-    >
-      {children}
-    </ModeContext.Provider>
-  )
+  return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>
 }
 
 export function useMode() {
   const ctx = useContext(ModeContext)
-  if (!ctx) throw new Error('useMode must be used inside ModeProvider')
+  if (!ctx) throw new Error('useMode must be used inside <ModeProvider>')
   return ctx
 }
