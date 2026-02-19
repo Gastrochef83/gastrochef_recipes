@@ -1,7 +1,7 @@
 /* =========================================================
    GastroChef — KITOPI-LIKE UI THEME (OMEGA)
    ✅ UI only (no logic change)
-   Keeps your existing class names
+   Includes: PRO action buttons (Open Editor / Cook / Archive)
    ========================================================= */
 
 /* ---------- Design Tokens (Kitopi-like: clean + teal) ---------- */
@@ -45,7 +45,7 @@
   /* focus */
   --gc-focus: 0 0 0 4px rgba(20, 184, 166, .18);
 
-  /* ✅ Kitopi-like page background (subtle, clean) */
+  /* ✅ Kitopi-like page background */
   --gc-grad: linear-gradient(180deg, #f7f9fb 0%, #eef3f6 100%);
 }
 
@@ -305,6 +305,105 @@ button, input, textarea, select{ font-family: inherit; }
   box-shadow: none;
 }
 
+/* =========================================================
+   ✅ PRO ACTION BUTTONS (Open Editor / Cook / Archive)
+   Works with existing .gc-menu-actions buttons without logic changes
+   ========================================================= */
+
+/* layout */
+.gc-menu-actions{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  justify-content: space-between;
+  margin-top: 12px;
+}
+
+/* all action buttons */
+.gc-menu-actions .gc-btn{
+  flex: 1 1 0;
+  min-height: 40px;
+  padding: 10px 12px;
+  border-radius: 14px;
+  font-weight: 950;
+  letter-spacing: -0.01em;
+  box-shadow: 0 10px 18px rgba(2,6,23,.08);
+  border: 1px solid var(--gc-border);
+  background: linear-gradient(180deg, rgba(255,255,255,.96), rgba(255,255,255,.90));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap: 8px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* subtle shine */
+.gc-menu-actions .gc-btn::before{
+  content:"";
+  position:absolute;
+  inset:-40% -60%;
+  background: radial-gradient(circle at 20% 20%, rgba(20,184,166,.16), rgba(255,255,255,0) 55%);
+  transform: rotate(8deg);
+  opacity: .9;
+  pointer-events:none;
+}
+
+/* hover / focus */
+.gc-menu-actions .gc-btn:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 16px 30px rgba(2,6,23,.10);
+}
+.gc-menu-actions .gc-btn:focus{
+  outline: none;
+  box-shadow: var(--gc-focus), 0 18px 36px rgba(2,6,23,.12);
+}
+
+/* Primary action (usually Open Editor) */
+.gc-menu-actions .gc-btn-primary{
+  background: linear-gradient(180deg, rgba(15,118,110,1), rgba(15,118,110,.86));
+  border-color: rgba(15,118,110,.35);
+  color: #fff;
+}
+.gc-dark .gc-menu-actions .gc-btn-primary{
+  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
+  border-color: rgba(94,234,212,.35);
+  color: #071a18;
+}
+.gc-menu-actions .gc-btn-primary::before{
+  background: radial-gradient(circle at 20% 20%, rgba(255,255,255,.22), rgba(255,255,255,0) 55%);
+}
+
+/* Cook button (auto-detect by text content using :has + attribute fallback safe) */
+.gc-menu-actions .gc-btn[data-action="cook"],
+.gc-menu-actions a[data-action="cook"]{
+  border-color: rgba(20,184,166,.22);
+}
+.gc-menu-actions .gc-btn[data-action="cook"]:hover{
+  border-color: rgba(20,184,166,.35);
+}
+
+/* Archive button (danger / muted) */
+.gc-menu-actions .gc-btn[data-action="archive"],
+.gc-menu-actions button[data-action="archive"]{
+  background: linear-gradient(180deg, rgba(239,68,68,.10), rgba(239,68,68,.06));
+  border-color: rgba(239,68,68,.18);
+  color: rgba(127,29,29,.95);
+}
+.gc-dark .gc-menu-actions .gc-btn[data-action="archive"]{
+  background: linear-gradient(180deg, rgba(239,68,68,.14), rgba(239,68,68,.08));
+  border-color: rgba(239,68,68,.22);
+  color: rgba(254,202,202,.95);
+}
+.gc-menu-actions .gc-btn[data-action="archive"]:hover{
+  border-color: rgba(239,68,68,.30);
+}
+
+/* If your buttons don't have data-action attributes,
+   they will still look premium (general rule above).
+   Optionally you can add data-action later without changing logic. */
+
 /* ---------- Toast ---------- */
 .gc-toast{
   background: var(--gc-card);
@@ -357,15 +456,11 @@ button, input, textarea, select{ font-family: inherit; }
 }
 
 /* ✅ REMOVE DARK OVERLAY ABOVE IMAGE (no logic change) */
-.gc-menu-overlay{
-  display:none;
-}
+.gc-menu-overlay{ display:none; }
 .gc-dark .gc-menu-overlay{ display:none; }
 
-/* ✅ REMOVE TEXT/BADGES ABOVE IMAGE (Portions / Kitchen / etc.) */
-.gc-menu-badges{
-  display:none;
-}
+/* ✅ REMOVE TEXT/BADGES ABOVE IMAGE */
+.gc-menu-badges{ display:none; }
 
 .gc-chip{
   background: rgba(255,255,255,.86);
@@ -395,17 +490,7 @@ button, input, textarea, select{ font-family: inherit; }
   color: var(--gc-muted);
 }
 
-/* actions row */
-.gc-menu-actions{
-  display:flex;
-  gap: 10px;
-  align-items:center;
-  justify-content: space-between;
-  margin-top: 12px;
-}
-.gc-menu-actions .gc-btn{ padding: 9px 11px; border-radius: 12px; }
-
 /* =========================================================
-   Any extra legacy helpers (keep safe)
+   helpers
    ========================================================= */
 .gc-divider{ height: 1px; background: var(--gc-border); }
