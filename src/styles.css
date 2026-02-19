@@ -1,713 +1,754 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { supabase } from '../lib/supabase'
-import { Toast } from '../components/Toast'
-import { useMode } from '../lib/mode'
+/* =========================================================
+   GastroChef V5 — GLOBAL UI POLISH (Paprika Killer)
+   ✅ UI only (no logic change)
+   Covers: AppLayout + Recipes + RecipeEditor + RecipeLinesPro + Toast + Print A4
+   ========================================================= */
 
-/**
- * ✅ Your kitchens.id (FK target)
- */
-const KITCHEN_ID = '9ca989dc-3115-4cf6-ba0f-af1f25374721'
+/* ---------- Design Tokens ---------- */
+:root{
+  /* surfaces */
+  --gc-bg: #f6f8fb;
+  --gc-bg-2: #eef2f8;
+  --gc-card: #ffffff;
+  --gc-text: #0b1220;
+  --gc-muted: #64748b;
 
-type LineType = 'ingredient' | 'subrecipe' | 'group'
+  /* borders / shadows */
+  --gc-border: rgba(15, 23, 42, .10);
+  --gc-border-strong: rgba(15, 23, 42, .16);
+  --gc-shadow: 0 22px 65px rgba(2, 6, 23, .12);
+  --gc-shadow-soft: 0 12px 32px rgba(2, 6, 23, .10);
 
-type Line = {
-  id: string
-  recipe_id: string
-  ingredient_id: string | null
-  sub_recipe_id: string | null
-  qty: number
-  unit: string
-  note: string | null
-  sort_order: number
-  line_type: LineType
-  group_title: string | null
+  /* radius */
+  --gc-radius: 18px;
+  --gc-radius-lg: 22px;
+  --gc-radius-xl: 26px;
+
+  /* brand */
+  --gc-ink: #111827;            /* ink black */
+  --gc-accent: #2563eb;         /* blue */
+  --gc-success: #10b981;
+  --gc-warn: #f59e0b;
+  --gc-danger: #ef4444;
+
+  /* layout */
+  --gc-side-w: 300px;
+  --gc-max: 1200px;
+
+  /* typography */
+  --gc-font: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  --gc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+
+  /* focus */
+  --gc-focus: 0 0 0 4px rgba(37, 99, 235, .18);
+
+  /* page gradient */
+  --gc-grad:
+    radial-gradient(1200px 700px at 70% 0%, rgba(99,102,241,.14), transparent 60%),
+    radial-gradient(1000px 700px at 100% 10%, rgba(16,185,129,.12), transparent 55%),
+    radial-gradient(900px 700px at 0% 20%, rgba(56,189,248,.10), transparent 55%),
+    linear-gradient(180deg, var(--gc-bg), var(--gc-bg-2));
 }
 
-type Ingredient = {
-  id: string
-  name?: string | null
-  pack_unit?: string | null
-  net_unit_cost?: number | null
-  is_active?: boolean
+/* ---------- Dark Mode ---------- */
+.gc-dark{
+  --gc-bg: #070b13;
+  --gc-bg-2: #0b1020;
+  --gc-card: #0f172a;
+  --gc-text: #e5e7eb;
+  --gc-muted: rgba(229, 231, 235, .68);
+
+  --gc-border: rgba(148, 163, 184, .14);
+  --gc-border-strong: rgba(148, 163, 184, .22);
+
+  --gc-shadow: 0 26px 80px rgba(0,0,0,.45);
+  --gc-shadow-soft: 0 16px 44px rgba(0,0,0,.36);
+
+  --gc-focus: 0 0 0 4px rgba(96, 165, 250, .20);
+
+  --gc-grad:
+    radial-gradient(1200px 700px at 70% 0%, rgba(99,102,241,.18), transparent 60%),
+    radial-gradient(1000px 700px at 100% 10%, rgba(16,185,129,.14), transparent 55%),
+    radial-gradient(900px 700px at 0% 20%, rgba(56,189,248,.12), transparent 55%),
+    linear-gradient(180deg, var(--gc-bg), var(--gc-bg-2));
 }
 
-type RecipeRow = {
-  id: string
-  kitchen_id: string
-  name: string
-  category: string | null
-  portions: number
-  yield_qty: number | null
-  yield_unit: string | null
-  is_subrecipe: boolean
-  is_archived: boolean
-  photo_url: string | null
-  description: string | null
-  calories: number | null
-  protein_g: number | null
-  carbs_g: number | null
-  fat_g: number | null
-  selling_price?: number | null
-  currency?: string | null
-  target_food_cost_pct?: number | null
+/* ---------- Base ---------- */
+*{ box-sizing:border-box; }
+html,body{ height:100%; }
+body{
+  margin:0;
+  font-family: var(--gc-font);
+  color: var(--gc-text);
+  background: var(--gc-grad);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+a{ color: inherit; text-decoration:none; }
+button, input, textarea, select{ font-family: inherit; }
+
+::selection{ background: rgba(37,99,235,.22); }
+
+/* tasteful scrollbar */
+*::-webkit-scrollbar{ width: 11px; height: 11px; }
+*::-webkit-scrollbar-thumb{
+  background: rgba(100,116,139,.35);
+  border-radius: 99px;
+  border: 3px solid rgba(0,0,0,0);
+  background-clip: padding-box;
+}
+.gc-dark *::-webkit-scrollbar-thumb{
+  background: rgba(148,163,184,.28);
+  border: 3px solid rgba(0,0,0,0);
+  background-clip: padding-box;
 }
 
-function toNum(x: any, fallback = 0) {
-  const n = Number(x)
-  return Number.isFinite(n) ? n : fallback
+/* Tailwind neutral helpers alignment */
+.text-neutral-600{ color: var(--gc-muted) !important; }
+.text-neutral-500{ color: rgba(100,116,139,.85) !important; }
+.gc-dark .text-neutral-500{ color: rgba(148,163,184,.74) !important; }
+
+/* ---------- Layout (AppLayout) ---------- */
+.gc-root{ min-height: 100vh; background: var(--gc-grad); }
+.gc-shell{
+  display:flex;
+  gap: 18px;
+  padding: 18px;
+  max-width: calc(var(--gc-max) + var(--gc-side-w) + 60px);
+  margin: 0 auto;
 }
-function safeUnit(u: string) {
-  return (u ?? '').trim().toLowerCase() || 'g'
+.gc-side{
+  width: var(--gc-side-w);
+  flex: 0 0 var(--gc-side-w);
+  position: sticky;
+  top: 18px;
+  align-self: flex-start;
 }
-function fmtMoney(n: number, currency: string) {
-  const v = Number.isFinite(n) ? n : 0
-  const cur = (currency || 'USD').toUpperCase()
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
-  } catch {
-    return `${v.toFixed(2)} ${cur}`
-  }
+.gc-main{ flex: 1 1 auto; min-width: 0; }
+.gc-content{ padding: 10px 4px 40px; }
+
+@media (max-width: 1020px){
+  .gc-shell{ flex-direction: column; }
+  .gc-side{ width: 100%; flex-basis: auto; position: relative; top:auto; }
+  :root{ --gc-side-w: 100%; }
 }
-function convertQty(qty: number, fromUnit: string, toUnit: string) {
-  const f = safeUnit(fromUnit)
-  const t = safeUnit(toUnit)
-  if (f === t) return { ok: true, value: qty }
-  if (f === 'g' && t === 'kg') return { ok: true, value: qty / 1000 }
-  if (f === 'kg' && t === 'g') return { ok: true, value: qty * 1000 }
-  if (f === 'ml' && t === 'l') return { ok: true, value: qty / 1000 }
-  if (f === 'l' && t === 'ml') return { ok: true, value: qty * 1000 }
-  return { ok: false, value: 0 }
-}
-function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
-  const u = safeUnit(lineUnit)
-  const p = safeUnit(packUnit)
-  let conv = qty
-  if (u === 'g' && p === 'kg') conv = qty / 1000
-  else if (u === 'kg' && p === 'g') conv = qty * 1000
-  else if (u === 'ml' && p === 'l') conv = qty / 1000
-  else if (u === 'l' && p === 'ml') conv = qty * 1000
-  return conv
+@media (max-width: 640px){
+  .gc-shell{ padding: 12px; gap: 12px; }
+  .gc-content{ padding: 8px 0 28px; }
 }
 
-/** -------- Cost Cache (10 minutes) -------- */
-type CostPoint = {
-  at: number
-  totalCost: number
-  cpp: number
-  fcPct: number | null
-  margin: number
-  marginPct: number | null
-  warnings: string[]
+/* ---------- Cards / Blocks ---------- */
+.gc-card{
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  box-shadow: var(--gc-shadow-soft);
 }
-const COST_CACHE_KEY = 'gc_v5_cost_cache_v1'
-const COST_TTL_MS = 10 * 60 * 1000
+.gc-card:hover{ border-color: var(--gc-border-strong); }
 
-function loadCostCache(): Record<string, CostPoint> {
-  try {
-    const raw = localStorage.getItem(COST_CACHE_KEY)
-    if (!raw) return {}
-    const obj = JSON.parse(raw) as Record<string, CostPoint>
-    if (!obj || typeof obj !== 'object') return {}
-    return obj
-  } catch {
-    return {}
+.gc-label{
+  font-size: 11px;
+  letter-spacing: .18em;
+  font-weight: 800;
+  color: rgba(100,116,139,.92);
+  text-transform: uppercase;
+}
+.gc-dark .gc-label{ color: rgba(148,163,184,.78); }
+
+/* ---------- Sidebar ---------- */
+.gc-side-card{
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  box-shadow: var(--gc-shadow-soft);
+  padding: 16px;
+}
+.gc-brand{
+  display:flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gc-border);
+}
+.gc-brand-name{
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+.gc-brand-sub{ font-size: 12px; color: var(--gc-muted); }
+
+.gc-side-block{ margin-top: 14px; }
+.gc-side-hint{ font-size: 12.5px; color: var(--gc-muted); }
+
+.gc-side-tip{
+  font-size: 12.5px;
+  color: var(--gc-muted);
+  background: rgba(99,102,241,.08);
+  border: 1px solid rgba(99,102,241,.14);
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+.gc-dark .gc-side-tip{
+  background: rgba(99,102,241,.12);
+  border-color: rgba(99,102,241,.20);
+}
+
+/* Segmented (Kitchen/Mgmt) */
+.gc-seg{
+  display:flex;
+  background: rgba(148,163,184,.12);
+  border: 1px solid var(--gc-border);
+  border-radius: 16px;
+  padding: 6px;
+  gap: 6px;
+}
+.gc-dark .gc-seg{ background: rgba(148,163,184,.10); }
+
+.gc-seg-btn{
+  flex: 1 1 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--gc-muted);
+  border-radius: 12px;
+  padding: 10px 10px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .08s ease, background .14s ease, color .14s ease, border-color .14s ease;
+}
+.gc-seg-btn:hover{ transform: translateY(-1px); }
+.gc-seg-btn.is-active{
+  background: var(--gc-card);
+  color: var(--gc-text);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 10px 22px rgba(2,6,23,.10);
+}
+
+/* Nav */
+.gc-nav{ display:flex; flex-direction: column; gap: 10px; }
+.gc-nav-item{
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.40);
+  color: var(--gc-text);
+  font-weight: 900;
+  transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.gc-dark .gc-nav-item{ background: rgba(15,23,42,.55); }
+.gc-nav-item:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
+}
+.gc-nav-item.is-active{
+  background: linear-gradient(180deg, rgba(17,24,39,.98), rgba(17,24,39,.90));
+  color: #fff;
+  border-color: rgba(17,24,39,.35);
+}
+.gc-dark .gc-nav-item.is-active{
+  background: linear-gradient(180deg, rgba(37,99,235,.95), rgba(37,99,235,.82));
+  border-color: rgba(96,165,250,.35);
+}
+
+/* ---------- Inputs / Buttons ---------- */
+.gc-input{
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.76);
+  color: var(--gc-text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  outline: none;
+  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+}
+.gc-dark .gc-input{ background: rgba(15,23,42,.62); }
+.gc-input:focus{
+  border-color: rgba(37,99,235,.35);
+  box-shadow: var(--gc-focus);
+}
+
+/* nicer textarea */
+textarea.gc-input{ line-height: 1.45; resize: vertical; }
+
+.gc-btn{
+  border: 1px solid var(--gc-border);
+  background: var(--gc-card);
+  color: var(--gc-text);
+  border-radius: 14px;
+  padding: 11px 14px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+  transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, filter .18s ease;
+}
+.gc-btn:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
+}
+.gc-btn:active{ transform: translateY(0px); }
+.gc-btn:disabled{ opacity: .55; cursor: not-allowed; transform:none; box-shadow:none; }
+
+.gc-btn-primary{
+  background: linear-gradient(180deg, rgba(17,24,39,1), rgba(17,24,39,.88));
+  color: #fff;
+  border-color: rgba(17,24,39,.35);
+}
+.gc-dark .gc-btn-primary{
+  background: linear-gradient(180deg, rgba(37,99,235,.98), rgba(37,99,235,.82));
+  border-color: rgba(96,165,250,.35);
+}
+.gc-btn-soft{
+  background: rgba(239,68,68,.08);
+  border-color: rgba(239,68,68,.18);
+  color: rgba(153,27,27,.95);
+}
+.gc-dark .gc-btn-soft{
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.22);
+  color: rgba(254,202,202,.92);
+}
+.gc-btn-ghost{ background: transparent; box-shadow:none; }
+.gc-btn-ghost:hover{ background: rgba(99,102,241,.08); }
+
+/* focus ring */
+.gc-btn:focus-visible,
+.gc-seg-btn:focus-visible,
+.gc-nav-item:focus-visible,
+.gc-action:focus-visible,
+.gc-input:focus-visible{
+  outline: none;
+  box-shadow: var(--gc-focus);
+}
+
+/* ---------- Toast ---------- */
+.gc-toast{
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: 16px;
+  box-shadow: var(--gc-shadow);
+  padding: 12px 14px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  min-width: 260px;
+}
+.gc-toast-close{
+  margin-left:auto;
+  border: 1px solid var(--gc-border);
+  background: transparent;
+  border-radius: 12px;
+  width: 34px;
+  height: 34px;
+  cursor:pointer;
+  font-size: 18px;
+  line-height: 1;
+  color: var(--gc-muted);
+}
+.gc-toast-close:hover{
+  border-color: var(--gc-border-strong);
+  color: var(--gc-text);
+}
+
+/* =========================================================
+   Recipes — Premium Cards (gc-menu-*)
+   ========================================================= */
+.gc-menu-card{
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  overflow: hidden;
+  box-shadow: var(--gc-shadow-soft);
+  transform: translateZ(0);
+  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.gc-menu-card:hover{
+  transform: translateY(-2px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow);
+}
+
+.gc-menu-hero{
+  position: relative;
+  height: 190px;
+  background:
+    radial-gradient(500px 220px at 30% 20%, rgba(99,102,241,.18), transparent 55%),
+    linear-gradient(180deg, rgba(148,163,184,.20), rgba(148,163,184,.06));
+  overflow: hidden;
+}
+.gc-dark .gc-menu-hero{
+  background:
+    radial-gradient(500px 220px at 30% 20%, rgba(99,102,241,.18), transparent 55%),
+    linear-gradient(180deg, rgba(148,163,184,.10), rgba(148,163,184,.04));
+}
+.gc-menu-hero img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display:block;
+  transform: scale(1.03);
+  filter: saturate(1.05) contrast(1.02);
+}
+.gc-menu-overlay{
+  position:absolute;
+  inset:0;
+  background: linear-gradient(180deg, rgba(2,6,23,.00) 25%, rgba(2,6,23,.46) 100%);
+  pointer-events:none;
+}
+.gc-dark .gc-menu-overlay{
+  background: linear-gradient(180deg, rgba(2,6,23,.00) 25%, rgba(2,6,23,.60) 100%);
+}
+
+.gc-menu-badges{
+  position:absolute;
+  left: 12px;
+  right: 12px;
+  top: 12px;
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items:center;
+}
+.gc-chip{
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(255,255,255,.55);
+  color: rgba(15,23,42,.92);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 950;
+  box-shadow: 0 10px 22px rgba(2,6,23,.10);
+  backdrop-filter: blur(8px);
+}
+.gc-dark .gc-chip{
+  background: rgba(15,23,42,.62);
+  border-color: rgba(148,163,184,.18);
+  color: rgba(226,232,240,.95);
+}
+.gc-chip.warn{
+  background: rgba(245,158,11,.12);
+  border-color: rgba(245,158,11,.25);
+  color: rgba(161,98,7,.98);
+}
+.gc-dark .gc-chip.warn{ color: rgba(254,243,199,.95); }
+
+.gc-menu-body{ padding: 14px 14px 16px; }
+.gc-menu-kicker{
+  font-size: 11px;
+  letter-spacing: .18em;
+  font-weight: 950;
+  color: rgba(100,116,139,.90);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.gc-menu-title{
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.gc-menu-desc{
+  margin-top: 6px;
+  color: var(--gc-muted);
+  font-size: 13px;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.gc-menu-metrics{
+  margin-top: 10px;
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 10px;
+  font-size: 13px;
+}
+.gc-menu-metrics b{ font-weight: 950; }
+.gc-menu-actions{
+  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.gc-action{
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.72);
+  color: var(--gc-text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 950;
+  cursor: pointer;
+  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+  transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+}
+.gc-dark .gc-action{ background: rgba(15,23,42,.62); }
+.gc-action:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
+}
+.gc-action.primary{
+  background: linear-gradient(180deg, rgba(17,24,39,1), rgba(17,24,39,.88));
+  color: #fff;
+  border-color: rgba(17,24,39,.35);
+}
+.gc-dark .gc-action.primary{
+  background: linear-gradient(180deg, rgba(37,99,235,.98), rgba(37,99,235,.82));
+  border-color: rgba(96,165,250,.35);
+}
+
+/* =========================================================
+   RecipeEditor — GLOBAL POLISH (gc-kpi + spacing + print hooks)
+   ========================================================= */
+
+/* KPI blocks used in RecipeEditor */
+.gc-kpi{
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.62);
+  border-radius: 16px;
+  padding: 12px 12px;
+  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+}
+.gc-dark .gc-kpi{ background: rgba(15,23,42,.60); }
+.gc-kpi-label{
+  font-size: 11px;
+  letter-spacing: .16em;
+  font-weight: 950;
+  text-transform: uppercase;
+  color: rgba(100,116,139,.88);
+}
+.gc-dark .gc-kpi-label{ color: rgba(148,163,184,.76); }
+.gc-kpi-value{
+  margin-top: 6px;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+
+/* Make editor cards feel “app-like” */
+.gc-card.p-6{ padding: 18px !important; }
+@media (min-width: 1024px){
+  .gc-card.p-6{ padding: 22px !important; }
+}
+
+/* Dividers look nicer */
+.divide-neutral-200 > :not([hidden]) ~ :not([hidden]){
+  border-color: var(--gc-border) !important;
+}
+
+/* =========================================================
+   PRINT — A4 Recipe Card (classes already in RecipeEditor)
+   ========================================================= */
+
+.gc-print-only{ display: none; }
+
+@media print{
+  /* hide app chrome */
+  .gc-side, .gc-nav, .gc-seg, .gc-toast, button, .gc-btn, .gc-action, input, textarea, select{
+    display: none !important;
+  }
+  .gc-shell{ padding: 0 !important; max-width: none !important; }
+  .gc-main, .gc-content{ padding: 0 !important; }
+  .gc-card{ box-shadow: none !important; }
+
+  /* show print layout */
+  .gc-print-only{ display: block !important; }
+  .gc-print-page{
+    width: 210mm;
+    min-height: 297mm;
+    padding: 14mm 14mm 12mm;
+    margin: 0 auto;
+    background: #fff;
+    color: #111;
+    font-family: var(--gc-font);
+  }
+
+  .gc-print-header{
+    display:flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12mm;
+    padding-bottom: 6mm;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .gc-print-brand{
+    font-weight: 950;
+    letter-spacing: -0.02em;
+    font-size: 18px;
+  }
+  .gc-print-name{
+    font-weight: 950;
+    letter-spacing: -0.02em;
+    font-size: 26px;
+    line-height: 1.15;
+    margin-top: 2mm;
+  }
+  .gc-print-sub{
+    margin-top: 2mm;
+    color: #64748b;
+    font-size: 12.5px;
+  }
+
+  .gc-print-grid{
+    display:grid;
+    grid-template-columns: 1.2fr .8fr;
+    gap: 10mm;
+    margin-top: 8mm;
+  }
+  .gc-print-right{ text-align: right; }
+
+  .gc-print-photo{
+    width: 100%;
+    height: 58mm;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e5e7eb;
+  }
+  .gc-print-photo img{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display:block;
+  }
+  .gc-print-photo-empty{
+    width: 100%;
+    height: 58mm;
+    border-radius: 12px;
+    border: 1px dashed #cbd5e1;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    color:#94a3b8;
+    font-size: 12px;
+  }
+
+  .gc-print-kpis{
+    margin-top: 6mm;
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4mm;
+  }
+  .gc-print-kpi{
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 4mm 4mm;
+  }
+  .gc-print-kpi-l{
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: #64748b;
+    font-weight: 900;
+  }
+  .gc-print-kpi-v{
+    margin-top: 2mm;
+    font-size: 16px;
+    font-weight: 950;
+  }
+
+  .gc-print-block{
+    margin-top: 8mm;
+  }
+  .gc-print-label{
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 950;
+    color: #475569;
+    margin-bottom: 3mm;
+  }
+  .gc-print-text{
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #0f172a;
+    white-space: pre-wrap;
+  }
+  .gc-print-muted{ color: #64748b; }
+
+  /* ingredients list */
+  .gc-print-list{
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .gc-print-row{
+    display:flex;
+    justify-content: space-between;
+    gap: 8mm;
+    padding: 3.2mm 4mm;
+    border-bottom: 1px solid #eef2f7;
+    font-size: 12.5px;
+  }
+  .gc-print-row:last-child{ border-bottom: 0; }
+  .gc-print-row-name{ font-weight: 700; color:#0f172a; }
+  .gc-print-row-note{ color:#64748b; font-size: 12px; margin-top: 1mm; }
+  .gc-print-row-right{ font-weight: 800; color:#111827; white-space: nowrap; }
+
+  /* steps */
+  .gc-print-steps{
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 4mm 4mm;
+  }
+  .gc-print-step2{ margin-top: 3.5mm; }
+  .gc-print-step2-head{
+    display:flex;
+    gap: 3mm;
+    align-items: baseline;
+  }
+  .gc-print-step-n{
+    font-weight: 950;
+    color:#2563eb;
+    font-family: var(--gc-mono);
+    font-size: 12px;
+  }
+  .gc-print-step-t{
+    font-weight: 800;
+    color:#0f172a;
+    font-size: 12.5px;
+    line-height: 1.4;
+  }
+  .gc-print-step2-photo{
+    margin-top: 2.5mm;
+    height: 34mm;
+    border-radius: 10px;
+    overflow:hidden;
+    border: 1px solid #e5e7eb;
+  }
+  .gc-print-step2-photo img{
+    width:100%;
+    height:100%;
+    object-fit: cover;
+    display:block;
+  }
+
+  .gc-print-tags{
+    margin-top: 4mm;
+    display:flex;
+    flex-wrap: wrap;
+    gap: 2mm;
+  }
+  .gc-print-tag{
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: 1.8mm 3mm;
+    font-size: 11px;
+    font-weight: 800;
+    color:#0f172a;
+  }
+
+  .gc-print-footer{
+    margin-top: 10mm;
+    padding-top: 4mm;
+    border-top: 1px solid #e5e7eb;
+    color:#94a3b8;
+    font-size: 11px;
+    display:flex;
+    justify-content: space-between;
   }
 }
-function saveCostCache(cache: Record<string, CostPoint>) {
-  try {
-    localStorage.setItem(COST_CACHE_KEY, JSON.stringify(cache))
-  } catch {}
-}
 
-type Density = 'comfortable' | 'dense'
-
-export default function Recipes() {
-  const nav = useNavigate()
-  const { isKitchen } = useMode()
-  const isMgmt = !isKitchen
-
-  const [toast, setToast] = useState<string | null>(null)
-  const [err, setErr] = useState<string | null>(null)
-  const [loading, setLoading] = useState(true)
-
-  const [q, setQ] = useState('')
-  const [showArchived, setShowArchived] = useState(false)
-
-  const [recipes, setRecipes] = useState<RecipeRow[]>([])
-  const [ingredients, setIngredients] = useState<Ingredient[]>([])
-
-  const [selected, setSelected] = useState<Record<string, boolean>>({})
-  const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[k]), [selected])
-
-  const [density, setDensity] = useState<Density>(() => {
-    const v = localStorage.getItem('gc_v5_density')
-    return v === 'dense' ? 'dense' : 'comfortable'
-  })
-
-  // lines cache like RecipeEditor
-  const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
-  const loadingLinesRef = useRef<Set<string>>(new Set())
-
-  // cost cache (memory + localStorage)
-  const [costCache, setCostCache] = useState<Record<string, CostPoint>>(() => loadCostCache())
-
-  const recipeById = useMemo(() => {
-    const m = new Map<string, RecipeRow>()
-    for (const r of recipes) m.set(r.id, r)
-    return m
-  }, [recipes])
-
-  const ingById = useMemo(() => {
-    const m = new Map<string, Ingredient>()
-    for (const i of ingredients) m.set(i.id, i)
-    return m
-  }, [ingredients])
-
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase()
-    let list = recipes
-    if (!showArchived) list = list.filter((r) => !r.is_archived)
-    if (!s) return list
-    return list.filter((r) => {
-      const a = (r.name || '').toLowerCase()
-      const b = (r.category || '').toLowerCase()
-      return a.includes(s) || b.includes(s)
-    })
-  }, [recipes, q, showArchived])
-
-  async function loadAll() {
-    setLoading(true)
-    setErr(null)
-    try {
-      const selectRecipes =
-        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
-
-      const { data: r, error: rErr } = await supabase
-        .from('recipes')
-        .select(selectRecipes)
-        .eq('kitchen_id', KITCHEN_ID)
-        .order('is_archived', { ascending: true })
-        .order('name', { ascending: true })
-
-      if (rErr) throw rErr
-      setRecipes((r ?? []) as RecipeRow[])
-
-      const { data: i, error: iErr } = await supabase
-        .from('ingredients')
-        .select('id,name,pack_unit,net_unit_cost,is_active')
-        .eq('kitchen_id', KITCHEN_ID) as any
-
-      if (iErr && String(iErr.message || '').toLowerCase().includes('kitchen_id')) {
-        const { data: i2, error: i2Err } = await supabase
-          .from('ingredients')
-          .select('id,name,pack_unit,net_unit_cost,is_active')
-          .order('name', { ascending: true })
-        if (i2Err) throw i2Err
-        setIngredients((i2 ?? []) as Ingredient[])
-      } else {
-        if (iErr) throw iErr
-        setIngredients((i ?? []) as Ingredient[])
-      }
-    } catch (e: any) {
-      setErr(e?.message || 'Failed to load')
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    loadAll()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-
-  async function ensureRecipeLinesLoaded(recipeIds: string[]) {
-    const ids = Array.from(new Set(recipeIds)).filter(Boolean)
-    const need = ids.filter((id) => !recipeLinesCache[id] && !loadingLinesRef.current.has(id))
-    if (!need.length) return
-
-    need.forEach((id) => loadingLinesRef.current.add(id))
-    try {
-      const { data, error } = await supabase
-        .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
-        .in('recipe_id', need)
-        .order('sort_order', { ascending: true })
-      if (error) throw error
-
-      const fetched: Record<string, Line[]> = {}
-      for (const rid of need) fetched[rid] = []
-      for (const row of (data ?? []) as any[]) {
-        if (!fetched[row.recipe_id]) fetched[row.recipe_id] = []
-        fetched[row.recipe_id].push(row as Line)
-      }
-      setRecipeLinesCache((p) => ({ ...p, ...fetched }))
-    } finally {
-      need.forEach((id) => loadingLinesRef.current.delete(id))
-    }
-  }
-
-  /** Same engine as RecipeEditor (no logic change) */
-  const getRecipeTotalCost = (recipeId: string, visited: Set<string>): { cost: number; warnings: string[] } => {
-    const warnings: string[] = []
-    if (visited.has(recipeId)) {
-      warnings.push(`Loop detected in sub-recipes at ${recipeId}`)
-      return { cost: 0, warnings }
-    }
-    visited.add(recipeId)
-
-    const rr = recipeById.get(recipeId)
-    const rLines = recipeLinesCache[recipeId] ?? []
-    let sum = 0
-
-    for (const l of rLines) {
-      if (l.line_type === 'group') continue
-
-      if (l.line_type === 'ingredient') {
-        if (!l.ingredient_id) continue
-        const ing = ingById.get(l.ingredient_id)
-        const net = toNum(ing?.net_unit_cost, 0)
-        const packUnit = safeUnit(ing?.pack_unit ?? 'g')
-        const conv = convertQtyToPackUnit(toNum(l.qty, 0), l.unit, packUnit)
-        sum += conv * net
-        continue
-      }
-
-      if (l.line_type === 'subrecipe') {
-        if (!l.sub_recipe_id) continue
-        const childId = l.sub_recipe_id
-        const child = recipeById.get(childId)
-        const childLines = recipeLinesCache[childId]
-        if (!child || !childLines) continue
-
-        const childRes = getRecipeTotalCost(childId, visited)
-        for (const w of childRes.warnings) warnings.push(w)
-
-        const yq = toNum(child.yield_qty, 0)
-        const yu = safeUnit(child.yield_unit ?? '')
-        if (yq <= 0 || !yu) {
-          warnings.push(`Missing yield for subrecipe: ${child.name}`)
-          continue
-        }
-
-        const qtyParent = toNum(l.qty, 0)
-        const conv = convertQty(qtyParent, l.unit, yu)
-        if (!conv.ok) {
-          warnings.push(`Unit mismatch for subrecipe "${child.name}" (${safeUnit(l.unit)} -> ${yu})`)
-          continue
-        }
-
-        const costPerYieldUnit = childRes.cost / yq
-        sum += conv.value * costPerYieldUnit
-        continue
-      }
-    }
-
-    visited.delete(recipeId)
-    if (!rr) return { cost: sum, warnings }
-    return { cost: sum, warnings }
-  }
-
-  const costMemo = useMemo(() => {
-    const cache = new Map<string, { cost: number; warnings: string[] }>()
-    const get = (rid: string) => {
-      const hit = cache.get(rid)
-      if (hit) return hit
-      const res = getRecipeTotalCost(rid, new Set<string>())
-      cache.set(rid, res)
-      return res
-    }
-    return { get }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipeLinesCache, ingById, recipeById])
-
-  useEffect(() => {
-    if (loading) return
-    if (!filtered.length) return
-
-    const visible = filtered.slice(0, 28)
-    ensureRecipeLinesLoaded(visible.map((r) => r.id)).catch(() => {})
-
-    const subIds: string[] = []
-    for (const r of visible) {
-      const lines = recipeLinesCache[r.id]
-      if (!lines) continue
-      for (const l of lines) {
-        if (l.line_type === 'subrecipe' && l.sub_recipe_id) subIds.push(l.sub_recipe_id)
-      }
-    }
-    if (subIds.length) ensureRecipeLinesLoaded(subIds).catch(() => {})
-
-    const now = Date.now()
-    const nextCache: Record<string, CostPoint> = { ...costCache }
-    let changed = false
-
-    for (const r of visible) {
-      const rid = r.id
-      const hit = nextCache[rid]
-      if (hit && now - hit.at < COST_TTL_MS) continue
-      if (!recipeLinesCache[rid]) continue
-
-      const totalRes = costMemo.get(rid)
-      const totalCost = totalRes.cost
-      const portionsN = Math.max(1, toNum(r.portions, 1))
-      const cpp = portionsN > 0 ? totalCost / portionsN : 0
-
-      const sell = Math.max(0, toNum(r.selling_price, 0))
-      const fcPct = sell > 0 ? (cpp / sell) * 100 : null
-      const margin = sell - cpp
-      const marginPct = sell > 0 ? (margin / sell) * 100 : null
-
-      nextCache[rid] = {
-        at: now,
-        totalCost,
-        cpp,
-        fcPct,
-        margin,
-        marginPct,
-        warnings: totalRes.warnings,
-      }
-      changed = true
-    }
-
-    if (changed) {
-      setCostCache(nextCache)
-      saveCostCache(nextCache)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, filtered, recipeLinesCache, costMemo])
-
-  async function createNewRecipe() {
-    setErr(null)
-    try {
-      const payload: Partial<RecipeRow> = {
-        kitchen_id: KITCHEN_ID,
-        name: 'New Recipe',
-        category: null,
-        portions: 1,
-        is_subrecipe: false,
-        is_archived: false,
-        description: '',
-        photo_url: null,
-      }
-
-      const { data, error } = await supabase.from('recipes').insert(payload as any).select('id').single()
-      if (error) throw error
-
-      const id = (data as any)?.id as string
-      setToast('Created. Opening editor…')
-      nav(`/recipe?id=${encodeURIComponent(id)}`)
-    } catch (e: any) {
-      setErr(e?.message || 'Failed to create recipe')
-    }
-  }
-
-  async function toggleArchive(r: RecipeRow) {
-    try {
-      const next = !r.is_archived
-      const { error } = await supabase.from('recipes').update({ is_archived: next }).eq('id', r.id)
-      if (error) throw error
-      setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_archived: next } : x)))
-      setToast(next ? 'Archived.' : 'Restored.')
-    } catch (e: any) {
-      setErr(e?.message || 'Failed to update recipe')
-    }
-  }
-
-  function toggleSelect(id: string) {
-    setSelected((p) => ({ ...p, [id]: !p[id] }))
-  }
-  function selectVisible() {
-    const ids = filtered.slice(0, 64).map((r) => r.id)
-    setSelected((p) => {
-      const next = { ...p }
-      ids.forEach((id) => (next[id] = true))
-      return next
-    })
-  }
-  function clearSelection() {
-    setSelected({})
-  }
-
-  async function deleteOneRecipe(recipeId: string) {
-    const ok = window.confirm('Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.')
-    if (!ok) return
-
-    setErr(null)
-    try {
-      const { error: lErr } = await supabase.from('recipe_lines').delete().eq('recipe_id', recipeId)
-      if (lErr) throw lErr
-
-      const { error: rErr } = await supabase.from('recipes').delete().eq('id', recipeId)
-      if (rErr) throw rErr
-
-      setRecipes((prev) => prev.filter((r) => r.id !== recipeId))
-      setRecipeLinesCache((p) => {
-        const next = { ...p }
-        delete next[recipeId]
-        return next
-      })
-      setSelected((p) => {
-        const next = { ...p }
-        delete next[recipeId]
-        return next
-      })
-      setToast('Deleted.')
-    } catch (e: any) {
-      setErr(e?.message || 'Failed to delete recipe')
-    }
-  }
-
-  async function bulkDeleteSelected() {
-    if (!selectedIds.length) return
-
-    const ok = window.confirm(
-      `Delete ${selectedIds.length} recipes permanently?\n\nThis will also delete their recipe lines.\nThis action cannot be undone.`
-    )
-    if (!ok) return
-
-    setErr(null)
-    try {
-      const { error: lErr } = await supabase.from('recipe_lines').delete().in('recipe_id', selectedIds)
-      if (lErr) throw lErr
-
-      const { error: rErr } = await supabase.from('recipes').delete().in('id', selectedIds)
-      if (rErr) throw rErr
-
-      setRecipes((prev) => prev.filter((r) => !selectedIds.includes(r.id)))
-      setRecipeLinesCache((p) => {
-        const next = { ...p }
-        selectedIds.forEach((id) => delete next[id])
-        return next
-      })
-      setSelected({})
-      setToast(`Deleted ${selectedIds.length} recipe(s).`)
-    } catch (e: any) {
-      setErr(e?.message || 'Bulk delete failed')
-    }
-  }
-
-  function toggleDensity() {
-    const next: Density = density === 'dense' ? 'comfortable' : 'dense'
-    setDensity(next)
-    localStorage.setItem('gc_v5_density', next)
-  }
-
-  const gridClass =
-    density === 'dense'
-      ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
-      : 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
-
-  return (
-    <div className="space-y-4">
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
-
-      {/* Sticky top header */}
-      <div
-        className="gc-card"
-        style={{
-          position: 'sticky',
-          top: 12,
-          zIndex: 20,
-          backdropFilter: 'blur(10px)',
-        }}
-      >
-        <div className="p-5">
-          <div className="gc-label">RECIPES</div>
-
-          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
-              <div className="mt-1 text-sm text-neutral-600">
-                V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
-              </div>
-            </div>
-
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
-              <input
-                className="gc-input sm:w-[340px]"
-                placeholder="Search by name or category..."
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-
-              <button className="gc-btn" type="button" onClick={loadAll} disabled={loading}>
-                Refresh
-              </button>
-
-              <button className="gc-btn gc-btn-primary" type="button" onClick={createNewRecipe}>
-                + New
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-neutral-600">
-                <input
-                  type="checkbox"
-                  checked={showArchived}
-                  onChange={(e) => setShowArchived(e.target.checked)}
-                  style={{ marginRight: 8 }}
-                />
-                Show archived
-              </label>
-
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={toggleDensity}>
-                Density: {density === 'dense' ? 'Dense' : 'Comfort'}
-              </button>
-
-              {isMgmt && (
-                <>
-                  <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
-                    Select visible
-                  </button>
-                  <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
-                    Clear
-                  </button>
-                </>
-              )}
-            </div>
-
-            {isMgmt && (
-              <div className="flex items-center gap-2">
-                <div className="text-sm text-neutral-600">
-                  Selected: <b>{selectedIds.length}</b>
-                </div>
-                <button className="gc-btn gc-btn-soft" type="button" onClick={bulkDeleteSelected} disabled={!selectedIds.length}>
-                  Delete Selected
-                </button>
-              </div>
-            )}
-          </div>
-
-          {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
-        </div>
-      </div>
-
-      <div className={gridClass}>
-        {loading &&
-          Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="gc-menu-card">
-              <div className="gc-menu-hero" />
-              <div className="p-4">
-                <div className="h-4 w-2/3 rounded bg-neutral-200" />
-                <div className="mt-3 h-3 w-full rounded bg-neutral-100" />
-                <div className="mt-2 h-3 w-5/6 rounded bg-neutral-100" />
-                <div className="mt-4 h-9 w-full rounded bg-neutral-100" />
-              </div>
-            </div>
-          ))}
-
-        {!loading &&
-          filtered.map((r) => {
-            const title = r.name || 'Untitled'
-            const cat = (r.category || 'Uncategorized').toUpperCase()
-            const portions = Math.max(1, toNum(r.portions, 1))
-            const cur = (r.currency || 'USD').toUpperCase()
-
-            const c = costCache[r.id]
-            const fresh = c && Date.now() - c.at < COST_TTL_MS
-            const cpp = fresh ? c.cpp : null
-            const fcPct = fresh ? c.fcPct : null
-            const margin = fresh ? c.margin : null
-
-            return (
-              <div key={r.id} className="gc-menu-card">
-                <div className="gc-menu-hero" style={density === 'dense' ? { height: 160 } : undefined}>
-                  {r.photo_url ? (
-                    <img src={r.photo_url} alt={title} loading="lazy" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">No Photo</div>
-                  )}
-                  <div className="gc-menu-overlay" />
-                  <div className="gc-menu-badges">
-                    <span className="gc-chip">{cat}</span>
-                    <span className="gc-chip">Portions: {portions}</span>
-                    {r.is_archived && <span className="gc-chip warn">Archived</span>}
-                    {isKitchen && <span className="gc-chip">Kitchen</span>}
-                  </div>
-                </div>
-
-                <div className="gc-menu-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
-                  <div className="gc-menu-kicker">Recipe</div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="gc-menu-title" style={{ marginTop: 0, fontSize: density === 'dense' ? 16 : 18 }}>
-                      {title}
-                    </div>
-
-                    {isMgmt && (
-                      <label title="Select for bulk delete" className="text-xs text-neutral-600">
-                        <input
-                          type="checkbox"
-                          checked={!!selected[r.id]}
-                          onChange={() => toggleSelect(r.id)}
-                          style={{ transform: 'scale(1.05)' }}
-                        />
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="gc-menu-desc" style={density === 'dense' ? { WebkitLineClamp: 1 } as any : undefined}>
-                    {r.description?.trim() ? r.description : 'Add a short menu description…'}
-                  </div>
-
-                  <div className="gc-menu-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
-                    <div>
-                      <span className="text-neutral-600">Cost/portion:</span> <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600">FC%:</span> <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600">Margin:</span> <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600">Price:</span>{' '}
-                      <b>{r.selling_price == null ? '—' : fmtMoney(toNum(r.selling_price, 0), cur)}</b>
-                    </div>
-                  </div>
-
-                  <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
-                    <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                      Open Editor
-                    </button>
-
-                    <button type="button" className="gc-action" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}>
-                      Cook
-                    </button>
-
-                    <button type="button" className="gc-action" onClick={() => toggleArchive(r)}>
-                      {r.is_archived ? 'Restore' : 'Archive'}
-                    </button>
-
-                    {isMgmt && (
-                      <button type="button" className="gc-action" onClick={() => deleteOneRecipe(r.id)}>
-                        Delete
-                      </button>
-                    )}
-                  </div>
-
-                  {!!c?.warnings?.length && (
-                    <div className="mt-3 text-xs text-amber-700">
-                      {c.warnings.slice(0, 2).map((w, i) => (
-                        <div key={i}>⚠️ {w}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
-      </div>
-
-      {!loading && filtered.length === 0 && (
-        <div className="gc-card p-8 text-center">
-          <div className="text-xl font-extrabold">No recipes found</div>
-          <div className="mt-2 text-sm text-neutral-600">Try another search, or create a new recipe.</div>
-        </div>
-      )}
-    </div>
-  )
-}
+/* ---------- Safety for long titles ---------- */
+.gc-menu-title, .gc-brand-name{ word-break: break-word; }
