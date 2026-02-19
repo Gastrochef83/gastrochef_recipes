@@ -3,7 +3,10 @@ import ReactDOM from 'react-dom/client'
 import { HashRouter } from 'react-router-dom'
 import App from './App'
 
-// ✅ global styles
+// ✅ Tailwind entry (fixes “HTML-looking” pages)
+import './index.css'
+
+// ✅ Your custom UI theme
 import './styles.css'
 
 import { ModeProvider } from './lib/mode'
