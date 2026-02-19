@@ -52,11 +52,9 @@ function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
-
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
-
 function fmtMoney(n: number, currency: string) {
   const v = Number.isFinite(n) ? n : 0
   const cur = (currency || 'USD').toUpperCase()
@@ -77,7 +75,6 @@ function convertQty(qty: number, fromUnit: string, toUnit: string) {
   if (f === 'l' && t === 'ml') return { ok: true, value: qty * 1000 }
   return { ok: false, value: 0 }
 }
-
 function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
   const u = safeUnit(lineUnit)
   const p = safeUnit(packUnit)
@@ -99,7 +96,6 @@ type CostPoint = {
   marginPct: number | null
   warnings: string[]
 }
-
 const COST_CACHE_KEY = 'gc_v5_cost_cache_v1'
 const COST_TTL_MS = 10 * 60 * 1000
 
@@ -114,26 +110,29 @@ function loadCostCache(): Record<string, CostPoint> {
     return {}
   }
 }
-
 function saveCostCache(cache: Record<string, CostPoint>) {
   try {
     localStorage.setItem(COST_CACHE_KEY, JSON.stringify(cache))
-  } catch {
-    // ignore
-  }
+  } catch {}
 }
 
 export default function Recipes() {
   const nav = useNavigate()
   const { isKitchen } = useMode()
+  const isMgmt = !isKitchen
 
   const [toast, setToast] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const [q, setQ] = useState('')
+  const [showArchived, setShowArchived] = useState(false)
+
   const [recipes, setRecipes] = useState<RecipeRow[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
+
+  const [selected, setSelected] = useState<Record<string, boolean>>({})
+  const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[k]), [selected])
 
   // lines cache like RecipeEditor
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
@@ -156,19 +155,20 @@ export default function Recipes() {
 
   const filtered = useMemo(() => {
     const s = q.trim().toLowerCase()
-    if (!s) return recipes
-    return recipes.filter((r) => {
+    let list = recipes
+    if (!showArchived) list = list.filter((r) => !r.is_archived)
+    if (!s) return list
+    return list.filter((r) => {
       const a = (r.name || '').toLowerCase()
       const b = (r.category || '').toLowerCase()
       return a.includes(s) || b.includes(s)
     })
-  }, [recipes, q])
+  }, [recipes, q, showArchived])
 
   async function loadAll() {
     setLoading(true)
     setErr(null)
     try {
-      // recipes
       const selectRecipes =
         'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
       const { data: r, error: rErr } = await supabase
@@ -179,7 +179,6 @@ export default function Recipes() {
       if (rErr) throw rErr
       setRecipes((r ?? []) as RecipeRow[])
 
-      // ingredients
       const { data: i, error: iErr } = await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active')
@@ -218,7 +217,6 @@ export default function Recipes() {
         if (!fetched[row.recipe_id]) fetched[row.recipe_id] = []
         fetched[row.recipe_id].push(row as Line)
       }
-
       setRecipeLinesCache((p) => ({ ...p, ...fetched }))
     } finally {
       need.forEach((id) => loadingLinesRef.current.delete(id))
@@ -299,18 +297,13 @@ export default function Recipes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [recipeLinesCache, ingById, recipeById])
 
-  /** Calculate costs for visible cards (lazy + cached) */
   useEffect(() => {
     if (loading) return
     if (!filtered.length) return
 
-    // only compute for first N visible (perf)
     const visible = filtered.slice(0, 24)
-
-    // make sure lines exist for visible recipes
     ensureRecipeLinesLoaded(visible.map((r) => r.id)).catch(() => {})
 
-    // after their lines are loaded, fetch subrecipes lines too
     const subIds: string[] = []
     for (const r of visible) {
       const lines = recipeLinesCache[r.id]
@@ -321,7 +314,6 @@ export default function Recipes() {
     }
     if (subIds.length) ensureRecipeLinesLoaded(subIds).catch(() => {})
 
-    // compute and cache (only when we have required lines)
     const now = Date.now()
     const nextCache: Record<string, CostPoint> = { ...costCache }
     let changed = false
@@ -330,8 +322,6 @@ export default function Recipes() {
       const rid = r.id
       const hit = nextCache[rid]
       if (hit && now - hit.at < COST_TTL_MS) continue
-
-      // require at least main lines loaded; if not, wait next cycle
       if (!recipeLinesCache[rid]) continue
 
       const totalRes = costMemo.get(rid)
@@ -375,7 +365,6 @@ export default function Recipes() {
         description: '',
         photo_url: null,
       }
-
       const { data, error } = await supabase.from('recipes').insert(payload as any).select('id').single()
       if (error) throw error
       const id = (data as any)?.id as string
@@ -398,6 +387,89 @@ export default function Recipes() {
     }
   }
 
+  function toggleSelect(id: string) {
+    setSelected((p) => ({ ...p, [id]: !p[id] }))
+  }
+
+  function selectAllVisible() {
+    const ids = filtered.slice(0, 48).map((r) => r.id)
+    setSelected((p) => {
+      const next = { ...p }
+      ids.forEach((id) => (next[id] = true))
+      return next
+    })
+  }
+
+  function clearSelection() {
+    setSelected({})
+  }
+
+  async function deleteOneRecipe(recipeId: string) {
+    // Strong confirm
+    const ok = window.confirm(
+      'Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.'
+    )
+    if (!ok) return
+
+    setErr(null)
+    try {
+      // 1) delete recipe_lines first (avoid FK issues)
+      const { error: lErr } = await supabase.from('recipe_lines').delete().eq('recipe_id', recipeId)
+      if (lErr) throw lErr
+
+      // 2) delete recipe
+      const { error: rErr } = await supabase.from('recipes').delete().eq('id', recipeId)
+      if (rErr) throw rErr
+
+      setRecipes((prev) => prev.filter((r) => r.id !== recipeId))
+      setRecipeLinesCache((p) => {
+        const next = { ...p }
+        delete next[recipeId]
+        return next
+      })
+      setSelected((p) => {
+        const next = { ...p }
+        delete next[recipeId]
+        return next
+      })
+
+      setToast('Deleted.')
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to delete recipe (RLS?)')
+    }
+  }
+
+  async function bulkDeleteSelected() {
+    if (!selectedIds.length) return
+
+    const ok = window.confirm(
+      `Delete ${selectedIds.length} recipes permanently?\n\nThis will also delete their recipe lines.\nThis action cannot be undone.`
+    )
+    if (!ok) return
+
+    setErr(null)
+    try {
+      // delete lines for all selected
+      const { error: lErr } = await supabase.from('recipe_lines').delete().in('recipe_id', selectedIds)
+      if (lErr) throw lErr
+
+      // delete recipes
+      const { error: rErr } = await supabase.from('recipes').delete().in('id', selectedIds)
+      if (rErr) throw rErr
+
+      setRecipes((prev) => prev.filter((r) => !selectedIds.includes(r.id)))
+      setRecipeLinesCache((p) => {
+        const next = { ...p }
+        selectedIds.forEach((id) => delete next[id])
+        return next
+      })
+      setSelected({})
+      setToast(`Deleted ${selectedIds.length} recipe(s).`)
+    } catch (e: any) {
+      setErr(e?.message || 'Bulk delete failed (RLS?)')
+    }
+  }
+
   return (
     <div className="space-y-4">
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
@@ -408,7 +480,9 @@ export default function Recipes() {
         <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
-            <div className="mt-1 text-sm text-neutral-600">V5 ULTRA cards + accurate costing (cached).</div>
+            <div className="mt-1 text-sm text-neutral-600">
+              V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
+            </div>
           </div>
 
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
@@ -427,6 +501,48 @@ export default function Recipes() {
               + New
             </button>
           </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <label className="text-sm text-neutral-600">
+              <input
+                type="checkbox"
+                checked={showArchived}
+                onChange={(e) => setShowArchived(e.target.checked)}
+                style={{ marginRight: 8 }}
+              />
+              Show archived
+            </label>
+
+            {isMgmt && (
+              <>
+                <button className="gc-btn" type="button" onClick={selectAllVisible} disabled={loading || !filtered.length}>
+                  Select visible
+                </button>
+                <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
+                  Clear
+                </button>
+              </>
+            )}
+          </div>
+
+          {isMgmt && (
+            <div className="flex items-center gap-2">
+              <div className="text-sm text-neutral-600">
+                Selected: <b>{selectedIds.length}</b>
+              </div>
+              <button
+                className="gc-btn gc-btn-soft"
+                type="button"
+                onClick={bulkDeleteSelected}
+                disabled={!selectedIds.length}
+                title="Deletes recipes + their recipe lines"
+              >
+                Delete Selected
+              </button>
+            </div>
+          )}
         </div>
 
         {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
@@ -454,9 +570,10 @@ export default function Recipes() {
             const cur = (r.currency || 'USD').toUpperCase()
 
             const c = costCache[r.id]
-            const cpp = c && Date.now() - c.at < COST_TTL_MS ? c.cpp : null
-            const fcPct = c && Date.now() - c.at < COST_TTL_MS ? c.fcPct : null
-            const margin = c && Date.now() - c.at < COST_TTL_MS ? c.margin : null
+            const fresh = c && Date.now() - c.at < COST_TTL_MS
+            const cpp = fresh ? c.cpp : null
+            const fcPct = fresh ? c.fcPct : null
+            const margin = fresh ? c.margin : null
 
             return (
               <div key={r.id} className="gc-menu-card">
@@ -481,7 +598,23 @@ export default function Recipes() {
 
                 <div className="gc-menu-body">
                   <div className="gc-menu-kicker">Recipe</div>
-                  <div className="gc-menu-title">{title}</div>
+
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="gc-menu-title" style={{ marginTop: 0 }}>
+                      {title}
+                    </div>
+
+                    {isMgmt && (
+                      <label title="Select for bulk delete" className="text-xs text-neutral-600">
+                        <input
+                          type="checkbox"
+                          checked={!!selected[r.id]}
+                          onChange={() => toggleSelect(r.id)}
+                          style={{ transform: 'scale(1.05)' }}
+                        />
+                      </label>
+                    )}
+                  </div>
 
                   <div className="gc-menu-desc">
                     {r.description?.trim() ? r.description : 'Add a short menu description…'}
@@ -507,26 +640,28 @@ export default function Recipes() {
                   </div>
 
                   <div className="gc-menu-actions">
-                    <button
-                      type="button"
-                      className="gc-action primary"
-                      onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}
-                    >
+                    <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
                       Open Editor
                     </button>
 
-                    <button
-                      type="button"
-                      className="gc-action"
-                      onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}
-                      title="Cook view (uses same editor route)"
-                    >
+                    <button type="button" className="gc-action" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}>
                       Cook
                     </button>
 
                     <button type="button" className="gc-action" onClick={() => toggleArchive(r)}>
                       {r.is_archived ? 'Restore' : 'Archive'}
                     </button>
+
+                    {isMgmt && (
+                      <button
+                        type="button"
+                        className="gc-action"
+                        onClick={() => deleteOneRecipe(r.id)}
+                        title="Delete permanently (also deletes recipe lines)"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </div>
 
                   {!!c?.warnings?.length && (
