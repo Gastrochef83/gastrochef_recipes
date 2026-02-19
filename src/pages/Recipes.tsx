@@ -353,10 +353,17 @@ export default function Recipes() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, filtered, recipeLinesCache, costMemo])
 
+  // ✅ FIX: include kitchen_id for RLS
   async function createNewRecipe() {
     setErr(null)
     try {
+      const { data: u, error: uErr } = await supabase.auth.getUser()
+      if (uErr) throw uErr
+      const user = u?.user
+      if (!user) throw new Error('You are not signed in.')
+
       const payload: Partial<RecipeRow> = {
+        kitchen_id: user.id,
         name: 'New Recipe',
         category: null,
         portions: 1,
@@ -365,8 +372,10 @@ export default function Recipes() {
         description: '',
         photo_url: null,
       }
+
       const { data, error } = await supabase.from('recipes').insert(payload as any).select('id').single()
       if (error) throw error
+
       const id = (data as any)?.id as string
       setToast('Created. Opening editor…')
       nav(`/recipe?id=${encodeURIComponent(id)}`)
@@ -391,7 +400,7 @@ export default function Recipes() {
     setSelected((p) => ({ ...p, [id]: !p[id] }))
   }
 
-  function selectAllVisible() {
+  function selectVisible() {
     const ids = filtered.slice(0, 48).map((r) => r.id)
     setSelected((p) => {
       const next = { ...p }
@@ -405,7 +414,6 @@ export default function Recipes() {
   }
 
   async function deleteOneRecipe(recipeId: string) {
-    // Strong confirm
     const ok = window.confirm(
       'Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.'
     )
@@ -413,11 +421,9 @@ export default function Recipes() {
 
     setErr(null)
     try {
-      // 1) delete recipe_lines first (avoid FK issues)
       const { error: lErr } = await supabase.from('recipe_lines').delete().eq('recipe_id', recipeId)
       if (lErr) throw lErr
 
-      // 2) delete recipe
       const { error: rErr } = await supabase.from('recipes').delete().eq('id', recipeId)
       if (rErr) throw rErr
 
@@ -432,7 +438,6 @@ export default function Recipes() {
         delete next[recipeId]
         return next
       })
-
       setToast('Deleted.')
     } catch (e: any) {
       setErr(e?.message || 'Failed to delete recipe (RLS?)')
@@ -449,11 +454,9 @@ export default function Recipes() {
 
     setErr(null)
     try {
-      // delete lines for all selected
       const { error: lErr } = await supabase.from('recipe_lines').delete().in('recipe_id', selectedIds)
       if (lErr) throw lErr
 
-      // delete recipes
       const { error: rErr } = await supabase.from('recipes').delete().in('id', selectedIds)
       if (rErr) throw rErr
 
@@ -517,7 +520,7 @@ export default function Recipes() {
 
             {isMgmt && (
               <>
-                <button className="gc-btn" type="button" onClick={selectAllVisible} disabled={loading || !filtered.length}>
+                <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
                   Select visible
                 </button>
                 <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
@@ -640,11 +643,19 @@ export default function Recipes() {
                   </div>
 
                   <div className="gc-menu-actions">
-                    <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
+                    <button
+                      type="button"
+                      className="gc-action primary"
+                      onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}
+                    >
                       Open Editor
                     </button>
 
-                    <button type="button" className="gc-action" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}>
+                    <button
+                      type="button"
+                      className="gc-action"
+                      onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}
+                    >
                       Cook
                     </button>
 
