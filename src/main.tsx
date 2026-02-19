@@ -1,20 +1,21 @@
-// src/main.tsx
 import React from 'react'
 import ReactDOM from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
 import App from './App'
 
-// ✅ CRITICAL — styles must be imported here
+/**
+ * ✅ IMPORTANT
+ * 1) index.css = Tailwind (your pages depend on it)
+ * 2) styles.css = GastroChef Premium Shell (layout/theme)
+ */
+import './index.css'
 import './styles.css'
 
 import { ModeProvider } from './lib/mode'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <HashRouter>
-      <ModeProvider>
-        <App />
-      </ModeProvider>
-    </HashRouter>
+    <ModeProvider>
+      <App />
+    </ModeProvider>
   </React.StrictMode>
 )
