@@ -1,11 +1,8 @@
-/* =========================================================
-   GastroChef — Enterprise UI (PHASE 4 FIX)
-   ✅ Matches your current AppLayout.tsx class names
-   ✅ Restores Premium look (cards, buttons, inputs, sidebar)
-   ✅ No Tailwind required
-   ========================================================= */
+/* =========================
+   GastroChef — Premium Shell
+   Works WITH Tailwind (does not replace it)
+   ========================= */
 
-/* ---------- Theme Tokens ---------- */
 :root{
   --gc-bg: #f7f7fb;
   --gc-card: #ffffff;
@@ -13,21 +10,12 @@
   --gc-muted: #6b7280;
   --gc-border: #e5e7eb;
   --gc-border-strong: #d1d5db;
-
   --gc-shadow: 0 12px 40px rgba(0,0,0,.08);
   --gc-shadow-soft: 0 8px 22px rgba(0,0,0,.06);
-
   --gc-radius: 22px;
 
-  --gc-accent: #111111;
-  --gc-accent-2: #0ea5e9;
-  --gc-good: #059669;
-  --gc-warn: #b45309;
-  --gc-bad: #dc2626;
-
-  --gc-focus: 0 0 0 3px rgba(14,165,233,.18);
-
-  --gc-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  --gc-brand: #0b0b0f;
+  --gc-accent: #111827;
 }
 
 .gc-dark{
@@ -37,28 +25,26 @@
   --gc-muted: #9ca3af;
   --gc-border: rgba(255,255,255,.10);
   --gc-border-strong: rgba(255,255,255,.16);
-
   --gc-shadow: 0 18px 60px rgba(0,0,0,.45);
   --gc-shadow-soft: 0 10px 28px rgba(0,0,0,.35);
 
+  --gc-brand: #0f172a;
   --gc-accent: #e5e7eb;
 }
 
-/* ---------- Base Reset ---------- */
-*{ box-sizing: border-box; }
-html, body{ height: 100%; }
-body{
-  margin: 0;
-  font-family: var(--gc-font);
+html, body{
   background: var(--gc-bg);
   color: var(--gc-text);
 }
 
-img{ max-width: 100%; display: block; }
+/* Prevent “unstyled HTML look” */
 a{ color: inherit; }
-button, input, select, textarea{ font-family: inherit; }
+*{ box-sizing: border-box; }
 
-/* ---------- Shell (matches AppLayout) ---------- */
+/* =========================
+   Shell Layout
+   ========================= */
+
 .gc-shell{
   min-height: 100vh;
   display: grid;
@@ -66,8 +52,8 @@ button, input, select, textarea{ font-family: inherit; }
   gap: 18px;
   padding: 18px;
   background:
-    radial-gradient(1200px 700px at 60% 0%, rgba(99,102,241,.14), transparent 60%),
-    radial-gradient(1000px 650px at 100% 10%, rgba(16,185,129,.10), transparent 55%),
+    radial-gradient(1200px 600px at 60% 0%, rgba(99,102,241,.14), transparent 60%),
+    radial-gradient(1000px 600px at 100% 10%, rgba(16,185,129,.10), transparent 55%),
     var(--gc-bg);
 }
 
@@ -89,43 +75,53 @@ button, input, select, textarea{ font-family: inherit; }
   gap: 14px;
 }
 
-/* ---------- Brand ---------- */
-.gc-brand{ padding: 6px 6px 2px; }
-.gc-brand-name{ font-weight: 900; font-size: 18px; letter-spacing: .2px; }
-.gc-brand-sub{ font-size: 12px; color: var(--gc-muted); margin-top: 2px; }
-
-/* ---------- Blocks ---------- */
 .gc-side-block{
+  background: rgba(0,0,0,0.02);
   border: 1px solid var(--gc-border);
   border-radius: 18px;
   padding: 12px;
-  background: rgba(0,0,0,0.02);
 }
 .gc-dark .gc-side-block{ background: rgba(255,255,255,0.03); }
+
+.gc-brand{ padding: 6px 6px 2px; }
+.gc-brand-name{ font-weight: 900; font-size: 18px; letter-spacing: .2px; }
+.gc-brand-sub{ font-size: 12px; color: var(--gc-muted); margin-top: 2px; }
 
 .gc-label{
   font-size: 11px;
   letter-spacing: .12em;
   text-transform: uppercase;
+  font-weight: 900;
   color: var(--gc-muted);
-  font-weight: 800;
 }
 
-/* ---------- Mode Segmented ---------- */
+.gc-side-hint,
+.gc-side-tip{
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--gc-muted);
+}
+
+/* =========================
+   Mode Segmented Control
+   ========================= */
+
 .gc-seg{
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 10px;
 }
+
 .gc-seg-btn{
+  appearance: none;
   border: 1px solid var(--gc-border);
   background: var(--gc-card);
   color: var(--gc-text);
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 10px 12px;
   font-weight: 900;
   cursor: pointer;
-  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .gc-seg-btn:hover{
   transform: translateY(-1px);
@@ -133,34 +129,24 @@ button, input, select, textarea{ font-family: inherit; }
   box-shadow: var(--gc-shadow-soft);
 }
 .gc-seg-btn.is-active{
-  background: #0b0b0f;
+  background: var(--gc-brand);
   color: #fff;
   border-color: transparent;
 }
 .gc-dark .gc-seg-btn.is-active{
   background: #111827;
-  color: #fff;
 }
 
-.gc-side-hint{
-  margin-top: 8px;
-  font-size: 12px;
-  color: var(--gc-muted);
-}
+/* =========================
+   Navigation
+   ========================= */
 
-.gc-side-tip{
-  margin-top: 10px;
-  font-size: 12px;
-  color: var(--gc-muted);
-  line-height: 1.4;
-}
-
-/* ---------- Nav ---------- */
 .gc-nav{
   display: flex;
   flex-direction: column;
   gap: 10px;
 }
+
 .gc-nav-item{
   display: block;
   padding: 10px 12px;
@@ -170,25 +156,32 @@ button, input, select, textarea{ font-family: inherit; }
   color: var(--gc-text);
   font-weight: 900;
   text-decoration: none;
-  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
 }
+
 .gc-nav-item:hover{
   transform: translateY(-1px);
   border-color: var(--gc-border-strong);
   box-shadow: var(--gc-shadow-soft);
 }
+
+/* ✅ IMPORTANT: your AppLayout uses 'is-active' not 'gc-nav-item-active' */
 .gc-nav-item.is-active{
-  background: #0b0b0f;
+  background: var(--gc-brand);
   color: #fff;
   border-color: transparent;
 }
 .gc-dark .gc-nav-item.is-active{
   background: #111827;
-  color: #fff;
 }
 
-/* ---------- Main ---------- */
-.gc-main{ min-width: 0; }
+/* =========================
+   Main / Topbar
+   ========================= */
+
+.gc-main{
+  min-width: 0;
+}
 
 .gc-topbar{
   display: flex;
@@ -202,15 +195,17 @@ button, input, select, textarea{ font-family: inherit; }
   box-shadow: var(--gc-shadow-soft);
   backdrop-filter: blur(10px);
 }
-.gc-dark .gc-topbar{ background: rgba(15,23,42,.65); }
+.gc-dark .gc-topbar{
+  background: rgba(15,23,42,.65);
+}
 
 .gc-top-title{
-  font-weight: 950;
+  font-weight: 900;
   font-size: 14px;
   color: var(--gc-text);
 }
 .gc-top-sub{
-  margin-top: 4px;
+  margin-top: 2px;
   font-size: 12px;
   color: var(--gc-muted);
 }
@@ -219,114 +214,33 @@ button, input, select, textarea{ font-family: inherit; }
   margin-top: 14px;
 }
 
-/* ---------- Cards / Controls used in your pages ---------- */
-.gc-card{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius);
-  box-shadow: var(--gc-shadow-soft);
-}
+/* =========================
+   Buttons (optional helpers)
+   ========================= */
 
-.gc-input{
-  width: 100%;
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.75);
-  color: var(--gc-text);
-  border-radius: 16px;
-  padding: 10px 12px;
-  outline: none;
-  transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
-}
-.gc-dark .gc-input{ background: rgba(15,23,42,.55); }
-
-.gc-input:focus{
-  border-color: rgba(14,165,233,.55);
-  box-shadow: var(--gc-focus);
-}
-
-textarea.gc-input{ resize: vertical; }
-
-/* Buttons */
 .gc-btn{
   border: 1px solid var(--gc-border);
   background: var(--gc-card);
   color: var(--gc-text);
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 10px 12px;
   font-weight: 900;
   cursor: pointer;
-  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
 }
 .gc-btn:hover{
   transform: translateY(-1px);
   border-color: var(--gc-border-strong);
   box-shadow: var(--gc-shadow-soft);
 }
-.gc-btn:disabled{
-  opacity: .6;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-.gc-btn-primary{
-  background: #0b0b0f;
-  color: #fff;
-  border-color: transparent;
-}
-.gc-dark .gc-btn-primary{
-  background: #111827;
-  color: #fff;
-}
-
 .gc-btn-ghost{
   background: transparent;
 }
 
-/* KPI blocks (used in RecipeEditor pricing panel) */
-.gc-kpi{
-  border: 1px solid var(--gc-border);
-  border-radius: 18px;
-  padding: 12px;
-  background: rgba(0,0,0,0.02);
-}
-.gc-dark .gc-kpi{ background: rgba(255,255,255,0.03); }
+/* =========================
+   Responsive
+   ========================= */
 
-.gc-kpi-label{
-  font-size: 11px;
-  letter-spacing: .12em;
-  text-transform: uppercase;
-  color: var(--gc-muted);
-  font-weight: 800;
-}
-.gc-kpi-value{
-  margin-top: 8px;
-  font-size: 20px;
-  font-weight: 950;
-}
-
-/* Utility spacing helpers (your JSX uses Tailwind-like sometimes; keep safe minimal) */
-.mt-1{ margin-top: 4px; }
-.mt-2{ margin-top: 8px; }
-.mt-3{ margin-top: 12px; }
-.mt-4{ margin-top: 16px; }
-.p-4{ padding: 16px; }
-.p-6{ padding: 24px; }
-.space-y-6 > * + *{ margin-top: 24px; }
-.space-y-4 > * + *{ margin-top: 16px; }
-.space-y-3 > * + *{ margin-top: 12px; }
-.space-y-2 > * + *{ margin-top: 8px; }
-
-/* ---------- Print helpers (RecipeEditor uses gc-print-only) ---------- */
-.gc-print-only{ display: none; }
-@media print{
-  .gc-shell{ display: block; padding: 0; background: #fff; }
-  .gc-side, .gc-topbar, .gc-btn, .gc-seg, .gc-nav{ display: none !important; }
-  .gc-content{ margin: 0; }
-  .gc-print-only{ display: block; }
-}
-
-/* ---------- Responsive ---------- */
 @media (max-width: 980px){
   .gc-shell{ grid-template-columns: 1fr; }
   .gc-side{ position: relative; height: auto; }
