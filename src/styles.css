@@ -409,3 +409,157 @@ button, input, textarea, select{ font-family: inherit; }
    Any extra legacy helpers (keep safe)
    ========================================================= */
 .gc-divider{ height: 1px; background: var(--gc-border); }
+/* =========================================================
+   SIMPLE ACTION BUTTONS (NO ICONS / NO LOGOS) — NO LOGIC CHANGE
+   Targets: .gc-menu-actions row only
+   ========================================================= */
+
+.gc-menu-actions{
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gc-border);
+}
+
+/* style ANY clickable inside actions row */
+.gc-menu-actions a,
+.gc-menu-actions button,
+.gc-menu-actions .gc-btn{
+  appearance: none;
+  -webkit-appearance: none;
+
+  flex: 1 1 0;
+  min-width: 0;
+
+  height: 34px;
+  padding: 0 10px;
+
+  border-radius: 12px;
+  border: 1px solid var(--gc-border);
+
+  background: rgba(255,255,255,.92);
+  color: var(--gc-text);
+
+  /* ✅ text fit */
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  line-height: 1;
+
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  box-shadow: 0 10px 18px rgba(2,6,23,.06);
+  cursor: pointer;
+  user-select: none;
+
+  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+}
+
+/* ✅ remove any pseudo icons or decorations from previous experiments */
+.gc-menu-actions a::before,
+.gc-menu-actions a::after,
+.gc-menu-actions button::before,
+.gc-menu-actions button::after,
+.gc-menu-actions .gc-btn::before,
+.gc-menu-actions .gc-btn::after{
+  content: none !important;
+  display: none !important;
+}
+
+/* hover */
+.gc-menu-actions a:hover,
+.gc-menu-actions button:hover,
+.gc-menu-actions .gc-btn:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 16px 28px rgba(2,6,23,.08);
+  background: rgba(255,255,255,1);
+}
+
+/* focus */
+.gc-menu-actions a:focus,
+.gc-menu-actions button:focus,
+.gc-menu-actions .gc-btn:focus{
+  outline: none;
+  box-shadow: var(--gc-focus), 0 18px 34px rgba(2,6,23,.10);
+}
+
+/* ✅ simple professional colors by order:
+   1 Open Editor (primary)
+   2 Cook (soft teal)
+   3 Archive (neutral)
+   4 Delete (soft red)
+*/
+.gc-menu-actions > :nth-child(1){
+  background: linear-gradient(180deg, var(--gc-accent), rgba(15,118,110,.86));
+  border-color: rgba(15,118,110,.30);
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(15,118,110,.14);
+}
+
+.gc-menu-actions > :nth-child(2){
+  background: rgba(20,184,166,.10);
+  border-color: rgba(20,184,166,.22);
+  color: rgba(15,118,110,.98);
+}
+
+.gc-menu-actions > :nth-child(3){
+  background: rgba(15,23,42,.04);
+  border-color: rgba(15,23,42,.12);
+  color: rgba(15,23,42,.92);
+}
+
+.gc-menu-actions > :nth-child(4){
+  background: rgba(239,68,68,.10);
+  border-color: rgba(239,68,68,.20);
+  color: rgba(127,29,29,.95);
+}
+
+/* dark mode */
+.gc-dark .gc-menu-actions{ border-top-color: rgba(148,163,184,.14); }
+
+.gc-dark .gc-menu-actions a,
+.gc-dark .gc-menu-actions button,
+.gc-dark .gc-menu-actions .gc-btn{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(148,163,184,.18);
+  color: rgba(229,231,235,.92);
+  box-shadow: 0 12px 26px rgba(0,0,0,.35);
+}
+
+.gc-dark .gc-menu-actions > :nth-child(1){
+  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
+  border-color: rgba(94,234,212,.35);
+  color: #071a18;
+  box-shadow: 0 18px 34px rgba(20,184,166,.16);
+}
+.gc-dark .gc-menu-actions > :nth-child(2){
+  background: rgba(94,234,212,.10);
+  border-color: rgba(94,234,212,.24);
+  color: rgba(94,234,212,.95);
+}
+.gc-dark .gc-menu-actions > :nth-child(3){
+  background: rgba(148,163,184,.10);
+  border-color: rgba(148,163,184,.22);
+  color: rgba(229,231,235,.92);
+}
+.gc-dark .gc-menu-actions > :nth-child(4){
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.24);
+  color: rgba(254,202,202,.95);
+}
+
+/* small screens safety */
+@media (max-width: 420px){
+  .gc-menu-actions{ flex-wrap: wrap; }
+  .gc-menu-actions > *{ flex: 1 1 calc(50% - 6px); }
+}
