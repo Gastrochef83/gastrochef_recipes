@@ -10,7 +10,7 @@ function cx(...arr: Array<string | false | null | undefined>) {
 }
 
 const BRAND_ICON = '/gastrochef-icon-512.png'     // ✅ small, sharp
-const BRAND_LOGO = '/gastrochef-logo.png'         // optional for future big header
+const BRAND_LOGO = '/gastrochef-<h1 className="gc-sidebar-logo">  Gastro<span>Chef</span>  </h1>'         // optional for future big header
 
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
