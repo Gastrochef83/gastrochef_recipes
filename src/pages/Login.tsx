@@ -2,7 +2,7 @@ import { FormEvent, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link, useNavigate } from 'react-router-dom'
 
-const LOGO_URL = '/gastrochef-logo.png'
+const BRAND_ICON = '/gastrochef-icon-512.png'
 
 export default function Login() {
   const nav = useNavigate()
@@ -22,23 +22,70 @@ export default function Login() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50">
-      <div className="mx-auto max-w-md px-4 py-16">
-        <div className="rounded-2xl border bg-white p-6">
-          {/* Logo */}
-          <div className="flex items-center gap-3">
+    <div
+      className="min-h-screen"
+      style={{
+        background: 'linear-gradient(180deg, #f6f8fb 0%, #eef3f6 100%)',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 16,
+      }}
+    >
+      <div style={{ width: 'min(520px, 92vw)' }}>
+        {/* Hero (Kitopi-like) */}
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
+          <div
+            style={{
+              width: 96,
+              height: 96,
+              borderRadius: 26,
+              margin: '0 auto',
+              background: '#ffffff',
+              border: '1px solid rgba(15,23,42,.10)',
+              boxShadow: '0 18px 50px rgba(2,6,23,.10)',
+              display: 'grid',
+              placeItems: 'center',
+              overflow: 'hidden',
+            }}
+          >
             <img
-              src={LOGO_URL}
+              src={BRAND_ICON}
               alt="GastroChef"
-              className="h-12 w-12 rounded-xl border bg-white object-contain"
+              style={{ width: 72, height: 72, objectFit: 'contain', display: 'block' }}
             />
-            <div>
-              <div className="text-xl font-extrabold">GastroChef</div>
-              <div className="text-sm text-neutral-500">Sign in to your kitchen workspace</div>
-            </div>
           </div>
 
-          <form className="mt-6 space-y-3" onSubmit={onSubmit}>
+          <div style={{ marginTop: 14, fontSize: 22, fontWeight: 900, letterSpacing: '-0.02em', color: '#0f172a' }}>
+            GastroChef
+          </div>
+
+          <div style={{ marginTop: 4, fontSize: 13, color: '#64748b' }}>
+            Sign in to your kitchen workspace
+          </div>
+
+          {/* Accent line */}
+          <div
+            style={{
+              width: 70,
+              height: 4,
+              borderRadius: 99,
+              background: '#0f766e',
+              margin: '14px auto 0',
+            }}
+          />
+        </div>
+
+        {/* Card */}
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid rgba(15,23,42,.10)',
+            borderRadius: 22,
+            boxShadow: '0 18px 50px rgba(2,6,23,.08)',
+            padding: 18,
+          }}
+        >
+          <form className="space-y-3" onSubmit={onSubmit}>
             <div>
               <label className="text-xs font-semibold text-neutral-600">Email</label>
               <input
