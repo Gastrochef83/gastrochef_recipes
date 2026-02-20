@@ -105,9 +105,17 @@ export default function AppLayout() {
               <div className="gc-top-sub">Premium UI · GastroChef</div>
             </div>
 
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
-              {dark ? 'Light Mode' : 'Dark Mode'}
-            </button>
+            {/* ✅ Right actions (UI only) */}
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
+                {dark ? 'Light Mode' : 'Dark Mode'}
+              </button>
+
+              {/* ✅ Log out UI only (NO LOGIC CHANGE) */}
+              <button className="gc-btn" type="button" disabled title="UI only — not wired yet">
+                Log out
+              </button>
+            </div>
           </div>
 
           <div className="gc-content">
