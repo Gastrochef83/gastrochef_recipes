@@ -1,7 +1,8 @@
 // src/layouts/AppLayout.tsx
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useMode } from '../lib/mode'
+import { supabase } from '../lib/supabase'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -10,7 +11,10 @@ function cx(...arr: Array<string | false | null | undefined>) {
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
   const loc = useLocation()
+  const nav = useNavigate()
+
   const [dark, setDark] = useState(false)
+  const [loggingOut, setLoggingOut] = useState(false)
 
   const title = useMemo(() => {
     const p = (loc.pathname || '').toLowerCase()
@@ -20,6 +24,21 @@ export default function AppLayout() {
     if (p.includes('settings')) return 'Settings'
     return 'Dashboard'
   }, [loc.pathname])
+
+  async function handleLogout() {
+    if (loggingOut) return
+    setLoggingOut(true)
+
+    try {
+      // ✅ real logout (Supabase session cleared)
+      await supabase.auth.signOut()
+
+      // ✅ go to home (or your login page if you add it later)
+      nav('/', { replace: true })
+    } finally {
+      setLoggingOut(false)
+    }
+  }
 
   return (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
@@ -105,15 +124,14 @@ export default function AppLayout() {
               <div className="gc-top-sub">Premium UI · GastroChef</div>
             </div>
 
-            {/* ✅ Right actions (UI only) */}
+            {/* Right actions */}
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
               <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
                 {dark ? 'Light Mode' : 'Dark Mode'}
               </button>
 
-              {/* ✅ Log out UI only (NO LOGIC CHANGE) */}
-              <button className="gc-btn" type="button" disabled title="UI only — not wired yet">
-                Log out
+              <button className="gc-btn" type="button" onClick={handleLogout} disabled={loggingOut}>
+                {loggingOut ? 'Logging out…' : 'Log out'}
               </button>
             </div>
           </div>
