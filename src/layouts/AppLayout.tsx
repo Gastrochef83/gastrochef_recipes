@@ -9,8 +9,8 @@ function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
 }
 
-// ✅ Put your logo in: public/gastrochef-logo.png
-const LOGO_URL = '/gastrochef-logo.png'
+const BRAND_ICON = '/gastrochef-icon-512.png'     // ✅ small, sharp
+const BRAND_LOGO = '/gastrochef-logo.png'         // optional for future big header
 
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
@@ -23,7 +23,6 @@ export default function AppLayout() {
 
   const title = useMemo(() => {
     const p = (loc.pathname || '').toLowerCase()
-
     if (p.includes('ingredients')) return 'Ingredients'
     if (p.includes('recipes')) return 'Recipes'
     if (p.includes('recipe')) return 'Recipe Editor'
@@ -31,32 +30,15 @@ export default function AppLayout() {
     return 'Dashboard'
   }, [loc.pathname])
 
-  /* ======================================================
-     LOG OUT (REAL SIGN OUT + NO BREAK)
-     ====================================================== */
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
-
     try {
-      // ✅ REAL sign out (this is why your button "felt not working")
-      try {
-        await supabase.auth.signOut()
-      } catch {
-        // ignore - we still reset local state
-      }
-
-      // ✅ reset ONLY local UI state
+      try { await supabase.auth.signOut() } catch {}
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
-
-      // optional clean caches
       sessionStorage.clear()
-
-      // default mode
       setMode('mgmt')
-
-      // ✅ go to Login page
       nav('/login', { replace: true })
     } finally {
       setLoggingOut(false)
@@ -64,32 +46,61 @@ export default function AppLayout() {
   }
 
   return (
-    <div
-      className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}
-    >
+    <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
         {/* Sidebar */}
         <aside className="gc-side">
           <div className="gc-side-card">
-            <div className="gc-brand" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img
-                src={LOGO_URL}
-                alt="GastroChef"
+            {/* Brand */}
+            <div
+              className="gc-brand"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 12,
+              }}
+            >
+              {/* ✅ Premium icon badge */}
+              <div
                 style={{
-                  width: 44,
-                  height: 44,
-                  borderRadius: 12,
-                  objectFit: 'contain',
+                  width: 52,
+                  height: 52,
+                  borderRadius: 16,
                   border: '1px solid var(--gc-border)',
-                  background: 'var(--gc-card)',
+                  background: 'linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.75))',
+                  boxShadow: '0 10px 22px rgba(2,6,23,.08)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  overflow: 'hidden',
                 }}
-              />
+              >
+                <img
+                  src={BRAND_ICON}
+                  alt="GastroChef"
+                  style={{
+                    width: 40,
+                    height: 40,
+                    objectFit: 'contain',
+                    display: 'block',
+                  }}
+                />
+              </div>
 
               <div style={{ minWidth: 0 }}>
-                <div className="gc-brand-name" style={{ lineHeight: 1.1 }}>
+                <div
+                  className="gc-brand-name"
+                  style={{
+                    fontWeight: 900,
+                    letterSpacing: '-0.02em',
+                    lineHeight: 1.05,
+                    fontSize: 18,
+                  }}
+                >
                   GastroChef
                 </div>
-                <div className="gc-brand-sub">v4 MVP</div>
+                <div className="gc-brand-sub" style={{ opacity: 0.85 }}>
+                  v4 MVP
+                </div>
               </div>
             </div>
 
@@ -125,31 +136,19 @@ export default function AppLayout() {
               <div className="gc-label">NAVIGATION</div>
 
               <nav className="gc-nav mt-2">
-                <NavLink
-                  to="/dashboard"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Dashboard
                 </NavLink>
 
-                <NavLink
-                  to="/ingredients"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Ingredients
                 </NavLink>
 
-                <NavLink
-                  to="/recipes"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Recipes
                 </NavLink>
 
-                <NavLink
-                  to="/settings"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Settings
                 </NavLink>
               </nav>
@@ -170,22 +169,11 @@ export default function AppLayout() {
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <button
-                className="gc-btn gc-btn-ghost"
-                type="button"
-                onClick={() => setDark((v) => !v)}
-              >
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
                 {dark ? 'Light Mode' : 'Dark Mode'}
               </button>
 
-              {/* LOG OUT */}
-              <button
-                className="gc-btn"
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                title="Sign out"
-              >
+              <button className="gc-btn" type="button" onClick={handleLogout} disabled={loggingOut}>
                 {loggingOut ? 'Signing out…' : 'Log out'}
               </button>
             </div>
