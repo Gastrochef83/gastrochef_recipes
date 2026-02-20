@@ -1,5 +1,3 @@
-// src/layouts/AppLayout.tsx
-
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useMode } from '../lib/mode'
@@ -9,12 +7,8 @@ function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
 }
 
-const BRAND_ICON = '/gastrochef-icon-512.png'     // ✅ small, sharp
-const BRAND_LOGO = '/gastrochef-<h1 className="gc-sidebar-logo">  Gastro<span>Chef</span>  </h1>'         // optional for future big header
-
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
-
   const loc = useLocation()
   const nav = useNavigate()
 
@@ -33,11 +27,19 @@ export default function AppLayout() {
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
+
     try {
-      try { await supabase.auth.signOut() } catch {}
+      try {
+        await supabase.auth.signOut()
+      } catch {
+        // ignore
+      }
+
+      // keep existing behavior (local UI state reset only)
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
       sessionStorage.clear()
+
       setMode('mgmt')
       nav('/login', { replace: true })
     } finally {
@@ -51,7 +53,7 @@ export default function AppLayout() {
         {/* Sidebar */}
         <aside className="gc-side">
           <div className="gc-side-card">
-            {/* Brand */}
+            {/* ✅ Wordmark Brand (UI only) */}
             <div
               className="gc-brand"
               style={{
@@ -60,7 +62,7 @@ export default function AppLayout() {
                 gap: 12,
               }}
             >
-              {/* ✅ Premium icon badge */}
+              {/* small badge like Kitopi (no image) */}
               <div
                 style={{
                   width: 52,
@@ -73,31 +75,39 @@ export default function AppLayout() {
                   placeItems: 'center',
                   overflow: 'hidden',
                 }}
+                aria-hidden="true"
               >
-                <img
-                  src={BRAND_ICON}
-                  alt="GastroChef"
+                {/* minimal mark: G */}
+                <div
                   style={{
-                    width: 40,
-                    height: 40,
-                    objectFit: 'contain',
-                    display: 'block',
+                    fontWeight: 900,
+                    fontSize: 18,
+                    letterSpacing: '-0.03em',
+                    color: '#0f766e',
+                    lineHeight: 1,
+                    userSelect: 'none',
                   }}
-                />
+                >
+                  G
+                </div>
               </div>
 
               <div style={{ minWidth: 0 }}>
+                {/* Wordmark (prevents weird global CSS) */}
                 <div
-                  className="gc-brand-name"
                   style={{
-                    fontWeight: 900,
-                    letterSpacing: '-0.02em',
-                    lineHeight: 1.05,
                     fontSize: 18,
+                    fontWeight: 900,
+                    letterSpacing: '-0.03em',
+                    lineHeight: 1.05,
+                    color: 'var(--gc-text)',
+                    display: 'inline-block',
+                    whiteSpace: 'nowrap',
                   }}
                 >
-                  GastroChef
+                  Gastro<span style={{ color: '#0f766e' }}>Chef</span>
                 </div>
+
                 <div className="gc-brand-sub" style={{ opacity: 0.85 }}>
                   v4 MVP
                 </div>
@@ -136,19 +146,31 @@ export default function AppLayout() {
               <div className="gc-label">NAVIGATION</div>
 
               <nav className="gc-nav mt-2">
-                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/dashboard"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Dashboard
                 </NavLink>
 
-                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/ingredients"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Ingredients
                 </NavLink>
 
-                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/recipes"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Recipes
                 </NavLink>
 
-                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
+                >
                   Settings
                 </NavLink>
               </nav>
@@ -160,7 +182,7 @@ export default function AppLayout() {
           </div>
         </aside>
 
-        {/* MAIN */}
+        {/* Main */}
         <main className="gc-main">
           <div className="gc-topbar">
             <div>
