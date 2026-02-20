@@ -27,7 +27,6 @@ export default function AppLayout() {
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
-
     try {
       try {
         await supabase.auth.signOut()
@@ -35,7 +34,6 @@ export default function AppLayout() {
         // ignore
       }
 
-      // keep existing behavior (local UI state reset only)
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
       sessionStorage.clear()
@@ -53,7 +51,7 @@ export default function AppLayout() {
         {/* Sidebar */}
         <aside className="gc-side">
           <div className="gc-side-card">
-            {/* ✅ Wordmark Brand (UI only) */}
+            {/* ✅ Brand (wordmark only + clean mark) */}
             <div
               className="gc-brand"
               style={{
@@ -62,38 +60,43 @@ export default function AppLayout() {
                 gap: 12,
               }}
             >
-              {/* small badge like Kitopi (no image) */}
+              {/* Minimal mark (NO LETTER to avoid burn) */}
               <div
                 style={{
                   width: 52,
                   height: 52,
                   borderRadius: 16,
                   border: '1px solid var(--gc-border)',
-                  background: 'linear-gradient(180deg, rgba(255,255,255,.95), rgba(255,255,255,.75))',
-                  boxShadow: '0 10px 22px rgba(2,6,23,.08)',
+                  background: '#ffffff',
+                  boxShadow: '0 10px 22px rgba(2,6,23,.06)',
                   display: 'grid',
                   placeItems: 'center',
-                  overflow: 'hidden',
                 }}
                 aria-hidden="true"
               >
-                {/* minimal mark: G */}
+                {/* simple teal dot + ring (Kitopi-like minimal) */}
                 <div
                   style={{
-                    fontWeight: 900,
-                    fontSize: 18,
-                    letterSpacing: '-0.03em',
-                    color: '#0f766e',
-                    lineHeight: 1,
-                    userSelect: 'none',
+                    width: 18,
+                    height: 18,
+                    borderRadius: 999,
+                    background: '#0f766e',
+                    boxShadow: '0 6px 16px rgba(15,118,110,.25)',
+                    position: 'relative',
                   }}
                 >
-                  G
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: -5,
+                      borderRadius: 999,
+                      border: '2px solid rgba(15,118,110,.22)',
+                    }}
+                  />
                 </div>
               </div>
 
               <div style={{ minWidth: 0 }}>
-                {/* Wordmark (prevents weird global CSS) */}
                 <div
                   style={{
                     fontSize: 18,
@@ -146,31 +149,19 @@ export default function AppLayout() {
               <div className="gc-label">NAVIGATION</div>
 
               <nav className="gc-nav mt-2">
-                <NavLink
-                  to="/dashboard"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Dashboard
                 </NavLink>
 
-                <NavLink
-                  to="/ingredients"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Ingredients
                 </NavLink>
 
-                <NavLink
-                  to="/recipes"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Recipes
                 </NavLink>
 
-                <NavLink
-                  to="/settings"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Settings
                 </NavLink>
               </nav>
