@@ -8,15 +8,10 @@ function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
 }
 
-// HashRouter-safe path getter
 function getEffectivePathname(pathname: string, hash: string) {
-  // If HashRouter, pathname can be "/" while route lives in hash "#/recipe?id=..."
   if (pathname && pathname !== '/') return pathname
-
   const h = (hash || '').trim()
   if (!h) return '/'
-
-  // "#/recipe?id=..." -> "/recipe?id=..."
   const noHash = h.startsWith('#') ? h.slice(1) : h
   const withSlash = noHash.startsWith('/') ? noHash : `/${noHash}`
   return withSlash || '/'
@@ -27,7 +22,8 @@ function stripQuery(p: string) {
 }
 
 function routeTitle(pLower: string) {
-  // order matters: "/recipe" before "/recipes"
+  // ✅ order matters
+  if (pLower.includes('/cook')) return 'Cook Mode'
   if (pLower.includes('/recipe')) return 'Recipe Editor'
   if (pLower.includes('/recipes')) return 'Recipes'
   if (pLower.includes('/ingredients')) return 'Ingredients'
@@ -37,16 +33,14 @@ function routeTitle(pLower: string) {
 }
 
 function breadcrumbItems(pathLower: string) {
-  // Simple Kitopi-like breadcrumb
-  // Dashboard > Recipes > Recipe Editor
   const items: Array<{ label: string; to: string }> = [{ label: 'Dashboard', to: '/dashboard' }]
 
   if (pathLower.includes('/ingredients')) items.push({ label: 'Ingredients', to: '/ingredients' })
   if (pathLower.includes('/recipes')) items.push({ label: 'Recipes', to: '/recipes' })
   if (pathLower.includes('/recipe')) items.push({ label: 'Recipe Editor', to: '/recipes' })
+  if (pathLower.includes('/cook')) items.push({ label: 'Cook Mode', to: '/recipes' })
   if (pathLower.includes('/settings')) items.push({ label: 'Settings', to: '/settings' })
 
-  // Avoid duplicates if route overlaps
   const seen = new Set<string>()
   return items.filter((x) => {
     const k = `${x.label}:${x.to}`
@@ -65,7 +59,6 @@ export default function AppLayout() {
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
-  // ✅ FIX: Title based on effective path (pathname OR hash)
   const effectivePath = useMemo(() => {
     const p = getEffectivePathname(loc.pathname || '/', loc.hash || '')
     return stripQuery(p)
@@ -81,25 +74,14 @@ export default function AppLayout() {
     return breadcrumbItems(pLower)
   }, [effectivePath])
 
-  /* ======================================================
-     LOG OUT (NO BREAK LOGIC)
-     ====================================================== */
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
-
     try {
-      // ✅ reset ONLY local UI state
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
-
-      // optional clean caches
       sessionStorage.clear()
-
-      // default mode
       setMode('mgmt')
-
-      // ✅ go Dashboard
       nav('/dashboard', { replace: true })
     } finally {
       setLoggingOut(false)
@@ -107,11 +89,8 @@ export default function AppLayout() {
   }
 
   return (
-    <div
-      className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}
-    >
+    <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
-        {/* Sidebar */}
         <aside className="gc-side">
           <div className="gc-side-card">
             <div className="gc-brand">
@@ -119,7 +98,6 @@ export default function AppLayout() {
               <div className="gc-brand-sub">v4 MVP</div>
             </div>
 
-            {/* MODE */}
             <div className="gc-side-block">
               <div className="gc-label">MODE</div>
 
@@ -146,36 +124,23 @@ export default function AppLayout() {
               </div>
             </div>
 
-            {/* NAV */}
             <div className="gc-side-block">
               <div className="gc-label">NAVIGATION</div>
 
               <nav className="gc-nav mt-2">
-                <NavLink
-                  to="/dashboard"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Dashboard
                 </NavLink>
 
-                <NavLink
-                  to="/ingredients"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Ingredients
                 </NavLink>
 
-                <NavLink
-                  to="/recipes"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Recipes
                 </NavLink>
 
-                <NavLink
-                  to="/settings"
-                  className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                >
+                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Settings
                 </NavLink>
               </nav>
@@ -187,20 +152,10 @@ export default function AppLayout() {
           </div>
         </aside>
 
-        {/* MAIN */}
         <main className="gc-main">
           <div className="gc-topbar">
             <div>
-              {/* ✅ Kitopi-like breadcrumb */}
-              <div
-                style={{
-                  display: 'flex',
-                  gap: 10,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                  marginBottom: 6,
-                }}
-              >
+              <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap', marginBottom: 6 }}>
                 {crumbs.map((c, idx) => (
                   <div key={`${c.label}-${idx}`} style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
                     {idx === 0 ? null : <span style={{ opacity: 0.45, fontWeight: 900 }}>›</span>}
@@ -224,21 +179,11 @@ export default function AppLayout() {
             </div>
 
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <button
-                className="gc-btn gc-btn-ghost"
-                type="button"
-                onClick={() => setDark((v) => !v)}
-              >
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
                 {dark ? 'Light Mode' : 'Dark Mode'}
               </button>
 
-              {/* LOG OUT */}
-              <button
-                className="gc-btn"
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-              >
+              <button className="gc-btn" type="button" onClick={handleLogout} disabled={loggingOut}>
                 {loggingOut ? 'Resetting...' : 'Log out'}
               </button>
             </div>
