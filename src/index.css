@@ -2,124 +2,342 @@
 @tailwind components;
 @tailwind utilities;
 
-/* OMEGA V9.2 — Kitopi-like base typography (UI ONLY) */
-@layer base {
-  html { -webkit-text-size-adjust: 100%; }
-  body {
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-    -webkit-font-smoothing: antialiased;
-    -moz-osx-font-smoothing: grayscale;
+/* =========================================================
+   GastroChef — KITOPI 95% PREMIUM UI (CSS ONLY)
+   - NO logic change
+   - Focus: Sidebar + Topbar + Buttons + Cards polish
+   ========================================================= */
+
+:root {
+  --gc-bg: #f6f8fb;
+  --gc-card: #ffffff;
+  --gc-text: #0f172a;
+  --gc-muted: #64748b;
+
+  --gc-border: rgba(15, 23, 42, 0.10);
+  --gc-border-strong: rgba(15, 23, 42, 0.16);
+
+  --gc-shadow: 0 18px 50px rgba(2, 6, 23, 0.10);
+  --gc-shadow-soft: 0 10px 26px rgba(2, 6, 23, 0.08);
+
+  --gc-radius: 18px;
+
+  --gc-accent: #0f766e; /* Kitopi-ish teal */
+  --gc-accent-weak: rgba(15, 118, 110, 0.12);
+
+  --gc-btn: #111827;
+  --gc-btn-hover: #0b1220;
+
+  --gc-chip: rgba(15, 23, 42, 0.06);
+}
+
+/* =========================
+   Base layout
+   ========================= */
+
+.gc-root {
+  min-height: 100vh;
+  background: radial-gradient(1200px 600px at 20% -10%, rgba(15,118,110,0.10), transparent 55%),
+              radial-gradient(900px 500px at 90% 0%, rgba(37,99,235,0.06), transparent 55%),
+              var(--gc-bg);
+  color: var(--gc-text);
+}
+
+.gc-shell {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 18px;
+  padding: 18px;
+  max-width: 1320px;
+  margin: 0 auto;
+}
+
+@media (max-width: 980px) {
+  .gc-shell {
+    grid-template-columns: 1fr;
   }
 }
-/* ========= BRAND LOGO ========= */
 
-.gc-brand{
+/* =========================
+   Sidebar (Kitopi-like)
+   ========================= */
 
-font-size:38px;
-
-font-weight:800;
-
-letter-spacing:-1px;
-
-color:#0f172a;
-
+.gc-side {
+  position: sticky;
+  top: 18px;
+  height: calc(100vh - 36px);
+  align-self: start;
 }
 
-.gc-brand span{
-
-color:#0f766e;
-
+@media (max-width: 980px) {
+  .gc-side {
+    position: relative;
+    height: auto;
+    top: 0;
+  }
 }
 
-
-.gc-brand-sub{
-
-margin-top:6px;
-
-color:#64748b;
-
-font-size:14px;
-
+.gc-side-card {
+  height: 100%;
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--gc-border);
+  border-radius: 22px;
+  box-shadow: var(--gc-shadow-soft);
+  padding: 16px;
+  backdrop-filter: blur(8px);
 }
 
-
-/* SIDEBAR */
-
-.gc-sidebar-logo{
-
-font-size:20px;
-
-font-weight:800;
-
-letter-spacing:-0.5px;
-
-color:#0f172a;
-
+/* Brand section */
+.gc-brand {
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+  border-bottom: 1px solid var(--gc-border);
 }
 
-.gc-sidebar-logo span{
-
-color:#0f766e;
-
+/* Labels / hints */
+.gc-label {
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(100,116,139,0.95);
+  font-weight: 800;
 }
 
-
-/* LOGIN CARD */
-
-.gc-login-card{
-
-background:white;
-
-padding:28px;
-
-border-radius:18px;
-
-box-shadow:
-
-0 10px 28px rgba(0,0,0,.08);
-
-display:flex;
-
-flex-direction:column;
-
-gap:14px;
-
+.gc-side-hint {
+  font-size: 12px;
+  color: var(--gc-muted);
 }
 
-
-/* INPUT */
-
-.gc-input{
-
-padding:12px;
-
-border-radius:10px;
-
-border:
-
-1px solid rgba(0,0,0,.1);
-
+.gc-side-block + .gc-side-block {
+  margin-top: 14px;
 }
 
-
-/* BUTTON */
-
-.gc-login-btn{
-
-background:#111827;
-
-color:white;
-
-padding:12px;
-
-border-radius:10px;
-
-font-weight:600;
-
+/* Segment (Kitchen/Mgmt) */
+.gc-seg {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: rgba(15, 23, 42, 0.04);
+  border: 1px solid var(--gc-border);
+  border-radius: 16px;
+  padding: 6px;
+  gap: 6px;
 }
 
-.gc-login-btn:hover{
+.gc-seg-btn {
+  border: 0;
+  background: transparent;
+  border-radius: 12px;
+  padding: 10px 10px;
+  font-weight: 800;
+  font-size: 13px;
+  color: rgba(15,23,42,0.65);
+  transition: transform 0.12s ease, background 0.18s ease, box-shadow 0.18s ease, color 0.18s ease;
+}
 
-background:#000;
+.gc-seg-btn:hover {
+  background: rgba(255,255,255,0.75);
+  color: rgba(15,23,42,0.92);
+}
 
+.gc-seg-btn.is-active {
+  background: #fff;
+  color: var(--gc-text);
+  box-shadow: 0 10px 22px rgba(2, 6, 23, 0.10);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+/* Navigation */
+.gc-nav {
+  display: grid;
+  gap: 10px;
+}
+
+.gc-nav-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 12px 12px;
+  border-radius: 14px;
+
+  background: rgba(255,255,255,0.80);
+  border: 1px solid var(--gc-border);
+
+  color: rgba(15,23,42,0.92);
+  font-weight: 800;
+  font-size: 13px;
+  text-decoration: none;
+
+  transition: transform 0.12s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.gc-nav-item:hover {
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 12px 26px rgba(2,6,23,0.08);
+}
+
+.gc-nav-item.is-active {
+  background: linear-gradient(180deg, rgba(15,118,110,0.12), rgba(15,118,110,0.08));
+  border-color: rgba(15,118,110,0.30);
+  box-shadow: 0 14px 28px rgba(15,118,110,0.14);
+}
+
+/* Tip box */
+.gc-side-tip {
+  margin-top: 12px;
+  border-radius: 14px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(15,118,110,0.10), rgba(15,118,110,0.06));
+  border: 1px solid rgba(15,118,110,0.18);
+  color: rgba(15, 23, 42, 0.78);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+/* =========================
+   Main + Topbar
+   ========================= */
+
+.gc-main {
+  min-width: 0;
+}
+
+.gc-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 14px 16px;
+  border-radius: 22px;
+
+  background: rgba(255,255,255,0.78);
+  border: 1px solid var(--gc-border);
+  box-shadow: var(--gc-shadow-soft);
+  backdrop-filter: blur(8px);
+
+  margin-bottom: 16px;
+}
+
+.gc-top-title {
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+.gc-top-sub {
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--gc-muted);
+}
+
+/* Content container */
+.gc-content {
+  min-width: 0;
+}
+
+/* =========================
+   Buttons
+   ========================= */
+
+.gc-btn {
+  border: 1px solid rgba(15,23,42,0.10);
+  background: #fff;
+  color: var(--gc-text);
+
+  padding: 10px 12px;
+  border-radius: 14px;
+
+  font-weight: 800;
+  font-size: 13px;
+
+  box-shadow: 0 10px 22px rgba(2,6,23,0.06);
+  transition: transform 0.12s ease, box-shadow 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.gc-btn:hover {
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 14px 30px rgba(2,6,23,0.08);
+}
+
+.gc-btn:disabled {
+  opacity: 0.6;
+  transform: none;
+  box-shadow: none;
+  cursor: not-allowed;
+}
+
+.gc-btn-ghost {
+  background: rgba(15,23,42,0.04);
+  border: 1px solid rgba(15,23,42,0.08);
+  box-shadow: none;
+}
+
+.gc-btn-ghost:hover {
+  background: rgba(15,23,42,0.06);
+}
+
+/* =========================
+   Cards (global polish)
+   ========================= */
+
+.gc-card,
+.gc-panel,
+.gc-box {
+  background: rgba(255,255,255,0.92);
+  border: 1px solid var(--gc-border);
+  border-radius: 22px;
+  box-shadow: var(--gc-shadow-soft);
+}
+
+/* Tables (gentle) */
+table {
+  border-color: var(--gc-border);
+}
+
+th {
+  color: rgba(100,116,139,0.95);
+  font-weight: 800;
+  font-size: 12px;
+}
+
+/* =========================
+   Dark Mode (optional)
+   ========================= */
+
+.gc-dark {
+  --gc-bg: #0b1220;
+  --gc-card: #0f172a;
+  --gc-text: #e5e7eb;
+  --gc-muted: rgba(226,232,240,0.70);
+
+  --gc-border: rgba(226,232,240,0.12);
+  --gc-border-strong: rgba(226,232,240,0.20);
+
+  --gc-shadow: 0 18px 50px rgba(0,0,0,0.40);
+  --gc-shadow-soft: 0 10px 26px rgba(0,0,0,0.30);
+}
+
+.gc-dark .gc-side-card,
+.gc-dark .gc-topbar,
+.gc-dark .gc-nav-item,
+.gc-dark .gc-card,
+.gc-dark .gc-panel,
+.gc-dark .gc-box {
+  background: rgba(15,23,42,0.70);
+  backdrop-filter: blur(10px);
+}
+
+.gc-dark .gc-nav-item {
+  color: rgba(226,232,240,0.92);
+}
+
+.gc-dark .gc-seg {
+  background: rgba(226,232,240,0.06);
+}
+
+.gc-dark .gc-btn {
+  background: rgba(15,23,42,0.70);
+  color: rgba(226,232,240,0.92);
 }
