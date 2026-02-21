@@ -712,13 +712,13 @@ export default function Recipes() {
                         Open Editor
                       </button>
 
-                      <button type="button" className="gc-action" onClick={() => nav(`/cook?id=${encodeURIComponent(r.id)}`)}>
+                      <button type="button" className="gc-action secondary" onClick={() => nav(`/cook?id=${encodeURIComponent(r.id)}`)}>
                         Cook Mode
                       </button>
                     </div>
 
                     <div className="gc-actions-row secondary">
-                      <button type="button" className="gc-action" onClick={() => toggleArchive(r)}>
+                      <button type="button" className="gc-action warn" onClick={() => toggleArchive(r)}>
                         {r.is_archived ? 'Restore' : 'Archive'}
                       </button>
 

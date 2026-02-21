@@ -2522,3 +2522,158 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
 .gc-nav-item{ background: rgba(255,255,255,.86); }
 .gc-dark .gc-nav-item{ background: rgba(15,23,42,.62); }
 
+/* =========================================================
+   STEP 3 (2026-02-22) — BUTTON HIERARCHY (UI ONLY)
+   Goals:
+   - One clear Primary / Secondary / Warn / Danger hierarchy
+   - Consistent button sizing + typography across all pages
+   - Keep existing logic + class names (no JS logic changes)
+   ========================================================= */
+
+/* Global buttons (used across pages) */
+:root{
+  --gc-btn-h2: 42px;
+  --gc-btn-radius2: 14px;
+  --gc-btn-font2: 13px;
+}
+
+/* Base */
+.gc-btn{
+  height: var(--gc-btn-h2);
+  min-height: var(--gc-btn-h2);
+  padding: 0 14px;
+  border-radius: var(--gc-btn-radius2);
+  font-size: var(--gc-btn-font2);
+  font-weight: 700;
+  letter-spacing: .01em;
+  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+}
+.gc-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(2,6,23,.12);
+}
+.gc-btn:active{ transform: translateY(0); }
+
+/* Primary */
+.gc-btn-primary{
+  background: var(--gc-accent);
+  border-color: rgba(0,0,0,.10);
+  color: #fff;
+}
+
+/* Secondary / Ghost = outline */
+.gc-btn-ghost{
+  background: transparent;
+  box-shadow: none;
+}
+.gc-btn-ghost:hover{
+  background: rgba(15,23,42,.04);
+  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+}
+.gc-dark .gc-btn-ghost:hover{
+  background: rgba(255,255,255,.06);
+}
+
+/* Danger (global) */
+.gc-btn-danger{
+  background: #fff;
+  color: #b91c1c;
+  border-color: rgba(185,28,28,.35);
+}
+
+/* =========================================================
+   Recipe Card Actions (Recipes page)
+   ========================================================= */
+.gc-menu-actions{
+  background: transparent !important;
+  border-top: 1px solid rgba(15,23,42,.08) !important;
+}
+
+/* Base action button look */
+.gc-menu-actions .gc-action,
+.gc-menu-actions button,
+.gc-menu-actions a{
+  height: 44px !important;
+  min-height: 44px !important;
+  border-radius: 14px !important;
+  font-size: 13px !important;
+  font-weight: 700 !important;
+  letter-spacing: .01em !important;
+
+  background: #fff !important;
+  color: var(--gc-text) !important;
+  border: 1px solid rgba(15,23,42,.14) !important;
+  box-shadow: 0 10px 22px rgba(2,6,23,.10) !important;
+
+  transition: transform .12s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease !important;
+}
+
+.gc-menu-actions .gc-action:hover,
+.gc-menu-actions button:hover,
+.gc-menu-actions a:hover{
+  transform: translateY(-1px) !important;
+  box-shadow: 0 14px 30px rgba(2,6,23,.14) !important;
+}
+
+.gc-menu-actions .gc-action:active,
+.gc-menu-actions button:active,
+.gc-menu-actions a:active{
+  transform: translateY(0) !important;
+  box-shadow: 0 10px 22px rgba(2,6,23,.10) !important;
+}
+
+/* Primary = Open Editor */
+.gc-menu-actions .gc-action.primary{
+  background: var(--gc-accent) !important;
+  color: #fff !important;
+  border-color: rgba(0,0,0,.10) !important;
+}
+
+/* Secondary = Cook Mode */
+.gc-menu-actions .gc-action.secondary{
+  background: #fff !important;
+  color: var(--gc-text) !important;
+  border-color: rgba(15,23,42,.18) !important;
+}
+
+/* Warn = Archive (safe “attention”, not delete) */
+.gc-menu-actions .gc-action.warn{
+  background: #fff !important;
+  color: #a16207 !important;
+  border-color: rgba(161,98,7,.35) !important;
+  box-shadow: 0 10px 22px rgba(161,98,7,.10) !important;
+}
+
+/* Danger = Delete */
+.gc-menu-actions .gc-action.danger{
+  background: #fff !important;
+  color: #b91c1c !important;
+  border-color: rgba(185,28,28,.35) !important;
+  box-shadow: 0 10px 22px rgba(185,28,28,.10) !important;
+}
+
+/* Dark mode support */
+.gc-dark .gc-menu-actions{
+  border-top-color: rgba(255,255,255,.10) !important;
+}
+.gc-dark .gc-menu-actions .gc-action,
+.gc-dark .gc-menu-actions button,
+.gc-dark .gc-menu-actions a{
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(255,255,255,.92) !important;
+  border-color: rgba(255,255,255,.14) !important;
+  box-shadow: 0 12px 28px rgba(0,0,0,.35) !important;
+}
+.gc-dark .gc-menu-actions .gc-action.primary{
+  background: var(--gc-accent) !important;
+  color: #fff !important;
+  border-color: rgba(0,0,0,.20) !important;
+}
+.gc-dark .gc-menu-actions .gc-action.warn{
+  color: #fde68a !important;
+  border-color: rgba(253,230,138,.35) !important;
+}
+.gc-dark .gc-menu-actions .gc-action.danger{
+  color: #fecaca !important;
+  border-color: rgba(248,113,113,.35) !important;
+}
