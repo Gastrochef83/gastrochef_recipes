@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 
 type Props = {
   message: string
@@ -7,13 +7,18 @@ type Props = {
 }
 
 /**
- * ✅ FINAL GOD — Toast PRO
+ * ✅ Toast PRO (FIX)
+ * - If message is empty/whitespace, don't render (prevents "black box")
  * - Auto dismiss (default 2600ms)
  * - Escape to close
  * - No business-logic change
  */
 export function Toast({ message, onClose, durationMs = 2600 }: Props) {
+  const text = useMemo(() => (message ?? '').toString(), [message])
+  const visible = text.trim().length > 0
+
   useEffect(() => {
+    if (!visible) return
     const t = window.setTimeout(onClose, Math.max(800, durationMs))
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose()
@@ -23,7 +28,9 @@ export function Toast({ message, onClose, durationMs = 2600 }: Props) {
       window.clearTimeout(t)
       window.removeEventListener('keydown', onKey)
     }
-  }, [onClose, durationMs])
+  }, [onClose, durationMs, visible])
+
+  if (!visible) return null
 
   return (
     <div
@@ -50,7 +57,7 @@ export function Toast({ message, onClose, durationMs = 2600 }: Props) {
           gap: 10,
         }}
       >
-        <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.2 }}>{message}</div>
+        <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.2 }}>{text}</div>
 
         <button
           type="button"
