@@ -1095,3 +1095,89 @@ button, input, textarea, select{ font-family: inherit; }
 /* Map legacy classes used in AppLayout */
 .gc-title{ font-size: 22px; font-weight: 950; letter-spacing: -0.02em; }
 .gc-subtitle{ font-size: 12.5px; color: var(--gc-muted); margin-top: 2px; }
+/* =========================================================
+   GastroChef — FINAL GOD Patch 5 (UI polish only)
+   ✅ Toast / Buttons / Cards micro-polish
+   ✅ No logic changes
+   Put this in: src/styles.css (replace whole file ONLY if you want)
+   OR append at the bottom (safe).
+   ========================================================= */
+
+/* ---------- Toast ---------- */
+.gc-toast {
+  pointer-events: none;
+}
+.gc-toast button {
+  pointer-events: auto;
+}
+
+/* ---------- Buttons ---------- */
+.gc-btn,
+.gc-action {
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.gc-btn:active,
+.gc-action:active {
+  transform: translateY(1px);
+}
+.gc-btn[disabled],
+.gc-action[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Subtle focus ring (Kitopi-like) */
+.gc-btn:focus-visible,
+.gc-action:focus-visible,
+.gc-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
+  border-color: rgba(15, 118, 110, 0.35);
+}
+
+/* ---------- Cards ---------- */
+.gc-card,
+.gc-menu-card {
+  will-change: transform;
+}
+.gc-card:hover,
+.gc-menu-card:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------- Inputs ---------- */
+.gc-input::placeholder {
+  color: rgba(100, 116, 139, 0.9);
+}
+
+/* ---------- Badge chips ---------- */
+.gc-chip {
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- Topbar title smoothing ---------- */
+.gc-title {
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Reduce layout shift for images ---------- */
+.gc-menu-hero img {
+  image-rendering: auto;
+}
+
+/* ---------- Optional: nicer scrollbars (Chromium) ---------- */
+@media (pointer: fine) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.28);
+  }
+}
