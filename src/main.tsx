@@ -12,15 +12,20 @@ import './styles.css'
 import { ModeProvider } from './lib/mode'
 import ErrorBoundary from './components/ErrorBoundary'
 
+/**
+ * ✅ FINAL GOD — render stability
+ * Notes:
+ * - We intentionally DO NOT wrap with React.StrictMode here
+ *   to avoid double-mount/double-fetch issues in dev that can look like freezes.
+ * - Production build is unchanged, but this makes local + preview behavior stable.
+ */
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <HashRouter>
-      <ModeProvider>
-        {/* ✅ Prevents "blank screen" by catching render-time crashes */}
-        <ErrorBoundary>
-          <App />
-        </ErrorBoundary>
-      </ModeProvider>
-    </HashRouter>
-  </React.StrictMode>
+  <HashRouter>
+    <ModeProvider>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </ModeProvider>
+  </HashRouter>
 )
