@@ -145,9 +145,19 @@ export default function AppLayout() {
         {/* Main */}
         <main className="gc-main">
           <div className="gc-topbar">
-            <div>
-              <div className="gc-title">{title}</div>
-              <div className="gc-subtitle">Premium UI · GastroChef</div>
+            <div className="gc-topbar-brand">
+              <img
+                className="gc-topbar-logo"
+                src={brandIcon}
+                alt="GastroChef"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
+                }}
+              />
+              <div>
+                <div className="gc-title">{title}</div>
+                <div className="gc-subtitle">Premium UI · GastroChef</div>
+              </div>
             </div>
 
             <div className="gc-topbar-actions">

@@ -1070,3 +1070,28 @@ button, input, textarea, select{ font-family: inherit; }
   color: #fecaca !important;
   border-color: rgba(248,113,113,.35) !important;
 }
+
+
+/* ---------- Topbar Brand (Logo + Title) ---------- */
+.gc-topbar-brand{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  min-width: 0;
+}
+.gc-topbar-logo{
+  width: 30px;
+  height: 30px;
+  border-radius: 10px;
+  object-fit: contain;
+  background: rgba(255,255,255,.7);
+  border: 1px solid var(--gc-border);
+  box-shadow: 0 10px 20px rgba(2,6,23,.06);
+}
+.gc-dark .gc-topbar-logo{
+  background: rgba(15,23,42,.55);
+}
+
+/* Map legacy classes used in AppLayout */
+.gc-title{ font-size: 22px; font-weight: 950; letter-spacing: -0.02em; }
+.gc-subtitle{ font-size: 12.5px; color: var(--gc-muted); margin-top: 2px; }
