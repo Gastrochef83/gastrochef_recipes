@@ -154,29 +154,45 @@ button, input, textarea, select{ font-family: inherit; }
 
 /* ---------- Sidebar ---------- */
 .gc-side-card{
-  background: var(--gc-card);
+  background: linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.80) 100%);
   border: 1px solid var(--gc-border);
   border-radius: var(--gc-radius-xl);
   box-shadow: var(--gc-shadow-soft);
-  padding: 16px;
+  padding: 14px;
+  backdrop-filter: blur(6px);
+}
+.gc-dark .gc-side-card{
+  background: linear-gradient(180deg, rgba(15,23,42,.86) 0%, rgba(15,23,42,.70) 100%);
 }
 .gc-brand{
   display:flex;
-  align-items: baseline;
-  justify-content: space-between;
+  align-items: center;
+  justify-content: flex-start;
   gap: 12px;
   padding-bottom: 12px;
   border-bottom: 1px solid var(--gc-border);
 }
 .gc-brand-name{
-  font-size: 18px;
+  font-size: 17px;
   font-weight: 950;
   letter-spacing: -0.02em;
+  line-height: 1.05;
 }
 .gc-brand-accent{ color: var(--gc-accent); }
-.gc-brand-sub{ font-size: 12px; color: var(--gc-muted); }
+.gc-brand-sub{
+  margin-top: 3px;
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  font-size: 11.5px;
+  color: var(--gc-muted);
+  padding: 3px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--gc-border);
+  background: rgba(15,23,42,.03);
+}
 
-.gc-side-block{ margin-top: 14px; }
+.gc-side-block{ margin-top: 12px; }
 .gc-side-hint{ font-size: 12.5px; color: var(--gc-muted); }
 
 .gc-side-tip{
@@ -191,6 +207,10 @@ button, input, textarea, select{ font-family: inherit; }
   background: rgba(20,184,166,.12);
   border-color: rgba(94,234,212,.18);
 }
+
+
+/* Sidebar label spacing */
+.gc-side .gc-label{ display:block; margin-bottom: 8px; }
 
 /* Segmented (Kitchen/Mgmt) */
 .gc-seg{
@@ -223,17 +243,18 @@ button, input, textarea, select{ font-family: inherit; }
 }
 
 /* Nav */
-.gc-nav{ display:flex; flex-direction: column; gap: 10px; }
+.gc-nav{ display:flex; flex-direction: column; gap: 8px; }
 .gc-nav-item{
+  position: relative;
   padding: 12px 14px;
   border-radius: 14px;
   border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.70);
+  background: rgba(255,255,255,.86);
   color: var(--gc-text);
   font-weight: 900;
   transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
-.gc-dark .gc-nav-item{ background: rgba(15,23,42,.55); }
+.gc-dark .gc-nav-item{ background: rgba(15,23,42,.62); }
 .gc-nav-item:hover{
   transform: translateY(-1px);
   border-color: var(--gc-border-strong);
@@ -248,6 +269,27 @@ button, input, textarea, select{ font-family: inherit; }
   background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
   color: #071a18;
   border-color: rgba(94,234,212,.35);
+}
+
+
+/* Sidebar helper text (aliases used in AppLayout.tsx) */
+.gc-hint{
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--gc-muted);
+}
+.gc-tip{
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--gc-muted);
+  background: rgba(20,184,166,.08);
+  border: 1px solid rgba(20,184,166,.14);
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+.gc-dark .gc-tip{
+  background: rgba(20,184,166,.12);
+  border-color: rgba(94,234,212,.18);
 }
 
 /* ---------- Topbar ---------- */
@@ -2415,3 +2457,68 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
 .gc-dark .gc-actions-danger:hover{
   background: rgba(248,113,113,.10);
 }
+
+
+/* =========================================================
+   STEP 2 — SIDEBAR SURGERY (UI only)
+   - Lighter + tighter sidebar
+   - Consistent hints/tips
+   - Brand mark polished
+   ========================================================= */
+
+.gc-side-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.80) 100%);
+  padding: 14px;
+}
+.gc-dark .gc-side-card{
+  background: linear-gradient(180deg, rgba(15,23,42,.86) 0%, rgba(15,23,42,.70) 100%);
+}
+
+.gc-brand{
+  align-items:center;
+  justify-content:flex-start;
+  gap: 12px;
+}
+
+.gc-brand-mark{
+  width: 42px;
+  height: 42px;
+  border-radius: 14px;
+  background: var(--gc-bg-2);
+  border: 1px solid var(--gc-border);
+  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+}
+.gc-dark .gc-brand-mark{ background: rgba(255,255,255,.06); }
+.gc-brand-mark img{
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gc-side .gc-label{ display:block; margin-bottom: 8px; }
+
+.gc-hint{
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--gc-muted);
+}
+
+.gc-tip{
+  margin-top: 10px;
+  font-size: 12.5px;
+  color: var(--gc-muted);
+  background: rgba(20,184,166,.08);
+  border: 1px solid rgba(20,184,166,.14);
+  padding: 10px 12px;
+  border-radius: 14px;
+}
+.gc-dark .gc-tip{
+  background: rgba(20,184,166,.12);
+  border-color: rgba(94,234,212,.18);
+}
+
+/* nav polish */
+.gc-nav{ gap: 8px; }
+.gc-nav-item{ background: rgba(255,255,255,.86); }
+.gc-dark .gc-nav-item{ background: rgba(15,23,42,.62); }
+
