@@ -2767,3 +2767,107 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
 .gc-dark .gc-editor .gc-section-sub{
   color: rgba(255,255,255,.62);
 }
+
+
+
+/* =========================================================
+   STEP 7 — FINAL MICRO POLISH PASS (UI ONLY)
+   - Hover polish + focus states + micro animations
+   - Empty states consistency helpers
+   ========================================================= */
+
+@media (prefers-reduced-motion: no-preference){
+  .gc-card,
+  .gc-menu-card,
+  .gc-btn,
+  .gc-btn-secondary,
+  .gc-btn-warn,
+  .gc-btn-danger,
+  .gc-topbar,
+  a,
+  button,
+  input,
+  select,
+  textarea{
+    transition: transform .12s ease, box-shadow .16s ease, border-color .16s ease, background-color .16s ease, color .16s ease, opacity .16s ease;
+  }
+}
+
+/* --- Hover lift for cards (subtle) --- */
+.gc-card:hover{
+  box-shadow: var(--gc-shadow);
+}
+.gc-menu-card:hover{
+  box-shadow: var(--gc-shadow);
+}
+
+/* --- Buttons: slightly nicer hover feel (no logic) --- */
+.gc-btn:hover{
+  transform: translateY(-1px);
+}
+.gc-btn:active{
+  transform: translateY(0);
+}
+
+/* --- Inputs: consistent focus ring --- */
+:where(input, select, textarea).gc-input:focus,
+:where(input, select, textarea).gc-input:focus-visible{
+  outline: none;
+  box-shadow: var(--gc-focus);
+  border-color: rgba(20, 184, 166, .55);
+}
+:where(input, select, textarea):focus-visible{
+  outline: none;
+}
+
+/* --- Buttons: focus ring --- */
+:where(.gc-btn, .gc-btn-secondary, .gc-btn-warn, .gc-btn-danger, button, a):focus-visible{
+  outline: none;
+  box-shadow: var(--gc-focus);
+}
+
+/* --- Links: cleaner hover --- */
+a:hover{
+  opacity: .92;
+}
+
+/* --- Empty state helpers (used by Dashboard + any page) --- */
+.gc-empty{
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.gc-empty-ico{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: rgba(20, 184, 166, .10);
+  border: 1px solid rgba(20, 184, 166, .18);
+  font-size: 18px;
+}
+.gc-empty-step{
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.gc-empty-dot{
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: rgba(15, 118, 110, .10);
+  border: 1px solid rgba(15, 118, 110, .18);
+  color: var(--gc-accent);
+  font-weight: 800;
+  font-size: 12px;
+  flex: 0 0 auto;
+}
+
+/* --- Reduced motion: respect user preference --- */
+@media (prefers-reduced-motion: reduce){
+  *{ transition: none !important; scroll-behavior: auto !important; }
+}
