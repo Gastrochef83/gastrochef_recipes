@@ -1432,9 +1432,9 @@ export default function RecipeEditor() {
   // UI
   // =========================
   return (
-    <div className="gc-editor space-y-6">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="gc-card p-6 gc-editor-header" style={{ position: 'sticky', top: 12, zIndex: 30 }}>
+      <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="h-28 w-28 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shrink-0">
@@ -1445,7 +1445,7 @@ export default function RecipeEditor() {
               )}
             </div>
 
-            <div className="flex-1 min-w-0">
+            <div className="min-w-[min(760px,92vw)]">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="gc-label">RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}</div>
                 <div className="flex items-center gap-2 text-xs">
@@ -1522,7 +1522,7 @@ export default function RecipeEditor() {
                   )}
 
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
-                    Cook Mode
+                    🍳 Cook Mode
                   </NavLink>
 
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
@@ -2189,7 +2189,7 @@ export default function RecipeEditor() {
                 return (
                   <div key={l.id} className="px-4 py-3">
                     <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3">
-                      <div className="pr-2">
+                      <div className="pr-2 min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
                             className="gc-input w-[150px]"
@@ -2201,7 +2201,7 @@ export default function RecipeEditor() {
                           </select>
 
                           {r.line_type === 'ingredient' ? (
-                            <select className="gc-input flex-1 min-w-[220px]" value={r.ingredient_id} onChange={(ev) => setRow({ ingredient_id: ev.target.value })}>
+                            <select className="gc-input flex-1 min-w-0" value={r.ingredient_id} onChange={(ev) => setRow({ ingredient_id: ev.target.value })}>
                               <option value="">Select…</option>
                               {activeIngredients.map((i) => (
                                 <option key={i.id} value={i.id}>
@@ -2210,7 +2210,7 @@ export default function RecipeEditor() {
                               ))}
                             </select>
                           ) : (
-                            <select className="gc-input flex-1 min-w-[220px]" value={r.sub_recipe_id} onChange={(ev) => setRow({ sub_recipe_id: ev.target.value })}>
+                            <select className="gc-input flex-1 min-w-0" value={r.sub_recipe_id} onChange={(ev) => setRow({ sub_recipe_id: ev.target.value })}>
                               <option value="">Select…</option>
                               {subRecipeOptions.map((sr) => (
                                 <option key={sr.id} value={sr.id}>
