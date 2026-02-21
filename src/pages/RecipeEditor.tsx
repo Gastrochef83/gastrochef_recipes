@@ -203,6 +203,8 @@ export default function RecipeEditor() {
   const [addSubRecipeId, setAddSubRecipeId] = useState('')
   const [addQty, setAddQty] = useState('1')
   const [addUnit, setAddUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
+  const [addYieldPercent, setAddYieldPercent] = useState('100')
+  const [addGrossQty, setAddGrossQty] = useState('')
   const [addNote, setAddNote] = useState('')
   const [savingAdd, setSavingAdd] = useState(false)
 
@@ -961,8 +963,14 @@ export default function RecipeEditor() {
   // -------------------------
   const addLineInline = async () => {
     if (!id) return
-    const qty = Math.max(0, toNum(addQty, 0))
-    if (qty <= 0) return showToast('Qty must be > 0')
+    const netIn = Math.max(0, toNum(addQty, 0))
+    const grossIn = Math.max(0, toNum(addGrossQty, 0))
+    const y = clampYield(Math.max(0.01, toNum(addYieldPercent, 100)))
+
+    if (netIn <= 0 && grossIn <= 0) return showToast('Enter Net or Gross (must be > 0)')
+
+    const qty = netIn > 0 ? netIn : netFromGross(grossIn, y)
+    const grossOverride = grossIn > 0 ? grossIn : null
 
     setSavingAdd(true)
     try {
@@ -983,8 +991,8 @@ export default function RecipeEditor() {
           sub_recipe_id: null,
           qty,
           unit: safeUnit(addUnit),
-          yield_percent: 100,
-          gross_qty_override: null,
+          yield_percent: y,
+          gross_qty_override: grossOverride,
           group_title: null,
         }
         const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -998,8 +1006,8 @@ export default function RecipeEditor() {
           sub_recipe_id: addSubRecipeId,
           qty,
           unit: safeUnit(addUnit),
-          yield_percent: 100,
-          gross_qty_override: null,
+          yield_percent: y,
+          gross_qty_override: grossOverride,
           group_title: null,
         }
         const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -1010,6 +1018,8 @@ export default function RecipeEditor() {
       setAddSubRecipeId('')
       setAddQty('1')
       setAddUnit('g')
+      setAddYieldPercent('100')
+      setAddGrossQty('')
       setAddNote('')
       showToast('Added ✅')
       await loadAll(id)
@@ -1921,7 +1931,7 @@ export default function RecipeEditor() {
         </div>
 
         {/* Inline Add */}
-        <div className="mt-4 grid gap-3 lg:grid-cols-[.7fr_1.6fr_.6fr_1fr_auto]">
+        <div className="mt-4 grid gap-3 lg:grid-cols-[.7fr_1.6fr_.7fr_.55fr_.7fr_1fr_auto]">
           <div>
             <div className="gc-label">TYPE</div>
             <select className="gc-input mt-2 w-full" value={addType} onChange={(e) => setAddType(e.target.value as any)}>
@@ -1962,9 +1972,17 @@ export default function RecipeEditor() {
           </div>
 
           <div>
-            <div className="gc-label">QTY + UNIT</div>
+            <div className="gc-label">NET QTY + UNIT</div>
             <div className="mt-2 grid grid-cols-2 gap-2">
-              <input className="gc-input" type="number" min={0} step="0.01" value={addQty} onChange={(e) => setAddQty(e.target.value)} />
+              <input
+                className="gc-input"
+                type="number"
+                min={0}
+                step="0.01"
+                value={addQty}
+                onChange={(e) => setAddQty(e.target.value)}
+                placeholder="Net"
+              />
               <select className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value as any)}>
                 <option value="g">g</option>
                 <option value="kg">kg</option>
@@ -1973,6 +1991,33 @@ export default function RecipeEditor() {
                 <option value="pcs">pcs</option>
               </select>
             </div>
+          </div>
+
+          <div>
+            <div className="gc-label">YIELD %</div>
+            <input
+              className="gc-input mt-2 w-full text-right tabular-nums"
+              type="number"
+              min={0.01}
+              step="0.01"
+              value={addYieldPercent}
+              onChange={(e) => setAddYieldPercent(e.target.value)}
+              placeholder="100"
+            />
+          </div>
+
+          <div>
+            <div className="gc-label">GROSS QTY</div>
+            <input
+              className="gc-input mt-2 w-full text-right tabular-nums"
+              type="number"
+              min={0}
+              step="0.01"
+              value={addGrossQty}
+              onChange={(e) => setAddGrossQty(e.target.value)}
+              placeholder="optional"
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">If set, it will be saved as manual gross.</div>
           </div>
 
           <div>
