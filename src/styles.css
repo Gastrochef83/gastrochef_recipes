@@ -1662,3 +1662,114 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
     grid-template-columns: 1.6fr .7fr .7fr .7fr .9fr 1.2fr 1.3fr;
   }
 }
+/* =========================================================
+   GOD MODE LINES — VISUAL POLISH (UI ONLY)
+   Fixes the "look" of the lines grid:
+   - cleaner header typography
+   - consistent control heights
+   - better column balance (more space for Note, less for Actions)
+   - less empty feeling, more Kitopi-like
+   Append to END of src/styles.css
+   ========================================================= */
+
+/* Header */
+.gc-lines-header{
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  color: rgba(71,85,105,.85);
+}
+
+/* Rows */
+.gc-line-row{
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+}
+.gc-line-row:last-child{
+  border-bottom: none;
+}
+
+/* Better column balance */
+.gc-lines-header,
+.gc-line-row{
+  grid-template-columns:
+    minmax(240px,1.6fr)  /* Item */
+    minmax(88px,.55fr)   /* Net Qty */
+    minmax(86px,.55fr)   /* Unit */
+    minmax(92px,.55fr)   /* Yield % */
+    minmax(120px,.65fr)  /* Gross Qty */
+    minmax(220px,1.2fr)  /* Note */
+    auto;                /* Actions */
+}
+
+/* Controls: consistent height */
+.gc-line-row input,
+.gc-line-row select,
+.gc-line-row button{
+  height: 38px;
+}
+
+/* Inputs look */
+.gc-line-row input,
+.gc-line-row select{
+  border-radius: 14px;
+}
+
+/* Item column: make the stacked selects breathe */
+.gc-line-row .gc-item-stack{
+  display: grid;
+  gap: 8px;
+}
+
+/* Buttons in actions: smaller gap + consistent style */
+.gc-line-row .gc-actions{
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+/* Tiny arrow buttons (up/down) */
+.gc-line-row .gc-mini-btn{
+  width: 36px;
+  padding: 0 !important;
+  border-radius: 12px;
+}
+
+/* Sync button: keep compact */
+.gc-line-row .gc-sync-btn{
+  padding: 0 12px !important;
+  border-radius: 14px;
+}
+
+/* Make note input wider on large screens */
+@media (min-width: 1100px){
+  .gc-lines-header,
+  .gc-line-row{
+    grid-template-columns:
+      minmax(260px,1.6fr)
+      minmax(90px,.55fr)
+      minmax(90px,.55fr)
+      minmax(98px,.55fr)
+      minmax(130px,.65fr)
+      minmax(280px,1.4fr)
+      auto;
+  }
+}
+
+/* Small screens: allow wrap gracefully */
+@media (max-width: 900px){
+  .gc-lines-header{ display:none; }
+  .gc-line-row{
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+  .gc-line-row .gc-actions{
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
+}
