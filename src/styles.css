@@ -1562,3 +1562,53 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
 .gc-menu-card:hover{
   box-shadow: 0 14px 36px rgba(2,6,23,.10);
 }
+/* =========================================================
+   RECIPE LINES — ALIGNMENT FIX (NO LOGIC CHANGE)
+   Fixes:
+   - Net Qty / Unit / Yield / Gross / Note not aligned with header
+   ========================================================= */
+
+.gc-card table,
+.gc-lines {
+  width: 100%;
+}
+
+/* Force SAME grid template for header + rows */
+.gc-lines-header,
+.gc-line-row {
+  display: grid;
+  grid-template-columns:
+    minmax(260px,1.8fr)   /* Item */
+    minmax(90px,.6fr)     /* Net Qty */
+    minmax(90px,.6fr)     /* Unit */
+    minmax(90px,.6fr)     /* Yield */
+    minmax(110px,.7fr)    /* Gross */
+    minmax(1fr,1fr)       /* Note */
+    auto;                 /* Actions */
+  gap: 12px;
+  align-items: center;
+}
+
+/* prevent selects from pushing layout */
+.gc-line-row select,
+.gc-line-row input {
+  min-width: 0 !important;
+  width: 100%;
+}
+
+/* keep buttons compact */
+.gc-line-row .gc-btn{
+  white-space: nowrap;
+}
+
+/* small screens */
+@media (max-width: 900px){
+  .gc-lines-header,
+  .gc-line-row{
+    grid-template-columns:
+      minmax(200px,1.4fr)
+      repeat(4, minmax(80px,.5fr))
+      1fr
+      auto;
+  }
+}
