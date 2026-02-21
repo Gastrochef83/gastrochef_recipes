@@ -1986,3 +1986,62 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
     min-width: 160px;
   }
 }
+/* =========================================================
+   HOVER REVEAL ULTRA — UI ONLY (No logic changes)
+   Goal:
+   - Keep the grid clean: show row actions only on hover/focus
+   - Always show actions on touch devices (no hover)
+   Append to END of src/styles.css
+   ========================================================= */
+
+/* Hide actions by default (desktop hover) */
+@media (hover: hover) and (pointer: fine) {
+  .gc-line-row-hover .gc-actions-hover {
+    opacity: 0;
+    transform: translateY(-2px);
+    pointer-events: none;
+    transition: opacity .14s ease, transform .14s ease;
+  }
+
+  /* Reveal on row hover or when any control inside the row is focused */
+  .gc-line-row-hover:hover .gc-actions-hover,
+  .gc-line-row-hover:focus-within .gc-actions-hover {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+}
+
+/* On touch devices, actions must stay visible */
+@media (hover: none), (pointer: coarse) {
+  .gc-line-row-hover .gc-actions-hover {
+    opacity: 1 !important;
+    transform: none !important;
+    pointer-events: auto !important;
+  }
+}
+
+/* Optional: subtle row highlight on hover */
+@media (hover: hover) and (pointer: fine) {
+  .gc-line-row-hover:hover {
+    background: rgba(15, 23, 42, 0.02);
+  }
+}
+
+/* Ensure header stays crisp */
+.gc-lines-header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+}
+
+/* Keep actions compact and aligned */
+.gc-actions-hover {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
