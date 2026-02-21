@@ -585,7 +585,7 @@ export default function Recipes() {
         </div>
       </div>
 
-      <div className={gridClass}>
+      <div className={`gc-recipes-grid ${gridClass}`}>
         {loading &&
           Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="gc-menu-card">
@@ -674,7 +674,7 @@ export default function Recipes() {
                       Open Editor
                     </button>
 
-                    <button type="button" className="gc-action" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}>
+                    <button type="button" className="gc-action" onClick={() => nav(`/cook?id=${encodeURIComponent(r.id)}`)}>
                       Cook
                     </button>
 
