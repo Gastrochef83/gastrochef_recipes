@@ -1612,3 +1612,53 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
       auto;
   }
 }
+/* =========================================================
+   GOD MODE LINES — ultra smooth + perfect alignment (UI only)
+   ✅ No logic changes
+   Append to END of: src/styles.css
+   ========================================================= */
+
+/* 1) Hard alignment: header + rows forced to same columns */
+.gc-lines-header,
+.gc-line-row{
+  display: grid;
+  grid-template-columns: 1.55fr .55fr .55fr .55fr .65fr 1fr 1.2fr;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 2) Prevent inputs/selects from expanding columns */
+.gc-line-row input,
+.gc-line-row select{
+  min-width: 0 !important;
+  width: 100%;
+}
+
+/* 3) Reduce layout/paint cost per row */
+.gc-line-row{
+  contain: layout paint;
+  padding: 10px 16px;
+}
+.gc-lines-header{
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* 4) Smooth scrolling on heavy tables */
+.gc-lines-scroll{
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 5) Make action buttons compact and non-wrapping */
+.gc-line-row .gc-btn{
+  white-space: nowrap;
+}
+
+/* 6) On small screens: keep usable without breaking alignment */
+@media (max-width: 920px){
+  .gc-lines-header,
+  .gc-line-row{
+    grid-template-columns: 1.6fr .7fr .7fr .7fr .9fr 1.2fr 1.3fr;
+  }
+}
