@@ -2074,7 +2074,7 @@ export default function RecipeEditor() {
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
+            <div className="gc-lines-header grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
               <div className="whitespace-nowrap">Item</div>
               <div className="text-right whitespace-nowrap">Net Qty</div>
               <div className="text-right whitespace-nowrap">Unit</div>
@@ -2188,8 +2188,8 @@ export default function RecipeEditor() {
 
                 return (
                   <div key={l.id} className="px-4 py-3">
-                    <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3">
-                      <div className="pr-2 min-w-0">
+                    <div className="gc-line-row grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3">
+                      <div className="pr-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
                             className="gc-input w-[150px]"
@@ -2201,7 +2201,7 @@ export default function RecipeEditor() {
                           </select>
 
                           {r.line_type === 'ingredient' ? (
-                            <select className="gc-input flex-1 min-w-0" value={r.ingredient_id} onChange={(ev) => setRow({ ingredient_id: ev.target.value })}>
+                            <select className="gc-input flex-1 min-w-[220px]" value={r.ingredient_id} onChange={(ev) => setRow({ ingredient_id: ev.target.value })}>
                               <option value="">Select…</option>
                               {activeIngredients.map((i) => (
                                 <option key={i.id} value={i.id}>
@@ -2210,7 +2210,7 @@ export default function RecipeEditor() {
                               ))}
                             </select>
                           ) : (
-                            <select className="gc-input flex-1 min-w-0" value={r.sub_recipe_id} onChange={(ev) => setRow({ sub_recipe_id: ev.target.value })}>
+                            <select className="gc-input flex-1 min-w-[220px]" value={r.sub_recipe_id} onChange={(ev) => setRow({ sub_recipe_id: ev.target.value })}>
                               <option value="">Select…</option>
                               {subRecipeOptions.map((sr) => (
                                 <option key={sr.id} value={sr.id}>
