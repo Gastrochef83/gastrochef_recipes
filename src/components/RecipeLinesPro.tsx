@@ -48,6 +48,10 @@ export default function RecipeLinesPro(props: {
 }) {
   const { lines, setLines, ingredients } = props
 
+  // UI-only: keep the same data + calculations, but reduce visual noise by
+  // collapsing advanced fields (Yield %, Notes) behind a toggle.
+  const [showAdvanced, setShowAdvanced] = React.useState(false)
+
   const ingById = React.useMemo(() => {
     const m = new Map<string, IngredientPick>()
     for (const i of ingredients) m.set(i.id, i)
@@ -100,9 +104,20 @@ export default function RecipeLinesPro(props: {
           </div>
         </div>
 
-        <div className="text-xs text-neutral-500">
-          Total cost contribution:&nbsp;
-          <span className="font-semibold">{totalCost.toFixed(2)}</span> {props.currency?.toUpperCase() || 'USD'}
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="gc-btn gc-btn-ghost"
+            onClick={() => setShowAdvanced((v) => !v)}
+            aria-expanded={showAdvanced}
+          >
+            {showAdvanced ? 'Hide advanced' : 'Advanced'}
+          </button>
+
+          <div className="text-xs text-neutral-500">
+            Total cost contribution:&nbsp;
+            <span className="font-semibold">{totalCost.toFixed(2)}</span> {props.currency?.toUpperCase() || 'USD'}
+          </div>
         </div>
       </div>
 
@@ -113,7 +128,7 @@ export default function RecipeLinesPro(props: {
               <th className="py-2 pr-4">Ingredient</th>
               <th className="py-2 pr-4">Net Qty</th>
               <th className="py-2 pr-4">Gross Qty</th>
-              <th className="py-2 pr-4">Yield</th>
+              {showAdvanced && <th className="py-2 pr-4">Yield</th>}
               <th className="py-2 pr-4">Cost Contribution</th>
               <th className="py-2 pr-0 text-right">Actions</th>
             </tr>
@@ -160,18 +175,37 @@ export default function RecipeLinesPro(props: {
                         />
                       </div>
 
-                      <div className="sm:col-span-4">
-                        <div className="gc-label">YIELD %</div>
-                        <input
-                          className="gc-input w-full"
-                          value={String(toNum(l.yield_percent, 100))}
-                          onChange={(e) => update(l.id, { yield_percent: clamp(toNum(e.target.value, 100), 0.0001, 100) })}
-                          inputMode="decimal"
-                        />
-                      </div>
+                      {showAdvanced && (
+                        <div className="sm:col-span-4">
+                          <div className="gc-label">YIELD %</div>
+                          <input
+                            className="gc-input w-full"
+                            value={String(toNum(l.yield_percent, 100))}
+                            onChange={(e) =>
+                              update(l.id, { yield_percent: clamp(toNum(e.target.value, 100), 0.0001, 100) })
+                            }
+                            inputMode="decimal"
+                          />
+                        </div>
+                      )}
                     </div>
 
-                    {l.notes != null && l.notes !== '' && <div className="mt-2 text-xs text-neutral-500">Notes: {l.notes}</div>}
+                    {showAdvanced ? (
+                      <div className="mt-2">
+                        <div className="gc-label">NOTES</div>
+                        <input
+                          className="gc-input w-full"
+                          value={l.notes ?? ''}
+                          onChange={(e) => update(l.id, { notes: e.target.value })}
+                          placeholder="Optional notes (prep, trimming, etc.)"
+                        />
+                      </div>
+                    ) : (
+                      l.notes != null &&
+                      l.notes !== '' && (
+                        <div className="mt-2 text-xs text-neutral-500">Notes: {l.notes}</div>
+                      )
+                    )}
                   </td>
 
                   <td className="py-3 pr-4">
@@ -182,9 +216,11 @@ export default function RecipeLinesPro(props: {
                     <div className="font-semibold">{fmtQty(grossQty)} {unit}</div>
                   </td>
 
-                  <td className="py-3 pr-4">
-                    <div className="font-semibold">{fmtQty(y)}%</div>
-                  </td>
+                  {showAdvanced && (
+                    <td className="py-3 pr-4">
+                      <div className="font-semibold">{fmtQty(y)}%</div>
+                    </td>
+                  )}
 
                   <td className="py-3 pr-4">
                     <div className="font-semibold">{fmtQty(pct)}%</div>
