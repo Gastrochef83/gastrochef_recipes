@@ -35,8 +35,7 @@ export default function AppLayout() {
 
 
   /* ======================================================
-     LOG OUT (REAL SIGN-OUT)
-     - Keeps your UI logic, but actually ends the Supabase session
+     LOG OUT (NO BREAK LOGIC)
      ====================================================== */
 
   async function handleLogout() {
@@ -44,21 +43,21 @@ export default function AppLayout() {
     setLoggingOut(true)
 
     try {
-      // ✅ 1) End session
+      // ✅ Real sign-out (Supabase session)
       await supabase.auth.signOut()
 
-      // ✅ 2) Clear local UI state / workspace cache
+      // ✅ reset local UI state
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
       sessionStorage.clear()
 
-      // ✅ 3) Default mode for next login
+      // default mode
       setMode('mgmt')
 
-      // ✅ 4) Go to login (hard stop)
+      // ✅ go to login (hard stop)
       nav('/login', { replace: true })
-    } catch (e) {
-      // If signOut fails, still force user to login
+    } catch {
+      // Even if signOut fails, force the user to login
       nav('/login', { replace: true })
     } finally {
       setLoggingOut(false)
@@ -83,6 +82,10 @@ export default function AppLayout() {
           <div className="gc-side-card">
 
             <div className="gc-brand">
+
+              <div className="gc-brand-mark" aria-hidden="true">
+                <img src="/gastrochef-icon-512.png" alt="" />
+              </div>
 
               <div className="gc-brand-name">
                 GastroChef
