@@ -18,6 +18,10 @@ export default function AppLayout() {
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
+  // Use Vite BASE_URL so the brand icon works in all deployments (root, subpath, HashRouter)
+  const brandIcon = `${import.meta.env.BASE_URL}gastrochef-icon-512.png`
+  const brandLogoFallback = `${import.meta.env.BASE_URL}gastrochef-logo.png`
+
   const title = useMemo(() => {
     const p = (loc.pathname || '').toLowerCase()
 
@@ -68,11 +72,20 @@ export default function AppLayout() {
           <div className="gc-side-card">
             <div className="gc-brand">
               <div className="gc-brand-mark" aria-hidden="true">
-                <img src="/gastrochef-icon-512.png" alt="" />
+                <img
+                  src={brandIcon}
+                  alt=""
+                  onError={(e) => {
+                    // fallback (in case the icon path is blocked/rewritten)
+                    ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
+                  }}
+                />
               </div>
 
               <div>
-                <div className="gc-brand-name">GastroChef</div>
+                <div className="gc-brand-name">
+                  Gastro<span className="gc-brand-accent">Chef</span>
+                </div>
                 <div className="gc-brand-sub">v4 MVP</div>
               </div>
             </div>
