@@ -1,27 +1,74 @@
 import { useEffect } from 'react'
 
-export function Toast({
-  open,
-  message,
-  onClose,
-}: {
-  open: boolean
+type Props = {
   message: string
   onClose: () => void
-}) {
-  useEffect(() => {
-    if (!open) return
-    const t = setTimeout(onClose, 2600)
-    return () => clearTimeout(t)
-  }, [open, onClose])
+  durationMs?: number
+}
 
-  if (!open) return null
+/**
+ * ✅ FINAL GOD — Toast PRO
+ * - Auto dismiss (default 2600ms)
+ * - Escape to close
+ * - No business-logic change
+ */
+export function Toast({ message, onClose, durationMs = 2600 }: Props) {
+  useEffect(() => {
+    const t = window.setTimeout(onClose, Math.max(800, durationMs))
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
+    }
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.clearTimeout(t)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose, durationMs])
 
   return (
-    <div className="fixed bottom-6 right-6 z-50">
-      <div className="gc-toast">
-        <div className="text-sm font-semibold">{message}</div>
-        <button type="button" className="gc-toast-close" onClick={onClose} aria-label="Close">
+    <div
+      className="gc-toast"
+      style={{
+        position: 'fixed',
+        right: 16,
+        bottom: 16,
+        zIndex: 2000,
+      }}
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        style={{
+          background: '#111827',
+          color: '#fff',
+          borderRadius: 14,
+          padding: '12px 14px',
+          boxShadow: '0 18px 50px rgba(2,6,23,.20)',
+          maxWidth: 420,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.2 }}>{message}</div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            marginLeft: 'auto',
+            border: 'none',
+            background: 'rgba(255,255,255,.12)',
+            color: '#fff',
+            borderRadius: 10,
+            padding: '6px 10px',
+            cursor: 'pointer',
+            fontWeight: 800,
+            fontSize: 12,
+          }}
+          aria-label="Close"
+          title="Close"
+        >
           ×
         </button>
       </div>
