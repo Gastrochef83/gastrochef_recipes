@@ -43,6 +43,7 @@ type Line = {
   unit: string
   yield_percent: number
   notes: string | null
+  gross_qty_override: number | null
   line_type: LineType
   group_title: string | null
 }
@@ -55,12 +56,17 @@ type Ingredient = {
   is_active?: boolean
 }
 
+type GrossMode = 'sync' | 'manual'
+
 type EditRow = {
   line_type: LineType
   ingredient_id: string
   sub_recipe_id: string
-  qty: string
+  qty: string // Net Qty
   unit: string
+  yield_percent: string
+  gross_qty_override: string
+  gross_mode: GrossMode
   notes: string
   group_title: string
 }
@@ -329,7 +335,7 @@ export default function RecipeEditor() {
 
     const { data: l, error: lErr } = await supabase
       .from('recipe_lines')
-      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,position,line_type,group_title')
+      .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title')
       .eq('recipe_id', recipeId)
       .order('position', { ascending: true })
       .order('id', { ascending: true })
@@ -387,10 +393,13 @@ export default function RecipeEditor() {
         line_type: x.line_type ?? 'ingredient',
         ingredient_id: x.ingredient_id ?? '',
         sub_recipe_id: x.sub_recipe_id ?? '',
-        qty: String(x.qty ?? 0),
-        unit: safeUnit(x.unit ?? 'g'),
-        notes: x.notes ?? '',
-        group_title: x.group_title ?? '',
+        qty: String((x as any).qty ?? 0),
+        unit: safeUnit((x as any).unit ?? 'g'),
+        yield_percent: String((x as any).yield_percent ?? 100),
+        gross_qty_override: String(((x as any).gross_qty_override ?? '') as any),
+        gross_mode: (x as any).gross_qty_override != null ? 'manual' : 'sync',
+        notes: ((x as any).notes ?? (x as any).note ?? '') as any,
+        group_title: (x as any).group_title ?? '',
       }
     }
     setEdit(m)
@@ -501,7 +510,7 @@ export default function RecipeEditor() {
     for (const ids of chunk(needFetch, 50)) {
       const { data, error } = await supabase
         .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,position,line_type,group_title')
+        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title')
         .in('recipe_id', ids)
         .order('position', { ascending: true })
         .order('id', { ascending: true })
@@ -913,7 +922,42 @@ export default function RecipeEditor() {
   }
 
   // -------------------------
-  // Lines CRUD
+  
+  // -------------------------
+  // Net/Gross (Kitopi Sync)
+  // -------------------------
+  const clampYield = (y: number) => Math.min(100, Math.max(0.01, y))
+  const round6 = (n: number) => (Number.isFinite(n) ? Math.round(n * 1_000_000) / 1_000_000 : 0)
+
+  const grossFromNet = (netQty: number, yPct: number) => {
+    const y = clampYield(yPct) / 100
+    return round6(netQty / y)
+  }
+
+  const netFromGross = (grossQty: number, yPct: number) => {
+    const y = clampYield(yPct) / 100
+    return round6(grossQty * y)
+  }
+
+  const numOr0 = (x: any) => {
+    const n = Number(x)
+    return Number.isFinite(n) ? n : 0
+  }
+
+  const syncFromNet = (row: EditRow) => {
+    const net = Math.max(0, numOr0(row.qty))
+    const y = clampYield(Math.max(0.01, numOr0(row.yield_percent)))
+    const gross = grossFromNet(net, y)
+    return { ...row, gross_qty_override: String(gross), gross_mode: 'sync' as const }
+  }
+
+  const syncFromGross = (row: EditRow) => {
+    const gross = Math.max(0, numOr0(row.gross_qty_override))
+    const y = clampYield(Math.max(0.01, numOr0(row.yield_percent)))
+    const net = netFromGross(gross, y)
+    return { ...row, qty: String(net), gross_mode: 'manual' as const }
+  }
+// Lines CRUD
   // -------------------------
   const addLineInline = async () => {
     if (!id) return
@@ -940,6 +984,7 @@ export default function RecipeEditor() {
           qty,
           unit: safeUnit(addUnit),
           yield_percent: 100,
+          gross_qty_override: null,
           group_title: null,
         }
         const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -954,6 +999,7 @@ export default function RecipeEditor() {
           qty,
           unit: safeUnit(addUnit),
           yield_percent: 100,
+          gross_qty_override: null,
           group_title: null,
         }
         const { error } = await supabase.from('recipe_lines').insert(payload)
@@ -990,6 +1036,7 @@ export default function RecipeEditor() {
         qty: 0,
         unit: 'g',
         yield_percent: 100,
+        gross_qty_override: null,
         notes: null,
         position: maxSort + 10,
         line_type: 'group',
@@ -1027,8 +1074,9 @@ export default function RecipeEditor() {
             sub_recipe_id: null,
             qty: 0,
             unit: 'g',
-        yield_percent: 100,
-        notes: null,
+            yield_percent: 100,
+            gross_qty_override: null,
+            notes: null,
           })
           .eq('id', lineId)
           .eq('recipe_id', id)
@@ -1052,6 +1100,11 @@ export default function RecipeEditor() {
             sub_recipe_id: null,
             qty,
             unit: safeUnit(row.unit),
+            yield_percent: clampYield(toNum((row as any).yield_percent, 100)),
+            gross_qty_override: (() => {
+              const g = toNum((row as any).gross_qty_override, 0)
+              return g > 0 ? g : null
+            })(),
             notes: row.notes.trim() || null,
             group_title: null,
           })
@@ -1071,6 +1124,11 @@ export default function RecipeEditor() {
             sub_recipe_id,
             qty,
             unit: safeUnit(row.unit),
+            yield_percent: clampYield(toNum((row as any).yield_percent, 100)),
+            gross_qty_override: (() => {
+              const g = toNum((row as any).gross_qty_override, 0)
+              return g > 0 ? g : null
+            })(),
             notes: row.notes.trim() || null,
             group_title: null,
           })
@@ -1954,14 +2012,14 @@ export default function RecipeEditor() {
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <div className="grid grid-cols-[1.4fr_.55fr_.6fr_.55fr_.9fr_1fr_1.2fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-[11px] font-semibold text-neutral-600">
-              <div className="tracking-wide">Item</div>
-              <div className="text-right tracking-wide">Net Qty</div>
-              <div className="text-right tracking-wide">Unit</div>
-              <div className="text-right tracking-wide">Yield %</div>
-              <div className="text-right tracking-wide">Gross Qty</div>
-              <div className="tracking-wide">Note</div>
-              <div className="text-right tracking-wide">Actions</div>
+            <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
+              <div>Item</div>
+              <div className="text-right">Net</div>
+              <div className="text-right">Unit</div>
+              <div className="text-right">Yield %</div>
+              <div className="text-right">Gross</div>
+              <div>Note</div>
+              <div className="text-right">Actions</div>
             </div>
 
             <div className="divide-y divide-neutral-200">
@@ -1989,6 +2047,9 @@ export default function RecipeEditor() {
                                     sub_recipe_id: '',
                                     qty: '0',
                                     unit: 'g',
+                                    yield_percent: '100',
+                                    gross_qty_override: '',
+                                    gross_mode: 'sync',
                                     notes: '',
                                     group_title: '',
                                   }),
@@ -2029,10 +2090,13 @@ export default function RecipeEditor() {
                     line_type: l.line_type,
                     ingredient_id: l.ingredient_id ?? '',
                     sub_recipe_id: l.sub_recipe_id ?? '',
-                    qty: String(l.qty ?? 0),
-                    unit: safeUnit(l.unit ?? 'g'),
-                    notes: l.notes ?? '',
-                    group_title: l.group_title ?? '',
+                    qty: String((l as any).qty ?? 0),
+                    unit: safeUnit((l as any).unit ?? 'g'),
+                    yield_percent: String((l as any).yield_percent ?? 100),
+                    gross_qty_override: String(((l as any).gross_qty_override ?? '') as any),
+                    gross_mode: (l as any).gross_qty_override != null ? 'manual' : 'sync',
+                    notes: ((l as any).notes ?? (l as any).note ?? '') as any,
+                    group_title: (l as any).group_title ?? '',
                   } as EditRow)
 
                 const setRow = (patch: Partial<EditRow>) =>
@@ -2060,20 +2124,15 @@ export default function RecipeEditor() {
 
                 const canExpand = r.line_type === 'subrecipe' && !!r.sub_recipe_id
 
-                // UI-only helpers (no logic change): Net = qty, Gross = Net / (yield%/100)
-                const _yieldPct = Math.max(0, toNum((l as any).yield_percent, 100))
-                const _netQty = toNum(r.qty, 0)
-                const _grossQty = _yieldPct > 0 ? _netQty / (_yieldPct / 100) : _netQty
-
                 return (
                   <div key={l.id} className="px-4 py-3">
-                    <div className="grid grid-cols-[1.4fr_.55fr_.6fr_.55fr_.9fr_1fr_1.2fr] items-center gap-3">
+                    <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3">
                       <div className="pr-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
                             className="gc-input w-[150px]"
                             value={r.line_type}
-                            onChange={(ev) => setRow({ line_type: ev.target.value as any, ingredient_id: '', sub_recipe_id: '' })}
+                            onChange={(ev) => setRow({ line_type: ev.target.value as any, ingredient_id: '', sub_recipe_id: '', yield_percent: '100', gross_qty_override: '', gross_mode: 'sync' })}
                           >
                             <option value="ingredient">Ingredient</option>
                             <option value="subrecipe">Sub-recipe</option>
@@ -2108,36 +2167,109 @@ export default function RecipeEditor() {
                         )}
                       </div>
 
-                      {/* Yield % (read-only) */}
                       <div className="text-right">
-                        <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-1 text-[12px] font-semibold text-neutral-700 tabular-nums">
-                          {Math.round(_yieldPct)}%
-                        </span>
-                      </div>
-
-                      {/* Gross Qty (computed) */}
-                      <div className="text-right">
-                        <div className="flex flex-col items-end">
-                          <div className="text-sm font-extrabold tabular-nums">
-                            {Number.isFinite(_grossQty) ? _grossQty.toFixed(3) : '—'} <span className="text-xs font-semibold text-neutral-500">{safeUnit(r.unit)}</span>
-                          </div>
-                          <div className="mt-0.5 text-[11px] text-neutral-500">Gross = Net ÷ Yield</div>
-                        </div>
-                      </div>
-
-                      <div className="text-right">
-                        <input className="gc-input w-full text-right" type="number" min={0} step="0.01" value={r.qty} onChange={(ev) => setRow({ qty: ev.target.value })} />
+                        <input
+                          className="gc-input w-full text-right tabular-nums"
+                          type="number"
+                          min={0}
+                          step="0.000001"
+                          value={r.qty}
+                          onChange={(ev) => {
+                            const v = ev.target.value
+                            setEdit((p) => {
+                              const cur = p[l.id] || r
+                              const next = { ...cur, qty: v }
+                              if (next.gross_mode === 'sync') return { ...p, [l.id]: syncFromNet(next) }
+                              return { ...p, [l.id]: next }
+                            })
+                          }}
+                        />
                       </div>
 
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-2">
-                          <select className="gc-input w-full text-right" value={safeUnit(r.unit)} onChange={(ev) => setRow({ unit: ev.target.value })}>
+                          <select className="gc-input w-full text-right" value={safeUnit(r.unit)} onChange={(ev) => {
+                            // if unit changes and we're in sync mode, keep gross synced from net
+                            setEdit((p) => {
+                              const cur = p[l.id] || r
+                              const next = { ...cur, unit: ev.target.value }
+                              return { ...p, [l.id]: next }
+                            })
+                          }}>
                             <option value="g">g</option>
                             <option value="kg">kg</option>
                             <option value="ml">ml</option>
                             <option value="l">l</option>
                             <option value="pcs">pcs</option>
                           </select>
+                        </div>
+                      </div>
+
+                      {/* Yield % */}
+                      <div className="text-right">
+                        <input
+                          className="gc-input w-full text-right tabular-nums"
+                          type="number"
+                          min={0.01}
+                          max={100}
+                          step="0.01"
+                          value={r.yield_percent}
+                          onChange={(ev) => {
+                            const v = ev.target.value
+                            setEdit((p) => {
+                              const cur = p[l.id] || r
+                              const next = { ...cur, yield_percent: v }
+                              // Keep sync behavior:
+                              // - If gross is in sync mode: recompute gross from net
+                              // - If gross is manual: keep gross, recompute net
+                              const y = clampYield(toNum(v, 100))
+                              if (next.gross_mode === 'manual') {
+                                const gross = Math.max(0, toNum(next.gross_qty_override, 0))
+                                return { ...p, [l.id]: { ...next, qty: String(netFromGross(gross, y)) } }
+                              }
+                              return { ...p, [l.id]: syncFromNet({ ...next, yield_percent: String(y) }) }
+                            })
+                          }}
+                        />
+                      </div>
+
+                      {/* Gross Qty (manual + sync) */}
+                      <div className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <input
+                            className="gc-input w-full text-right tabular-nums"
+                            type="number"
+                            min={0}
+                            step="0.000001"
+                            value={r.gross_qty_override}
+                            onChange={(ev) => {
+                              const v = ev.target.value
+                              setEdit((p) => {
+                                const cur = p[l.id] || r
+                                const next = { ...cur, gross_qty_override: v, gross_mode: 'manual' as const }
+                                // When user edits gross, net follows (Kitopi Sync)
+                                return { ...p, [l.id]: syncFromGross(next) }
+                              })
+                            }}
+                            placeholder={(() => {
+                              const net = Math.max(0, toNum(r.qty, 0))
+                              const y = clampYield(toNum(r.yield_percent, 100))
+                              return String(grossFromNet(net, y))
+                            })()}
+                          />
+                          <button
+                            className="gc-btn gc-btn-ghost"
+                            type="button"
+                            title="Sync gross from net (auto)"
+                            onClick={() => {
+                              setEdit((p) => {
+                                const cur = p[l.id] || r
+                                return { ...p, [l.id]: syncFromNet({ ...cur, gross_mode: 'sync' }) }
+                              })
+                            }}
+                          >
+                            Sync
+                          </button>
                         </div>
                       </div>
 
