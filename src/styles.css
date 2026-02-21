@@ -620,3 +620,89 @@ button, input, textarea, select{ font-family: inherit; }
 }
 .gc-dark .gc-brand-mark{ background: rgba(255,255,255,.06); }
 .gc-brand-mark img{ width:28px; height:28px; object-fit:contain; }
+/* =========================================================
+   PAPRIKA HOTFIX V14
+   - Fix recipe card action "teal blocks" glitch
+   - Improve toolbar alignment (search vs +New)
+   UI only — no logic changes
+   Paste at END of src/styles.css
+   ========================================================= */
+
+/* ---------- Recipe toolbar alignment ---------- */
+.gc-recipes-toolbar{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+}
+
+/* raise search slightly to align with buttons */
+.gc-recipes-search{
+  position: relative;
+  top: -3px;
+  height: 40px;
+}
+
+/* make toolbar buttons same visual height */
+.gc-recipes-btn,
+.gc-btn,
+.gc-btn-primary{
+  min-height: 40px;
+}
+
+/* ---------- Recipe card actions hotfix ---------- */
+/* Remove any inherited background layers / weird pseudo elements */
+.gc-menu-card .gc-action{
+  position: relative;
+  overflow: hidden;
+  height: 40px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--gc-border);
+  background: #fff;
+  color: var(--gc-text);
+  box-shadow: 0 10px 20px rgba(2,6,23,.06);
+}
+
+.gc-menu-card .gc-action::before,
+.gc-menu-card .gc-action::after{
+  content: none !important;
+  display: none !important;
+}
+
+/* Primary action (Open Editor) */
+.gc-menu-card .gc-action.primary{
+  background: linear-gradient(180deg, rgba(0,128,117,1) 0%, rgba(0,107,97,1) 100%);
+  border-color: rgba(0,107,97,.35);
+  color: #fff;
+  box-shadow: 0 16px 34px rgba(0,107,97,.22);
+}
+
+/* Danger action */
+.gc-menu-card .gc-action.danger{
+  background: #fff;
+  border-color: rgba(239,68,68,.35);
+  color: #b91c1c;
+}
+
+/* Action rows should lay out nicely (no huge blocks) */
+.gc-menu-card .gc-actions-row{
+  display:flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gc-menu-card .gc-actions-row .gc-action{
+  flex: 1 1 140px;
+  min-width: 140px;
+}
+
+@media (max-width: 520px){
+  .gc-menu-card .gc-actions-row{
+    display:grid;
+    grid-template-columns: 1fr;
+  }
+  .gc-menu-card .gc-actions-row .gc-action{
+    min-width: 0;
+    width: 100%;
+  }
+}
