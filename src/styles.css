@@ -2045,3 +2045,94 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
   justify-content: flex-end;
   white-space: nowrap;
 }
+/* =========================================================
+   GHOST ACTIONS + VISUAL FIX — UI ONLY (No logic changes)
+   Fixes:
+   - Prevent note field visual overlap / weird stretching
+   - Ensure consistent sizing for inputs/selects/buttons inside the grid
+   - Ghost actions: low opacity by default, full on hover/focus
+   Append to END of src/styles.css
+   ========================================================= */
+
+.gc-lines-header,
+.gc-line-row {
+  /* Ensure consistent sizing */
+  box-sizing: border-box;
+}
+
+/* Make every control respect the grid cell */
+.gc-line-row input,
+.gc-line-row select,
+.gc-line-row textarea,
+.gc-line-row button {
+  box-sizing: border-box;
+  min-width: 0 !important;
+}
+
+/* Note field must not overflow into Actions */
+.gc-line-row input[type="text"],
+.gc-line-row textarea {
+  width: 100%;
+}
+
+/* If your Note input has a class, this is even safer (keeps it inside its column) */
+.gc-line-row .gc-note,
+.gc-line-row .gc-note input,
+.gc-line-row .gc-note textarea {
+  width: 100%;
+  max-width: 100%;
+}
+
+/* Slightly widen Actions column so buttons never get clipped (e.g., "Del") */
+.gc-lines-header,
+.gc-line-row {
+  grid-template-columns:
+    minmax(240px,1.55fr)  /* Item */
+    minmax(88px,.55fr)    /* Net Qty */
+    minmax(86px,.55fr)    /* Unit */
+    minmax(92px,.55fr)    /* Yield % */
+    minmax(120px,.65fr)   /* Gross Qty */
+    minmax(260px,1.45fr)  /* Note */
+    minmax(260px, auto);  /* Actions */
+}
+
+/* Actions container (keep compact) */
+.gc-actions-hover {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  white-space: nowrap;
+}
+
+/* ---------- Ghost actions (desktop hover) ---------- */
+@media (hover: hover) and (pointer: fine) {
+  /* Default: faint actions */
+  .gc-line-row-hover .gc-actions-hover {
+    opacity: 0.18;
+    transform: translateY(-1px);
+    transition: opacity .14s ease, transform .14s ease;
+  }
+
+  /* Full on hover/focus */
+  .gc-line-row-hover:hover .gc-actions-hover,
+  .gc-line-row-hover:focus-within .gc-actions-hover {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Touch devices: always visible (no hover) */
+@media (hover: none), (pointer: coarse) {
+  .gc-line-row-hover .gc-actions-hover {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Optional: subtle row highlight */
+@media (hover: hover) and (pointer: fine) {
+  .gc-line-row-hover:hover {
+    background: rgba(15, 23, 42, 0.02);
+  }
+}
