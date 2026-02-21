@@ -2136,3 +2136,198 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
     background: rgba(15, 23, 42, 0.02);
   }
 }
+/* =========================================================
+   FINAL GRID RESET — UI ONLY (No logic changes)
+   Purpose:
+   - Fix broken alignment caused by multiple patches overriding each other
+   - Force ONE single grid template for header + rows
+   - Prevent Note overflow and keep Actions visible
+   Append to END of src/styles.css
+   ========================================================= */
+
+/* Force consistent grid for header + rows */
+.gc-lines-header,
+.gc-line-row{
+  display: grid !important;
+  grid-template-columns:
+    minmax(240px,1.55fr)  /* Item */
+    minmax(88px,.55fr)    /* Net Qty */
+    minmax(86px,.55fr)    /* Unit */
+    minmax(92px,.55fr)    /* Yield % */
+    minmax(120px,.65fr)   /* Gross Qty */
+    minmax(320px,1.6fr)   /* Note */
+    minmax(300px, auto)   /* Actions */
+  !important;
+  gap: 12px !important;
+  align-items: center !important;
+  width: 100% !important;
+  box-sizing: border-box;
+}
+
+/* Make controls respect their cells */
+.gc-line-row input,
+.gc-line-row select,
+.gc-line-row textarea,
+.gc-line-row button{
+  min-width: 0 !important;
+  box-sizing: border-box;
+}
+
+/* Note must not push into Actions */
+.gc-line-row input[type="text"],
+.gc-line-row textarea{
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Actions container: never wrap into Note */
+.gc-line-row .gc-actions,
+.gc-line-row .gc-actions-hover{
+  display: flex !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 8px !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+}
+
+/* Ensure buttons never get clipped */
+.gc-line-row .gc-actions button,
+.gc-line-row .gc-actions-hover button{
+  white-space: nowrap !important;
+}
+
+/* Tablet */
+@media (max-width: 1100px){
+  .gc-lines-header,
+  .gc-line-row{
+    grid-template-columns:
+      minmax(220px,1.45fr)
+      minmax(84px,.55fr)
+      minmax(84px,.55fr)
+      minmax(88px,.55fr)
+      minmax(110px,.65fr)
+      minmax(240px,1.25fr)
+      minmax(240px, auto)
+    !important;
+  }
+  .gc-line-row .gc-actions,
+  .gc-line-row .gc-actions-hover{
+    flex-wrap: wrap !important;
+    justify-content: flex-start !important;
+  }
+}
+
+/* Mobile: hide header, stack fields (keeps everything usable) */
+@media (max-width: 900px){
+  .gc-lines-header{ display:none !important; }
+  .gc-line-row{
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .gc-line-row .gc-actions,
+  .gc-line-row .gc-actions-hover{
+    width: 100% !important;
+    justify-content: flex-start !important;
+    flex-wrap: wrap !important;
+  }
+}
+/* =========================================================
+   LEGEND MODE — Recipe Lines (UI ONLY, No logic changes)
+   Requires: FINAL GRID RESET appended before this (recommended)
+   Purpose:
+   - Sticky header with premium blur
+   - Row hover highlight + active row focus ring
+   - "Saved" micro-glow on Save buttons (optional class-based)
+   - Ultra clean spacing, consistent control height
+   Append to END of src/styles.css (after RESET)
+   ========================================================= */
+
+/* Sticky header (inside scroll area) */
+.gc-lines-header{
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: rgba(255,255,255,.92);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  padding: 10px 14px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(71,85,105,.85);
+}
+
+/* Rows */
+.gc-line-row{
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  border-radius: 16px;
+}
+
+/* Gentle hover */
+@media (hover:hover) and (pointer:fine){
+  .gc-line-row:hover{
+    background: rgba(15,23,42,.02);
+  }
+}
+
+/* Focus within row: premium ring */
+.gc-line-row:focus-within{
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.18);
+  border-color: rgba(15, 118, 110, 0.28);
+}
+
+/* Controls: consistent height + softer radii */
+.gc-line-row input,
+.gc-line-row select,
+.gc-line-row textarea,
+.gc-line-row button{
+  height: 38px;
+}
+.gc-line-row input,
+.gc-line-row select,
+.gc-line-row textarea{
+  border-radius: 14px;
+}
+
+/* Note input: slightly larger and calmer */
+.gc-line-row input[type="text"],
+.gc-line-row textarea{
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+/* Mini move buttons */
+.gc-line-row .gc-mini-btn{
+  width: 34px;
+  border-radius: 12px;
+}
+
+/* Ghost actions: subtle by default, full on hover/focus */
+@media (hover:hover) and (pointer:fine){
+  .gc-line-row .gc-actions-hover{
+    opacity: .20;
+    transform: translateY(-1px);
+    transition: opacity .14s ease, transform .14s ease;
+  }
+  .gc-line-row:hover .gc-actions-hover,
+  .gc-line-row:focus-within .gc-actions-hover{
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Touch devices: always visible */
+@media (hover:none), (pointer:coarse){
+  .gc-line-row .gc-actions-hover{
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+/* Optional: make the main Save button feel primary without changing classes */
+.gc-line-row .gc-actions-hover button{
+  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+}
