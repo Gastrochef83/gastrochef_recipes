@@ -1,6 +1,8 @@
 // src/layouts/AppLayout.tsx
+// ✅ UI polish + logout hard-redirect (HashRouter-safe)
+// ✅ No business-logic change to recipes/ingredients/costing
 
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useMemo, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
@@ -13,14 +15,14 @@ export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
 
   const loc = useLocation()
-  const nav = useNavigate()
 
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
   // Use Vite BASE_URL so the brand icon works in all deployments (root, subpath, HashRouter)
-  const brandIcon = `${import.meta.env.BASE_URL}gastrochef-icon-512.png`
-  const brandLogoFallback = `${import.meta.env.BASE_URL}gastrochef-logo.png`
+  const base = (import.meta as any).env?.BASE_URL || '/'
+  const brandIcon = `${base}gastrochef-icon-512.png`
+  const brandLogoFallback = `${base}gastrochef-logo.png`
 
   const title = useMemo(() => {
     const p = (loc.pathname || '').toLowerCase()
@@ -35,37 +37,37 @@ export default function AppLayout() {
   }, [loc.pathname])
 
   /* ======================================================
-     LOG OUT (REAL SIGN OUT) — keeps app logic
+     LOG OUT (REAL SIGN OUT) — robust + HashRouter safe
+     - avoids "bounce back to dashboard" by forcing a reload
      ====================================================== */
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
 
     try {
-      // ✅ end Supabase session
+      // ✅ end Supabase session (server + client)
       await supabase.auth.signOut()
+    } catch {
+      // ignore — we still want to move the user to login
+    }
 
+    try {
       // ✅ reset ONLY local UI state
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
       sessionStorage.clear()
 
-      // default mode
+      // default mode (so UI doesn't keep kitchen state)
       setMode('mgmt')
-
-      // ✅ go to login (HashRouter friendly)
-      nav('/login', { replace: true })
-    } catch {
-      nav('/login', { replace: true })
     } finally {
-      setLoggingOut(false)
+      // ✅ Hard redirect (prevents router state glitches / cached outlet)
+      // HashRouter friendly: BASE_URL + "#/login"
+      window.location.assign(`${base}#/login`)
     }
   }
 
   return (
-    <div
-      className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}
-    >
+    <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
         {/* Sidebar */}
         <aside className="gc-side">
@@ -76,7 +78,6 @@ export default function AppLayout() {
                   src={brandIcon}
                   alt=""
                   onError={(e) => {
-                    // fallback (in case the icon path is blocked/rewritten)
                     ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
                   }}
                 />
@@ -95,25 +96,15 @@ export default function AppLayout() {
               <div className="gc-label">MODE</div>
 
               <div className="gc-seg">
-                <button
-                  className={cx('gc-seg-btn', isKitchen && 'is-active')}
-                  type="button"
-                  onClick={() => setMode('kitchen')}
-                >
+                <button className={cx('gc-seg-btn', isKitchen && 'is-active')} type="button" onClick={() => setMode('kitchen')}>
                   Kitchen
                 </button>
-                <button
-                  className={cx('gc-seg-btn', isMgmt && 'is-active')}
-                  type="button"
-                  onClick={() => setMode('mgmt')}
-                >
+                <button className={cx('gc-seg-btn', isMgmt && 'is-active')} type="button" onClick={() => setMode('mgmt')}>
                   Mgmt
                 </button>
               </div>
 
-              <div className="gc-hint">
-                {isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}
-              </div>
+              <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
             </div>
 
             {/* NAV */}
@@ -135,9 +126,7 @@ export default function AppLayout() {
                 </NavLink>
               </nav>
 
-              <div className="gc-tip">
-                Tip: Kitchen for cooking · Mgmt for costing & pricing.
-              </div>
+              <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
             </div>
           </div>
         </aside>
@@ -156,12 +145,13 @@ export default function AppLayout() {
               />
               <div>
                 <div className="gc-title">{title}</div>
-                <div className="gc-subtitle">Premium UI · GastroChef</div>
+                {/* ✅ Removed "Premium UI …" marketing subtitle */}
+                <div className="gc-subtitle">GastroChef</div>
               </div>
             </div>
 
             <div className="gc-topbar-actions">
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark(v => !v)}>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
                 {dark ? 'Light Mode' : 'Dark Mode'}
               </button>
 
