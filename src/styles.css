@@ -1233,6 +1233,168 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-editor .gc-subpanel {
   border-radius: 18px;
 }
+
+/* =========================================================
+   GastroChef — PERFORMANCE SAFE OVERRIDES (UI only)
+   هدفها منع أي "ثقل" ممكن يسبب بطء/تقطيع (Freeze) على الأجهزة الضعيفة.
+   - تعطيل backdrop-filter إذا الجهاز/المتصفح لا يتحملها
+   - تقليل will-change (يستهلك RAM)
+   ========================================================= */
+
+/* Reduce heavy blur effects on low-end / when user prefers reduced transparency */
+@media (prefers-reduced-transparency: reduce) {
+  .gc-editor-header,
+  .gc-card[style*="position: sticky"],
+  .gc-chip { backdrop-filter: none !important; }
+}
+@supports not ((backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px))) {
+  .gc-editor-header,
+  .gc-card[style*="position: sticky"],
+  .gc-chip { backdrop-filter: none !important; }
+}
+
+/* Avoid permanent will-change (can cause memory pressure) */
+.gc-card,
+.gc-menu-card { will-change: auto !important; }
+
+
+
+/* ===== styles_PATCH_5.css (APPENDED) ===== */
+/* =========================================================
+   GastroChef — FINAL GOD Patch 5 (UI polish only)
+   ✅ Toast / Buttons / Cards micro-polish
+   ✅ No logic changes
+   Put this in: src/styles.css (replace whole file ONLY if you want)
+   OR append at the bottom (safe).
+   ========================================================= */
+
+/* ---------- Toast ---------- */
+.gc-toast {
+  pointer-events: none;
+}
+.gc-toast button {
+  pointer-events: auto;
+}
+
+/* ---------- Buttons ---------- */
+.gc-btn,
+.gc-action {
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+}
+.gc-btn:active,
+.gc-action:active {
+  transform: translateY(1px);
+}
+.gc-btn[disabled],
+.gc-action[disabled] {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+/* Subtle focus ring (Kitopi-like) */
+.gc-btn:focus-visible,
+.gc-action:focus-visible,
+.gc-input:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.22);
+  border-color: rgba(15, 118, 110, 0.35);
+}
+
+/* ---------- Cards ---------- */
+.gc-card,
+.gc-menu-card {
+  will-change: transform;
+}
+.gc-card:hover,
+.gc-menu-card:hover {
+  transform: translateY(-1px);
+}
+
+/* ---------- Inputs ---------- */
+.gc-input::placeholder {
+  color: rgba(100, 116, 139, 0.9);
+}
+
+/* ---------- Badge chips ---------- */
+.gc-chip {
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- Topbar title smoothing ---------- */
+.gc-title {
+  letter-spacing: -0.02em;
+}
+
+/* ---------- Reduce layout shift for images ---------- */
+.gc-menu-hero img {
+  image-rendering: auto;
+}
+
+/* ---------- Optional: nicer scrollbars (Chromium) ---------- */
+@media (pointer: fine) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: rgba(15, 23, 42, 0.28);
+  }
+}
+
+
+/* ===== styles_RECIPEEDITOR_PATCH.css (APPENDED) ===== */
+/* =========================================================
+   GastroChef — RecipeEditor POLISH (UI only)
+   ✅ Sticky header, better spacing, responsive
+   ✅ No logic changes
+   Append to: src/styles.css
+   ========================================================= */
+
+.gc-editor {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Sticky header refinement */
+.gc-editor-header {
+  backdrop-filter: blur(10px);
+}
+
+@media (max-width: 640px) {
+  .gc-editor-header {
+    top: 8px !important;
+  }
+}
+
+/* Make inputs feel more "Kitopi" */
+.gc-editor .gc-input {
+  border-radius: 14px;
+}
+
+/* Button row: less wrap chaos */
+.gc-editor .gc-btn {
+  border-radius: 14px;
+}
+
+/* Prevent long names from stretching layout */
+.gc-editor .gc-menu-title,
+.gc-editor-header .gc-label {
+  max-width: 100%;
+}
+
+/* Sub-recipe panel */
+.gc-editor .gc-subpanel {
+  border-radius: 18px;
+}
+
+
+/* ===== styles_GLOBAL_PATCH.css (APPENDED) ===== */
 /* =========================================================
    GastroChef — NEXT Global UI Patch (UI ONLY)
    ✅ Unifies look across: Dashboard / Ingredients / Recipes / RecipeEditor
@@ -1354,4 +1516,49 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
     border: 2px solid rgba(255, 255, 255, 0.6);
   }
   *::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); }
+}
+
+
+/* ===== styles_NEXT_LEVEL_ULTRA.css (APPENDED) ===== */
+/* =========================================================
+   GastroChef — NEXT LEVEL ULTRA (UI only)
+   ✅ Dashboard + Ingredients + headers polish
+   ✅ No logic changes
+   Append to END of: src/styles.css
+   ========================================================= */
+
+.gc-page-header{
+  backdrop-filter: blur(10px);
+}
+
+.gc-dashboard, .gc-ingredients{
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+@media (max-width: 640px){
+  .gc-page-header{
+    top: 8px !important;
+  }
+}
+
+/* KPI cards: subtle hover & spacing */
+.gc-dashboard .gc-card{
+  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease;
+}
+.gc-dashboard .gc-card:hover{
+  transform: translateY(-1px);
+}
+
+/* Ingredients table area: smoother density */
+.gc-ingredients table{
+  background: #fff;
+}
+
+/* =========================================================
+   FINAL SAFETY: lighter hover shadows (less GPU work)
+   ========================================================= */
+.gc-card:hover,
+.gc-menu-card:hover{
+  box-shadow: 0 14px 36px rgba(2,6,23,.10);
 }
