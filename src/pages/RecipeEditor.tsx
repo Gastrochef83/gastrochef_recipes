@@ -1432,7 +1432,7 @@ export default function RecipeEditor() {
   // UI
   // =========================
   return (
-    <div className="space-y-6">
+    <div className="gc-editor space-y-6">
       {/* Header */}
       <div className="gc-card p-6">
         <div className="flex flex-wrap items-start justify-between gap-6">
@@ -1687,6 +1687,13 @@ export default function RecipeEditor() {
         </div>
       ) : null}
 
+      <div className="gc-section-head">
+        <div>
+          <div className="gc-section-title">OVERVIEW</div>
+          <div className="gc-section-sub">Description, nutrition and pricing — organized into clean panels.</div>
+        </div>
+      </div>
+
       {/* Premium Panels */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Description */}
@@ -1839,6 +1846,13 @@ export default function RecipeEditor() {
         )}
       </div>
 
+      <div className="gc-section-head">
+        <div>
+          <div className="gc-section-title">METHOD</div>
+          <div className="gc-section-sub">Steps and photos — optimized for kitchen readability.</div>
+        </div>
+      </div>
+
       {/* Step Builder */}
       <div className="gc-card p-6">
         <div className="gc-label">STEP BUILDER (WITH PHOTOS)</div>
@@ -1925,6 +1939,13 @@ export default function RecipeEditor() {
             })}
           </div>
         )}
+      </div>
+
+      <div className="gc-section-head">
+        <div>
+          <div className="gc-section-title">INGREDIENTS</div>
+          <div className="gc-section-sub">Add lines fast, then refine details — clean spacing and clear hierarchy.</div>
+        </div>
       </div>
 
       {/* LINES */}

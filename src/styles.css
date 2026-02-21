@@ -2677,3 +2677,39 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
   color: #fecaca !important;
   border-color: rgba(248,113,113,.35) !important;
 }
+
+/* =========================================================
+   STEP 4 — Recipe Editor Breathing (UI only)
+   - Section headers + spacing hierarchy
+   ========================================================= */
+
+.gc-editor .gc-section-head{
+  display:flex;
+  align-items:flex-end;
+  justify-content:space-between;
+  gap:12px;
+  padding: 0 2px;
+}
+
+.gc-editor .gc-section-title{
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(15,23,42,.78);
+}
+
+.gc-editor .gc-section-sub{
+  margin-top: 6px;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(15,23,42,.62);
+}
+
+.gc-dark .gc-editor .gc-section-title{
+  color: rgba(255,255,255,.82);
+}
+
+.gc-dark .gc-editor .gc-section-sub{
+  color: rgba(255,255,255,.62);
+}
