@@ -7,13 +7,15 @@ import Ingredients from './pages/Ingredients'
 import Recipes from './pages/Recipes'
 import RecipeEditor from './pages/RecipeEditor'
 import Settings from './pages/Settings'
-
 import Login from './pages/Login'
 import Register from './pages/Register'
 
 export default function App() {
   return (
     <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+
       <Route path="/" element={<AppLayout />}>
 
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -25,9 +27,6 @@ export default function App() {
         <Route path="settings" element={<Settings />} />
 
       </Route>
-
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
 
       {/* fallback */}
       <Route path="*" element={<Navigate to="/login" replace />} />
