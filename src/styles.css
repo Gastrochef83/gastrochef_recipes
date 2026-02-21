@@ -1,141 +1,41 @@
 /* =========================================================
-   PAPRIKA RECIPE CARDS PRO — Add-on (V11)
-   Paste at END of your styles.css (after PAPRIKA PACK)
+   PAPRIKA RECIPE CARDS PRO — ADDON V2 (Grid + Card polish)
+   Paste at END of your styles.css (after previous addon)
    ========================================================= */
 
-/* Hero area (search + actions) */
-.gc-recipes-hero{
-  position: relative;
-}
-
+/* Force a responsive grid regardless of Tailwind density classes */
 .gc-recipes-grid{
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
+  gap: 16px !important;
   align-items: start;
 }
 
-/* Recipe cards refinements */
-.gc-menu-kicker{
-  font-size: 11px;
-  letter-spacing: .16em;
-  text-transform: uppercase;
-  font-weight: 900;
-  color: var(--gc-muted);
-  opacity: .9;
-  margin-bottom: 6px;
+/* Make cards feel tighter like Paprika */
+.gc-menu-hero{
+  height: 170px;
 }
 
-.gc-menu-desc{
-  margin-top: 6px;
-  color: var(--gc-muted);
-  font-weight: 650;
-  font-size: 13px;
-  line-height: 1.35;
-
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
+.gc-menu-body{
+  padding: 12px 14px 14px 14px;
 }
 
-.gc-menu-metrics{
-  margin-top: 10px;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 12px;
-  font-size: 13px;
-  color: var(--gc-muted);
-}
-
-.gc-menu-metrics b{
-  color: var(--gc-text);
-  font-weight: 950;
-}
-
-/* Chips variants */
-.gc-chip.warn{
-  border-color: rgba(245,158,11,.25);
-  background: rgba(245,158,11,.08);
-  color: rgba(180,83,9,1);
-}
-.gc-chip.good{
-  border-color: rgba(22,163,74,.22);
-  background: rgba(22,163,74,.08);
-  color: rgba(22,101,52,1);
-}
-
-/* Actions = Paprika pill buttons */
-.gc-action{
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.60);
-  color: var(--gc-text);
-  border-radius: 999px;
-  padding: 9px 12px;
-  font-weight: 950;
-  font-size: 12.5px;
-  cursor: pointer;
-  transition: transform .12s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
-  white-space: nowrap;
-}
-
-.gc-dark .gc-action{
-  background: rgba(255,255,255,.06);
-}
-
-.gc-action:hover{
-  transform: translateY(-1px);
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow-soft);
-}
-
-.gc-action.primary{
-  border-color: rgba(217,72,84,.35);
-  background: linear-gradient(180deg, rgba(217,72,84,.18), rgba(217,72,84,.10));
-  box-shadow: 0 14px 28px rgba(217,72,84,.14);
-}
-
-.gc-action:active{
-  transform: translateY(0px);
+.gc-menu-title{
+  font-size: 15px;
 }
 
 .gc-menu-actions{
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-/* Hover reveal quick-actions overlay (optional) */
-.gc-menu-quick{
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
   gap: 8px;
-  opacity: 0;
-  transform: translateY(6px);
-  transition: opacity .18s ease, transform .18s ease;
-  pointer-events: none;
 }
-.gc-menu-card:hover .gc-menu-quick{
-  opacity: 1;
-  transform: translateY(0px);
-  pointer-events: auto;
-}
-.gc-quick-btn{
-  width: 36px;
-  height: 36px;
-  border-radius: 999px;
-  border: 1px solid rgba(255,255,255,.22);
-  background: rgba(2,6,23,.35);
-  color: #fff;
-  font-weight: 950;
-  display: grid;
-  place-items: center;
-  cursor: pointer;
-  backdrop-filter: blur(8px);
-  transition: transform .12s ease, background .18s ease;
-}
-.gc-quick-btn:hover{ transform: translateY(-1px); background: rgba(2,6,23,.45); }
 
-/* Ensure hero overlay feels premium */
-.gc-menu-overlay{
-  background: linear-gradient(180deg, rgba(2,6,23,0) 38%, rgba(2,6,23,.62));
+.gc-action{
+  padding: 8px 11px;
+  font-size: 12px;
+}
+
+/* Secondary actions row (Archive/Delete) look calmer */
+.gc-action.danger{
+  border-color: rgba(220,38,38,.22);
+  background: rgba(220,38,38,.06);
+  color: rgba(153,27,27,1);
 }
