@@ -1432,9 +1432,9 @@ export default function RecipeEditor() {
   // UI
   // =========================
   return (
-    <div className="space-y-6">
+    <div className="gc-editor space-y-6">
       {/* Header */}
-      <div className="gc-card p-6">
+      <div className="gc-card p-6 gc-editor-header" style={{ position: 'sticky', top: 12, zIndex: 30 }}>
         <div className="flex flex-wrap items-start justify-between gap-6">
           <div className="flex items-start gap-4">
             <div className="h-28 w-28 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shrink-0">
@@ -1445,7 +1445,7 @@ export default function RecipeEditor() {
               )}
             </div>
 
-            <div className="min-w-[min(760px,92vw)]">
+            <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div className="gc-label">RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}</div>
                 <div className="flex items-center gap-2 text-xs">
@@ -1522,7 +1522,7 @@ export default function RecipeEditor() {
                   )}
 
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
-                    🍳 Cook Mode
+                    Cook Mode
                   </NavLink>
 
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
@@ -2299,12 +2299,7 @@ export default function RecipeEditor() {
                             type="number"
                             min={0}
                             step="0.000001"
-                            value={(() => {
-                              const net = Math.max(0, toNum(r.qty, 0))
-                              const y = clampYield(toNum(r.yield_percent, 100))
-                              const computed = grossFromNet(net, y)
-                              return r.gross_mode === 'manual' ? r.gross_qty_override : String(computed)
-                            })()}
+                            value={r.gross_qty_override}
                             onChange={(ev) => {
                               const v = ev.target.value
                               setEdit((p) => {
