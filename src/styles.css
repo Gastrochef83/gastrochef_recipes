@@ -1592,6 +1592,60 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
   transform: translateY(-1px);
 }
 
+/* Dashboard polish: KPI icons + empty state */
+.gc-kpi-head{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gc-kpi-ico{
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  border: 1px solid var(--gc-border);
+  background: rgba(15,23,42,.03);
+  font-size: 14px;
+  line-height: 1;
+}
+
+.gc-empty{
+  display: grid;
+  grid-template-columns: 46px 1fr;
+  gap: 14px;
+  align-items: start;
+}
+.gc-empty-ico{
+  width: 46px;
+  height: 46px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--gc-border);
+  background: rgba(15,23,42,.04);
+  font-size: 18px;
+}
+.gc-empty-step{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.gc-empty-dot{
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid var(--gc-border);
+  background: rgba(15,23,42,.03);
+}
+
 /* Ingredients table area: smoother density */
 .gc-ingredients table{
   background: #fff;

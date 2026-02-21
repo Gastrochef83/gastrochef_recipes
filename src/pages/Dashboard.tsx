@@ -293,9 +293,9 @@ export default function Dashboard() {
   return (
     <div className="gc-dashboard space-y-6">
       <div className="gc-card p-6 gc-page-header" style={{ position: 'sticky', top: 12, zIndex: 30 }}>
-        <div className="gc-label">DASHBOARD (UPGRADE PRO)</div>
+        <div className="gc-label">DASHBOARD</div>
         <div className="mt-2 text-2xl font-extrabold">Overview</div>
-        <div className="mt-2 text-sm text-neutral-600">KPIs + diagnostics (yield-based sub-recipes + unit checks).</div>
+        <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
       </div>
 
       {loading && <div className="gc-card p-6">Loading…</div>}
@@ -309,6 +309,34 @@ export default function Dashboard() {
 
       {!loading && !err && (
         <>
+          {activeRecipes.length === 0 && activeIngredientsCount === 0 && (
+            <div className="gc-card p-6">
+              <div className="gc-empty">
+                <div className="gc-empty-ico">✨</div>
+                <div>
+                  <div className="text-lg font-extrabold">You’re one minute away from WOW.</div>
+                  <div className="mt-1 text-sm text-neutral-600">
+                    Add a few ingredients, then create your first recipe. This dashboard will instantly show cost insights.
+                  </div>
+                  <div className="mt-4 grid gap-2 text-sm">
+                    <div className="gc-empty-step">
+                      <span className="gc-empty-dot">1</span>
+                      <span>Add 5–10 ingredients (with pack unit + net cost)</span>
+                    </div>
+                    <div className="gc-empty-step">
+                      <span className="gc-empty-dot">2</span>
+                      <span>Create 1 recipe and add ingredients</span>
+                    </div>
+                    <div className="gc-empty-step">
+                      <span className="gc-empty-dot">3</span>
+                      <span>Return here to see Top Costs + Diagnostics</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {hasOutliers && (
             <div className="gc-card p-6">
               <div className="gc-label">WARNING</div>
@@ -321,43 +349,78 @@ export default function Dashboard() {
 
           <div className="grid gap-4 md:grid-cols-4">
             <div className="gc-card p-5">
-              <div className="gc-label">RECIPES</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  🍳
+                </span>
+                <div className="gc-label">RECIPES</div>
+              </div>
               <div className="mt-2 text-2xl font-extrabold">{activeRecipes.length}</div>
               <div className="mt-1 text-xs text-neutral-500">Active</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-label">SUB-RECIPES</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  🧩
+                </span>
+                <div className="gc-label">SUB-RECIPES</div>
+              </div>
               <div className="mt-2 text-2xl font-extrabold">{subRecipeCount}</div>
               <div className="mt-1 text-xs text-neutral-500">Active</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-label">INGREDIENTS</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  🧂
+                </span>
+                <div className="gc-label">INGREDIENTS</div>
+              </div>
               <div className="mt-2 text-2xl font-extrabold">{activeIngredientsCount}</div>
               <div className="mt-1 text-xs text-neutral-500">Active</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-label">AVG COST / PORTION</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  💵
+                </span>
+                <div className="gc-label">AVG COST / PORTION</div>
+              </div>
               <div className="mt-2 text-2xl font-extrabold">{money(avgCostPerPortion)}</div>
               <div className="mt-1 text-xs text-neutral-500">Across active recipes</div>
             </div>
 
             <div className="gc-card p-5 md:col-span-2">
-              <div className="gc-label">TOTAL ACTIVE COST</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  ∑
+                </span>
+                <div className="gc-label">TOTAL ACTIVE COST</div>
+              </div>
               <div className="mt-2 text-2xl font-extrabold">{money(totalActiveCost)}</div>
               <div className="mt-1 text-xs text-neutral-500">Sum of all active recipe totals</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-label">CHEAPEST RECIPE</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  🟢
+                </span>
+                <div className="gc-label">CHEAPEST RECIPE</div>
+              </div>
               <div className="mt-2 text-lg font-extrabold">{cheapestRecipe?.name ?? '—'}</div>
               <div className="mt-1 text-xs text-neutral-500">{money(cheapestRecipe?.total ?? 0)}</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-label">MOST EXPENSIVE</div>
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  🔴
+                </span>
+                <div className="gc-label">MOST EXPENSIVE</div>
+              </div>
               <div className="mt-2 text-lg font-extrabold">{mostExpensiveRecipe?.name ?? '—'}</div>
               <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
             </div>
