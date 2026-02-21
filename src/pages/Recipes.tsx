@@ -523,15 +523,15 @@ export default function Recipes() {
               </div>
             </div>
 
-            <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-center">
+            <div className="gc-recipes-toolbar">
               <input
-                className="gc-input sm:w-[340px]"
+                className="gc-input gc-recipes-search"
                 placeholder="Search by name or category..."
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
 
-              <button className="gc-btn" type="button" onClick={loadAll} disabled={loading}>
+              <button className="gc-btn gc-btn-ghost gc-recipes-btn" type="button" onClick={loadAll} disabled={loading}>
                 Refresh
               </button>
 
@@ -630,26 +630,25 @@ export default function Recipes() {
                 </div>
 
                 <div className="gc-menu-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
-                  <div className="gc-menu-kicker">Recipe</div>
-
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="gc-menu-title" style={{ marginTop: 0, fontSize: density === 'dense' ? 16 : 18 }}>
-                      {title}
-                    </div>
+                  <div className="gc-menu-head">
+                    <div className="gc-menu-kicker">RECIPE</div>
 
                     {isMgmt && (
-                      <label title="Select for bulk delete" className="text-xs text-neutral-600">
+                      <label title="Select for bulk delete" className="gc-select">
                         <input
                           type="checkbox"
                           checked={!!selected[r.id]}
                           onChange={() => toggleSelect(r.id)}
-                          style={{ transform: 'scale(1.05)' }}
                         />
                       </label>
                     )}
                   </div>
 
-                  <div className="gc-menu-desc" style={density === 'dense' ? { WebkitLineClamp: 1 } as any : undefined}>
+                  <div className="gc-menu-title" title={title}>
+                    {title}
+                  </div>
+
+                  <div className="gc-menu-desc" style={density === 'dense' ? ({ WebkitLineClamp: 1 } as any) : undefined}>
                     {r.description?.trim() ? r.description : 'Add a short menu description…'}
                   </div>
 
@@ -670,26 +669,29 @@ export default function Recipes() {
                   </div>
 
                   <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
-                    <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                      Open Editor
-                    </button>
-
-                    <button type="button" className="gc-action" onClick={() => nav(`/cook?id=${encodeURIComponent(r.id)}`)}>
-                      Cook
-                    </button>
-
-                    <button type="button" className="gc-action" onClick={() => toggleArchive(r)}>
-                      {r.is_archived ? 'Restore' : 'Archive'}
-                    </button>
-
-                    {isMgmt && (
-                      <button type="button" className="gc-action" onClick={() => deleteOneRecipe(r.id)}>
-                        Delete
+                    <div className="gc-actions-row">
+                      <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
+                        Open Editor
                       </button>
-                    )}
-                  </div>
 
-                  {!!c?.warnings?.length && (
+                      <button type="button" className="gc-action" onClick={() => nav(`/cook?id=${encodeURIComponent(r.id)}`)}>
+                        Cook Mode
+                      </button>
+                    </div>
+
+                    <div className="gc-actions-row secondary">
+                      <button type="button" className="gc-action" onClick={() => toggleArchive(r)}>
+                        {r.is_archived ? 'Restore' : 'Archive'}
+                      </button>
+
+                      {isMgmt && (
+                        <button type="button" className="gc-action danger" onClick={() => deleteOneRecipe(r.id)}>
+                          Delete
+                        </button>
+                      )}
+                    </div>
+                  </div>
+{!!c?.warnings?.length && (
                     <div className="mt-3 text-xs text-amber-700">
                       {c.warnings.slice(0, 2).map((w, i) => (
                         <div key={i}>⚠️ {w}</div>
