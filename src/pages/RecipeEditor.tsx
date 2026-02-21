@@ -61,7 +61,6 @@ type EditRow = {
   sub_recipe_id: string
   qty: string
   unit: string
-  yield_percent: string
   notes: string
   group_title: string
 }
@@ -1028,8 +1027,8 @@ export default function RecipeEditor() {
             sub_recipe_id: null,
             qty: 0,
             unit: 'g',
-            yield_percent: 100,
-            notes: null,
+        yield_percent: 100,
+        notes: null,
           })
           .eq('id', lineId)
           .eq('recipe_id', id)
@@ -1053,7 +1052,6 @@ export default function RecipeEditor() {
             sub_recipe_id: null,
             qty,
             unit: safeUnit(row.unit),
-            yield_percent: Math.min(100, Math.max(0.0001, toNum((row as any).yield_percent, 100))),
             notes: row.notes.trim() || null,
             group_title: null,
           })
@@ -1073,7 +1071,6 @@ export default function RecipeEditor() {
             sub_recipe_id,
             qty,
             unit: safeUnit(row.unit),
-            yield_percent: Math.min(100, Math.max(0.0001, toNum((row as any).yield_percent, 100))),
             notes: row.notes.trim() || null,
             group_title: null,
           })
@@ -1957,14 +1954,14 @@ export default function RecipeEditor() {
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <div className="grid grid-cols-[1.5fr_.55fr_.6fr_.65fr_.85fr_1fr_1.2fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
-              <div>Item</div>
-              <div className="text-right">Net Qty</div>
-              <div className="text-right">Unit</div>
-              <div className="text-right">Yield %</div>
-              <div className="text-right">Gross Qty</div>
-              <div>Note</div>
-              <div className="text-right">Actions</div>
+            <div className="grid grid-cols-[1.4fr_.55fr_.6fr_.55fr_.9fr_1fr_1.2fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-[11px] font-semibold text-neutral-600">
+              <div className="tracking-wide">Item</div>
+              <div className="text-right tracking-wide">Net Qty</div>
+              <div className="text-right tracking-wide">Unit</div>
+              <div className="text-right tracking-wide">Yield %</div>
+              <div className="text-right tracking-wide">Gross Qty</div>
+              <div className="tracking-wide">Note</div>
+              <div className="text-right tracking-wide">Actions</div>
             </div>
 
             <div className="divide-y divide-neutral-200">
@@ -1992,7 +1989,6 @@ export default function RecipeEditor() {
                                     sub_recipe_id: '',
                                     qty: '0',
                                     unit: 'g',
-                                    yield_percent: '100',
                                     notes: '',
                                     group_title: '',
                                   }),
@@ -2035,7 +2031,6 @@ export default function RecipeEditor() {
                     sub_recipe_id: l.sub_recipe_id ?? '',
                     qty: String(l.qty ?? 0),
                     unit: safeUnit(l.unit ?? 'g'),
-                    yield_percent: String((l as any).yield_percent ?? 100),
                     notes: l.notes ?? '',
                     group_title: l.group_title ?? '',
                   } as EditRow)
@@ -2065,9 +2060,14 @@ export default function RecipeEditor() {
 
                 const canExpand = r.line_type === 'subrecipe' && !!r.sub_recipe_id
 
+                // UI-only helpers (no logic change): Net = qty, Gross = Net / (yield%/100)
+                const _yieldPct = Math.max(0, toNum((l as any).yield_percent, 100))
+                const _netQty = toNum(r.qty, 0)
+                const _grossQty = _yieldPct > 0 ? _netQty / (_yieldPct / 100) : _netQty
+
                 return (
                   <div key={l.id} className="px-4 py-3">
-                    <div className="grid grid-cols-[1.5fr_.55fr_.6fr_.65fr_.85fr_1fr_1.2fr] items-center gap-3">
+                    <div className="grid grid-cols-[1.4fr_.55fr_.6fr_.55fr_.9fr_1fr_1.2fr] items-center gap-3">
                       <div className="pr-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
@@ -2108,6 +2108,23 @@ export default function RecipeEditor() {
                         )}
                       </div>
 
+                      {/* Yield % (read-only) */}
+                      <div className="text-right">
+                        <span className="inline-flex items-center rounded-full bg-neutral-100 px-2 py-1 text-[12px] font-semibold text-neutral-700 tabular-nums">
+                          {Math.round(_yieldPct)}%
+                        </span>
+                      </div>
+
+                      {/* Gross Qty (computed) */}
+                      <div className="text-right">
+                        <div className="flex flex-col items-end">
+                          <div className="text-sm font-extrabold tabular-nums">
+                            {Number.isFinite(_grossQty) ? _grossQty.toFixed(3) : '—'} <span className="text-xs font-semibold text-neutral-500">{safeUnit(r.unit)}</span>
+                          </div>
+                          <div className="mt-0.5 text-[11px] text-neutral-500">Gross = Net ÷ Yield</div>
+                        </div>
+                      </div>
+
                       <div className="text-right">
                         <input className="gc-input w-full text-right" type="number" min={0} step="0.01" value={r.qty} onChange={(ev) => setRow({ qty: ev.target.value })} />
                       </div>
@@ -2122,31 +2139,6 @@ export default function RecipeEditor() {
                             <option value="pcs">pcs</option>
                           </select>
                         </div>
-                      </div>
-
-                      <div className="text-right">
-                        <input
-                          className="gc-input w-full text-right"
-                          type="number"
-                          min={0.0001}
-                          max={100}
-                          step="0.1"
-                          value={(r as any).yield_percent ?? '100'}
-                          onChange={(ev) => setRow({ yield_percent: ev.target.value } as any)}
-                        />
-                      </div>
-
-                      <div className="text-right">
-                        <div className="text-sm font-extrabold text-neutral-800">
-                          {(() => {
-                            const netQty = Math.max(0, toNum(r.qty, 0))
-                            const y = Math.min(100, Math.max(0.0001, toNum((r as any).yield_percent, 100)))
-                            const grossQty = netQty / (y / 100)
-                            return `${grossQty.toFixed(3)}`
-                          })()}{' '}
-                          <UnitBadge unit={safeUnit(r.unit)} />
-                        </div>
-                        <div className="text-[11px] text-neutral-500">Gross = Net ÷ Yield</div>
                       </div>
 
                       <div>
