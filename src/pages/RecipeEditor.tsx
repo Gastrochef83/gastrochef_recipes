@@ -2074,14 +2074,14 @@ export default function RecipeEditor() {
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
-              <div>Item</div>
-              <div className="text-right">Net</div>
-              <div className="text-right">Unit</div>
-              <div className="text-right">Yield %</div>
-              <div className="text-right">Gross</div>
-              <div>Note</div>
-              <div className="text-right">Actions</div>
+            <div className="grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
+              <div className="whitespace-nowrap">Item</div>
+              <div className="text-right whitespace-nowrap">Net Qty</div>
+              <div className="text-right whitespace-nowrap">Unit</div>
+              <div className="text-right whitespace-nowrap">Yield %</div>
+              <div className="text-right whitespace-nowrap">Gross Qty</div>
+              <div className="whitespace-nowrap">Note</div>
+              <div className="text-right whitespace-nowrap">Actions</div>
             </div>
 
             <div className="divide-y divide-neutral-200">
