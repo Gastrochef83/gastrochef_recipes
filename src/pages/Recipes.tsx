@@ -69,7 +69,6 @@ function fmtMoney(n: number, currency: string) {
     return `${v.toFixed(2)} ${cur}`
   }
 }
-
 function convertQty(qty: number, fromUnit: string, toUnit: string) {
   const f = safeUnit(fromUnit)
   const t = safeUnit(toUnit)
@@ -78,31 +77,37 @@ function convertQty(qty: number, fromUnit: string, toUnit: string) {
   if (f === 'kg' && t === 'g') return { ok: true, value: qty * 1000 }
   if (f === 'ml' && t === 'l') return { ok: true, value: qty / 1000 }
   if (f === 'l' && t === 'ml') return { ok: true, value: qty * 1000 }
-  return { ok: false, value: qty }
+  return { ok: false, value: 0 }
+}
+function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
+  const u = safeUnit(lineUnit)
+  const p = safeUnit(packUnit)
+  let conv = qty
+  if (u === 'g' && p === 'kg') conv = qty / 1000
+  else if (u === 'kg' && p === 'g') conv = qty * 1000
+  else if (u === 'ml' && p === 'l') conv = qty / 1000
+  else if (u === 'l' && p === 'ml') conv = qty * 1000
+  return conv
 }
 
-function convertQtyToPackUnit(qty: number, fromUnit: string, packUnit: string) {
-  const conv = convertQty(qty, fromUnit, packUnit)
-  return conv.ok ? conv.value : qty
-}
-
+/** -------- Cost Cache (10 minutes) -------- */
 type CostPoint = {
   at: number
   totalCost: number
   cpp: number
   fcPct: number | null
-  margin: number | null
+  margin: number
   marginPct: number | null
   warnings: string[]
 }
-
-const COST_TTL_MS = 60_000
+const COST_CACHE_KEY = 'gc_v5_cost_cache_v1'
+const COST_TTL_MS = 10 * 60 * 1000
 
 function loadCostCache(): Record<string, CostPoint> {
   try {
-    const raw = localStorage.getItem('gc_cost_cache_v5')
+    const raw = localStorage.getItem(COST_CACHE_KEY)
     if (!raw) return {}
-    const obj = JSON.parse(raw)
+    const obj = JSON.parse(raw) as Record<string, CostPoint>
     if (!obj || typeof obj !== 'object') return {}
     return obj
   } catch {
@@ -111,7 +116,7 @@ function loadCostCache(): Record<string, CostPoint> {
 }
 function saveCostCache(cache: Record<string, CostPoint>) {
   try {
-    localStorage.setItem('gc_cost_cache_v5', JSON.stringify(cache))
+    localStorage.setItem(COST_CACHE_KEY, JSON.stringify(cache))
   } catch {}
 }
 
@@ -188,10 +193,10 @@ export default function Recipes() {
       if (rErr) throw rErr
       setRecipes((r ?? []) as RecipeRow[])
 
-      const { data: i, error: iErr } = (await supabase
+      const { data: i, error: iErr } = await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active')
-        .eq('kitchen_id', KITCHEN_ID)) as any
+        .eq('kitchen_id', KITCHEN_ID) as any
 
       if (iErr && String(iErr.message || '').toLowerCase().includes('kitchen_id')) {
         const { data: i2, error: i2Err } = await supabase
@@ -497,7 +502,7 @@ export default function Recipes() {
     <div className="space-y-4">
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
-      {/* Premium Header Card (sticky) */}
+      {/* Sticky top header */}
       <div
         className="gc-card"
         style={{
@@ -514,13 +519,7 @@ export default function Recipes() {
             <div>
               <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
               <div className="mt-1 text-sm text-neutral-600">
-                Premium cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
-              </div>
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <span className="gc-pill">{filtered.length} shown</span>
-                <span className="gc-pill">{recipes.length} total</span>
-                {isKitchen && <span className="gc-pill">Kitchen View</span>}
-                {isMgmt && <span className="gc-pill">Mgmt View</span>}
+                V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
               </div>
             </div>
 
@@ -543,10 +542,15 @@ export default function Recipes() {
           </div>
 
           <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex flex-wrap items-center gap-3">
-              <label className="gc-check">
-                <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
-                <span>Show archived</span>
+            <div className="flex items-center gap-3">
+              <label className="text-sm text-neutral-600">
+                <input
+                  type="checkbox"
+                  checked={showArchived}
+                  onChange={(e) => setShowArchived(e.target.checked)}
+                  style={{ marginRight: 8 }}
+                />
+                Show archived
               </label>
 
               <button className="gc-btn gc-btn-ghost" type="button" onClick={toggleDensity}>
@@ -581,17 +585,16 @@ export default function Recipes() {
         </div>
       </div>
 
-      {/* Grid */}
       <div className={gridClass}>
         {loading &&
           Array.from({ length: 10 }).map((_, i) => (
             <div key={i} className="gc-menu-card">
-              <div className="gc-menu-hero skel" />
-              <div className="gc-menu-body">
-                <div className="skel-line w2" />
-                <div className="skel-line w3" />
-                <div className="skel-line w4" />
-                <div className="skel-btn" />
+              <div className="gc-menu-hero" />
+              <div className="p-4">
+                <div className="h-4 w-2/3 rounded bg-neutral-200" />
+                <div className="mt-3 h-3 w-full rounded bg-neutral-100" />
+                <div className="mt-2 h-3 w-5/6 rounded bg-neutral-100" />
+                <div className="mt-4 h-9 w-full rounded bg-neutral-100" />
               </div>
             </div>
           ))}
@@ -615,14 +618,9 @@ export default function Recipes() {
                   {r.photo_url ? (
                     <img src={r.photo_url} alt={title} loading="lazy" />
                   ) : (
-                    <div className="gc-menu-nophoto">
-                      <div className="gc-menu-nophoto-badge">{(title.trim()[0] || 'R').toUpperCase()}</div>
-                      <div className="gc-menu-nophoto-text">No Photo</div>
-                    </div>
+                    <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">No Photo</div>
                   )}
-
                   <div className="gc-menu-overlay" />
-
                   <div className="gc-menu-badges">
                     <span className="gc-chip">{cat}</span>
                     <span className="gc-chip">Portions: {portions}</span>
@@ -632,7 +630,7 @@ export default function Recipes() {
                 </div>
 
                 <div className="gc-menu-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
-                  <div className="gc-menu-kicker">{r.is_subrecipe ? 'Sub-recipe' : 'Recipe'}</div>
+                  <div className="gc-menu-kicker">Recipe</div>
 
                   <div className="flex items-center justify-between gap-2">
                     <div className="gc-menu-title" style={{ marginTop: 0, fontSize: density === 'dense' ? 16 : 18 }}>
@@ -640,42 +638,40 @@ export default function Recipes() {
                     </div>
 
                     {isMgmt && (
-                      <label title="Select for bulk delete" className="gc-select-mini">
+                      <label title="Select for bulk delete" className="text-xs text-neutral-600">
                         <input
                           type="checkbox"
                           checked={!!selected[r.id]}
                           onChange={() => toggleSelect(r.id)}
+                          style={{ transform: 'scale(1.05)' }}
                         />
                       </label>
                     )}
                   </div>
 
-                  <div className="gc-menu-desc" style={density === 'dense' ? ({ WebkitLineClamp: 1 } as any) : undefined}>
+                  <div className="gc-menu-desc" style={density === 'dense' ? { WebkitLineClamp: 1 } as any : undefined}>
                     {r.description?.trim() ? r.description : 'Add a short menu description…'}
                   </div>
 
                   <div className="gc-menu-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
                     <div>
-                      <span>Cost/portion</span>
-                      <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
+                      <span className="text-neutral-600">Cost/portion:</span> <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
                     </div>
                     <div>
-                      <span>FC%</span>
-                      <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
+                      <span className="text-neutral-600">FC%:</span> <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
                     </div>
                     <div>
-                      <span>Margin</span>
-                      <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
+                      <span className="text-neutral-600">Margin:</span> <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
                     </div>
                     <div>
-                      <span>Price</span>
+                      <span className="text-neutral-600">Price:</span>{' '}
                       <b>{r.selling_price == null ? '—' : fmtMoney(toNum(r.selling_price, 0), cur)}</b>
                     </div>
                   </div>
 
                   <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
                     <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                      Open
+                      Open Editor
                     </button>
 
                     <button type="button" className="gc-action" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}&view=cook`)}>
@@ -687,14 +683,14 @@ export default function Recipes() {
                     </button>
 
                     {isMgmt && (
-                      <button type="button" className="gc-action danger" onClick={() => deleteOneRecipe(r.id)}>
+                      <button type="button" className="gc-action" onClick={() => deleteOneRecipe(r.id)}>
                         Delete
                       </button>
                     )}
                   </div>
 
                   {!!c?.warnings?.length && (
-                    <div className="gc-warnbox">
+                    <div className="mt-3 text-xs text-amber-700">
                       {c.warnings.slice(0, 2).map((w, i) => (
                         <div key={i}>⚠️ {w}</div>
                       ))}
