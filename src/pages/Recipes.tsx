@@ -127,6 +127,14 @@ export default function Recipes() {
   const { isKitchen } = useMode()
   const isMgmt = !isKitchen
 
+  const mountedRef = useRef(true)
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
+
   const [toast, setToast] = useState<string | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -177,8 +185,11 @@ export default function Recipes() {
   }, [recipes, q, showArchived])
 
   async function loadAll() {
-    setLoading(true)
-    setErr(null)
+    if (mountedRef.current) {
+      setLoading(true)
+      setErr(null)
+    }
+
     try {
       const selectRecipes =
         'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
@@ -191,12 +202,12 @@ export default function Recipes() {
         .order('name', { ascending: true })
 
       if (rErr) throw rErr
-      setRecipes((r ?? []) as RecipeRow[])
+      if (mountedRef.current) setRecipes((r ?? []) as RecipeRow[])
 
-      const { data: i, error: iErr } = await supabase
+      const { data: i, error: iErr } = (await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active')
-        .eq('kitchen_id', KITCHEN_ID) as any
+        .eq('kitchen_id', KITCHEN_ID)) as any
 
       if (iErr && String(iErr.message || '').toLowerCase().includes('kitchen_id')) {
         const { data: i2, error: i2Err } = await supabase
@@ -204,15 +215,15 @@ export default function Recipes() {
           .select('id,name,pack_unit,net_unit_cost,is_active')
           .order('name', { ascending: true })
         if (i2Err) throw i2Err
-        setIngredients((i2 ?? []) as Ingredient[])
+        if (mountedRef.current) setIngredients((i2 ?? []) as Ingredient[])
       } else {
         if (iErr) throw iErr
-        setIngredients((i ?? []) as Ingredient[])
+        if (mountedRef.current) setIngredients((i ?? []) as Ingredient[])
       }
     } catch (e: any) {
-      setErr(e?.message || 'Failed to load')
+      if (mountedRef.current) setErr(e?.message || 'Failed to load')
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
@@ -220,6 +231,24 @@ export default function Recipes() {
     loadAll()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  function normalizeLine(row: any): Line {
+    // ✅ handles either "note" or "notes" from DB
+    const notes = row?.notes ?? row?.note ?? null
+    const lt = (row?.line_type ?? 'ingredient') as LineType
+    return {
+      id: String(row?.id ?? ''),
+      recipe_id: String(row?.recipe_id ?? ''),
+      ingredient_id: row?.ingredient_id ?? null,
+      sub_recipe_id: row?.sub_recipe_id ?? null,
+      qty: toNum(row?.qty, 0),
+      unit: String(row?.unit ?? 'g'),
+      notes,
+      position: toNum(row?.position, 0),
+      line_type: lt,
+      group_title: row?.group_title ?? null,
+    }
+  }
 
   async function ensureRecipeLinesLoaded(recipeIds: string[]) {
     const ids = Array.from(new Set(recipeIds)).filter(Boolean)
@@ -230,18 +259,25 @@ export default function Recipes() {
     try {
       const { data, error } = await supabase
         .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,position,line_type,group_title')
+        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,notes,position,line_type,group_title')
         .in('recipe_id', need)
         .order('position', { ascending: true })
+
       if (error) throw error
 
       const fetched: Record<string, Line[]> = {}
       for (const rid of need) fetched[rid] = []
+
       for (const row of (data ?? []) as any[]) {
-        if (!fetched[row.recipe_id]) fetched[row.recipe_id] = []
-        fetched[row.recipe_id].push(row as Line)
+        const rid = String(row?.recipe_id ?? '')
+        if (!rid) continue
+        if (!fetched[rid]) fetched[rid] = []
+        fetched[rid].push(normalizeLine(row))
       }
-      setRecipeLinesCache((p) => ({ ...p, ...fetched }))
+
+      if (mountedRef.current) {
+        setRecipeLinesCache((p) => ({ ...p, ...fetched }))
+      }
     } finally {
       need.forEach((id) => loadingLinesRef.current.delete(id))
     }
@@ -371,14 +407,14 @@ export default function Recipes() {
     }
 
     if (changed) {
-      setCostCache(nextCache)
+      if (mountedRef.current) setCostCache(nextCache)
       saveCostCache(nextCache)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [loading, filtered, recipeLinesCache, costMemo])
 
   async function createNewRecipe() {
-    setErr(null)
+    if (mountedRef.current) setErr(null)
     try {
       const payload: Partial<RecipeRow> = {
         kitchen_id: KITCHEN_ID,
@@ -395,10 +431,10 @@ export default function Recipes() {
       if (error) throw error
 
       const id = (data as any)?.id as string
-      setToast('Created. Opening editor…')
+      if (mountedRef.current) setToast('Created. Opening editor…')
       nav(`/recipe?id=${encodeURIComponent(id)}`)
     } catch (e: any) {
-      setErr(e?.message || 'Failed to create recipe')
+      if (mountedRef.current) setErr(e?.message || 'Failed to create recipe')
     }
   }
 
@@ -407,10 +443,12 @@ export default function Recipes() {
       const next = !r.is_archived
       const { error } = await supabase.from('recipes').update({ is_archived: next }).eq('id', r.id)
       if (error) throw error
-      setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_archived: next } : x)))
-      setToast(next ? 'Archived.' : 'Restored.')
+      if (mountedRef.current) {
+        setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_archived: next } : x)))
+        setToast(next ? 'Archived.' : 'Restored.')
+      }
     } catch (e: any) {
-      setErr(e?.message || 'Failed to update recipe')
+      if (mountedRef.current) setErr(e?.message || 'Failed to update recipe')
     }
   }
 
@@ -433,7 +471,7 @@ export default function Recipes() {
     const ok = window.confirm('Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.')
     if (!ok) return
 
-    setErr(null)
+    if (mountedRef.current) setErr(null)
     try {
       const { error: lErr } = await supabase.from('recipe_lines').delete().eq('recipe_id', recipeId)
       if (lErr) throw lErr
@@ -441,20 +479,22 @@ export default function Recipes() {
       const { error: rErr } = await supabase.from('recipes').delete().eq('id', recipeId)
       if (rErr) throw rErr
 
-      setRecipes((prev) => prev.filter((r) => r.id !== recipeId))
-      setRecipeLinesCache((p) => {
-        const next = { ...p }
-        delete next[recipeId]
-        return next
-      })
-      setSelected((p) => {
-        const next = { ...p }
-        delete next[recipeId]
-        return next
-      })
-      setToast('Deleted.')
+      if (mountedRef.current) {
+        setRecipes((prev) => prev.filter((r) => r.id !== recipeId))
+        setRecipeLinesCache((p) => {
+          const next = { ...p }
+          delete next[recipeId]
+          return next
+        })
+        setSelected((p) => {
+          const next = { ...p }
+          delete next[recipeId]
+          return next
+        })
+        setToast('Deleted.')
+      }
     } catch (e: any) {
-      setErr(e?.message || 'Failed to delete recipe')
+      if (mountedRef.current) setErr(e?.message || 'Failed to delete recipe')
     }
   }
 
@@ -466,7 +506,7 @@ export default function Recipes() {
     )
     if (!ok) return
 
-    setErr(null)
+    if (mountedRef.current) setErr(null)
     try {
       const { error: lErr } = await supabase.from('recipe_lines').delete().in('recipe_id', selectedIds)
       if (lErr) throw lErr
@@ -474,16 +514,18 @@ export default function Recipes() {
       const { error: rErr } = await supabase.from('recipes').delete().in('id', selectedIds)
       if (rErr) throw rErr
 
-      setRecipes((prev) => prev.filter((r) => !selectedIds.includes(r.id)))
-      setRecipeLinesCache((p) => {
-        const next = { ...p }
-        selectedIds.forEach((id) => delete next[id])
-        return next
-      })
-      setSelected({})
-      setToast(`Deleted ${selectedIds.length} recipe(s).`)
+      if (mountedRef.current) {
+        setRecipes((prev) => prev.filter((r) => !selectedIds.includes(r.id)))
+        setRecipeLinesCache((p) => {
+          const next = { ...p }
+          selectedIds.forEach((id) => delete next[id])
+          return next
+        })
+        setSelected({})
+        setToast(`Deleted ${selectedIds.length} recipe(s).`)
+      }
     } catch (e: any) {
-      setErr(e?.message || 'Bulk delete failed')
+      if (mountedRef.current) setErr(e?.message || 'Bulk delete failed')
     }
   }
 
@@ -635,11 +677,7 @@ export default function Recipes() {
 
                     {isMgmt && (
                       <label title="Select for bulk delete" className="gc-select">
-                        <input
-                          type="checkbox"
-                          checked={!!selected[r.id]}
-                          onChange={() => toggleSelect(r.id)}
-                        />
+                        <input type="checkbox" checked={!!selected[r.id]} onChange={() => toggleSelect(r.id)} />
                       </label>
                     )}
                   </div>
@@ -691,7 +729,8 @@ export default function Recipes() {
                       )}
                     </div>
                   </div>
-{!!c?.warnings?.length && (
+
+                  {!!c?.warnings?.length && (
                     <div className="mt-3 text-xs text-amber-700">
                       {c.warnings.slice(0, 2).map((w, i) => (
                         <div key={i}>⚠️ {w}</div>
