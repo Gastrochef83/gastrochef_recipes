@@ -1233,3 +1233,125 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-editor .gc-subpanel {
   border-radius: 18px;
 }
+/* =========================================================
+   GastroChef — NEXT Global UI Patch (UI ONLY)
+   ✅ Unifies look across: Dashboard / Ingredients / Recipes / RecipeEditor
+   ✅ Kitopi-like polish: spacing, buttons, inputs, cards, tables
+   ✅ No logic changes
+   👉 Append this to the END of: src/styles.css
+   ========================================================= */
+
+/* ---------- Global rhythm ---------- */
+:root{
+  --gc-radius-2: 14px;
+  --gc-radius-3: 18px;
+  --gc-ring: 0 0 0 3px rgba(15, 118, 110, 0.22);
+  --gc-ring-border: rgba(15, 118, 110, 0.35);
+  --gc-soft-shadow: 0 18px 50px rgba(2,6,23,.08);
+}
+
+/* ---------- App containers ---------- */
+.gc-content{
+  padding-bottom: 28px;
+}
+.gc-card{
+  border-radius: 22px;
+  box-shadow: var(--gc-soft-shadow);
+}
+
+/* ---------- Typography polish ---------- */
+.gc-label{
+  letter-spacing: .12em;
+}
+.gc-title{
+  letter-spacing: -0.02em;
+}
+.gc-subtitle{
+  opacity: .9;
+}
+
+/* ---------- Inputs ---------- */
+.gc-input, .gc-select select, select.gc-input, textarea.gc-input{
+  border-radius: var(--gc-radius-2);
+  transition: box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+.gc-input:hover, .gc-select select:hover, select.gc-input:hover, textarea.gc-input:hover{
+  border-color: rgba(15,23,42,.22);
+}
+.gc-input:focus-visible, .gc-select select:focus-visible, select.gc-input:focus-visible, textarea.gc-input:focus-visible{
+  outline: none;
+  box-shadow: var(--gc-ring);
+  border-color: var(--gc-ring-border);
+}
+.gc-input::placeholder{
+  color: rgba(100,116,139,.9);
+}
+
+/* ---------- Buttons ---------- */
+.gc-btn, .gc-action{
+  border-radius: var(--gc-radius-2);
+  line-height: 1.05;
+  letter-spacing: -0.01em;
+  transition: transform .08s ease, box-shadow .14s ease, background .14s ease, border-color .14s ease;
+}
+.gc-btn:active, .gc-action:active{
+  transform: translateY(1px);
+}
+.gc-btn:focus-visible, .gc-action:focus-visible{
+  outline: none;
+  box-shadow: var(--gc-ring);
+}
+.gc-btn[disabled], .gc-action[disabled]{
+  cursor: not-allowed;
+  opacity: .62;
+}
+
+/* ---------- Menu cards (Recipes) ---------- */
+.gc-menu-card{
+  border-radius: 22px;
+  box-shadow: var(--gc-soft-shadow);
+}
+.gc-menu-hero{
+  border-top-left-radius: 22px;
+  border-top-right-radius: 22px;
+}
+.gc-menu-hero img{
+  display:block;
+  width:100%;
+  height:100%;
+  object-fit: cover;
+}
+.gc-menu-badges .gc-chip{
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- Tables (Ingredients etc.) ---------- */
+table{
+  border-collapse: separate;
+  border-spacing: 0;
+}
+table tr:first-child th:first-child{ border-top-left-radius: 14px; }
+table tr:first-child th:last-child{ border-top-right-radius: 14px; }
+table tr:last-child td:first-child{ border-bottom-left-radius: 14px; }
+table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
+
+/* ---------- Sticky headers: more premium blur ---------- */
+.gc-editor-header,
+.gc-card[style*="position: sticky"]{
+  backdrop-filter: blur(10px);
+}
+
+/* ---------- Toast: never block clicks ---------- */
+.gc-toast{ pointer-events:none; }
+.gc-toast button{ pointer-events:auto; }
+
+/* ---------- Optional: nicer scrollbars (Chromium) ---------- */
+@media (pointer: fine) {
+  *::-webkit-scrollbar { width: 10px; height: 10px; }
+  *::-webkit-scrollbar-thumb {
+    background: rgba(15, 23, 42, 0.18);
+    border-radius: 999px;
+    border: 2px solid rgba(255, 255, 255, 0.6);
+  }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(15, 23, 42, 0.28); }
+}
