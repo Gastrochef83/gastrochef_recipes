@@ -10,12 +10,16 @@ import './index.css'
 import './styles.css'
 
 import { ModeProvider } from './lib/mode'
+import ErrorBoundary from './components/ErrorBoundary'
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <HashRouter>
       <ModeProvider>
-        <App />
+        {/* ✅ Prevents "blank screen" by catching render-time crashes */}
+        <ErrorBoundary>
+          <App />
+        </ErrorBoundary>
       </ModeProvider>
     </HashRouter>
   </React.StrictMode>
