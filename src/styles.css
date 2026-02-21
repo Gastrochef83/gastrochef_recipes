@@ -1,50 +1,73 @@
 /* =========================================================
-   PAPRIKA SEARCH BAR PRO + CARD FIX — V13
+   PAPRIKA CARDS + BRAND + LOGOUT BUTTON — HOTFIX
    Paste at END of src/styles.css
+   (No logic changes — UI only)
    ========================================================= */
 
-/* --- Header toolbar (Paprika-like) --- */
-.gc-recipes-toolbar{
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
+/* ---------- Sidebar brand mark ---------- */
+.gc-brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
 }
 
-@media (max-width: 780px){
-  .gc-recipes-toolbar{
-    grid-template-columns: 1fr;
-  }
-}
-
-.gc-recipes-search{
-  width: 100%;
-  max-width: 520px;
-  padding-left: 14px;
+.gc-brand-mark{
+  width: 44px;
+  height: 44px;
   border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.70);
+  box-shadow: 0 10px 26px rgba(2,6,23,.10);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
 }
 
-.gc-recipes-btn{
-  height: 42px;
-  border-radius: 14px;
+.gc-dark .gc-brand-mark{
+  background: rgba(255,255,255,.06);
 }
 
-.gc-recipes-btn-primary{
-  min-width: 96px;
+.gc-brand-mark img{
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: auto;
 }
 
-/* --- Make sure our grid actually fills the content area --- */
-.gc-recipes-grid{
-  width: 100%;
+/* ---------- Card layout (force Paprika button rows) ---------- */
+.gc-menu-actions{
+  display:grid !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+  justify-content: initial !important;
 }
 
-/* --- Card layout hard-fixes (in case older CSS wasn’t pasted) --- */
-.gc-menu-actions{ display: grid; gap: 10px; }
-.gc-actions-row{ display:flex; gap:10px; flex-wrap:wrap; }
-@media (max-width: 520px){ .gc-actions-row{ display:grid; grid-template-columns:1fr; } }
+.gc-actions-row{
+  display:flex !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
 
-/* Keep buttons from stacking weirdly */
-.gc-action{ display:inline-flex; align-items:center; justify-content:center; }
+.gc-action{
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 140px; /* looks like Paprika */
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
+}
 
+.gc-actions-row.secondary .gc-action{
+  flex: 1 1 120px;
+}
+
+/* If any older CSS forces full-width buttons inside cards, undo it */
+.gc-menu-card button{
+  max-width: 100%;
+}
+
+@media (max-width: 520px){
+  .gc-actions-row{ display:grid !important; grid-template-columns: 1fr !important; }
+  .gc-action{ flex: none !important; width: 100% !important; }
+}
