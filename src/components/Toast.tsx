@@ -1,21 +1,23 @@
 import { useEffect, useMemo } from 'react'
 
 type Props = {
+  /** Optional legacy prop: if provided and false, Toast won't render */
+  open?: boolean
   message: string
   onClose: () => void
   durationMs?: number
 }
 
 /**
- * ✅ Toast PRO (FIX)
+ * ✅ Toast PRO (COMPAT)
+ * - Backward compatible with old usage: <Toast open={...} message={...} />
  * - If message is empty/whitespace, don't render (prevents "black box")
- * - Auto dismiss (default 2600ms)
- * - Escape to close
+ * - Auto dismiss (default 2600ms) + Escape to close
  * - No business-logic change
  */
-export function Toast({ message, onClose, durationMs = 2600 }: Props) {
+export function Toast({ open, message, onClose, durationMs = 2600 }: Props) {
   const text = useMemo(() => (message ?? '').toString(), [message])
-  const visible = text.trim().length > 0
+  const visible = (open ?? true) && text.trim().length > 0
 
   useEffect(() => {
     if (!visible) return
@@ -51,7 +53,7 @@ export function Toast({ message, onClose, durationMs = 2600 }: Props) {
           borderRadius: 14,
           padding: '12px 14px',
           boxShadow: '0 18px 50px rgba(2,6,23,.20)',
-          maxWidth: 420,
+          maxWidth: 520,
           display: 'flex',
           alignItems: 'center',
           gap: 10,
