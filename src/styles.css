@@ -1,86 +1,86 @@
 /* =========================================================
-   GastroChef — KITOPI-LIKE UI THEME (OMEGA)
-   ✅ UI only (no logic change)
-   Keeps your existing class names
-   ========================================================= */
+   GastroChef — KITOPI-LIKE UI THEME (OMEGA)
+   ✅ UI only (no logic change)
+   Keeps your existing class names
+   ========================================================= */
 
 /* ---------- Design Tokens (Kitopi-like: clean + teal) ---------- */
 :root{
-  /* surfaces */
-  --gc-bg: #f7f9fb;
-  --gc-bg-2: #eef3f6;
-  --gc-card: #ffffff;
+  /* surfaces */
+  --gc-bg: #f7f9fb;
+  --gc-bg-2: #eef3f6;
+  --gc-card: #ffffff;
 
-  /* text */
-  --gc-text: #0b1220;
-  --gc-muted: #6b7a90;
+  /* text */
+  --gc-text: #0b1220;
+  --gc-muted: #6b7a90;
 
-  /* borders / shadows (lighter, admin-like) */
-  --gc-border: rgba(15, 23, 42, .10);
-  --gc-border-strong: rgba(15, 23, 42, .14);
-  --gc-shadow: 0 18px 45px rgba(2, 6, 23, .08);
-  --gc-shadow-soft: 0 10px 24px rgba(2, 6, 23, .06);
+  /* borders / shadows (lighter, admin-like) */
+  --gc-border: rgba(15, 23, 42, .10);
+  --gc-border-strong: rgba(15, 23, 42, .14);
+  --gc-shadow: 0 18px 45px rgba(2, 6, 23, .08);
+  --gc-shadow-soft: 0 10px 24px rgba(2, 6, 23, .06);
 
-  /* radius */
-  --gc-radius: 16px;
-  --gc-radius-lg: 18px;
-  --gc-radius-xl: 20px;
+  /* radius */
+  --gc-radius: 16px;
+  --gc-radius-lg: 18px;
+  --gc-radius-xl: 20px;
 
-  /* brand (Kitopi teal) */
-  --gc-ink: #0b1220;
-  --gc-accent: #0f766e;     /* teal 700 */
-  --gc-accent-2: #14b8a6;   /* teal 500 */
-  --gc-success: #16a34a;
-  --gc-warn: #f59e0b;
-  --gc-danger: #ef4444;
+  /* brand (Kitopi teal) */
+  --gc-ink: #0b1220;
+  --gc-accent: #0f766e;     /* teal 700 */
+  --gc-accent-2: #14b8a6;   /* teal 500 */
+  --gc-success: #16a34a;
+  --gc-warn: #f59e0b;
+  --gc-danger: #ef4444;
 
-  /* layout */
-  --gc-side-w: 300px;
-  --gc-max: 1240px;
+  /* layout */
+  --gc-side-w: 300px;
+  --gc-max: 1240px;
 
-  /* typography */
-  --gc-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
-  --gc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+  /* typography */
+  --gc-font: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+  --gc-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
 
-  /* focus */
-  --gc-focus: 0 0 0 4px rgba(20, 184, 166, .18);
+  /* focus */
+  --gc-focus: 0 0 0 4px rgba(20, 184, 166, .18);
 
-  /* ✅ Kitopi-like page background (subtle, clean) */
-  --gc-grad: linear-gradient(180deg, #f7f9fb 0%, #eef3f6 100%);
+  /* ✅ Kitopi-like page background (subtle, clean) */
+  --gc-grad: linear-gradient(180deg, #f7f9fb 0%, #eef3f6 100%);
 }
 
 /* ---------- Dark Mode ---------- */
 .gc-dark{
-  --gc-bg: #0b1220;
-  --gc-bg-2: #0f172a;
-  --gc-card: #0f172a;
-  --gc-text: #e5e7eb;
-  --gc-muted: rgba(229, 231, 235, .70);
+  --gc-bg: #0b1220;
+  --gc-bg-2: #0f172a;
+  --gc-card: #0f172a;
+  --gc-text: #e5e7eb;
+  --gc-muted: rgba(229, 231, 235, .70);
 
-  --gc-border: rgba(148, 163, 184, .14);
-  --gc-border-strong: rgba(148, 163, 184, .22);
+  --gc-border: rgba(148, 163, 184, .14);
+  --gc-border-strong: rgba(148, 163, 184, .22);
 
-  --gc-shadow: 0 22px 70px rgba(0,0,0,.45);
-  --gc-shadow-soft: 0 12px 30px rgba(0,0,0,.30);
+  --gc-shadow: 0 22px 70px rgba(0,0,0,.45);
+  --gc-shadow-soft: 0 12px 30px rgba(0,0,0,.30);
 
-  --gc-accent: #14b8a6;
-  --gc-accent-2: #5eead4;
+  --gc-accent: #14b8a6;
+  --gc-accent-2: #5eead4;
 
-  --gc-focus: 0 0 0 4px rgba(94, 234, 212, .18);
+  --gc-focus: 0 0 0 4px rgba(94, 234, 212, .18);
 
-  --gc-grad: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
+  --gc-grad: linear-gradient(180deg, #0b1220 0%, #0f172a 100%);
 }
 
 /* ---------- Base ---------- */
 *{ box-sizing:border-box; }
 html,body{ height:100%; }
 body{
-  margin:0;
-  font-family: var(--gc-font);
-  color: var(--gc-text);
-  background: var(--gc-grad);
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
+  margin:0;
+  font-family: var(--gc-font);
+  color: var(--gc-text);
+  background: var(--gc-grad);
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
 }
 a{ color: inherit; text-decoration:none; }
 button, input, textarea, select{ font-family: inherit; }
@@ -89,15 +89,15 @@ button, input, textarea, select{ font-family: inherit; }
 /* tasteful scrollbar */
 *::-webkit-scrollbar{ width: 10px; height: 10px; }
 *::-webkit-scrollbar-thumb{
-  background: rgba(15,23,42,.18);
-  border-radius: 99px;
-  border: 2px solid rgba(0,0,0,0);
-  background-clip: padding-box;
+  background: rgba(15,23,42,.18);
+  border-radius: 99px;
+  border: 2px solid rgba(0,0,0,0);
+  background-clip: padding-box;
 }
 .gc-dark *::-webkit-scrollbar-thumb{
-  background: rgba(255,255,255,.16);
-  border: 2px solid rgba(0,0,0,0);
-  background-clip: padding-box;
+  background: rgba(255,255,255,.16);
+  border: 2px solid rgba(0,0,0,0);
+  background-clip: padding-box;
 }
 
 /* Tailwind neutral helpers alignment */
@@ -108,70 +108,70 @@ button, input, textarea, select{ font-family: inherit; }
 /* ---------- Layout (AppLayout) ---------- */
 .gc-root{ min-height: 100vh; background: var(--gc-grad); }
 .gc-shell{
-  display:flex;
-  gap: 16px;
-  padding: 16px;
-  max-width: calc(var(--gc-max) + var(--gc-side-w) + 60px);
-  margin: 0 auto;
+  display:flex;
+  gap: 16px;
+  padding: 16px;
+  max-width: calc(var(--gc-max) + var(--gc-side-w) + 60px);
+  margin: 0 auto;
 }
 .gc-side{
-  width: var(--gc-side-w);
-  flex: 0 0 var(--gc-side-w);
-  position: sticky;
-  top: 16px;
-  align-self: flex-start;
+  width: var(--gc-side-w);
+  flex: 0 0 var(--gc-side-w);
+  position: sticky;
+  top: 16px;
+  align-self: flex-start;
 }
 .gc-main{ flex: 1 1 auto; min-width: 0; }
 .gc-content{ padding: 10px 4px 40px; }
 
 @media (max-width: 1020px){
-  .gc-shell{ flex-direction: column; }
-  .gc-side{ width: 100%; flex-basis: auto; position: relative; top:auto; }
-  :root{ --gc-side-w: 100%; }
+  .gc-shell{ flex-direction: column; }
+  .gc-side{ width: 100%; flex-basis: auto; position: relative; top:auto; }
+  :root{ --gc-side-w: 100%; }
 }
 @media (max-width: 640px){
-  .gc-shell{ padding: 12px; gap: 12px; }
-  .gc-content{ padding: 8px 0 28px; }
+  .gc-shell{ padding: 12px; gap: 12px; }
+  .gc-content{ padding: 8px 0 28px; }
 }
 
 /* ---------- Cards / Blocks ---------- */
 .gc-card{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius-xl);
-  box-shadow: var(--gc-shadow-soft);
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  box-shadow: var(--gc-shadow-soft);
 }
 .gc-card:hover{ border-color: var(--gc-border-strong); }
 
 .gc-label{
-  font-size: 11px;
-  letter-spacing: .14em;
-  font-weight: 800;
-  color: rgba(107,122,144,.92);
-  text-transform: uppercase;
+  font-size: 11px;
+  letter-spacing: .14em;
+  font-weight: 800;
+  color: rgba(107,122,144,.92);
+  text-transform: uppercase;
 }
 .gc-dark .gc-label{ color: rgba(148,163,184,.78); }
 
 /* ---------- Sidebar ---------- */
 .gc-side-card{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: var(--gc-radius-xl);
-  box-shadow: var(--gc-shadow-soft);
-  padding: 16px;
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  box-shadow: var(--gc-shadow-soft);
+  padding: 16px;
 }
 .gc-brand{
-  display:flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 12px;
-  border-bottom: 1px solid var(--gc-border);
+  display:flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--gc-border);
 }
 .gc-brand-name{
-  font-size: 18px;
-  font-weight: 950;
-  letter-spacing: -0.02em;
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
 }
 .gc-brand-sub{ font-size: 12px; color: var(--gc-muted); }
 
@@ -179,289 +179,289 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-side-hint{ font-size: 12.5px; color: var(--gc-muted); }
 
 .gc-side-tip{
-  font-size: 12.5px;
-  color: var(--gc-muted);
-  background: rgba(20,184,166,.08);
-  border: 1px solid rgba(20,184,166,.14);
-  padding: 10px 12px;
-  border-radius: 14px;
+  font-size: 12.5px;
+  color: var(--gc-muted);
+  background: rgba(20,184,166,.08);
+  border: 1px solid rgba(20,184,166,.14);
+  padding: 10px 12px;
+  border-radius: 14px;
 }
 .gc-dark .gc-side-tip{
-  background: rgba(20,184,166,.12);
-  border-color: rgba(94,234,212,.18);
+  background: rgba(20,184,166,.12);
+  border-color: rgba(94,234,212,.18);
 }
 
 /* Segmented (Kitchen/Mgmt) */
 .gc-seg{
-  display:flex;
-  background: rgba(15,23,42,.04);
-  border: 1px solid var(--gc-border);
-  border-radius: 16px;
-  padding: 6px;
-  gap: 6px;
+  display:flex;
+  background: rgba(15,23,42,.04);
+  border: 1px solid var(--gc-border);
+  border-radius: 16px;
+  padding: 6px;
+  gap: 6px;
 }
 .gc-dark .gc-seg{ background: rgba(255,255,255,.04); }
 
 .gc-seg-btn{
-  flex: 1 1 0;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--gc-muted);
-  border-radius: 12px;
-  padding: 10px 10px;
-  font-weight: 900;
-  cursor: pointer;
-  transition: transform .08s ease, background .14s ease, color .14s ease, border-color .14s ease;
+  flex: 1 1 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--gc-muted);
+  border-radius: 12px;
+  padding: 10px 10px;
+  font-weight: 900;
+  cursor: pointer;
+  transition: transform .08s ease, background .14s ease, color .14s ease, border-color .14s ease;
 }
 .gc-seg-btn:hover{ transform: translateY(-1px); }
 .gc-seg-btn.is-active{
-  background: var(--gc-card);
-  color: var(--gc-text);
-  border-color: var(--gc-border-strong);
-  box-shadow: 0 10px 22px rgba(2,6,23,.08);
+  background: var(--gc-card);
+  color: var(--gc-text);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 10px 22px rgba(2,6,23,.08);
 }
 
 /* Nav */
 .gc-nav{ display:flex; flex-direction: column; gap: 10px; }
 .gc-nav-item{
-  padding: 12px 14px;
-  border-radius: 14px;
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.70);
-  color: var(--gc-text);
-  font-weight: 900;
-  transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
+  padding: 12px 14px;
+  border-radius: 14px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.70);
+  color: var(--gc-text);
+  font-weight: 900;
+  transition: transform .10s ease, box-shadow .18s ease, border-color .18s ease, background .18s ease;
 }
 .gc-dark .gc-nav-item{ background: rgba(15,23,42,.55); }
 .gc-nav-item:hover{
-  transform: translateY(-1px);
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow-soft);
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
 }
 .gc-nav-item.is-active{
-  background: linear-gradient(180deg, rgba(15,118,110,1), rgba(15,118,110,.86));
-  color: #fff;
-  border-color: rgba(15,118,110,.35);
+  background: linear-gradient(180deg, rgba(15,118,110,1), rgba(15,118,110,.86));
+  color: #fff;
+  border-color: rgba(15,118,110,.35);
 }
 .gc-dark .gc-nav-item.is-active{
-  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
-  color: #071a18;
-  border-color: rgba(94,234,212,.35);
+  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
+  color: #071a18;
+  border-color: rgba(94,234,212,.35);
 }
 
 /* ---------- Topbar ---------- */
 .gc-topbar{
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 12px 6px 6px;
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 6px 6px;
 }
 .gc-top-title{ font-size: 22px; font-weight: 950; letter-spacing: -0.02em; }
 .gc-top-sub{ font-size: 12.5px; color: var(--gc-muted); margin-top: 2px; }
 
 /* ---------- Inputs / Buttons ---------- */
 .gc-input{
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.92);
-  color: var(--gc-text);
-  border-radius: 14px;
-  padding: 12px 14px;
-  outline: none;
-  box-shadow: 0 10px 22px rgba(2,6,23,.05);
-  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.92);
+  color: var(--gc-text);
+  border-radius: 14px;
+  padding: 12px 14px;
+  outline: none;
+  box-shadow: 0 10px 22px rgba(2,6,23,.05);
+  transition: border-color .16s ease, box-shadow .16s ease, background .16s ease;
 }
 .gc-dark .gc-input{ background: rgba(15,23,42,.72); }
 .gc-input:focus{
-  border-color: rgba(20,184,166,.45);
-  box-shadow: var(--gc-focus);
+  border-color: rgba(20,184,166,.45);
+  box-shadow: var(--gc-focus);
 }
 
 .gc-btn{
-  border: 1px solid var(--gc-border);
-  background: var(--gc-card);
-  color: var(--gc-text);
-  border-radius: 14px;
-  padding: 10px 12px;
-  font-weight: 900;
-  cursor: pointer;
-  box-shadow: 0 12px 24px rgba(2,6,23,.06);
-  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+  border: 1px solid var(--gc-border);
+  background: var(--gc-card);
+  color: var(--gc-text);
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(2,6,23,.06);
+  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
 }
 .gc-btn:hover{
-  transform: translateY(-1px);
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow-soft);
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
 }
 .gc-btn:active{ transform: translateY(0); }
 
 .gc-btn-primary{
-  background: linear-gradient(180deg, var(--gc-accent), rgba(15,118,110,.88));
-  border-color: rgba(15,118,110,.35);
-  color: #fff;
+  background: linear-gradient(180deg, var(--gc-accent), rgba(15,118,110,.88));
+  border-color: rgba(15,118,110,.35);
+  color: #fff;
 }
 .gc-btn-ghost{
-  background: transparent;
-  box-shadow: none;
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ---------- Toast ---------- */
 .gc-toast{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  box-shadow: var(--gc-shadow);
-  border-radius: 16px;
-  padding: 12px 12px;
-  min-width: 220px;
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  box-shadow: var(--gc-shadow);
+  border-radius: 16px;
+  padding: 12px 12px;
+  min-width: 220px;
 }
 .gc-toast-close{
-  border: none;
-  background: transparent;
-  font-size: 18px;
-  font-weight: 900;
-  cursor: pointer;
-  opacity: .7;
+  border: none;
+  background: transparent;
+  font-size: 18px;
+  font-weight: 900;
+  cursor: pointer;
+  opacity: .7;
 }
 .gc-toast-close:hover{ opacity: 1; }
 
 /* =========================================================
-   Recipes Cards (Paprika-like library) — gc-menu-*
-   ========================================================= */
+   Recipes Cards (Paprika-like library) — gc-menu-*
+   ========================================================= */
 .gc-menu-card{
-  background: var(--gc-card);
-  border: 1px solid var(--gc-border);
-  border-radius: 22px;
-  overflow: hidden;
-  box-shadow: var(--gc-shadow-soft);
-  transition: transform 0.12s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+  background: var(--gc-card);
+  border: 1px solid var(--gc-border);
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: var(--gc-shadow-soft);
+  transition: transform 0.12s ease, box-shadow 0.18s ease, border-color 0.18s ease;
 }
 .gc-menu-card:hover{
-  transform: translateY(-2px);
-  border-color: var(--gc-border-strong);
-  box-shadow: var(--gc-shadow);
+  transform: translateY(-2px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow);
 }
 
 .gc-menu-hero{
-  position: relative;
-  height: 190px;
-  background: #e9eef2;
-  overflow: hidden;
+  position: relative;
+  height: 190px;
+  background: #e9eef2;
+  overflow: hidden;
 }
 .gc-menu-hero img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-  transform: scale(1.02);
-  filter: saturate(1.05) contrast(1.02);
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transform: scale(1.02);
+  filter: saturate(1.05) contrast(1.02);
 }
 
 /* ✅ REMOVE DARK OVERLAY ABOVE IMAGE (no logic change) */
 .gc-menu-overlay{
-  display:none;
+  display:none;
 }
 .gc-dark .gc-menu-overlay{ display:none; }
 
 /* ✅ REMOVE TEXT/BADGES ABOVE IMAGE (Portions / Kitchen / etc.) */
 .gc-menu-badges{
-  display:none;
+  display:none;
 }
 
 .gc-chip{
-  background: rgba(255,255,255,.86);
-  border: 1px solid rgba(255,255,255,.55);
-  color: rgba(15,23,42,.92);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 900;
+  background: rgba(255,255,255,.86);
+  border: 1px solid rgba(255,255,255,.55);
+  color: rgba(15,23,42,.92);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
 }
 .gc-chip.warn{
-  background: rgba(245,158,11,.14);
-  border-color: rgba(245,158,11,.22);
-  color: rgba(124,45,18,.95);
+  background: rgba(245,158,11,.14);
+  border-color: rgba(245,158,11,.22);
+  color: rgba(124,45,18,.95);
 }
 
 /* body of recipe card */
 .gc-menu-body{ padding: 14px 14px 16px; }
 .gc-menu-title{
-  font-size: 15px;
-  font-weight: 950;
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.01em;
 }
 .gc-menu-sub{
-  margin-top: 4px;
-  font-size: 12.5px;
-  color: var(--gc-muted);
+  margin-top: 4px;
+  font-size: 12.5px;
+  color: var(--gc-muted);
 }
 
 /* actions row */
 .gc-menu-actions{
-  display:flex;
-  gap: 10px;
-  align-items:center;
-  justify-content: space-between;
-  margin-top: 12px;
+  display:flex;
+  gap: 10px;
+  align-items:center;
+  justify-content: space-between;
+  margin-top: 12px;
 }
 .gc-menu-actions .gc-btn{ padding: 9px 11px; border-radius: 12px; }
 
 /* =========================================================
-   Any extra legacy helpers (keep safe)
-   ========================================================= */
+   Any extra legacy helpers (keep safe)
+   ========================================================= */
 .gc-divider{ height: 1px; background: var(--gc-border); }
 /* =========================================================
-   SIMPLE ACTION BUTTONS (NO ICONS / NO LOGOS) — NO LOGIC CHANGE
-   Targets: .gc-menu-actions row only
-   ========================================================= */
+   SIMPLE ACTION BUTTONS (NO ICONS / NO LOGOS) — NO LOGIC CHANGE
+   Targets: .gc-menu-actions row only
+   ========================================================= */
 
 .gc-menu-actions{
-  display:flex;
-  gap: 8px;
-  align-items:center;
-  justify-content: space-between;
-  margin-top: 12px;
-  padding-top: 12px;
-  border-top: 1px solid var(--gc-border);
+  display:flex;
+  gap: 8px;
+  align-items:center;
+  justify-content: space-between;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--gc-border);
 }
 
 /* style ANY clickable inside actions row */
 .gc-menu-actions a,
 .gc-menu-actions button,
 .gc-menu-actions .gc-btn{
-  appearance: none;
-  -webkit-appearance: none;
+  appearance: none;
+  -webkit-appearance: none;
 
-  flex: 1 1 0;
-  min-width: 0;
+  flex: 1 1 0;
+  min-width: 0;
 
-  height: 34px;
-  padding: 0 10px;
+  height: 34px;
+  padding: 0 10px;
 
-  border-radius: 12px;
-  border: 1px solid var(--gc-border);
+  border-radius: 12px;
+  border: 1px solid var(--gc-border);
 
-  background: rgba(255,255,255,.92);
-  color: var(--gc-text);
+  background: rgba(255,255,255,.92);
+  color: var(--gc-text);
 
-  /* ✅ text fit */
-  font-size: 12px;
-  font-weight: 900;
-  letter-spacing: .01em;
-  line-height: 1;
+  /* ✅ text fit */
+  font-size: 12px;
+  font-weight: 900;
+  letter-spacing: .01em;
+  line-height: 1;
 
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 
-  box-shadow: 0 10px 18px rgba(2,6,23,.06);
-  cursor: pointer;
-  user-select: none;
+  box-shadow: 0 10px 18px rgba(2,6,23,.06);
+  cursor: pointer;
+  user-select: none;
 
-  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
 }
 
 /* ✅ remove any pseudo icons or decorations from previous experiments */
@@ -471,57 +471,57 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-menu-actions button::after,
 .gc-menu-actions .gc-btn::before,
 .gc-menu-actions .gc-btn::after{
-  content: none !important;
-  display: none !important;
+  content: none !important;
+  display: none !important;
 }
 
 /* hover */
 .gc-menu-actions a:hover,
 .gc-menu-actions button:hover,
 .gc-menu-actions .gc-btn:hover{
-  transform: translateY(-1px);
-  border-color: var(--gc-border-strong);
-  box-shadow: 0 16px 28px rgba(2,6,23,.08);
-  background: rgba(255,255,255,1);
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: 0 16px 28px rgba(2,6,23,.08);
+  background: rgba(255,255,255,1);
 }
 
 /* focus */
 .gc-menu-actions a:focus,
 .gc-menu-actions button:focus,
 .gc-menu-actions .gc-btn:focus{
-  outline: none;
-  box-shadow: var(--gc-focus), 0 18px 34px rgba(2,6,23,.10);
+  outline: none;
+  box-shadow: var(--gc-focus), 0 18px 34px rgba(2,6,23,.10);
 }
 
 /* ✅ simple professional colors by order:
-   1 Open Editor (primary)
-   2 Cook (soft teal)
-   3 Archive (neutral)
-   4 Delete (soft red)
+   1 Open Editor (primary)
+   2 Cook (soft teal)
+   3 Archive (neutral)
+   4 Delete (soft red)
 */
 .gc-menu-actions > :nth-child(1){
-  background: linear-gradient(180deg, var(--gc-accent), rgba(15,118,110,.86));
-  border-color: rgba(15,118,110,.30);
-  color: #fff;
-  box-shadow: 0 16px 28px rgba(15,118,110,.14);
+  background: linear-gradient(180deg, var(--gc-accent), rgba(15,118,110,.86));
+  border-color: rgba(15,118,110,.30);
+  color: #fff;
+  box-shadow: 0 16px 28px rgba(15,118,110,.14);
 }
 
 .gc-menu-actions > :nth-child(2){
-  background: rgba(20,184,166,.10);
-  border-color: rgba(20,184,166,.22);
-  color: rgba(15,118,110,.98);
+  background: rgba(20,184,166,.10);
+  border-color: rgba(20,184,166,.22);
+  color: rgba(15,118,110,.98);
 }
 
 .gc-menu-actions > :nth-child(3){
-  background: rgba(15,23,42,.04);
-  border-color: rgba(15,23,42,.12);
-  color: rgba(15,23,42,.92);
+  background: rgba(15,23,42,.04);
+  border-color: rgba(15,23,42,.12);
+  color: rgba(15,23,42,.92);
 }
 
 .gc-menu-actions > :nth-child(4){
-  background: rgba(239,68,68,.10);
-  border-color: rgba(239,68,68,.20);
-  color: rgba(127,29,29,.95);
+  background: rgba(239,68,68,.10);
+  border-color: rgba(239,68,68,.20);
+  color: rgba(127,29,29,.95);
 }
 
 /* dark mode */
@@ -530,110 +530,110 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-dark .gc-menu-actions a,
 .gc-dark .gc-menu-actions button,
 .gc-dark .gc-menu-actions .gc-btn{
-  background: rgba(255,255,255,.06);
-  border-color: rgba(148,163,184,.18);
-  color: rgba(229,231,235,.92);
-  box-shadow: 0 12px 26px rgba(0,0,0,.35);
+  background: rgba(255,255,255,.06);
+  border-color: rgba(148,163,184,.18);
+  color: rgba(229,231,235,.92);
+  box-shadow: 0 12px 26px rgba(0,0,0,.35);
 }
 
 .gc-dark .gc-menu-actions > :nth-child(1){
-  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
-  border-color: rgba(94,234,212,.35);
-  color: #071a18;
-  box-shadow: 0 18px 34px rgba(20,184,166,.16);
+  background: linear-gradient(180deg, rgba(20,184,166,.95), rgba(20,184,166,.78));
+  border-color: rgba(94,234,212,.35);
+  color: #071a18;
+  box-shadow: 0 18px 34px rgba(20,184,166,.16);
 }
 .gc-dark .gc-menu-actions > :nth-child(2){
-  background: rgba(94,234,212,.10);
-  border-color: rgba(94,234,212,.24);
-  color: rgba(94,234,212,.95);
+  background: rgba(94,234,212,.10);
+  border-color: rgba(94,234,212,.24);
+  color: rgba(94,234,212,.95);
 }
 .gc-dark .gc-menu-actions > :nth-child(3){
-  background: rgba(148,163,184,.10);
-  border-color: rgba(148,163,184,.22);
-  color: rgba(229,231,235,.92);
+  background: rgba(148,163,184,.10);
+  border-color: rgba(148,163,184,.22);
+  color: rgba(229,231,235,.92);
 }
 .gc-dark .gc-menu-actions > :nth-child(4){
-  background: rgba(239,68,68,.12);
-  border-color: rgba(239,68,68,.24);
-  color: rgba(254,202,202,.95);
+  background: rgba(239,68,68,.12);
+  border-color: rgba(239,68,68,.24);
+  color: rgba(254,202,202,.95);
 }
 
 /* small screens safety */
 @media (max-width: 420px){
-  .gc-menu-actions{ flex-wrap: wrap; }
-  .gc-menu-actions > *{ flex: 1 1 calc(50% - 6px); }
+  .gc-menu-actions{ flex-wrap: wrap; }
+  .gc-menu-actions > *{ flex: 1 1 calc(50% - 6px); }
 }
 /* =========================================================
-   FIX: Open Editor text not fully visible (NO LOGIC CHANGE)
-   ========================================================= */
+   FIX: Open Editor text not fully visible (NO LOGIC CHANGE)
+   ========================================================= */
 
 /* Give the first action button more width */
 .gc-menu-actions > :nth-child(1){
-  flex: 1.55 1 0 !important;   /* wider than others */
+  flex: 1.55 1 0 !important;   /* wider than others */
 }
 
 /* Keep others normal */
 .gc-menu-actions > :nth-child(2),
 .gc-menu-actions > :nth-child(3),
 .gc-menu-actions > :nth-child(4){
-  flex: 1 1 0 !important;
+  flex: 1 1 0 !important;
 }
 
 /* Ensure Open Editor shows full text */
 .gc-menu-actions > :nth-child(1){
-  white-space: nowrap !important;
-  overflow: visible !important;
-  text-overflow: clip !important;
-  font-size: 11.6px !important;  /* tiny shrink so it fits perfectly */
-  padding: 0 12px !important;     /* slightly more horizontal room */
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
+  font-size: 11.6px !important;  /* tiny shrink so it fits perfectly */
+  padding: 0 12px !important;     /* slightly more horizontal room */
 }
 
 /* =========================================================
-   GastroChef — ABSOLUTE PRO UI PATCH PACK
-   - Cards + Search bar alignment + Premium card action buttons
-   - UI only (no logic change)
-   ========================================================= */
+   GastroChef — ABSOLUTE PRO UI PATCH PACK
+   - Cards + Search bar alignment + Premium card action buttons
+   - UI only (no logic change)
+   ========================================================= */
 
 /* =========================================================
-   PAPRIKA SEARCH BAR PRO + CARD FIX — V13
-   Paste at END of src/styles.css
-   ========================================================= */
+   PAPRIKA SEARCH BAR PRO + CARD FIX — V13
+   Paste at END of src/styles.css
+   ========================================================= */
 
 /* --- Header toolbar (Paprika-like) --- */
 .gc-recipes-toolbar{
-  display: grid;
-  grid-template-columns: 1fr auto auto;
-  gap: 10px;
-  align-items: center;
-  width: 100%;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
 }
 
 @media (max-width: 780px){
-  .gc-recipes-toolbar{
-    grid-template-columns: 1fr;
-  }
+  .gc-recipes-toolbar{
+    grid-template-columns: 1fr;
+  }
 }
 
 .gc-recipes-search{
-  width: 100%;
-  max-width: 520px;
-  padding-left: 14px;
-  border-radius: 14px;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
+  width: 100%;
+  max-width: 520px;
+  padding-left: 14px;
+  border-radius: 14px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.65);
 }
 
 .gc-recipes-btn{
-  height: 42px;
-  border-radius: 14px;
+  height: 42px;
+  border-radius: 14px;
 }
 
 .gc-recipes-btn-primary{
-  min-width: 96px;
+  min-width: 96px;
 }
 
 /* --- Make sure our grid actually fills the content area --- */
 .gc-recipes-grid{
-  width: 100%;
+  width: 100%;
 }
 
 /* --- Card layout hard-fixes (in case older CSS wasn’t pasted) --- */
@@ -645,133 +645,133 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-action{ display:inline-flex; align-items:center; justify-content:center; }
 
 /* =========================================================
-   PAPRIKA CARDS + BRAND + LOGOUT BUTTON — HOTFIX
-   Paste at END of src/styles.css
-   (No logic changes — UI only)
-   ========================================================= */
+   PAPRIKA CARDS + BRAND + LOGOUT BUTTON — HOTFIX
+   Paste at END of src/styles.css
+   (No logic changes — UI only)
+   ========================================================= */
 
 /* ---------- Sidebar brand mark ---------- */
 .gc-brand{
-  display:flex;
-  align-items:center;
-  gap: 12px;
+  display:flex;
+  align-items:center;
+  gap: 12px;
 }
 
 .gc-brand-mark{
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.70);
-  box-shadow: 0 10px 26px rgba(2,6,23,.10);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  overflow:hidden;
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.70);
+  box-shadow: 0 10px 26px rgba(2,6,23,.10);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
 }
 
 .gc-dark .gc-brand-mark{
-  background: rgba(255,255,255,.06);
+  background: rgba(255,255,255,.06);
 }
 
 .gc-brand-mark img{
-  width: 28px;
-  height: 28px;
-  object-fit: contain;
-  image-rendering: auto;
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+  image-rendering: auto;
 }
 
 /* ---------- Card layout (force Paprika button rows) ---------- */
 .gc-menu-actions{
-  display:grid !important;
-  gap: 10px !important;
-  align-items: stretch !important;
-  justify-content: initial !important;
+  display:grid !important;
+  gap: 10px !important;
+  align-items: stretch !important;
+  justify-content: initial !important;
 }
 
 .gc-actions-row{
-  display:flex !important;
-  gap: 10px !important;
-  flex-wrap: wrap !important;
+  display:flex !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
 }
 
 .gc-action{
-  width: auto !important;
-  min-width: 0 !important;
-  flex: 1 1 140px; /* looks like Paprika */
-  display:inline-flex !important;
-  align-items:center !important;
-  justify-content:center !important;
+  width: auto !important;
+  min-width: 0 !important;
+  flex: 1 1 140px; /* looks like Paprika */
+  display:inline-flex !important;
+  align-items:center !important;
+  justify-content:center !important;
 }
 
 .gc-actions-row.secondary .gc-action{
-  flex: 1 1 120px;
+  flex: 1 1 120px;
 }
 
 /* If any older CSS forces full-width buttons inside cards, undo it */
 .gc-menu-card button{
-  max-width: 100%;
+  max-width: 100%;
 }
 
 @media (max-width: 520px){
-  .gc-actions-row{ display:grid !important; grid-template-columns: 1fr !important; }
-  .gc-action{ flex: none !important; width: 100% !important; }
+  .gc-actions-row{ display:grid !important; grid-template-columns: 1fr !important; }
+  .gc-action{ flex: none !important; width: 100% !important; }
 }
 
 /* =========================================================
-   PAPRIKA / KITOPI-LIKE CARD ACTIONS — CLEAN & MINIMAL (V16)
-   - Replaces the "stacked blocks" look with premium buttons
-   - UI only (no logic changes)
-   Paste at END of src/styles.css
-   ========================================================= */
+   PAPRIKA / KITOPI-LIKE CARD ACTIONS — CLEAN & MINIMAL (V16)
+   - Replaces the "stacked blocks" look with premium buttons
+   - UI only (no logic changes)
+   Paste at END of src/styles.css
+   ========================================================= */
 
 :root{
-  /* You can tweak these without breaking anything */
-  --gc-btn-radius: 14px;
-  --gc-btn-h: 44px;
-  --gc-btn-font: 13px;
+  /* You can tweak these without breaking anything */
+  --gc-btn-radius: 14px;
+  --gc-btn-h: 44px;
+  --gc-btn-font: 13px;
 }
 
 /* Actions wrapper: remove teal slab, give breathing room */
 .gc-menu-actions{
-  display: grid !important;
-  gap: 10px !important;
-  padding: 12px !important;
-  background: transparent !important;
-  border-top: 1px solid rgba(15,23,42,.08) !important;
+  display: grid !important;
+  gap: 10px !important;
+  padding: 12px !important;
+  background: transparent !important;
+  border-top: 1px solid rgba(15,23,42,.08) !important;
 }
 
 /* Base button reset (anchors + buttons) */
 .gc-menu-actions .gc-action,
 .gc-menu-actions button,
 .gc-menu-actions a{
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  position: relative !important;
-  width: 100% !important;
+  appearance: none !important;
+  -webkit-appearance: none !important;
+  position: relative !important;
+  width: 100% !important;
 
-  height: var(--gc-btn-h) !important;
-  min-height: var(--gc-btn-h) !important;
-  padding: 0 14px !important;
+  height: var(--gc-btn-h) !important;
+  min-height: var(--gc-btn-h) !important;
+  padding: 0 14px !important;
 
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  gap: 8px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 8px !important;
 
-  border-radius: var(--gc-btn-radius) !important;
-  font-size: var(--gc-btn-font) !important;
-  font-weight: 700 !important;
-  line-height: 1 !important;
-  text-decoration: none !important;
+  border-radius: var(--gc-btn-radius) !important;
+  font-size: var(--gc-btn-font) !important;
+  font-weight: 700 !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
 
-  background-image: none !important;
-  filter: none !important;
-  transform: none !important;
-  overflow: hidden !important;
-  box-shadow: 0 10px 24px rgba(2,6,23,.10) !important;
+  background-image: none !important;
+  filter: none !important;
+  transform: none !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 24px rgba(2,6,23,.10) !important;
 
-  transition: transform .12s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease !important;
+  transition: transform .12s ease, box-shadow .18s ease, background-color .18s ease, border-color .18s ease !important;
 }
 
 /* Kill overlays that create the "double layer" look */
@@ -781,8 +781,8 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-menu-actions button::after,
 .gc-menu-actions a::before,
 .gc-menu-actions a::after{
-  content: none !important;
-  display: none !important;
+  content: none !important;
+  display: none !important;
 }
 
 /* ===== Variants (mapped by common class names) ===== */
@@ -794,9 +794,9 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-menu-actions button.gc-open,
 .gc-menu-actions button.primary,
 .gc-menu-actions a.gc-open{
-  background: var(--gc-accent) !important;
-  color: #fff !important;
-  border: 1px solid rgba(0,0,0,.10) !important;
+  background: var(--gc-accent) !important;
+  color: #fff !important;
+  border: 1px solid rgba(0,0,0,.10) !important;
 }
 
 /* Secondary = Cook Mode + Archive */
@@ -809,9 +809,9 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-menu-actions button.secondary,
 .gc-menu-actions a.gc-cook,
 .gc-menu-actions a.gc-archive{
-  background: #fff !important;
-  color: #0f172a !important;
-  border: 1px solid rgba(15,23,42,.14) !important;
+  background: #fff !important;
+  color: #0f172a !important;
+  border: 1px solid rgba(15,23,42,.14) !important;
 }
 
 /* Danger = Delete */
@@ -821,45 +821,45 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-menu-actions button.gc-delete,
 .gc-menu-actions button.danger,
 .gc-menu-actions a.gc-delete{
-  background: #fff !important;
-  color: #b91c1c !important;
-  border: 1px solid rgba(185,28,28,.35) !important;
-  box-shadow: 0 10px 24px rgba(185,28,28,.10) !important;
+  background: #fff !important;
+  color: #b91c1c !important;
+  border: 1px solid rgba(185,28,28,.35) !important;
+  box-shadow: 0 10px 24px rgba(185,28,28,.10) !important;
 }
 
 /* Hover/active feel */
 .gc-menu-actions .gc-action:hover,
 .gc-menu-actions button:hover,
 .gc-menu-actions a:hover{
-  transform: translateY(-1px) !important;
-  box-shadow: 0 14px 30px rgba(2,6,23,.14) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 14px 30px rgba(2,6,23,.14) !important;
 }
 .gc-menu-actions .gc-action:active,
 .gc-menu-actions button:active,
 .gc-menu-actions a:active{
-  transform: translateY(0) !important;
-  box-shadow: 0 10px 24px rgba(2,6,23,.10) !important;
+  transform: translateY(0) !important;
+  box-shadow: 0 10px 24px rgba(2,6,23,.10) !important;
 }
 
 /* Optional: make "Cook Mode" slightly emphasized but still clean */
 .gc-menu-actions .gc-cook{
-  border-color: rgba(15,23,42,.18) !important;
+  border-color: rgba(15,23,42,.18) !important;
 }
 
 /* Dark mode (if you have .gc-dark on body/root) */
 .gc-dark .gc-menu-actions{
-  border-top-color: rgba(255,255,255,.10) !important;
+  border-top-color: rgba(255,255,255,.10) !important;
 }
 .gc-dark .gc-menu-actions .gc-cook,
 .gc-dark .gc-menu-actions .gc-archive{
-  background: rgba(255,255,255,.06) !important;
-  color: rgba(255,255,255,.92) !important;
-  border-color: rgba(255,255,255,.14) !important;
+  background: rgba(255,255,255,.06) !important;
+  color: rgba(255,255,255,.92) !important;
+  border-color: rgba(255,255,255,.14) !important;
 }
 .gc-dark .gc-menu-actions .gc-delete{
-  background: rgba(255,255,255,.06) !important;
-  color: #fecaca !important;
-  border-color: rgba(248,113,113,.35) !important;
+  background: rgba(255,255,255,.06) !important;
+  color: #fecaca !important;
+  border-color: rgba(248,113,113,.35) !important;
 }
 
 
