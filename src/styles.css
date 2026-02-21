@@ -1,41 +1,86 @@
 /* =========================================================
-   PAPRIKA RECIPE CARDS PRO — ADDON V2 (Grid + Card polish)
-   Paste at END of your styles.css (after previous addon)
+   PAPRIKA CARD LAYOUT V12 — CSS (Add-on)
+   Paste at END of styles.css
    ========================================================= */
 
-/* Force a responsive grid regardless of Tailwind density classes */
-.gc-recipes-grid{
-  display: grid !important;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)) !important;
-  gap: 16px !important;
-  align-items: start;
-}
-
-/* Make cards feel tighter like Paprika */
-.gc-menu-hero{
-  height: 170px;
-}
-
 .gc-menu-body{
-  padding: 12px 14px 14px 14px;
+  display: grid;
+  gap: 10px;
+}
+
+.gc-menu-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.gc-select{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.65);
+}
+
+.gc-dark .gc-select{
+  background: rgba(255,255,255,.06);
+}
+
+.gc-select input{
+  width: 16px;
+  height: 16px;
+  accent-color: var(--gc-accent);
 }
 
 .gc-menu-title{
-  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 15.5px;
+  line-height: 1.2;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.gc-menu-metrics{
+  border-top: 1px dashed var(--gc-border);
+  padding-top: 10px;
+}
+
+.gc-actions-row{
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.gc-actions-row.secondary{
+  opacity: .95;
 }
 
 .gc-menu-actions{
-  gap: 8px;
+  display: grid;
+  gap: 10px;
 }
 
 .gc-action{
-  padding: 8px 11px;
-  font-size: 12px;
+  border-radius: 14px; /* less pill, more Paprika */
 }
 
-/* Secondary actions row (Archive/Delete) look calmer */
 .gc-action.danger{
   border-color: rgba(220,38,38,.22);
   background: rgba(220,38,38,.06);
   color: rgba(153,27,27,1);
+}
+
+@media (max-width: 520px){
+  .gc-actions-row{
+    display: grid;
+    grid-template-columns: 1fr;
+  }
 }
