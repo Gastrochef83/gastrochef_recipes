@@ -1,14 +1,28 @@
 // src/layouts/AppLayout.tsx
 // ✅ UI polish + logout hard-redirect (HashRouter-safe)
+// ✅ Global header: User Avatar + Dropdown (Dark Mode + Logout)
 // ✅ No business-logic change to recipes/ingredients/costing
 
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
+}
+
+function initialsFrom(emailOrName: string) {
+  const s = (emailOrName || '').trim()
+  if (!s) return 'GC'
+  const parts = s
+    .replace(/[@._-]+/g, ' ')
+    .split(' ')
+    .map((x) => x.trim())
+    .filter(Boolean)
+  const a = (parts[0] || 'G')[0]
+  const b = (parts[1] || parts[0] || 'C')[0]
+  return (a + b).toUpperCase()
 }
 
 export default function AppLayout() {
@@ -19,10 +33,33 @@ export default function AppLayout() {
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
+  // ✅ user (UI only)
+  const [userEmail, setUserEmail] = useState<string>('')
+  const menuRef = useRef<HTMLDetailsElement | null>(null)
+
   // Use Vite BASE_URL so the brand icon works in all deployments (root, subpath, HashRouter)
   const base = (import.meta as any).env?.BASE_URL || '/'
   const brandIcon = `${base}gastrochef-icon-512.png`
   const brandLogoFallback = `${base}gastrochef-logo.png`
+
+  useEffect(() => {
+    let alive = true
+
+    async function loadUser() {
+      try {
+        const { data } = await supabase.auth.getUser()
+        const email = data?.user?.email || ''
+        if (alive) setUserEmail(email)
+      } catch {
+        // ignore
+      }
+    }
+
+    loadUser()
+    return () => {
+      alive = false
+    }
+  }, [])
 
   const title = useMemo(() => {
     const p = (loc.pathname || '').toLowerCase()
@@ -65,6 +102,12 @@ export default function AppLayout() {
       window.location.assign(`${base}#/login`)
     }
   }
+
+  function closeMenu() {
+    if (menuRef.current) menuRef.current.open = false
+  }
+
+  const avatarText = initialsFrom(userEmail || 'GastroChef')
 
   return (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
@@ -145,25 +188,49 @@ export default function AppLayout() {
               />
               <div>
                 <div className="gc-title">{title}</div>
-                {/* ✅ Removed "Premium UI …" marketing subtitle */}
                 <div className="gc-subtitle">GastroChef</div>
               </div>
             </div>
 
-            <div className="gc-topbar-actions">
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setDark((v) => !v)}>
-                {dark ? 'Light Mode' : 'Dark Mode'}
-              </button>
+            {/* ✅ User menu (Avatar Dropdown) */}
+            <div className="gc-actions">
+              <details ref={menuRef} className="gc-actions-menu">
+                <summary className="gc-actions-trigger gc-user-trigger" aria-label="User menu">
+                  <span className="gc-avatar" aria-hidden="true">
+                    {avatarText}
+                  </span>
+                  <span className="gc-user-label">
+                    <span className="gc-user-name">Account</span>
+                    <span className="gc-user-email">{userEmail || 'Signed in'}</span>
+                  </span>
+                </summary>
 
-              <button
-                className="gc-btn gc-btn-ghost"
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                aria-disabled={loggingOut}
-              >
-                {loggingOut ? 'Logging out…' : 'Log out'}
-              </button>
+                <div className="gc-actions-panel gc-user-panel" role="menu">
+                  <button
+                    className="gc-actions-item"
+                    type="button"
+                    onClick={() => {
+                      setDark((v) => !v)
+                      closeMenu()
+                    }}
+                  >
+                    {dark ? 'Light Mode' : 'Dark Mode'}
+                  </button>
+
+                  <button
+                    className="gc-actions-item gc-actions-danger"
+                    type="button"
+                    onClick={async () => {
+                      closeMenu()
+                      await handleLogout()
+                    }}
+                    disabled={loggingOut}
+                    aria-disabled={loggingOut}
+                  >
+                    {loggingOut ? 'Logging out…' : 'Log out'}
+                  </button>
+                </div>
+              </details>
             </div>
           </div>
 

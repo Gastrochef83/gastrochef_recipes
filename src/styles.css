@@ -2331,3 +2331,87 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
 .gc-line-row .gc-actions-hover button{
   box-shadow: 0 10px 22px rgba(2,6,23,.06);
 }
+
+
+/* =========================================================
+   App Header — User Avatar Dropdown (Global)
+   UI ONLY (no logic)
+   ========================================================= */
+
+.gc-user-trigger{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  height: 40px;
+  padding: 0 12px !important;
+  border-radius: 16px;
+}
+
+.gc-avatar{
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display:grid;
+  place-items:center;
+  font-weight: 950;
+  font-size: 12px;
+  letter-spacing: .04em;
+  background: rgba(15,23,42,.08);
+  border: 1px solid rgba(15,23,42,.14);
+}
+
+.gc-user-label{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  line-height: 1.05;
+}
+
+.gc-user-name{
+  font-size: 12.5px;
+  font-weight: 950;
+  letter-spacing: -0.01em;
+}
+
+.gc-user-email{
+  font-size: 11.5px;
+  color: var(--gc-muted);
+  margin-top: 2px;
+  max-width: 220px;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gc-user-panel{
+  min-width: 220px;
+}
+
+.gc-dark .gc-avatar{
+  background: rgba(255,255,255,.08);
+  border-color: rgba(255,255,255,.16);
+}
+
+.gc-dark .gc-actions-panel{
+  background: rgba(15,23,42,.94);
+  border-color: rgba(255,255,255,.12);
+}
+
+.gc-dark .gc-actions-item{
+  background: rgba(15,23,42,.72);
+  border-color: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.92);
+}
+
+.gc-dark .gc-actions-item:hover{
+  background: rgba(255,255,255,.06);
+}
+
+.gc-dark .gc-actions-danger{
+  color: #fca5a5;
+  border-color: rgba(248,113,113,.28);
+}
+
+.gc-dark .gc-actions-danger:hover{
+  background: rgba(248,113,113,.10);
+}
