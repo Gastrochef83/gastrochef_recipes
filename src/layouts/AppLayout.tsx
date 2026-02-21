@@ -43,25 +43,31 @@ export default function AppLayout() {
     setLoggingOut(true)
 
     try {
-      // ✅ Real sign-out (Supabase session)
+      // ✅ REAL logout: end Supabase session
       await supabase.auth.signOut()
 
-      // ✅ reset local UI state
+      // ✅ reset ONLY local UI state
       localStorage.removeItem('gc-mode')
       localStorage.removeItem('kitchen_id')
       sessionStorage.clear()
 
-      // default mode
+      // default mode for next login
       setMode('mgmt')
 
-      // ✅ go to login (hard stop)
+      // ✅ go to login (HashRouter friendly)
       nav('/login', { replace: true })
     } catch {
-      // Even if signOut fails, force the user to login
+      // Even if signOut fails, still force navigation to login
       nav('/login', { replace: true })
     } finally {
       setLoggingOut(false)
     }
+  }    finally{
+
+      setLoggingOut(false)
+
+    }
+
   }
 
 
