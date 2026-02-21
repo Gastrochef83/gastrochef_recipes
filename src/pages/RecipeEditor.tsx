@@ -1350,128 +1350,105 @@ export default function RecipeEditor() {
   // =========================
   return (
     <div className="space-y-6">
-      {/* Header (Paprika Premium) */}
+      {/* Header */}
       <div className="gc-card p-6">
-        <div className="flex flex-col gap-5">
-          {/* Top line: photo + title + status */}
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="h-16 w-16 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shrink-0">
-                {recipe.photo_url ? (
-                  <img src={recipe.photo_url} alt={name} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-neutral-500">
-                    GC
-                  </div>
-                )}
-              </div>
+        <div className="flex flex-wrap items-start justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="h-28 w-28 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shrink-0">
+              {recipe.photo_url ? (
+                <img src={recipe.photo_url} alt={name} className="h-full w-full object-cover" />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
+              )}
+            </div>
 
-              <div className="min-w-[220px]">
-                <div className="text-[11px] font-extrabold tracking-[0.22em] text-slate-500">
-                  RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}
-                </div>
-                <div className="mt-1 text-2xl font-extrabold tracking-tight text-slate-900">
-                  {name?.trim() ? name : 'Untitled Recipe'}
-                </div>
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
-                    {category?.trim() ? category : 'Uncategorized'}
-                  </span>
-                  <span className="inline-flex items-center rounded-full border border-slate-200 bg-white px-2.5 py-1 text-xs font-semibold text-slate-700">
-                    Portions: {Number(portions || 0) || 1}
+            <div className="min-w-[min(760px,92vw)]">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="gc-label">RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}</div>
+                <div className="flex items-center gap-2 text-xs">
+                  <span
+                    className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${
+                      metaStatus === 'dirty'
+                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
+                        : metaStatus === 'saving'
+                        ? 'bg-blue-50 text-blue-800 border border-blue-200'
+                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                    }`}
+                  >
+                    {metaBadge}
                   </span>
                 </div>
               </div>
-            </div>
 
-            <div className="flex items-center gap-2 text-xs">
-              <span
-                className={`inline-flex items-center rounded-full px-2.5 py-1 font-extrabold ${
-                  metaStatus === 'dirty'
-                    ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                    : metaStatus === 'saving'
-                    ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                    : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                }`}
-              >
-                {metaBadge}
-              </span>
-            </div>
-          </div>
+              <div className="mt-3 grid gap-3 md:grid-cols-2">
+                <div>
+                  <div className="gc-label">NAME</div>
+                  <input className="gc-input mt-2 w-full" value={name} onChange={(e) => setName(e.target.value)} />
+                </div>
 
-          {/* Editable fields */}
-          <div className="grid gap-3 md:grid-cols-3">
-            <div>
-              <div className="gc-label">NAME</div>
-              <input className="gc-input mt-2 w-full" value={name} onChange={(e) => setName(e.target.value)} />
-            </div>
+                <div>
+                  <div className="gc-label">CATEGORY</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
+                    placeholder="Veg / Chicken / Dessert..."
+                  />
+                </div>
 
-            <div>
-              <div className="gc-label">CATEGORY</div>
-              <input
-                className="gc-input mt-2 w-full"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-                placeholder="Veg / Chicken / Dessert..."
-              />
-            </div>
+                <div>
+                  <div className="gc-label">PORTIONS</div>
+                  <input
+                    className="gc-input mt-2 w-full"
+                    type="number"
+                    min={1}
+                    step="1"
+                    value={portions}
+                    onChange={(e) => setPortions(e.target.value)}
+                  />
+                </div>
 
-            <div>
-              <div className="gc-label">PORTIONS</div>
-              <input
-                className="gc-input mt-2 w-full"
-                type="number"
-                min={1}
-                step="1"
-                value={portions}
-                onChange={(e) => setPortions(e.target.value)}
-              />
-            </div>
-          </div>
+                <div className="flex items-end gap-2 flex-wrap">
+                  <label className="gc-btn gc-btn-ghost cursor-pointer">
+                    {uploading ? 'Uploading…' : 'Upload Photo'}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const ff = e.target.files?.[0]
+                        if (ff) uploadPhoto(ff)
+                        e.currentTarget.value = ''
+                      }}
+                      disabled={uploading}
+                    />
+                  </label>
 
-          {/* Actions (keep all features) */}
-          <div className="flex flex-wrap items-center gap-2">
-            <label className="gc-btn gc-btn-ghost cursor-pointer">
-              {uploading ? 'Uploading…' : 'Upload Photo'}
-              <input
-                type="file"
-                accept="image/*"
-                className="hidden"
-                onChange={(e) => {
-                  const ff = e.target.files?.[0]
-                  if (ff) uploadPhoto(ff)
-                  e.currentTarget.value = ''
-                }}
-                disabled={uploading}
-              />
-            </label>
+                  <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
+                    {savingMeta ? 'Saving…' : 'Save'}
+                  </button>
 
-            <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
-              {savingMeta ? 'Saving…' : 'Save'}
-            </button>
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={printNow}>
+                    Print Card
+                  </button>
 
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={printNow}>
-              Print Card
-            </button>
+                  {isMgmt && (
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen((v) => !v)}>
+                      Cost History
+                    </button>
+                  )}
 
-            {isMgmt && (
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen((v) => !v)}>
-                Cost History
-              </button>
-            )}
+                  <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
+                    🍳 Cook Mode
+                  </NavLink>
 
-            <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
-              🍳 Cook Mode
-            </NavLink>
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
+                    ← Back
+                  </button>
+                </div>
+              </div>
 
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
-              ← Back
-            </button>
-          </div>
-        </div>
-      </div>
-
-{/* Sub-Recipe Settings (Mgmt only) */}
+              {/* Sub-Recipe Settings (Mgmt only) */}
               {isMgmt && (
                 <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="flex flex-wrap items-center justify-between gap-3">
