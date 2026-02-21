@@ -71,3 +71,80 @@
   .gc-actions-row{ display:grid !important; grid-template-columns: 1fr !important; }
   .gc-action{ flex: none !important; width: 100% !important; }
 }
+/* =========================================================
+   PAPRIKA CARD MINIMAL — HIDE METRICS + FIX ACTION ROWS
+   Paste at END of src/styles.css
+   (UI only — no logic changes)
+   ========================================================= */
+
+/* Hide Cost/portion, FC%, Margin, Price block in recipe cards */
+.gc-menu-metrics{
+  display: none !important;
+}
+
+/* Ensure actions never get "squeezed" into weird stacks */
+.gc-menu-actions{
+  display: grid !important;
+  gap: 10px !important;
+}
+
+.gc-actions-row{
+  display: flex !important;
+  gap: 10px !important;
+  flex-wrap: wrap !important;
+}
+
+/* Buttons share row space (Paprika-like) */
+.gc-action{
+  flex: 1 1 140px !important;
+  min-width: 0 !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+}
+
+/* Secondary row slightly smaller */
+.gc-actions-row.secondary .gc-action{
+  flex: 1 1 120px !important;
+}
+
+@media (max-width: 520px){
+  .gc-actions-row{
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+  }
+  .gc-action{
+    width: 100% !important;
+  }
+}
+
+/* Sidebar brand mark (if missing styles) */
+.gc-brand{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+}
+
+.gc-brand-mark{
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.70);
+  box-shadow: 0 10px 26px rgba(2,6,23,.10);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  overflow:hidden;
+}
+
+.gc-dark .gc-brand-mark{
+  background: rgba(255,255,255,.06);
+}
+
+.gc-brand-mark img{
+  width: 28px;
+  height: 28px;
+  object-fit: contain;
+}
+
