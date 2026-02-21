@@ -173,6 +173,7 @@ button, input, textarea, select{ font-family: inherit; }
   font-weight: 950;
   letter-spacing: -0.02em;
 }
+.gc-brand-accent{ color: var(--gc-accent); }
 .gc-brand-sub{ font-size: 12px; color: var(--gc-muted); }
 
 .gc-side-block{ margin-top: 14px; }
