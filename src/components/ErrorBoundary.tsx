@@ -1,5 +1,4 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
 
 type Props = {
   children: React.ReactNode
@@ -7,57 +6,108 @@ type Props = {
 
 type State = {
   hasError: boolean
-  message: string
-  stack?: string
+  error?: Error
 }
 
 export default class ErrorBoundary extends React.Component<Props, State> {
-  state: State = { hasError: false, message: '' }
 
-  static getDerivedStateFromError(err: any) {
-    return {
-      hasError: true,
-      message: err?.message || String(err) || 'Unknown error',
-    }
+  constructor(props: Props) {
+    super(props)
+    this.state = { hasError: false }
   }
 
-  componentDidCatch(error: any, info: any) {
-    // Log for debugging
-    // eslint-disable-next-line no-console
-    console.error('UI crashed:', error, info)
-    this.setState({ stack: info?.componentStack })
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error }
   }
 
-  reset = () => this.setState({ hasError: false, message: '', stack: undefined })
+  componentDidCatch(error: Error, info: React.ErrorInfo) {
+    console.error('🔥 GastroChef Render Error:', error)
+    console.error(info)
+  }
+
+  reload() {
+    window.location.reload()
+  }
 
   render() {
-    if (!this.state.hasError) return this.props.children
 
-    return (
-      <div className="gc-card p-6 space-y-3">
-        <div className="gc-label">UI CRASHED</div>
-        <div className="text-sm text-red-600 font-semibold">{this.state.message}</div>
+    if (this.state.hasError) {
 
-        <div className="text-xs text-neutral-500">
-          افتح Console في المتصفح (F12) وسترى الخطأ كاملًا تحت: <span className="font-mono">UI crashed</span>
-        </div>
-
-        <div className="flex flex-wrap gap-2 pt-2">
-          <button className="gc-btn gc-btn-primary" onClick={this.reset} type="button">
-            Try Again
-          </button>
-          <NavLink className="gc-btn gc-btn-ghost" to="/recipes">
-            Back to Recipes
-          </NavLink>
-          <button
-            className="gc-btn gc-btn-ghost"
-            type="button"
-            onClick={() => window.location.reload()}
+      return (
+        <div
+          style={{
+            minHeight: '100vh',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            background: '#f6f8fb',
+            fontFamily:
+              '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto'
+          }}
+        >
+          <div
+            style={{
+              background: '#fff',
+              padding: 30,
+              borderRadius: 18,
+              boxShadow:
+                '0 18px 50px rgba(2,6,23,.12)',
+              maxWidth: 520,
+              textAlign: 'center'
+            }}
           >
-            Reload
-          </button>
+            <h2
+              style={{
+                marginBottom: 10
+              }}
+            >
+              GastroChef encountered an error
+            </h2>
+
+            <p
+              style={{
+                color: '#64748b',
+                marginBottom: 18
+              }}
+            >
+              Something went wrong during rendering.
+            </p>
+
+            <button
+              onClick={() => this.reload()}
+              style={{
+                background: '#10b981',
+                color: '#fff',
+                border: 'none',
+                padding: '10px 18px',
+                borderRadius: 10,
+                cursor: 'pointer'
+              }}
+            >
+              Reload Application
+            </button>
+
+            {this.state.error && (
+
+              <pre
+                style={{
+                  marginTop: 20,
+                  textAlign: 'left',
+                  fontSize: 12,
+                  color: '#ef4444',
+                  whiteSpace: 'pre-wrap'
+                }}
+              >
+                {this.state.error.message}
+              </pre>
+
+            )}
+
+          </div>
         </div>
-      </div>
-    )
+      )
+    }
+
+    return this.props.children
   }
 }
