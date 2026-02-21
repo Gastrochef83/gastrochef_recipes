@@ -1010,33 +1010,18 @@ export default function RecipeEditor() {
           gross_qty_override: grossOverride,
           group_title: null,
         }
-        const { data: inserted, error } = await supabase
-          .from('recipe_lines')
-          .insert(payload as any)
-          .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title')
-          .single()
+        const { data, error } = await supabase.from('recipe_lines').insert(payload).select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title').single()
         if (error) throw error
-        if (inserted) {
-          // Optimistic: show Gross immediately even before full reload
-          setLines((prev) => [...prev, inserted as any])
-          setEdit((prev) => {
-            const l: any = inserted
-            const nextRow: any = {
-              line_type: (l.line_type || 'ingredient'),
-              ingredient_id: l.ingredient_id || '',
-              sub_recipe_id: l.sub_recipe_id || '',
-              qty: String(l.qty ?? ''),
-              unit: (l.unit || 'g'),
-              yield_percent: String(l.yield_percent ?? '100'),
-              gross_qty_override: String((l.gross_qty_override ?? '') as any),
-              gross_mode: l.gross_qty_override != null ? 'manual' : 'sync',
-              notes: String((l.notes ?? l.note ?? '') as any),
-              group_title: String((l.group_title ?? '') as any),
-            }
-            return { ...prev, [l.id]: nextRow }
+        if (data) {
+          // optimistic append so Gross/Net show instantly
+          setLines((prev) => {
+            const next = [...prev, data as any]
+            next.sort((a: any, b: any) => (Number(a.position) || 0) - (Number(b.position) || 0))
+            return next as any
           })
+          setEdit((p) => ({ ...p, [data.id]: toEditRow(data as any) }))
         }
-
+        if (error) throw error
       } else if (addType === 'subrecipe') {
         if (!addSubRecipeId) throw new Error('Pick a sub-recipe')
         const payload = {
@@ -1050,33 +1035,18 @@ export default function RecipeEditor() {
           gross_qty_override: grossOverride,
           group_title: null,
         }
-        const { data: inserted, error } = await supabase
-          .from('recipe_lines')
-          .insert(payload as any)
-          .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title')
-          .single()
+        const { data, error } = await supabase.from('recipe_lines').insert(payload).select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title').single()
         if (error) throw error
-        if (inserted) {
-          // Optimistic: show Gross immediately even before full reload
-          setLines((prev) => [...prev, inserted as any])
-          setEdit((prev) => {
-            const l: any = inserted
-            const nextRow: any = {
-              line_type: (l.line_type || 'ingredient'),
-              ingredient_id: l.ingredient_id || '',
-              sub_recipe_id: l.sub_recipe_id || '',
-              qty: String(l.qty ?? ''),
-              unit: (l.unit || 'g'),
-              yield_percent: String(l.yield_percent ?? '100'),
-              gross_qty_override: String((l.gross_qty_override ?? '') as any),
-              gross_mode: l.gross_qty_override != null ? 'manual' : 'sync',
-              notes: String((l.notes ?? l.note ?? '') as any),
-              group_title: String((l.group_title ?? '') as any),
-            }
-            return { ...prev, [l.id]: nextRow }
+        if (data) {
+          // optimistic append so Gross/Net show instantly
+          setLines((prev) => {
+            const next = [...prev, data as any]
+            next.sort((a: any, b: any) => (Number(a.position) || 0) - (Number(b.position) || 0))
+            return next as any
           })
+          setEdit((p) => ({ ...p, [data.id]: toEditRow(data as any) }))
         }
-
+        if (error) throw error
       }
 
       setAddIngredientId('')
@@ -1249,7 +1219,17 @@ export default function RecipeEditor() {
         notes: src.notes,
         group_title: src.line_type === 'group' ? (src.group_title ?? 'Group') : null,
       }
-      const { error } = await supabase.from('recipe_lines').insert(payload)
+      const { data, error } = await supabase.from('recipe_lines').insert(payload).select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,yield_percent,gross_qty_override,notes,note,position,line_type,group_title').single()
+        if (error) throw error
+        if (data) {
+          // optimistic append so Gross/Net show instantly
+          setLines((prev) => {
+            const next = [...prev, data as any]
+            next.sort((a: any, b: any) => (Number(a.position) || 0) - (Number(b.position) || 0))
+            return next as any
+          })
+          setEdit((p) => ({ ...p, [data.id]: toEditRow(data as any) }))
+        }
       if (error) throw error
       showToast('Duplicated ✅')
       await loadAll(id)
