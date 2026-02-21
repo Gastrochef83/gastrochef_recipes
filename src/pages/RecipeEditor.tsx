@@ -205,6 +205,15 @@ export default function RecipeEditor() {
   const [addUnit, setAddUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
   const [addYieldPercent, setAddYieldPercent] = useState('100')
   const [addGrossQty, setAddGrossQty] = useState('')
+  useEffect(() => {
+    // Auto Yield% from manual Net/Gross (Kitopi: Yield = Net ÷ Gross)
+    const net = toNum(addQty, 0)
+    const gross = toNum(addGrossQty, 0)
+    const y = yieldFromNetGross(net, gross)
+    setAddYieldPercent(String(Math.round(y * 1000) / 1000))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [addQty, addGrossQty])
+
   const [addNote, setAddNote] = useState('')
   const [savingAdd, setSavingAdd] = useState(false)
 
@@ -929,6 +938,13 @@ export default function RecipeEditor() {
   // Net/Gross (Kitopi Sync)
   // -------------------------
   const clampYield = (y: number) => Math.min(100, Math.max(0.01, y))
+  const yieldFromNetGross = (netQty: number, grossQty: number) => {
+    const g = Math.max(0, grossQty)
+    const n = Math.max(0, netQty)
+    if (n > 0 && g > 0) return clampYield((n / g) * 100)
+    return 100
+  }
+
   const round6 = (n: number) => (Number.isFinite(n) ? Math.round(n * 1_000_000) / 1_000_000 : 0)
 
   const grossFromNet = (netQty: number, yPct: number) => {
@@ -965,11 +981,10 @@ export default function RecipeEditor() {
     if (!id) return
     const netIn = Math.max(0, toNum(addQty, 0))
     const grossIn = Math.max(0, toNum(addGrossQty, 0))
-    const y = clampYield(Math.max(0.01, toNum(addYieldPercent, 100)))
+    const qty = netIn > 0 ? netIn : grossIn
+    const y = yieldFromNetGross(qty, grossIn)
 
-    if (netIn <= 0 && grossIn <= 0) return showToast('Enter Net or Gross (must be > 0)')
-
-    const qty = netIn > 0 ? netIn : netFromGross(grossIn, y)
+    if (qty <= 0 && grossIn <= 0) return showToast('Enter Net and/or Gross (must be > 0)')
     const grossOverride = grossIn > 0 ? grossIn : null
 
     setSavingAdd(true)
@@ -1994,16 +2009,18 @@ export default function RecipeEditor() {
           </div>
 
           <div>
-            <div className="gc-label">YIELD %</div>
-            <input
-              className="gc-input mt-2 w-full text-right tabular-nums"
-              type="number"
-              min={0.01}
-              step="0.01"
-              value={addYieldPercent}
-              onChange={(e) => setAddYieldPercent(e.target.value)}
-              placeholder="100"
-            />
+            <div className="gc-label">YIELD % (AUTO)</div>
+            <div className="relative mt-2">
+              <input
+                className="gc-input w-full pr-8 text-right tabular-nums"
+                type="number"
+                value={addYieldPercent}
+                readOnly
+                aria-readonly="true"
+                title="Auto: Yield% = Net ÷ Gross"
+              />
+              <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-500">%</span>
+            </div>
           </div>
 
           <div>
@@ -2224,8 +2241,10 @@ export default function RecipeEditor() {
                             setEdit((p) => {
                               const cur = p[l.id] || r
                               const next = { ...cur, qty: v }
-                              if (next.gross_mode === 'sync') return { ...p, [l.id]: syncFromNet(next) }
-                              return { ...p, [l.id]: next }
+                              const net = Math.max(0, toNum(v, 0))
+                              const gross = Math.max(0, toNum(next.gross_qty_override, 0))
+                              const y = yieldFromNetGross(net, gross)
+                              return { ...p, [l.id]: { ...next, yield_percent: String(y) } }
                             })
                           }}
                         />
@@ -2250,35 +2269,29 @@ export default function RecipeEditor() {
                         </div>
                       </div>
 
-                      {/* Yield % */}
+                      {/* Yield % (AUTO from Net/Gross) */}
                       <div className="text-right">
-                        <input
-                          className="gc-input w-full text-right tabular-nums"
-                          type="number"
-                          min={0.01}
-                          max={100}
-                          step="0.01"
-                          value={r.yield_percent}
-                          onChange={(ev) => {
-                            const v = ev.target.value
-                            setEdit((p) => {
-                              const cur = p[l.id] || r
-                              const next = { ...cur, yield_percent: v }
-                              // Keep sync behavior:
-                              // - If gross is in sync mode: recompute gross from net
-                              // - If gross is manual: keep gross, recompute net
-                              const y = clampYield(toNum(v, 100))
-                              if (next.gross_mode === 'manual') {
-                                const gross = Math.max(0, toNum(next.gross_qty_override, 0))
-                                return { ...p, [l.id]: { ...next, qty: String(netFromGross(gross, y)) } }
-                              }
-                              return { ...p, [l.id]: syncFromNet({ ...next, yield_percent: String(y) }) }
-                            })
-                          }}
-                        />
+                        <div className="relative">
+                          <input
+                            className="gc-input w-full pr-8 text-right tabular-nums"
+                            type="number"
+                            value={r.yield_percent}
+                            readOnly
+                            aria-readonly="true"
+                            title="Auto: Yield% = Net ÷ Gross"
+                          />
+                          <span className="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs font-semibold text-neutral-500">%</span>
+                        </div>
+                        {(() => {
+                          const net = Math.max(0, toNum(r.qty, 0))
+                          const gross = Math.max(0, toNum(r.gross_qty_override, 0))
+                          if (gross > 0 && net > gross) {
+                            return <div className="mt-1 text-[11px] text-amber-700">Net &gt; Gross</div>
+                          }
+                          return null
+                        })()}
                       </div>
-
-                      {/* Gross Qty (manual + sync) */}
+{/* Gross Qty (manual + sync) */}
                       <div className="text-right">
                         <div className="flex items-center justify-end gap-2">
                           <input
@@ -2292,8 +2305,10 @@ export default function RecipeEditor() {
                               setEdit((p) => {
                                 const cur = p[l.id] || r
                                 const next = { ...cur, gross_qty_override: v, gross_mode: 'manual' as const }
-                                // When user edits gross, net follows (Kitopi Sync)
-                                return { ...p, [l.id]: syncFromGross(next) }
+                                const net = Math.max(0, toNum(next.qty, 0))
+                                const gross = Math.max(0, toNum(v, 0))
+                                const y = yieldFromNetGross(net, gross)
+                                return { ...p, [l.id]: { ...next, yield_percent: String(y) } }
                               })
                             }}
                             placeholder={(() => {
@@ -2309,7 +2324,7 @@ export default function RecipeEditor() {
                             onClick={() => {
                               setEdit((p) => {
                                 const cur = p[l.id] || r
-                                return { ...p, [l.id]: syncFromNet({ ...cur, gross_mode: 'sync' }) }
+                                const net = Math.max(0, toNum(cur.qty, 0)); return { ...p, [l.id]: { ...cur, gross_mode: 'sync', gross_qty_override: String(net), yield_percent: '100' } }
                               })
                             }}
                           >
