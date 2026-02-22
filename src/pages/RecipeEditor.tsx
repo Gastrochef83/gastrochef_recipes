@@ -2130,12 +2130,16 @@ export default function RecipeEditor() {
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
             <div className="gc-lines-header grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
               <div className="whitespace-nowrap">Item</div>
-              <div className="text-right whitespace-nowrap">Net Qty</div>
-              <div className="text-right whitespace-nowrap">Unit</div>
-              <div className="text-right whitespace-nowrap">Yield %</div>
-              <div className="text-right whitespace-nowrap">Gross Qty</div>
-              <div className="whitespace-nowrap">Note</div>
+              <div className="text-right whitespace-nowrap" title="Net quantity (after trimming/cleaning)">Net Qty</div>
+              <div className="text-right whitespace-nowrap" title="Measurement unit for this line">Unit</div>
+              <div className="text-right whitespace-nowrap" title="Yield% = Net ÷ Gross (100% means no loss)">Yield %</div>
+              <div className="text-right whitespace-nowrap" title="Gross quantity (before trimming/cleaning)">Gross Qty</div>
+              <div className="whitespace-nowrap" title="Free note for prep / quality / instructions">Note</div>
               <div className="text-right whitespace-nowrap">Actions</div>
+            </div>
+
+            <div className="gc-lines-help px-4 py-2 text-[11px] text-neutral-600 border-b border-neutral-200 bg-white">
+              <span className="font-semibold">Quick clarity:</span> Net = after cleaning · Gross = before cleaning · Yield% auto from Net/Gross.
             </div>
 
             <div className="divide-y divide-neutral-200">
