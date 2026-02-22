@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { NavLink } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
 type Recipe = {
@@ -253,6 +254,17 @@ export default function Dashboard() {
     return best
   }, [activeRecipes, recipeTotalCost])
 
+  const mostExpensivePerPortion = useMemo(() => {
+    let best: { id: string; name: string; cpp: number } | null = null
+    for (const r of activeRecipes) {
+      const total = recipeTotalCost.get(r.id) ?? 0
+      const portions = Math.max(1, toNum(r.portions, 1))
+      const cpp = total / portions
+      if (!best || cpp > best.cpp) best = { id: r.id, name: r.name, cpp }
+    }
+    return best
+  }, [activeRecipes, recipeTotalCost])
+
   const cheapestRecipe = useMemo(() => {
     let best: { id: string; name: string; total: number } | null = null
     for (const r of activeRecipes) {
@@ -293,9 +305,20 @@ export default function Dashboard() {
   return (
     <div className="gc-dashboard space-y-6">
       <div className="gc-card p-6 gc-page-header">
-        <div className="gc-label">DASHBOARD</div>
-        <div className="gc-title">Overview</div>
-        <div className="gc-subtitle">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
+        <div className="flex-1">
+          <div className="gc-label">DASHBOARD</div>
+          <div className="gc-title">Chef Brain</div>
+          <div className="gc-subtitle">A fast, honest snapshot of costs, outliers, and what needs attention.</div>
+        </div>
+
+        <div className="gc-quick">
+          <NavLink to="/ingredients" className="gc-btn gc-btn-ghost">
+            + Ingredient
+          </NavLink>
+          <NavLink to="/recipes" className="gc-btn gc-btn-primary">
+            + Recipe
+          </NavLink>
+        </div>
       </div>
 
       {loading && <div className="gc-card p-6">Loading…</div>}
@@ -357,6 +380,17 @@ export default function Dashboard() {
               </div>
               <div className="mt-2 text-2xl font-extrabold">{activeRecipes.length}</div>
               <div className="mt-1 text-xs text-neutral-500">Active</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  ⚡
+                </span>
+                <div className="gc-label">HIGHEST COST / PORTION</div>
+              </div>
+              <div className="mt-2 text-lg font-extrabold">{mostExpensivePerPortion?.name ?? '—'}</div>
+              <div className="mt-1 text-xs text-neutral-500">{money(mostExpensivePerPortion?.cpp ?? 0)}</div>
             </div>
 
             <div className="gc-card p-5">
@@ -451,14 +485,17 @@ export default function Dashboard() {
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="text-xs font-semibold text-neutral-600">Unit mismatches</div>
                   <div className="mt-1 text-2xl font-extrabold">{diag.unitMismatchCount}</div>
+                  <div className="mt-1 text-[11px] text-neutral-500">Qty unit differs from ingredient pack unit</div>
                 </div>
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="text-xs font-semibold text-neutral-600">Missing yield (sub-recipes)</div>
                   <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
+                  <div className="mt-1 text-[11px] text-neutral-500">Add yield qty + unit for accurate costing</div>
                 </div>
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                   <div className="text-xs font-semibold text-neutral-600">Ingredients missing cost</div>
                   <div className="mt-1 text-2xl font-extrabold">{diag.missingIngredientCostCount}</div>
+                  <div className="mt-1 text-[11px] text-neutral-500">Set net unit cost to unlock totals</div>
                 </div>
               </div>
 
