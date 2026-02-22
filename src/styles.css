@@ -1677,50 +1677,91 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
    - Net Qty / Unit / Yield / Gross / Note not aligned with header
    ========================================================= */
 
-/* Single source of truth: header + rows share the SAME grid */
-.gc-lines-grid{
+.gc-card table,
+.gc-lines {
+  width: 100%;
+}
+
+/* Force SAME grid template for header + rows */
+.gc-lines-header,
+.gc-line-row {
   display: grid;
-  grid-template-columns: var(--gc-lines-cols);
+  grid-template-columns:
+    minmax(260px,1.8fr)   /* Item */
+    minmax(90px,.6fr)     /* Net Qty */
+    minmax(90px,.6fr)     /* Unit */
+    minmax(90px,.6fr)     /* Yield */
+    minmax(110px,.7fr)    /* Gross */
+    minmax(1fr,1fr)       /* Note */
+    auto;                 /* Actions */
+  gap: 12px;
+  align-items: center;
+}
+
+/* prevent selects from pushing layout */
+.gc-line-row select,
+.gc-line-row input {
+  min-width: 0 !important;
+  width: 100%;
+}
+
+/* keep buttons compact */
+.gc-line-row .gc-btn{
+  white-space: nowrap;
+}
+
+/* small screens */
+@media (max-width: 900px){
+  .gc-lines-header,
+  .gc-line-row{
+    grid-template-columns:
+      minmax(200px,1.4fr)
+      repeat(4, minmax(80px,.5fr))
+      1fr
+      auto;
+  }
+}
+/* =========================================================
+   GOD MODE LINES — ultra smooth + perfect alignment (UI only)
+   ✅ No logic changes
+   Append to END of: src/styles.css
+   ========================================================= */
+
+/* 1) Hard alignment: header + rows forced to same columns */
+.gc-lines-header,
+.gc-line-row{
+  display: grid;
+  grid-template-columns: 1.55fr .55fr .55fr .55fr .65fr 1fr 1.2fr;
   align-items: center;
   gap: 12px;
 }
 
-/* Keep header readable + stable */
-.gc-lines-header{
-  position: sticky;
-  top: 0;
-  z-index: 6;
-  backdrop-filter: blur(6px);
-}
-
-/* Prevent inputs/selects from breaking columns */
+/* 2) Prevent inputs/selects from expanding columns */
 .gc-line-row input,
 .gc-line-row select{
   min-width: 0 !important;
   width: 100%;
 }
 
-/* Reduce layout/paint cost on long lists */
-.gc-line-row{ contain: layout paint; }
-
-/* Keep action buttons compact and never wrap */
-.gc-line-row .gc-btn{ white-space: nowrap; }
-
-/* Gross input + Sync button: always look like a single unit */
-.gc-gross-wrap{
-  display: flex;
-  align-items: center;
-  gap: 8px;
+/* 3) Reduce layout/paint cost per row */
+.gc-line-row{
+  contain: layout paint;
+  padding: 10px 16px;
+}
+.gc-lines-header{
+  position: sticky;
+  top: 0;
+  z-index: 5;
 }
 
-/* Smooth scrolling for heavy tables */
-.gc-lines-scroll{ -webkit-overflow-scrolling: touch; }
+/* 4) Smooth scrolling on heavy tables */
+.gc-lines-scroll{
+  -webkit-overflow-scrolling: touch;
+}
 
-/* Small screens: slightly tighter columns (still aligned) */
-@media (max-width: 900px){
-  :root{
-    --gc-lines-cols: minmax(220px,1.35fr) minmax(86px,.55fr) minmax(78px,.5fr) minmax(86px,.55fr) minmax(96px,.6fr) minmax(180px,1fr) minmax(220px,1fr);
-  }
+/* 5) Make action buttons compact and non-wrapping */
+.gc-line-row .gc-btn{
+  white-space: nowrap;
 }
 
 /* 6) On small screens: keep usable without breaking alignment */
@@ -3357,29 +3398,6 @@ select.gc-input{
     linear-gradient(to right, transparent, transparent);
 }
 
-/* =========================================================
-   PRINT MODE SAFETY
-   Fixes: Print card showing inside normal page (should be print-only)
-   ========================================================= */
-.gc-print-only{ display: none; }
-
-@media print{
-  /* hide app chrome */
-  .gc-side,
-  .gc-topbar,
-  .gc-no-print,
-  button,
-  input,
-  select,
-  textarea{ display: none !important; }
-
-  body{ background: #fff !important; }
-  .gc-root, .gc-shell, .gc-main{ background: #fff !important; }
-  .gc-content{ padding: 0 !important; }
-
-  .gc-print-only{ display: block !important; }
-}
-
 /* ---- Buttons: consistent sizing (fixes ugly/misaligned actions) ---- */
 .gc-btn{
   height: 40px;
@@ -3460,4 +3478,193 @@ select.gc-input{
   background: rgba(15,23,42,.04);
   font-size: 12px;
   font-weight: 800;
+}
+
+
+/* =========================================================
+   NUCLEAR V6 — FULL APP UI UNIFY (UI only, no logic changes)
+   Goal: Cohesion across Dashboard + Recipes + Ingredients + Editor
+   ========================================================= */
+
+/* ---------- Global typography lock ---------- */
+:root{
+  --gc-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  --gc-label-size: 12px;
+  --gc-body-size: 14px;
+  --gc-title-size: 18px;
+  --gc-input-h: 42px;
+  --gc-radius-1: 12px;
+  --gc-radius-2: 18px;
+}
+
+html, body{
+  font-family: var(--gc-font);
+}
+
+/* Make all inputs/selects consistent */
+.gc-input,
+input[type="text"], input[type="number"], input[type="email"], input[type="password"],
+textarea, select{
+  font-size: var(--gc-body-size);
+}
+
+input[type="text"], input[type="number"], input[type="email"], input[type="password"], select{
+  min-height: var(--gc-input-h);
+  border-radius: var(--gc-radius-1);
+}
+
+/* ---------- Topbar + layout breathing ---------- */
+.gc-main{
+  padding: 18px;
+}
+
+.gc-topbar-card{
+  border-radius: var(--gc-radius-2);
+  padding: 12px 14px;
+}
+
+/* ---------- Sidebar polish (keeps structure) ---------- */
+.gc-sidebar{
+  border-radius: var(--gc-radius-2);
+}
+.gc-side-block{
+  padding: 12px;
+}
+.gc-side-block .gc-btn-danger{
+  background: transparent !important;
+  border: 1px solid rgba(239,68,68,.28) !important;
+  color: rgba(185,28,28,.95) !important;
+  box-shadow: none !important;
+}
+.gc-side-block .gc-btn-danger:hover{
+  background: rgba(239,68,68,.06) !important;
+  border-color: rgba(239,68,68,.38) !important;
+}
+
+/* ---------- Page headers unify ---------- */
+.gc-page-header{
+  border-radius: var(--gc-radius-2);
+}
+.gc-page-header .gc-label{
+  font-size: var(--gc-label-size);
+  letter-spacing: .12em;
+}
+
+/* ---------- Recipes cards: simplify + hover-reveal danger actions ---------- */
+.gc-menu-body{
+  padding: 14px 14px 16px;
+}
+
+.gc-menu-title{
+  font-size: 15.5px;
+  line-height: 1.2;
+}
+
+.gc-menu-desc{
+  margin-top: 6px;
+  color: var(--gc-muted);
+}
+
+/* Meta pills (replaces Cost/portion, FC%, etc on cards) */
+.gc-menu-meta{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.gc-pill{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  height: 26px;
+  padding: 0 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  background: rgba(2,6,23,.04);
+  border: 1px solid rgba(2,6,23,.08);
+  color: rgba(15,23,42,.82);
+}
+.gc-dark .gc-pill{
+  background: rgba(255,255,255,.06);
+  border-color: rgba(255,255,255,.10);
+  color: rgba(255,255,255,.82);
+}
+.gc-pill.warn{
+  background: rgba(245,158,11,.14);
+  border-color: rgba(245,158,11,.22);
+  color: rgba(124,45,18,.95);
+}
+
+/* Actions look identical to editor buttons */
+.gc-action{
+  min-height: 40px !important;
+  border-radius: 12px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.01em;
+}
+
+.gc-action.primary{
+  background: var(--gc-accent) !important;
+  border: 1px solid rgba(0,0,0,0) !important;
+  color: white !important;
+}
+.gc-action.secondary{
+  background: rgba(2,6,23,.03) !important;
+  border: 1px solid rgba(2,6,23,.10) !important;
+  color: rgba(15,23,42,.88) !important;
+}
+.gc-dark .gc-action.secondary{
+  background: rgba(255,255,255,.06) !important;
+  border-color: rgba(255,255,255,.12) !important;
+  color: rgba(255,255,255,.86) !important;
+}
+.gc-action.warn{
+  background: rgba(245,158,11,.12) !important;
+  border: 1px solid rgba(245,158,11,.20) !important;
+  color: rgba(124,45,18,.95) !important;
+}
+.gc-action.danger{
+  background: rgba(239,68,68,.06) !important;
+  border: 1px solid rgba(239,68,68,.22) !important;
+  color: rgba(185,28,28,.95) !important;
+}
+
+/* Hide destructive row until hover for cleaner look */
+.gc-actions-row.secondary{
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity .14s ease, transform .14s ease, max-height .18s ease;
+}
+.gc-menu-card:hover .gc-actions-row.secondary{
+  opacity: 1;
+  max-height: 120px;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+/* ---------- Dashboard KPI cards: cohesive radius + spacing ---------- */
+.gc-dashboard .gc-card{
+  border-radius: var(--gc-radius-2);
+}
+
+/* ---------- Tables: smoother header/row contrast ---------- */
+table{
+  border-collapse: separate;
+  border-spacing: 0;
+}
+thead th{
+  font-size: 12px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* ---------- Print safety ---------- */
+@media print{
+  .gc-topbar, .gc-sidebar{ display:none !important; }
+  .gc-main{ padding:0 !important; }
 }
