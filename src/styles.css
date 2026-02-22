@@ -47,6 +47,19 @@
 
   /* ✅ Kitopi-like page background (subtle, clean) */
   --gc-grad: linear-gradient(180deg, #f7f9fb 0%, #eef3f6 100%);
+
+  /* ✅ Nuclear UI sizing (single source of truth) */
+  --gc-input-h: 40px;
+  --gc-input-pad-x: 12px;
+  --gc-input-pad-y: 10px;
+  --gc-input-radius: 14px;
+
+  --gc-label-size: 12px;
+  --gc-text-size: 14px;
+  --gc-title-size: 18px;
+
+  /* Recipe lines grid (header + rows must match) */
+  --gc-lines-cols: minmax(280px, 1.55fr) minmax(92px, .55fr) minmax(86px, .55fr) minmax(92px, .55fr) minmax(110px, .65fr) minmax(210px, 1fr) minmax(280px, 1.2fr);
 }
 
 /* ---------- Dark Mode ---------- */
@@ -144,7 +157,7 @@ button, input, textarea, select{ font-family: inherit; }
 .gc-card:hover{ border-color: var(--gc-border-strong); }
 
 .gc-label{
-  font-size: 11px;
+  font-size: var(--gc-label-size);
   letter-spacing: .14em;
   font-weight: 800;
   color: rgba(107,122,144,.92);
@@ -3302,4 +3315,167 @@ textarea.gc-input{
 }
 @media (max-width: 900px){
   .gc-editor-subrecipe-grid{ grid-template-columns: 1fr; }
+}
+
+/* =========================================================
+   NUCLEAR UI — STABILIZATION OVERRIDES (V4)
+   Goal: perfect alignment + consistent controls across pages
+   UI only (no logic changes)
+   ========================================================= */
+
+/* ---- Form controls (single final definition) ---- */
+:where(input, select, textarea).gc-input,
+.gc-input,
+select.gc-input,
+textarea.gc-input{
+  height: var(--gc-input-h);
+  min-height: var(--gc-input-h);
+  padding: 0 var(--gc-input-pad-x);
+  border-radius: var(--gc-input-radius);
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.92);
+  color: var(--gc-text);
+  font-size: var(--gc-text-size);
+  line-height: 1.2;
+  outline: none;
+  box-shadow: none;
+}
+
+textarea.gc-input{
+  height: auto;
+  min-height: 120px;
+  padding: 12px;
+  line-height: 1.35;
+}
+
+.gc-dark :where(input, select, textarea).gc-input,
+.gc-dark .gc-input,
+.gc-dark select.gc-input,
+.gc-dark textarea.gc-input{
+  background: rgba(15,23,42,.70);
+  border-color: rgba(148,163,184,.18);
+  color: var(--gc-text);
+}
+
+:where(input, select, textarea).gc-input:hover{
+  border-color: var(--gc-border-strong);
+}
+
+:where(input, select, textarea).gc-input:focus,
+:where(input, select, textarea).gc-input:focus-visible{
+  border-color: rgba(20,184,166,.45);
+  box-shadow: var(--gc-focus);
+}
+
+:where(input, select, textarea).gc-input::placeholder{ color: rgba(100,116,139,.74); }
+.gc-dark :where(input, select, textarea).gc-input::placeholder{ color: rgba(148,163,184,.72); }
+
+/* Make selects look crisp + prevent weird glyph rendering */
+select.gc-input{
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(107,122,144,.9) 50%),
+    linear-gradient(135deg, rgba(107,122,144,.9) 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 13px) 50%,
+    0 0;
+  background-size:
+    5px 5px,
+    5px 5px,
+    100% 100%;
+  background-repeat: no-repeat;
+}
+
+.gc-dark select.gc-input{
+  background-image:
+    linear-gradient(45deg, transparent 50%, rgba(148,163,184,.92) 50%),
+    linear-gradient(135deg, rgba(148,163,184,.92) 50%, transparent 50%),
+    linear-gradient(to right, transparent, transparent);
+}
+
+/* ---- Buttons: consistent sizing (fixes ugly/misaligned actions) ---- */
+.gc-btn{
+  height: 40px;
+  border-radius: 14px;
+  padding: 0 14px;
+  font-weight: 900;
+  letter-spacing: -0.01em;
+}
+
+.gc-btn.gc-btn-ghost{
+  padding: 0 12px;
+}
+
+/* Compact icon-like buttons (↑ ↓ Sync etc.) */
+.gc-btn.gc-btn-icon{
+  width: 40px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* ---- RecipeEditor: Lines grid alignment ---- */
+.gc-lines-header,
+.gc-line-row{
+  display: grid !important;
+  grid-template-columns: var(--gc-lines-cols) !important;
+  gap: 12px !important;
+  align-items: center !important;
+}
+
+.gc-line-row > div{ min-width: 0; }
+
+/* Improve header readability */
+.gc-lines-header{
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+/* Prevent controls from looking "floating" under headers */
+.gc-line-row .gc-input{ width: 100%; }
+
+/* Gross input + sync button should feel like one control */
+.gc-line-row .gc-gross-wrap{
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+@media (max-width: 1100px){
+  :root{
+    --gc-lines-cols: minmax(260px, 1.2fr) minmax(90px, .5fr) minmax(80px, .5fr) minmax(86px, .5fr) minmax(100px, .6fr) minmax(180px, .9fr) minmax(240px, 1fr);
+  }
+}
+
+@media (max-width: 820px){
+  /* Mobile: stack row (still readable) */
+  .gc-lines-header{ display:none !important; }
+  .gc-line-row{
+    grid-template-columns: 1fr 1fr !important;
+    align-items: start !important;
+  }
+  .gc-line-row > div{ text-align: left !important; }
+}
+
+/* ---- Print tags spacing (fixes "MgmtSub-RecipeYield") ---- */
+.gc-print-tags{
+  display:flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+.gc-print-tag{
+  display:inline-flex;
+  align-items:center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(15,23,42,.04);
+  font-size: 12px;
+  font-weight: 800;
 }

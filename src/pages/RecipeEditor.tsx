@@ -2179,10 +2179,10 @@ export default function RecipeEditor() {
                         </div>
 
                         <div className="flex gap-2">
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving}>
+                          <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving} title="Move up">
                             ↑
                           </button>
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving}>
+                          <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving} title="Move down">
                             ↓
                           </button>
                           <button className="gc-btn gc-btn-ghost" type="button" onClick={() => duplicateLine(l.id)}>
@@ -2347,7 +2347,7 @@ export default function RecipeEditor() {
                       </div>
 {/* Gross Qty (manual + sync) */}
                       <div className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="gc-gross-wrap">
                           <input
                             className="gc-input w-full text-right tabular-nums"
                             type="number"
@@ -2372,7 +2372,7 @@ export default function RecipeEditor() {
                             })()}
                           />
                           <button
-                            className="gc-btn gc-btn-ghost"
+                            className="gc-btn gc-btn-ghost gc-btn-icon"
                             type="button"
                             title="Sync gross from net (auto)"
                             onClick={() => {
@@ -2382,7 +2382,7 @@ export default function RecipeEditor() {
                               })
                             }}
                           >
-                            Sync
+                            ↻
                           </button>
                         </div>
                       </div>
@@ -2391,16 +2391,16 @@ export default function RecipeEditor() {
                         <input className="gc-input w-full" value={r.notes} onChange={(ev) => setRow({ notes: ev.target.value })} placeholder="e.g., chopped / room temp / to taste…" />
                       </div>
 
-                      <div className="flex justify-end gap-2">
+                      <div className="flex justify-end gap-2 flex-wrap">
                         {canExpand && (
                           <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleExpand(l.id, r.sub_recipe_id)}>
                             {expanded[l.id] ? 'Hide' : 'Expand'}
                           </button>
                         )}
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving}>
+                        <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving} title="Move up">
                           ↑
                         </button>
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving}>
+                        <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving} title="Move down">
                           ↓
                         </button>
                         <button className="gc-btn gc-btn-ghost" type="button" onClick={() => duplicateLine(l.id)}>
