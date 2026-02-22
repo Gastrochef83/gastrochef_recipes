@@ -682,15 +682,23 @@ export default function Recipes() {
                     {r.description?.trim() ? r.description : 'Add a short menu description…'}
                   </div>
 
-                  <div className="gc-menu-meta" style={density === 'dense' ? { marginTop: 8 } : undefined}>
-                    <span className="gc-pill">{cat}</span>
-                    <span className="gc-pill">Portions {portions}</span>
-                    {r.is_subrecipe && <span className="gc-pill">Sub-Recipe</span>}
-                    {r.is_archived && <span className="gc-pill warn">Archived</span>}
+                  <div className="gc-menu-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
+                    <div>
+                      <span className="text-neutral-600">Cost/portion:</span> <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">FC%:</span> <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">Margin:</span> <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
+                    </div>
+                    <div>
+                      <span className="text-neutral-600">Price:</span>{' '}
+                      <b>{r.selling_price == null ? '—' : fmtMoney(toNum(r.selling_price, 0), cur)}</b>
+                    </div>
                   </div>
 
                   <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
- style={density === 'dense' ? { marginTop: 10 } : undefined}>
                     <div className="gc-actions-row">
                       <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
                         Open Editor

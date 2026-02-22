@@ -293,18 +293,9 @@ export default function Dashboard() {
   return (
     <div className="gc-dashboard space-y-6">
       <div className="gc-card p-6 gc-page-header">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <div className="gc-label">DASHBOARD</div>
-            <div className="mt-2 text-2xl font-extrabold">Overview</div>
-            <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
-          </div>
-          <div className="flex items-center gap-2">
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={load} disabled={loading}>
-              {loading ? 'Refreshing…' : 'Refresh'}
-            </button>
-          </div>
-        </div>
+        <div className="gc-label">DASHBOARD</div>
+        <div className="mt-2 text-2xl font-extrabold">Overview</div>
+        <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
       </div>
 
       {loading && <div className="gc-card p-6">Loading…</div>}
