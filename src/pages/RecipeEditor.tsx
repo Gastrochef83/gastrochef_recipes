@@ -196,6 +196,9 @@ export default function RecipeEditor() {
     setToastOpen(true)
   }
 
+  // Density (UI only)
+  const [density, setDensity] = useState<'comfort' | 'compact'>('comfort')
+
   // Inline Add
   const [ingSearch, setIngSearch] = useState('')
   const [addType, setAddType] = useState<LineType>('ingredient')
@@ -1441,15 +1444,41 @@ export default function RecipeEditor() {
             <div className="gc-editor-hero-title">{isKitchen ? 'Kitchen Mode' : 'Management Mode'}</div>
             <div className="gc-editor-hero-sub">Edit recipe meta, build lines, and manage method & pricing.</div>
           </div>
+          <div className="gc-editor-hero-status" />
+</div>
 
-          <div className="gc-editor-hero-status">
+
+        <div className="gc-editor-actionbar">
+          <div className="gc-editor-actionbar-left">
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
+              ← Back
+            </button>
+          </div>
+
+          <div className="gc-editor-actionbar-center">
+            <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
+              {savingMeta ? 'Saving…' : 'Save'}
+            </button>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={printNow}>
+              Print Card
+            </button>
+
+            {isMgmt && (
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen((v) => !v)}>
+                Cost History
+              </button>
+            )}
+
+            <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
+              Cook Mode
+            </NavLink>
+          </div>
+
+          <div className="gc-editor-actionbar-right">
             <span
               className={`gc-status-pill ${
-                metaStatus === 'dirty'
-                  ? 'is-warn'
-                  : metaStatus === 'saving'
-                  ? 'is-info'
-                  : 'is-ok'
+                metaStatus === 'dirty' ? 'is-warn' : metaStatus === 'saving' ? 'is-info' : 'is-ok'
               }`}
             >
               {metaBadge}
@@ -1519,35 +1548,14 @@ export default function RecipeEditor() {
                   placeholder="1"
                 />
               </div>
-
               <div className="gc-field">
-                <div className="gc-label">QUICK ACTIONS</div>
-                <div className="gc-editor-actions">
-                  <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
-                    {savingMeta ? 'Saving…' : 'Save'}
-                  </button>
-
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={printNow}>
-                    Print Card
-                  </button>
-
-                  {isMgmt && (
-                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setCostOpen((v) => !v)}>
-                      Cost History
-                    </button>
-                  )}
-
-                  <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
-                    Cook Mode
-                  </NavLink>
-
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
-                    Back
-                  </button>
+                <div className="gc-label">ACTIONS</div>
+                <div className="mt-2 text-sm text-neutral-600">
+                  Use the action bar above for Save / Print / History / Cook.
                 </div>
               </div>
-            </div>
-          </div>
+
+</div>
 
           {/* Stats */}
           {isMgmt && (
@@ -1988,6 +1996,22 @@ export default function RecipeEditor() {
           </div>
 
           <div className="flex items-center gap-2">
+            <div className="gc-seg" role="tablist" aria-label="Density">
+              <button
+                type="button"
+                className={`gc-seg-btn ${density === 'comfort' ? 'is-active' : ''}`}
+                onClick={() => setDensity('comfort')}
+              >
+                Comfort
+              </button>
+              <button
+                type="button"
+                className={`gc-seg-btn ${density === 'compact' ? 'is-active' : ''}`}
+                onClick={() => setDensity('compact')}
+              >
+                Compact
+              </button>
+            </div>
             <div className="text-xs text-neutral-500">{reorderSaving ? 'Saving order…' : ''}</div>
             <button className="gc-btn gc-btn-ghost" type="button" onClick={() => loadAll(id!)}>
               Refresh
@@ -2134,7 +2158,7 @@ export default function RecipeEditor() {
               <div className="text-right whitespace-nowrap">Actions</div>
             </div>
 
-            <div className="divide-y divide-neutral-200">
+            <div className={`divide-y divide-neutral-200 ${density === 'compact' ? 'gc-density-compact' : ''}`}>
               {lines.map((l) => {
                 const row = edit[l.id]
                 const saving = rowSaving[l.id] === true

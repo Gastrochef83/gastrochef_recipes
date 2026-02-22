@@ -3558,3 +3558,108 @@ select.gc-input{
   }
 }
 
+
+
+/* =========================================================
+   GastroChef — ABSOLUTE V12 (UI UNIFY + EDITOR GOD POLISH)
+   UI polish only — no logic changes
+   Adds: Editor top action bar, KPI punch, Notion-like method,
+         Lines density toggle (compact/comfort)
+   ========================================================= */
+
+/* ---- Editor action bar (no sticky) ---- */
+.gc-editor-actionbar{
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 18px;
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 18px 45px rgba(2,6,23,.06);
+}
+.gc-editor-actionbar-left{ justify-self: start; }
+.gc-editor-actionbar-center{
+  justify-self: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+}
+.gc-editor-actionbar-right{
+  justify-self: end;
+}
+.gc-editor-actionbar .gc-status-pill{
+  padding: 8px 12px;
+  border-radius: 999px;
+  font-weight: 900;
+}
+
+/* ---- Segmented control (Density) ---- */
+.gc-seg{
+  display: inline-flex;
+  gap: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.70);
+  overflow: hidden;
+}
+.gc-seg-btn{
+  border: 0;
+  background: transparent;
+  padding: 8px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  color: rgba(15,23,42,.70);
+  cursor: pointer;
+}
+.gc-seg-btn:hover{ background: rgba(15,23,42,.05); }
+.gc-seg-btn.is-active{
+  background: rgba(11,136,127,.12);
+  color: rgba(7,79,74,1);
+}
+
+/* ---- KPI card punch (cost) ---- */
+.gc-editor-stats{
+  border: 1px solid rgba(15,23,42,.12) !important;
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82)) !important;
+}
+.gc-editor-cost{
+  font-size: 38px !important;
+  letter-spacing: -0.02em;
+}
+.gc-editor-kpis .gc-mini-kpi{
+  border-radius: 16px;
+  background: rgba(15,23,42,.03);
+  border: 1px solid rgba(15,23,42,.08);
+}
+
+/* ---- Method: Notion-like steps ---- */
+.gc-card .gc-label{ letter-spacing: .03em; }
+.gc-card textarea.gc-input{
+  line-height: 1.45;
+}
+.gc-card textarea.gc-input:focus{
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(11,136,127,.14);
+  border-color: rgba(11,136,127,.35);
+}
+.gc-card img{ image-rendering: auto; }
+
+/* ---- Lines density compact ---- */
+.gc-density-compact .gc-line-row{ gap: 10px; }
+.gc-density-compact .gc-input{
+  min-height: 36px !important;
+  padding: 8px 10px !important;
+}
+.gc-density-compact .gc-btn{
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+.gc-density-compact > div{
+  padding-top: 10px !important;
+  padding-bottom: 10px !important;
+}
+
