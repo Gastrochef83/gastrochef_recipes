@@ -1986,6 +1986,7 @@ export default function RecipeEditor() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="gc-label">LINES (INGREDIENTS + SUB-RECIPES)</div>
+              <div className="gc-lines-help"><b>Net</b> = after cleaning • <b>Gross</b> = before cleaning • <b>Yield%</b> = Net/Gross × 100</div>
             <div className="mt-1 text-sm text-neutral-600">
               Inline add · Groups · Notes · Reorder · Duplicate · Expand breakdown.
             </div>
