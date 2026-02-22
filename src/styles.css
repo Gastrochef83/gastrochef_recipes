@@ -2871,3 +2871,58 @@ a:hover{
 @media (prefers-reduced-motion: reduce){
   *{ transition: none !important; scroll-behavior: auto !important; }
 }
+/* =========================================================
+   PATCH — Topbar clarity + Visible Logout styling
+   UI ONLY — No logic changes
+   Paste at END of src/styles.css
+   ========================================================= */
+
+.gc-topbar-card{
+  background: linear-gradient(180deg, rgba(255,255,255,.92) 0%, rgba(255,255,255,.82) 100%);
+  border: 1px solid var(--gc-border);
+  border-radius: var(--gc-radius-xl);
+  box-shadow: var(--gc-shadow-soft);
+  backdrop-filter: blur(8px);
+  padding: 12px 14px;
+  margin-bottom: 14px;
+}
+
+.gc-dark .gc-topbar-card{
+  background: linear-gradient(180deg, rgba(15,23,42,.86) 0%, rgba(15,23,42,.72) 100%);
+}
+
+/* Make the user trigger look like a button */
+.gc-user-trigger-btn{
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.86);
+  box-shadow: 0 10px 22px rgba(2,6,23,.06);
+  transition: transform .10s ease, box-shadow .16s ease, border-color .16s ease, background .16s ease;
+}
+
+.gc-dark .gc-user-trigger-btn{
+  background: rgba(15,23,42,.70);
+}
+
+.gc-user-trigger-btn:hover{
+  transform: translateY(-1px);
+  border-color: var(--gc-border-strong);
+  box-shadow: var(--gc-shadow-soft);
+}
+
+/* Sidebar logout button */
+.gc-btn-danger{
+  border-color: rgba(239,68,68,.28);
+  color: #b91c1c;
+  background: rgba(239,68,68,.06);
+}
+
+.gc-btn-danger:hover{
+  background: rgba(239,68,68,.10);
+  border-color: rgba(239,68,68,.40);
+}
+
+.gc-dark .gc-btn-danger{
+  color: #fca5a5;
+  background: rgba(248,113,113,.10);
+  border-color: rgba(248,113,113,.22);
+}
