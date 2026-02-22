@@ -1677,91 +1677,50 @@ table tr:last-child td:last-child{ border-bottom-right-radius: 14px; }
    - Net Qty / Unit / Yield / Gross / Note not aligned with header
    ========================================================= */
 
-.gc-card table,
-.gc-lines {
-  width: 100%;
-}
-
-/* Force SAME grid template for header + rows */
-.gc-lines-header,
-.gc-line-row {
+/* Single source of truth: header + rows share the SAME grid */
+.gc-lines-grid{
   display: grid;
-  grid-template-columns:
-    minmax(260px,1.8fr)   /* Item */
-    minmax(90px,.6fr)     /* Net Qty */
-    minmax(90px,.6fr)     /* Unit */
-    minmax(90px,.6fr)     /* Yield */
-    minmax(110px,.7fr)    /* Gross */
-    minmax(1fr,1fr)       /* Note */
-    auto;                 /* Actions */
-  gap: 12px;
-  align-items: center;
-}
-
-/* prevent selects from pushing layout */
-.gc-line-row select,
-.gc-line-row input {
-  min-width: 0 !important;
-  width: 100%;
-}
-
-/* keep buttons compact */
-.gc-line-row .gc-btn{
-  white-space: nowrap;
-}
-
-/* small screens */
-@media (max-width: 900px){
-  .gc-lines-header,
-  .gc-line-row{
-    grid-template-columns:
-      minmax(200px,1.4fr)
-      repeat(4, minmax(80px,.5fr))
-      1fr
-      auto;
-  }
-}
-/* =========================================================
-   GOD MODE LINES — ultra smooth + perfect alignment (UI only)
-   ✅ No logic changes
-   Append to END of: src/styles.css
-   ========================================================= */
-
-/* 1) Hard alignment: header + rows forced to same columns */
-.gc-lines-header,
-.gc-line-row{
-  display: grid;
-  grid-template-columns: 1.55fr .55fr .55fr .55fr .65fr 1fr 1.2fr;
+  grid-template-columns: var(--gc-lines-cols);
   align-items: center;
   gap: 12px;
 }
 
-/* 2) Prevent inputs/selects from expanding columns */
+/* Keep header readable + stable */
+.gc-lines-header{
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  backdrop-filter: blur(6px);
+}
+
+/* Prevent inputs/selects from breaking columns */
 .gc-line-row input,
 .gc-line-row select{
   min-width: 0 !important;
   width: 100%;
 }
 
-/* 3) Reduce layout/paint cost per row */
-.gc-line-row{
-  contain: layout paint;
-  padding: 10px 16px;
-}
-.gc-lines-header{
-  position: sticky;
-  top: 0;
-  z-index: 5;
+/* Reduce layout/paint cost on long lists */
+.gc-line-row{ contain: layout paint; }
+
+/* Keep action buttons compact and never wrap */
+.gc-line-row .gc-btn{ white-space: nowrap; }
+
+/* Gross input + Sync button: always look like a single unit */
+.gc-gross-wrap{
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-/* 4) Smooth scrolling on heavy tables */
-.gc-lines-scroll{
-  -webkit-overflow-scrolling: touch;
-}
+/* Smooth scrolling for heavy tables */
+.gc-lines-scroll{ -webkit-overflow-scrolling: touch; }
 
-/* 5) Make action buttons compact and non-wrapping */
-.gc-line-row .gc-btn{
-  white-space: nowrap;
+/* Small screens: slightly tighter columns (still aligned) */
+@media (max-width: 900px){
+  :root{
+    --gc-lines-cols: minmax(220px,1.35fr) minmax(86px,.55fr) minmax(78px,.5fr) minmax(86px,.55fr) minmax(96px,.6fr) minmax(180px,1fr) minmax(220px,1fr);
+  }
 }
 
 /* 6) On small screens: keep usable without breaking alignment */
@@ -3396,6 +3355,29 @@ select.gc-input{
     linear-gradient(45deg, transparent 50%, rgba(148,163,184,.92) 50%),
     linear-gradient(135deg, rgba(148,163,184,.92) 50%, transparent 50%),
     linear-gradient(to right, transparent, transparent);
+}
+
+/* =========================================================
+   PRINT MODE SAFETY
+   Fixes: Print card showing inside normal page (should be print-only)
+   ========================================================= */
+.gc-print-only{ display: none; }
+
+@media print{
+  /* hide app chrome */
+  .gc-side,
+  .gc-topbar,
+  .gc-no-print,
+  button,
+  input,
+  select,
+  textarea{ display: none !important; }
+
+  body{ background: #fff !important; }
+  .gc-root, .gc-shell, .gc-main{ background: #fff !important; }
+  .gc-content{ padding: 0 !important; }
+
+  .gc-print-only{ display: block !important; }
 }
 
 /* ---- Buttons: consistent sizing (fixes ugly/misaligned actions) ---- */

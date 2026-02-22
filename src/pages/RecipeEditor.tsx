@@ -2128,7 +2128,7 @@ export default function RecipeEditor() {
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <div className="gc-lines-header grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
+            <div className="gc-lines-header gc-lines-grid border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
               <div className="whitespace-nowrap">Item</div>
               <div className="text-right whitespace-nowrap">Net Qty</div>
               <div className="text-right whitespace-nowrap">Unit</div>
@@ -2242,7 +2242,7 @@ export default function RecipeEditor() {
 
                 return (
                   <div key={l.id} className="px-4 py-3">
-                    <div className="gc-line-row grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3">
+                    <div className="gc-line-row gc-lines-grid">
                       <div className="pr-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
