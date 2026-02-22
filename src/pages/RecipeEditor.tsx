@@ -1914,12 +1914,8 @@ export default function RecipeEditor() {
                   <div className="flex flex-wrap items-center justify-between gap-3">
                     <div className="gc-label">STEP {idx + 1}</div>
                     <div className="flex gap-2">
-                      <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveStep(idx, -1)}>
-                        ↑
-                      </button>
-                      <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveStep(idx, 1)}>
-                        ↓
-                      </button>
+                      <button className="gc-btn gc-btn-icon" type="button" title="Move up" aria-label="Move step up" onClick={() => moveStep(idx, -1)}>↑</button>
+                      <button className="gc-btn gc-btn-icon" type="button" title="Move down" aria-label="Move step down" onClick={() => moveStep(idx, 1)}>↓</button>
                       <button className="gc-btn gc-btn-ghost" type="button" onClick={() => removeStep(idx)}>
                         Remove
                       </button>
@@ -1986,20 +1982,6 @@ export default function RecipeEditor() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <div className="gc-label">LINES (INGREDIENTS + SUB-RECIPES)</div>
-            <div className="gc-legend" role="note" aria-label="Lines legend">
-              <span className="gc-pill">
-                <span aria-hidden>🧼</span>
-                Net <span className="muted">after cleaning</span>
-              </span>
-              <span className="gc-pill">
-                <span aria-hidden>🥩</span>
-                Gross <span className="muted">before cleaning</span>
-              </span>
-              <span className="gc-pill">
-                <span aria-hidden>📈</span>
-                Yield% <span className="muted">Net ÷ Gross × 100</span>
-              </span>
-            </div>
             <div className="mt-1 text-sm text-neutral-600">
               Inline add · Groups · Notes · Reorder · Duplicate · Expand breakdown.
             </div>
@@ -2144,22 +2126,10 @@ export default function RecipeEditor() {
           <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
             <div className="gc-lines-header grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
               <div className="whitespace-nowrap">Item</div>
-              <div className="text-right whitespace-nowrap">
-                Net Qty
-                <span className="gc-colhint">after cleaning</span>
-              </div>
-              <div className="text-right whitespace-nowrap">
-                Unit
-                <span className="gc-colhint">g · kg · ml · l</span>
-              </div>
-              <div className="text-right whitespace-nowrap">
-                Yield %
-                <span className="gc-colhint">auto</span>
-              </div>
-              <div className="text-right whitespace-nowrap">
-                Gross Qty
-                <span className="gc-colhint">before cleaning</span>
-              </div>
+              <div className="text-right whitespace-nowrap">Net Qty</div>
+              <div className="text-right whitespace-nowrap">Unit</div>
+              <div className="text-right whitespace-nowrap">Yield %</div>
+              <div className="text-right whitespace-nowrap">Gross Qty</div>
               <div className="whitespace-nowrap">Note</div>
               <div className="text-right whitespace-nowrap">Actions</div>
             </div>
@@ -2204,22 +2174,12 @@ export default function RecipeEditor() {
                           />
                         </div>
 
-                        <div className="flex gap-2">
-                          <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving} title="Move up">
-                            ↑
-                          </button>
-                          <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving} title="Move down">
-                            ↓
-                          </button>
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => duplicateLine(l.id)}>
-                            Duplicate
-                          </button>
-                          <button className="gc-btn gc-btn-primary" type="button" onClick={() => saveRow(l.id)} disabled={saving}>
-                            {saving ? 'Saving…' : 'Save'}
-                          </button>
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deleteLine(l.id)} disabled={saving}>
-                            Delete
-                          </button>
+                        <div className="gc-line-actions flex gap-2 justify-end">
+                          <button className="gc-btn gc-btn-icon" type="button" title="Move up" aria-label="Move line up" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving}>↑</button>
+                          <button className="gc-btn gc-btn-icon" type="button" title="Move down" aria-label="Move line down" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving}>↓</button>
+                          <button className="gc-btn gc-btn-icon" type="button" title="Duplicate" aria-label="Duplicate line" onClick={() => duplicateLine(l.id)}>⧉</button>
+                          <button className="gc-btn gc-btn-icon gc-btn-primary" type="button" title="Save line" aria-label="Save line" onClick={() => saveRow(l.id)} disabled={saving}>{saving ? "…" : "✓"}</button>
+                          <button className="gc-btn gc-btn-icon gc-btn-danger" type="button" title="Delete" aria-label="Delete line" onClick={() => deleteLine(l.id)} disabled={saving}>🗑</button>
                         </div>
                       </div>
                     </div>

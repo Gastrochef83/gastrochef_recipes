@@ -3482,136 +3482,79 @@ select.gc-input{
 
 
 /* =========================================================
-   GastroChef — ABSOLUTE V9 (GOD EXPERIENCE)
-   ✅ UI-only polish: cohesion, clarity, premium spacing
+   GastroChef — ABSOLUTE V11 (MASTER CHEF EDITOR)
+   UI polish only — no logic changes
+   Fixes: icon buttons, lines clarity, print-only safety
    ========================================================= */
 
-:root{
-  --gc-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
-  --gc-label-size: 12px;
-  --gc-input-size: 14px;
-  --gc-input-h: 42px;
-  --gc-gap: 12px;
-  --gc-gap-lg: 18px;
-  --gc-focus: 0 0 0 4px rgba(0, 150, 136, .18);
-}
-
-html, body { font-family: var(--gc-font); }
-
-.gc-page-header{
-  display:flex;
-  align-items:flex-start;
-  justify-content:space-between;
-  gap: var(--gc-gap-lg);
-}
-
-.gc-page-header .gc-label{ letter-spacing:.16em; font-size: var(--gc-label-size); }
-.gc-page-header .gc-title{ font-size: 26px; line-height: 1.15; font-weight: 900; color: var(--gc-text); }
-.gc-page-header .gc-subtitle{ margin-top: 6px; font-size: 13.5px; color: var(--gc-muted); max-width: 60ch; }
-
+/* ---- Inputs: stable sizing + numeric alignment ---- */
 .gc-input{
-  height: var(--gc-input-h);
-  font-size: var(--gc-input-size);
-  border-radius: 14px;
+  width: 100%;
+  min-height: 44px;
+}
+.gc-input[type="number"]{
+  text-align: right;
 }
 
-.gc-input:focus{ outline:none; box-shadow: var(--gc-focus); border-color: rgba(0,150,136,.35); }
-
-.gc-action, .gc-btn, button.gc-action{
+/* ---- Icon buttons (used in RecipeEditor lines + steps) ---- */
+.gc-btn-icon{
+  min-width: 40px;
   height: 40px;
-  border-radius: 14px;
-  font-weight: 800;
-  letter-spacing: .01em;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  line-height: 1;
+  font-weight: 700;
+}
+.gc-btn-icon.gc-btn-primary{
+  box-shadow: 0 12px 26px rgba(2,6,23,.10);
+}
+.gc-btn-danger{
+  border-color: rgba(220, 38, 38, .28) !important;
+  color: #b91c1c !important;
+  background: rgba(254, 242, 242, .9) !important;
+}
+.gc-btn-danger:hover{
+  border-color: rgba(220, 38, 38, .40) !important;
+  background: rgba(254, 226, 226, .95) !important;
 }
 
-.gc-action.primary{ box-shadow: 0 10px 24px rgba(0,150,136,.18); }
-.gc-action.secondary, .gc-action.warn, .gc-action.danger{ background:#fff; }
-
-.gc-recipes-grid{ gap: 18px; }
-
-.gc-menu-card{
-  border-radius: 22px;
-  box-shadow: var(--gc-shadow-soft);
-  transition: transform .14s ease, box-shadow .18s ease, border-color .18s ease;
-}
-
-.gc-menu-card:hover{ transform: translateY(-2px); box-shadow: var(--gc-shadow); }
-
-.gc-menu-hero{ border-bottom: 1px solid rgba(15,23,42,.06); }
-
-.gc-menu-overlay{ background: linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(2,6,23,.12) 55%, rgba(2,6,23,.34) 100%); }
-
-.gc-menu-badges{ gap: 8px; }
-
-.gc-chip{
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-weight: 800;
+/* ---- Lines table: clearer right alignment and breathing room ---- */
+.gc-lines-header{
   letter-spacing: .02em;
 }
-
-.gc-menu-body{ padding: 16px 16px 18px; }
-.gc-menu-title{ font-size: 16px; font-weight: 900; }
-.gc-menu-desc{ font-size: 13px; color: var(--gc-muted); }
-
-.gc-danger-row{
-  margin-top: 10px;
-  opacity: 0;
-  transform: translateY(6px);
-  pointer-events: none;
-  transition: opacity .18s ease, transform .18s ease;
+.gc-line-row .gc-input{
+  min-height: 40px;
+  padding: 10px 12px;
+}
+.gc-line-row select.gc-input{
+  padding-right: 28px;
+}
+.gc-line-row .gc-input[type="number"]{
+  text-align: right;
+}
+.gc-line-actions{
+  justify-content: flex-end;
 }
 
-.gc-menu-card:hover .gc-danger-row,
-.gc-menu-card:focus-within .gc-danger-row{
-  opacity: 1;
-  transform: translateY(0);
-  pointer-events: auto;
+/* ---- Print safety: never show print card on screen ---- */
+.gc-print-only{
+  display: none;
 }
-
-.gc-dashboard .gc-card{ border-radius: 20px; }
-.gc-dashboard .gc-card.p-6{ padding: 22px; }
-
-.gc-quick{
-  display:flex;
-  align-items:center;
-  gap: 10px;
-}
-
-.gc-legend{
-  display:flex;
-  flex-wrap:wrap;
-  gap: 8px;
-  margin-top: 10px;
-}
-
-.gc-pill{
-  display:inline-flex;
-  align-items:center;
-  gap: 8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(15,23,42,.10);
-  background: rgba(15,23,42,.03);
-  font-size: 12px;
-  font-weight: 800;
-  color: var(--gc-text);
-}
-
-.gc-pill .muted{ color: var(--gc-muted); font-weight: 800; }
-
-.gc-lines-header{ position: relative; }
-.gc-lines-header .gc-colhint{ display:block; font-size: 11px; font-weight: 800; color: rgba(100,116,139,.92); margin-top: 2px; }
-
-.gc-lines-help{
-  margin-top: 8px;
-  font-size: 12.5px;
-  color: var(--gc-muted);
-}
-
-.gc-lines-help b{ color: var(--gc-text); font-weight: 900; }
 
 @media print{
-  .gc-sidenav, .gc-topbar, .gc-fab{ display:none !important; }
-  body{ background:#fff !important; }
+  /* hide app chrome */
+  .gc-shell, .gc-sidebar, .gc-topbar, .gc-screen-only, nav, header, aside{
+    display: none !important;
+  }
+  /* show print */
+  .gc-print-only{
+    display: block !important;
+  }
+  body{
+    background: #fff !important;
+  }
 }
+
