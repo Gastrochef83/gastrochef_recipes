@@ -292,7 +292,7 @@ export default function Dashboard() {
 
   return (
     <div className="gc-dashboard space-y-6">
-      <div className="gc-card p-6 gc-page-header" style={{ position: 'sticky', top: 12, zIndex: 30 }}>
+      <div className="gc-card p-6 gc-page-header">
         <div className="gc-label">DASHBOARD</div>
         <div className="mt-2 text-2xl font-extrabold">Overview</div>
         <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>

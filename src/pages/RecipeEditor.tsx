@@ -1432,81 +1432,97 @@ export default function RecipeEditor() {
   // UI
   // =========================
   return (
-    <div className="gc-editor space-y-6">
-      {/* Header */}
-      <div className="gc-card p-6">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="h-28 w-28 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100 shrink-0">
+    <div className="gc-editor gc-editor-ultra space-y-6">
+      {/* Ultra Hero (no sticky) */}
+      <div className="gc-card gc-editor-hero">
+        <div className="gc-editor-hero-top">
+          <div>
+            <div className="gc-label">RECIPE EDITOR</div>
+            <div className="gc-editor-hero-title">{isKitchen ? 'Kitchen Mode' : 'Management Mode'}</div>
+            <div className="gc-editor-hero-sub">Edit recipe meta, build lines, and manage method & pricing.</div>
+          </div>
+
+          <div className="gc-editor-hero-status">
+            <span
+              className={`gc-status-pill ${
+                metaStatus === 'dirty'
+                  ? 'is-warn'
+                  : metaStatus === 'saving'
+                  ? 'is-info'
+                  : 'is-ok'
+              }`}
+            >
+              {metaBadge}
+            </span>
+          </div>
+        </div>
+
+        <div className="gc-editor-hero-grid">
+          {/* Media */}
+          <div className="gc-editor-media">
+            <div className="gc-editor-photo">
               {recipe.photo_url ? (
-                <img src={recipe.photo_url} alt={name} className="h-full w-full object-cover" />
+                <img src={recipe.photo_url} alt={name} />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
+                <div className="gc-editor-photo-empty">No Photo</div>
               )}
             </div>
 
-            <div className="min-w-[min(760px,92vw)]">
-              <div className="flex flex-wrap items-center justify-between gap-2">
-                <div className="gc-label">RECIPE EDITOR — {isKitchen ? 'KITCHEN MODE' : 'MGMT MODE'}</div>
-                <div className="flex items-center gap-2 text-xs">
-                  <span
-                    className={`inline-flex items-center rounded-full px-2 py-0.5 font-semibold ${
-                      metaStatus === 'dirty'
-                        ? 'bg-amber-50 text-amber-800 border border-amber-200'
-                        : metaStatus === 'saving'
-                        ? 'bg-blue-50 text-blue-800 border border-blue-200'
-                        : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
-                    }`}
-                  >
-                    {metaBadge}
-                  </span>
-                </div>
+            <label className="gc-btn gc-btn-ghost gc-btn-wide cursor-pointer">
+              {uploading ? 'Uploading…' : 'Upload Photo'}
+              <input
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  const ff = e.target.files?.[0]
+                  if (ff) uploadPhoto(ff)
+                  e.currentTarget.value = ''
+                }}
+                disabled={uploading}
+              />
+            </label>
+
+            <div className="gc-editor-mini">
+              <div className="gc-editor-mini-label">Recipe ID</div>
+              <div className="gc-editor-mini-value">{recipe.id}</div>
+            </div>
+          </div>
+
+          {/* Fields */}
+          <div className="gc-editor-fields">
+            <div className="gc-form-grid">
+              <div className="gc-field">
+                <div className="gc-label">NAME</div>
+                <input className="gc-input w-full" value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g., Cajun Chicken Bowl" />
               </div>
 
-              <div className="mt-3 grid gap-3 md:grid-cols-2">
-                <div>
-                  <div className="gc-label">NAME</div>
-                  <input className="gc-input mt-2 w-full" value={name} onChange={(e) => setName(e.target.value)} />
-                </div>
+              <div className="gc-field">
+                <div className="gc-label">CATEGORY</div>
+                <input
+                  className="gc-input w-full"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                  placeholder="Veg / Chicken / Dessert…"
+                />
+              </div>
 
-                <div>
-                  <div className="gc-label">CATEGORY</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    placeholder="Veg / Chicken / Dessert..."
-                  />
-                </div>
+              <div className="gc-field">
+                <div className="gc-label">PORTIONS</div>
+                <input
+                  className="gc-input w-full"
+                  type="number"
+                  min={1}
+                  step="1"
+                  value={portions}
+                  onChange={(e) => setPortions(e.target.value)}
+                  placeholder="1"
+                />
+              </div>
 
-                <div>
-                  <div className="gc-label">PORTIONS</div>
-                  <input
-                    className="gc-input mt-2 w-full"
-                    type="number"
-                    min={1}
-                    step="1"
-                    value={portions}
-                    onChange={(e) => setPortions(e.target.value)}
-                  />
-                </div>
-
-                <div className="flex items-end gap-2 flex-wrap">
-                  <label className="gc-btn gc-btn-ghost cursor-pointer">
-                    {uploading ? 'Uploading…' : 'Upload Photo'}
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      onChange={(e) => {
-                        const ff = e.target.files?.[0]
-                        if (ff) uploadPhoto(ff)
-                        e.currentTarget.value = ''
-                      }}
-                      disabled={uploading}
-                    />
-                  </label>
-
+              <div className="gc-field">
+                <div className="gc-label">QUICK ACTIONS</div>
+                <div className="gc-editor-actions">
                   <button className="gc-btn gc-btn-primary" onClick={() => saveMeta()} disabled={savingMeta}>
                     {savingMeta ? 'Saving…' : 'Save'}
                   </button>
@@ -1522,87 +1538,45 @@ export default function RecipeEditor() {
                   )}
 
                   <NavLink className="gc-btn gc-btn-ghost" to={`/cook?id=${recipe.id}`}>
-                    🍳 Cook Mode
+                    Cook Mode
                   </NavLink>
 
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={smartBack}>
-                    ← Back
+                    Back
                   </button>
                 </div>
               </div>
-
-              {/* Sub-Recipe Settings (Mgmt only) */}
-              {isMgmt && (
-                <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <div className="gc-label">SUB-RECIPE SETTINGS</div>
-                      <div className="mt-1 text-xs text-neutral-500">
-                        Enable this to use the recipe inside other recipes by quantity of yield.
-                      </div>
-                    </div>
-
-                    <button className="gc-btn gc-btn-ghost" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
-                      {yieldSmartLoading ? 'Calculating…' : 'Yield Smart'}
-                    </button>
-                  </div>
-
-                  <div className="mt-3 grid gap-3 md:grid-cols-3">
-                    <label className="flex items-center gap-2 text-sm font-semibold">
-                      <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} />
-                      This is a Sub-Recipe
-                    </label>
-
-                    <div>
-                      <div className="gc-label">YIELD QTY</div>
-                      <input
-                        className="gc-input mt-2 w-full"
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={yieldQty}
-                        onChange={(e) => setYieldQty(e.target.value)}
-                        disabled={!isSubRecipe}
-                        placeholder="e.g., 500"
-                      />
-                    </div>
-
-                    <div>
-                      <div className="gc-label">YIELD UNIT</div>
-                      <select
-                        className="gc-input mt-2 w-full"
-                        value={yieldUnit}
-                        onChange={(e) => setYieldUnit(e.target.value as any)}
-                        disabled={!isSubRecipe}
-                      >
-                        <option value="g">g</option>
-                        <option value="kg">kg</option>
-                        <option value="ml">ml</option>
-                        <option value="l">l</option>
-                        <option value="pcs">pcs</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  {isSubRecipe && (yieldQty.trim() === '' || !yieldUnit) ? (
-                    <div className="mt-2 text-xs text-amber-700">Tip: set Yield Qty + Unit then press Save.</div>
-                  ) : null}
-                </div>
-              )}
             </div>
           </div>
 
-          {/* Cost box (Mgmt only) */}
+          {/* Stats */}
           {isMgmt && (
-            <div className="min-w-[240px] rounded-2xl border border-neutral-200 bg-white p-4">
+            <div className="gc-editor-stats">
               <div className="gc-label">COST (RECURSIVE)</div>
-              <div className="mt-1 text-2xl font-extrabold">{fmtMoney(totalCost, currency)}</div>
-              <div className="mt-1 text-xs text-neutral-500">
-                Cost/portion: <span className="font-semibold">{fmtMoney(cpp, currency)}</span>
+              <div className="gc-editor-cost">{fmtMoney(totalCost, currency)}</div>
+              <div className="gc-editor-cost-sub">
+                Cost / portion <span className="gc-editor-cost-strong">{fmtMoney(cpp, currency)}</span>
+              </div>
+
+              <div className="gc-editor-divider" />
+
+              <div className="gc-editor-kpis">
+                <div className="gc-mini-kpi">
+                  <div className="gc-mini-kpi-label">Lines</div>
+                  <div className="gc-mini-kpi-value">{lines.length}</div>
+                </div>
+                <div className="gc-mini-kpi">
+                  <div className="gc-mini-kpi-label">Portions</div>
+                  <div className="gc-mini-kpi-value">{toNum(portions, 1)}</div>
+                </div>
+                <div className="gc-mini-kpi">
+                  <div className="gc-mini-kpi-label">CPP</div>
+                  <div className="gc-mini-kpi-value">{fmtMoney(cpp, currency)}</div>
+                </div>
               </div>
 
               {totalCostRes.warnings.length > 0 && (
-                <div className="mt-2 text-xs text-amber-700">
+                <div className="gc-editor-warn">
                   {totalCostRes.warnings.slice(0, 2).map((w, i) => (
                     <div key={i}>• {w}</div>
                   ))}
@@ -1611,6 +1585,65 @@ export default function RecipeEditor() {
             </div>
           )}
         </div>
+
+        {/* Sub-Recipe Settings (Mgmt only) */}
+        {isMgmt && (
+          <div className="gc-editor-subrecipe">
+            <div className="gc-editor-subrecipe-head">
+              <div>
+                <div className="gc-label">SUB-RECIPE SETTINGS</div>
+                <div className="gc-help">
+                  Enable this to use the recipe inside other recipes by quantity of yield.
+                </div>
+              </div>
+
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={yieldSmart} disabled={yieldSmartLoading}>
+                {yieldSmartLoading ? 'Calculating…' : 'Yield Smart'}
+              </button>
+            </div>
+
+            <div className="gc-editor-subrecipe-grid">
+              <label className="gc-check">
+                <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} />
+                <span>This is a Sub-Recipe</span>
+              </label>
+
+              <div className="gc-field">
+                <div className="gc-label">YIELD QTY</div>
+                <input
+                  className="gc-input w-full"
+                  type="number"
+                  min={0}
+                  step="0.01"
+                  value={yieldQty}
+                  onChange={(e) => setYieldQty(e.target.value)}
+                  disabled={!isSubRecipe}
+                  placeholder="e.g., 500"
+                />
+              </div>
+
+              <div className="gc-field">
+                <div className="gc-label">YIELD UNIT</div>
+                <select
+                  className="gc-input w-full"
+                  value={yieldUnit}
+                  onChange={(e) => setYieldUnit(e.target.value as any)}
+                  disabled={!isSubRecipe}
+                >
+                  <option value="g">g</option>
+                  <option value="kg">kg</option>
+                  <option value="ml">ml</option>
+                  <option value="l">l</option>
+                  <option value="pcs">pcs</option>
+                </select>
+              </div>
+            </div>
+
+            {isSubRecipe && (yieldQty.trim() === '' || !yieldUnit) ? (
+              <div className="gc-note-warn">Tip: set Yield Qty + Unit then press Save.</div>
+            ) : null}
+          </div>
+        )}
       </div>
 
       {/* Pack D: Cost History (Mgmt only) */}

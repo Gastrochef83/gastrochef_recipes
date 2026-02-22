@@ -57,9 +57,9 @@
 }
 
 .gc-side{
-  position: sticky;
-  top: 18px;
-  height: calc(100vh - 36px);
+  position: relative;
+  top: auto;
+  height: auto;
   align-self: start;
 }
 @media (max-width: 980px){

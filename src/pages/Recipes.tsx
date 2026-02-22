@@ -545,15 +545,7 @@ export default function Recipes() {
       {toast && <Toast message={toast} onClose={() => setToast(null)} />}
 
       {/* Sticky top header */}
-      <div
-        className="gc-card"
-        style={{
-          position: 'sticky',
-          top: 12,
-          zIndex: 20,
-          backdropFilter: 'blur(10px)',
-        }}
-      >
+      <div className="gc-card">
         <div className="p-5">
           <div className="gc-label">RECIPES</div>
 

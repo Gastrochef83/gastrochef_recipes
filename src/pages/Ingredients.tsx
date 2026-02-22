@@ -361,7 +361,7 @@ export default function Ingredients() {
   return (
     <div className="gc-ingredients space-y-6">
       {/* Header */}
-      <div className="gc-card p-6 gc-page-header" style={{ position: 'sticky', top: 12, zIndex: 30 }}>
+      <div className="gc-card p-6 gc-page-header">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="gc-label">INGREDIENTS — PRO</div>

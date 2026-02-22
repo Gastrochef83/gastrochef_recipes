@@ -2871,10 +2871,10 @@ a:hover{
 @media (prefers-reduced-motion: reduce){
   *{ transition: none !important; scroll-behavior: auto !important; }
 }
+
 /* =========================================================
    PATCH — Topbar clarity + Visible Logout styling
    UI ONLY — No logic changes
-   Paste at END of src/styles.css
    ========================================================= */
 
 .gc-topbar-card{
@@ -2925,4 +2925,381 @@ a:hover{
   color: #fca5a5;
   background: rgba(248,113,113,.10);
   border-color: rgba(248,113,113,.22);
+}
+
+/* RecipeEditor: stronger hierarchy without touching logic */
+.gc-editor{
+  padding-bottom: 40px;
+}
+
+.gc-editor .gc-card{
+  border-radius: 22px;
+}
+
+.gc-editor-sticky{
+  position: sticky;
+  top: 14px;
+  z-index: 30;
+}
+
+@media (max-width: 768px){
+  .gc-editor-sticky{ top: 10px; }
+}
+
+
+/* =========================================================
+   ULTRA VISUAL OVERHAUL — Global UI System (No Sticky)
+   - Polishes: typography, inputs, buttons, spacing, borders
+   - Disables ANY sticky behavior across the app (per request)
+   - Adds RecipeEditor Ultra Hero layout styles
+   ========================================================= */
+
+/* ---- Hard-disable sticky everywhere ---- */
+:where(.gc-side, .gc-topbar, .gc-page-header, .gc-editor-sticky, .gc-recipes-header, .gc-sticky, .sticky){
+  position: relative !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+.gc-card[style*="position: sticky"], 
+.gc-card[style*="position:sticky"],
+*[style*="position: sticky"],
+*[style*="position:sticky"]{
+  position: relative !important;
+  top: auto !important;
+  bottom: auto !important;
+}
+
+/* ---- Typography polish ---- */
+:root{
+  --gc-font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+  --gc-fs-xs: 12px;
+  --gc-fs-sm: 13px;
+  --gc-fs: 14px;
+  --gc-fs-md: 15px;
+  --gc-fs-lg: 18px;
+  --gc-fs-xl: 22px;
+  --gc-radius-sm: 12px;
+  --gc-radius-md: 16px;
+  --gc-radius-xl: 22px;
+}
+html, body{ font-family: var(--gc-font); }
+.gc-title{ letter-spacing: -0.02em; }
+.gc-section-title{ letter-spacing: -0.02em; }
+
+/* ---- Inputs / Select / Textarea (perfect alignment) ---- */
+:where(input, select, textarea).gc-input,
+.gc-input,
+select.gc-input,
+textarea.gc-input{
+  font-size: var(--gc-fs);
+  line-height: 20px;
+  padding: 10px 12px;
+  border-radius: var(--gc-radius-md);
+  border: 1px solid rgba(15,23,42,.14);
+  background: rgba(255,255,255,.92);
+  color: rgba(15,23,42,.92);
+  box-shadow: 0 10px 22px rgba(2,6,23,.04);
+}
+
+.gc-dark :where(input, select, textarea).gc-input,
+.gc-dark .gc-input,
+.gc-dark select.gc-input,
+.gc-dark textarea.gc-input{
+  background: rgba(15,23,42,.72);
+  border-color: rgba(148,163,184,.20);
+  color: rgba(241,245,249,.92);
+  box-shadow: 0 12px 26px rgba(0,0,0,.22);
+}
+
+.gc-input::placeholder{ color: rgba(100,116,139,.72); }
+.gc-dark .gc-input::placeholder{ color: rgba(148,163,184,.70); }
+
+:where(input, select, textarea).gc-input:hover{
+  border-color: rgba(15,23,42,.20);
+}
+.gc-dark :where(input, select, textarea).gc-input:hover{
+  border-color: rgba(148,163,184,.28);
+}
+
+:where(input, select, textarea).gc-input:focus,
+:where(input, select, textarea).gc-input:focus-visible{
+  outline: none;
+  border-color: rgba(37,99,235,.42);
+  box-shadow: 0 0 0 4px rgba(37,99,235,.16), 0 14px 30px rgba(2,6,23,.08);
+}
+
+/* Labels closer to inputs, consistent */
+.gc-label{
+  font-size: 11px;
+  letter-spacing: .14em;
+  margin-bottom: 6px;
+}
+
+/* Buttons consistent sizing */
+.gc-btn{
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  line-height: 18px;
+}
+.gc-btn-wide{ width: 100%; justify-content: center; }
+
+/* Helper text */
+.gc-help{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(100,116,139,.86);
+}
+.gc-note-warn{
+  margin-top: 10px;
+  font-size: 12px;
+  color: #92400e;
+}
+
+/* Check control */
+.gc-check{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(15,23,42,.86);
+}
+.gc-dark .gc-check{ color: rgba(241,245,249,.86); }
+.gc-check input{
+  width: 18px;
+  height: 18px;
+  accent-color: var(--gc-accent);
+}
+
+/* ---- Cards ---- */
+.gc-card{
+  border-radius: var(--gc-radius-xl);
+  border-color: rgba(15,23,42,.10);
+}
+.gc-dark .gc-card{ border-color: rgba(148,163,184,.14); }
+
+/* =========================================================
+   RecipeEditor — ULTRA Hero Layout (No sticky)
+   ========================================================= */
+.gc-editor-ultra .gc-editor-hero{
+  padding: 18px;
+}
+.gc-editor-hero-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 14px;
+  padding: 6px 6px 12px;
+}
+.gc-editor-hero-title{
+  font-size: var(--gc-fs-xl);
+  font-weight: 900;
+  margin-top: 4px;
+  color: rgba(15,23,42,.94);
+  letter-spacing: -0.02em;
+}
+.gc-dark .gc-editor-hero-title{ color: rgba(241,245,249,.94); }
+
+.gc-editor-hero-sub{
+  margin-top: 6px;
+  font-size: 13px;
+  color: rgba(100,116,139,.92);
+}
+.gc-editor-hero-status{
+  display:flex;
+  align-items:center;
+}
+
+.gc-status-pill{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(255,255,255,.76);
+}
+.gc-status-pill.is-ok{ background: rgba(16,185,129,.10); border-color: rgba(16,185,129,.22); color: rgba(6,95,70,1); }
+.gc-status-pill.is-info{ background: rgba(59,130,246,.10); border-color: rgba(59,130,246,.24); color: rgba(30,64,175,1); }
+.gc-status-pill.is-warn{ background: rgba(245,158,11,.12); border-color: rgba(245,158,11,.26); color: rgba(146,64,14,1); }
+
+.gc-editor-hero-grid{
+  display:grid;
+  grid-template-columns: 220px 1fr 280px;
+  gap: 14px;
+  align-items:start;
+}
+@media (max-width: 1040px){
+  .gc-editor-hero-grid{ grid-template-columns: 220px 1fr; }
+}
+@media (max-width: 720px){
+  .gc-editor-hero-grid{ grid-template-columns: 1fr; }
+}
+
+.gc-editor-media{
+  display:flex;
+  flex-direction:column;
+  gap: 10px;
+  padding: 6px;
+}
+.gc-editor-photo{
+  height: 180px;
+  border-radius: 20px;
+  overflow:hidden;
+  border: 1px solid rgba(15,23,42,.12);
+  background: rgba(15,23,42,.04);
+}
+.gc-editor-photo img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+.gc-editor-photo-empty{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size: 12px;
+  color: rgba(100,116,139,.84);
+}
+.gc-editor-mini{
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.70);
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+.gc-dark .gc-editor-mini{ background: rgba(15,23,42,.50); border-color: rgba(148,163,184,.16); }
+.gc-editor-mini-label{
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(100,116,139,.90);
+}
+.gc-editor-mini-value{
+  margin-top: 4px;
+  font-size: 12px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  color: rgba(15,23,42,.86);
+  word-break: break-all;
+}
+.gc-dark .gc-editor-mini-value{ color: rgba(241,245,249,.86); }
+
+.gc-editor-fields{
+  padding: 6px;
+}
+.gc-form-grid{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+@media (max-width: 720px){
+  .gc-form-grid{ grid-template-columns: 1fr; }
+}
+.gc-field .gc-label{ margin-bottom: 6px; }
+
+.gc-editor-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 10px;
+}
+.gc-editor-actions .gc-btn{
+  min-width: 120px;
+}
+
+.gc-editor-stats{
+  padding: 14px;
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 20px;
+  background: rgba(255,255,255,.78);
+  box-shadow: 0 14px 32px rgba(2,6,23,.06);
+}
+.gc-dark .gc-editor-stats{
+  background: rgba(15,23,42,.52);
+  border-color: rgba(148,163,184,.16);
+  box-shadow: 0 18px 40px rgba(0,0,0,.22);
+}
+.gc-editor-cost{
+  margin-top: 8px;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.gc-editor-cost-sub{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(100,116,139,.92);
+}
+.gc-editor-cost-strong{ font-weight: 900; color: rgba(15,23,42,.92); }
+.gc-dark .gc-editor-cost-strong{ color: rgba(241,245,249,.92); }
+
+.gc-editor-divider{
+  height: 1px;
+  background: rgba(15,23,42,.10);
+  margin: 12px 0;
+}
+.gc-dark .gc-editor-divider{ background: rgba(148,163,184,.16); }
+
+.gc-editor-kpis{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+}
+.gc-mini-kpi{
+  border: 1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.72);
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+.gc-dark .gc-mini-kpi{ background: rgba(15,23,42,.56); border-color: rgba(148,163,184,.16); }
+.gc-mini-kpi-label{
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(100,116,139,.90);
+}
+.gc-mini-kpi-value{
+  margin-top: 6px;
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(15,23,42,.92);
+}
+.gc-dark .gc-mini-kpi-value{ color: rgba(241,245,249,.92); }
+
+.gc-editor-warn{
+  margin-top: 10px;
+  font-size: 12px;
+  color: #92400e;
+  background: rgba(245,158,11,.10);
+  border: 1px solid rgba(245,158,11,.22);
+  border-radius: 16px;
+  padding: 10px 12px;
+}
+
+.gc-editor-subrecipe{
+  margin-top: 14px;
+  border-top: 1px solid rgba(15,23,42,.08);
+  padding-top: 14px;
+}
+.gc-dark .gc-editor-subrecipe{ border-top-color: rgba(148,163,184,.14); }
+.gc-editor-subrecipe-head{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap: 12px;
+}
+.gc-editor-subrecipe-grid{
+  margin-top: 12px;
+  display:grid;
+  grid-template-columns: 1.2fr 1fr 1fr;
+  gap: 12px;
+  align-items:end;
+}
+@media (max-width: 900px){
+  .gc-editor-subrecipe-grid{ grid-template-columns: 1fr; }
 }
