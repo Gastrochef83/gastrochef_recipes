@@ -3671,3 +3671,76 @@ select.gc-input{
   padding-bottom: 10px !important;
 }
 
+/* =========================================================
+   ABSOLUTE V13.1 — RECIPE EDITOR LINES (RIGHT SIDE FIX)
+   Fixes: cut-off Actions column, note field truncation,
+          consistent header/row grid, better horizontal scroll
+   (UI only — no logic change)
+   ========================================================= */
+
+/* Header + rows must share the SAME grid. Force it (some older blocks override). */
+.gc-lines-grid{
+  display: grid !important;
+  grid-template-columns: var(--gc-lines-cols) !important;
+  align-items: center;
+  /* ensure Actions is always reachable and never clipped */
+  min-width: 1020px;
+}
+
+/* Slightly tighter last column so the right side fits more often */
+:root{
+  --gc-lines-cols: minmax(320px, 1.55fr)
+                  minmax(92px, .55fr)
+                  minmax(86px, .50fr)
+                  minmax(92px, .55fr)
+                  minmax(110px, .60fr)
+                  minmax(220px, 1fr)
+                  160px;
+}
+
+/* Mobile/Small laptop: allow a bit more room for Notes, keep Actions compact */
+@media (max-width: 1100px){
+  :root{
+    --gc-lines-cols: minmax(280px, 1.35fr)
+                    minmax(90px, .55fr)
+                    minmax(80px, .50fr)
+                    minmax(88px, .55fr)
+                    minmax(100px, .60fr)
+                    minmax(200px, 1fr)
+                    150px;
+  }
+}
+
+/* Make the scroll container feel intentional + keep a safe right padding */
+.gc-scroll{
+  overflow-x: auto !important;
+  -webkit-overflow-scrolling: touch;
+}
+.gc-scroll > div{ /* header wrapper */
+  padding-right: 8px;
+}
+
+/* Actions: lock width + prevent wrapping */
+.gc-line-actions{
+  min-width: 150px;
+  white-space: nowrap;
+}
+
+/* Icon buttons: consistent size so the Actions column stays compact */
+.gc-btn.gc-btn-icon{
+  width: 36px;
+  height: 36px;
+  padding: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Notes input: prevent it from shrinking too hard */
+.gc-line-row .gc-input{
+  min-width: 0;
+}
+.gc-line-row > div:nth-child(6) .gc-input{
+  min-width: 180px;
+}
+
