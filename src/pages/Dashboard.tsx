@@ -43,7 +43,7 @@ export default function Dashboard() {
   const kpis = useMemo(() => {
     if (!recipes.length) {
       return {
-        avgFoodCost: 0,
+        avgfoodCost: r.food_cost ?? 0 0,
         avgMargin: 0,
         totalRecipes: 0,
         warnings: []
@@ -57,10 +57,10 @@ export default function Dashboard() {
     const avgMargin = totalRevenue ? ((totalRevenue - totalCost) / totalRevenue) * 100 : 0;
     
     const warnings = recipes
-      .filter(r => r.food_cost_percentage > 35)
+      .filter(r => r.food_cost_percentage ?? 0 ?? 0 > 35)
       .map(r => ({
         recipeName: r.name,
-        foodCost: r.food_cost_percentage
+        foodCost: r.food_cost ?? 0 r.food_cost_percentage ?? 0
       }));
     
     return {
