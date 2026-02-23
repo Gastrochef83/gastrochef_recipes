@@ -3695,7 +3695,7 @@ select.gc-input{
                   minmax(92px, .55fr)
                   minmax(110px, .60fr)
                   minmax(220px, 1fr)
-                  160px;
+                  var(--gc-lines-actions-w, 190px);
 }
 
 /* Mobile/Small laptop: allow a bit more room for Notes, keep Actions compact */
@@ -3707,7 +3707,7 @@ select.gc-input{
                     minmax(88px, .55fr)
                     minmax(100px, .60fr)
                     minmax(200px, 1fr)
-                    150px;
+                    var(--gc-lines-actions-w, 176px);
   }
 }
 
@@ -3726,22 +3726,6 @@ select.gc-input{
   white-space: nowrap;
 }
 
-/* --- V14 Rebuild: make the right side NEVER disappear ---
-   The Actions cell is sticky on the right inside the horizontal scroll container.
-   This eliminates the "cut off" issue even on narrow viewports.
-*/
-.gc-lines-actions-cell{
-  position: sticky;
-  right: 0;
-  z-index: 6;
-  background: #fff;
-  box-shadow: -18px 0 18px rgba(15, 23, 42, .06);
-  padding-left: 10px;
-}
-.gc-lines-head .gc-lines-actions-cell{
-  background: #fafafa;
-}
-
 /* Icon buttons: consistent size so the Actions column stays compact */
 .gc-btn.gc-btn-icon{
   width: 36px;
@@ -3758,5 +3742,49 @@ select.gc-input{
 }
 .gc-line-row > div:nth-child(6) .gc-input{
   min-width: 180px;
+}
+
+/* =========================================================
+   ABSOLUTE V15 — RECIPE EDITOR LINES (STICKY ACTIONS)
+   Goal: keep Actions visible without horizontal scrolling.
+   UI only — no logic change.
+   ========================================================= */
+
+/* Make the last column sticky to the right (header + rows). */
+.gc-lines-actions-head,
+.gc-lines-actions-cell{
+  position: sticky;
+  right: 0;
+  z-index: 5;
+  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.92) 20%, rgba(255,255,255,1) 60%);
+  padding-left: 10px;
+}
+
+/* Header needs its own background + border so it reads like a fixed column */
+.gc-lines-actions-head{
+  z-index: 10;
+  background: linear-gradient(90deg, rgba(250,250,250,0) 0%, rgba(250,250,250,.95) 25%, rgba(250,250,250,1) 65%);
+  border-left: 1px solid rgba(15,23,42,.10);
+}
+
+/* Rows: subtle divider and shadow to separate sticky column from scroll content */
+.gc-lines-actions-cell{
+  border-left: 1px solid rgba(15,23,42,.08);
+  box-shadow: -12px 0 18px rgba(2,6,23,.05);
+}
+
+/* Ensure the scroll container can show sticky items properly */
+.gc-scroll{
+  position: relative;
+}
+
+/* Give the Actions column a stable width (icons + optional expand) */
+:root{
+  --gc-lines-actions-w: 190px;
+}
+.gc-line-actions{ min-width: var(--gc-lines-actions-w); }
+
+@media (max-width: 1100px){
+  :root{ --gc-lines-actions-w: 176px; }
 }
 
