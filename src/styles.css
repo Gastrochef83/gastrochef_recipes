@@ -122,8 +122,8 @@ body{
 }
 
 .gc-brand-mark{
-  width: 42px;
-  height: 42px;
+  width: 40px;
+  height: 40px;
   border-radius: 14px;
   border: 1px solid var(--gc-border);
   background: var(--gc-surface-2);
@@ -133,8 +133,8 @@ body{
 }
 
 .gc-brand-mark img{
-  width: 34px;
-  height: 34px;
+  width: 28px;
+  height: 28px;
   object-fit: contain;
 }
 
@@ -455,3 +455,52 @@ body{
 .whitespace-nowrap{ white-space: nowrap; }
 .overflow-x-auto{ overflow-x: auto; }
 .border-t{ border-top: 1px solid var(--gc-border); }
+
+
+/* -------------------- Topbar Logo -------------------- */
+.gc-topbar-logo{
+  width: 28px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid var(--gc-border);
+  object-fit: contain;
+  background: var(--gc-surface-2);
+}
+
+/* -------------------- Print (Fix blank print preview) -------------------- */
+@media print{
+  html, body{ height: auto !important; }
+  body{
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* Hide shell chrome */
+  .gc-side,
+  .gc-topbar,
+  .gc-actions,
+  .gc-nav,
+  .gc-tip{ display:none !important; }
+
+  /* Make content full width */
+  .gc-shell{ grid-template-columns: 1fr !important; gap: 0 !important; }
+  .gc-main{ padding: 0 !important; }
+  .gc-content{ margin-top: 0 !important; }
+
+  /* Remove shadows/borders for clean paper */
+  .gc-card,
+  .gc-side-card,
+  .gc-topbar-card{
+    box-shadow: none !important;
+    border: none !important;
+  }
+
+  /* Avoid clipped printing inside scroll containers */
+  *{
+    overflow: visible !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  a{ color: #000 !important; text-decoration: none !important; }
+}
