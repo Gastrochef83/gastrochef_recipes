@@ -59,7 +59,8 @@
   --gc-title-size: 18px;
 
   /* Recipe lines grid (header + rows must match) */
-  --gc-lines-cols: minmax(280px, 1.55fr) minmax(92px, .55fr) minmax(86px, .55fr) minmax(92px, .55fr) minmax(110px, .65fr) minmax(210px, 1fr) minmax(280px, 1.2fr);
+  /* columns: Item | Net | Unit | Yield | Gross | Note | Actions */
+  --gc-lines-cols: minmax(300px, 1.6fr) minmax(92px, .55fr) minmax(86px, .55fr) minmax(92px, .55fr) minmax(110px, .65fr) minmax(240px, 1fr) 200px;
 }
 
 /* ---------- Dark Mode ---------- */
@@ -3419,6 +3420,13 @@ select.gc-input{
 }
 
 /* ---- RecipeEditor: Lines grid alignment ---- */
+.gc-scroll{
+  /* keeps the right side (Actions) reachable without clipping */
+  overflow-x: auto;
+  scrollbar-gutter: stable both-edges;
+  -webkit-overflow-scrolling: touch;
+}
+
 .gc-lines-header,
 .gc-line-row{
   display: grid !important;
@@ -3448,7 +3456,7 @@ select.gc-input{
 
 @media (max-width: 1100px){
   :root{
-    --gc-lines-cols: minmax(260px, 1.2fr) minmax(90px, .5fr) minmax(80px, .5fr) minmax(86px, .5fr) minmax(100px, .6fr) minmax(180px, .9fr) minmax(240px, 1fr);
+    --gc-lines-cols: minmax(260px, 1.25fr) minmax(90px, .5fr) minmax(80px, .5fr) minmax(86px, .5fr) minmax(100px, .6fr) minmax(200px, 1fr) 180px;
   }
 }
 
@@ -3663,84 +3671,3 @@ select.gc-input{
   padding-bottom: 10px !important;
 }
 
-
-/* =========================================================
-   GastroChef — FINAL NUCLEAR OVERRIDES (V-FINAL)
-   Purpose: one authoritative, low-risk UI polish layer.
-   - No logic changes
-   - Minimizes visual glitches across ALL pages
-   - RecipeEditor: perfect alignment + stable controls + print safety
-   ========================================================= */
-
-:root{
-  --gc-focus: 0 0 0 4px rgba(16, 185, 129, .18);
-}
-
-/* Universal control stability */
-.gc-input,
-select.gc-input,
-textarea.gc-input{
-  width: 100% !important;
-  min-height: 42px !important;
-  border-radius: 14px !important;
-}
-.gc-input[type="number"]{ text-align: right !important; }
-
-/* Focus ring: consistent */
-input:focus, select:focus, textarea:focus, button:focus{
-  outline: none !important;
-  box-shadow: var(--gc-focus) !important;
-}
-
-/* Buttons: consistent height */
-.gc-btn{ min-height: 42px; }
-.gc-btn-icon{ min-width: 40px; height: 40px; }
-
-/* RecipeEditor: header + row alignment protection */
-.gc-lines-header,
-.gc-line-row{
-  align-items: center !important;
-}
-.gc-line-row{
-  padding: 10px 14px !important;
-  border-bottom: 1px solid rgba(15,23,42,.08) !important;
-}
-.gc-lines-header{
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  backdrop-filter: blur(6px);
-}
-
-/* Prevent controls from overflowing grid cells */
-.gc-line-row input,
-.gc-line-row select,
-.gc-line-row textarea{
-  min-width: 0 !important;
-}
-
-/* Notes field: reduce “empty giant pill” effect */
-.gc-line-row textarea,
-.gc-line-row input[type="text"]{
-  padding: 10px 12px !important;
-}
-
-/* Legend pills (Net/Gross/Yield) — always readable */
-.gc-legend{ display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
-.gc-pill{
-  display:inline-flex; align-items:center; gap:8px;
-  padding: 6px 10px;
-  border-radius: 999px;
-  border: 1px solid rgba(15,23,42,.10);
-  background: rgba(255,255,255,.7);
-  font-size: 12px;
-  font-weight: 700;
-  color: rgba(15,23,42,.78);
-}
-
-/* Print: hard safety — print-only never visible on screen */
-.gc-print-only{ display:none !important; }
-@media print{
-  .gc-print-only{ display:block !important; }
-  .gc-screen-only{ display:none !important; }
-}

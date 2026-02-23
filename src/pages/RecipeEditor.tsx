@@ -2148,8 +2148,8 @@ export default function RecipeEditor() {
         {lines.length === 0 ? (
           <div className="mt-4 text-sm text-neutral-600">No lines yet.</div>
         ) : (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-            <div className="gc-lines-header grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
+          <div className="mt-4 overflow-x-auto rounded-2xl border border-neutral-200 bg-white gc-scroll">
+            <div className="gc-lines-header gc-lines-grid gc-lines-head items-center gap-3 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
               <div className="whitespace-nowrap">Item</div>
               <div className="text-right whitespace-nowrap">Net Qty</div>
               <div className="text-right whitespace-nowrap">Unit</div>
@@ -2253,7 +2253,7 @@ export default function RecipeEditor() {
 
                 return (
                   <div key={l.id} className="px-4 py-3">
-                    <div className="gc-line-row grid grid-cols-[1.55fr_.55fr_.55fr_.55fr_.65fr_1fr_1.2fr] items-center gap-3">
+                    <div className="gc-line-row gc-lines-grid items-center gap-3">
                       <div className="pr-2">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
@@ -2402,26 +2402,33 @@ export default function RecipeEditor() {
                         <input className="gc-input w-full" value={r.notes} onChange={(ev) => setRow({ notes: ev.target.value })} placeholder="e.g., chopped / room temp / to taste…" />
                       </div>
 
-                      <div className="flex justify-end gap-2 flex-wrap">
+                      <div className="gc-line-actions flex justify-end gap-2">
                         {canExpand && (
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleExpand(l.id, r.sub_recipe_id)}>
-                            {expanded[l.id] ? 'Hide' : 'Expand'}
+                          <button
+                            className="gc-btn gc-btn-icon"
+                            type="button"
+                            title={expanded[l.id] ? 'Hide breakdown' : 'Expand breakdown'}
+                            aria-label={expanded[l.id] ? 'Hide breakdown' : 'Expand breakdown'}
+                            onClick={() => toggleExpand(l.id, r.sub_recipe_id)}
+                          >
+                            {expanded[l.id] ? '▾' : '▸'}
                           </button>
                         )}
-                        <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving} title="Move up">
+
+                        <button className="gc-btn gc-btn-icon" type="button" title="Move up" aria-label="Move line up" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving}>
                           ↑
                         </button>
-                        <button className="gc-btn gc-btn-ghost gc-btn-icon" type="button" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving} title="Move down">
+                        <button className="gc-btn gc-btn-icon" type="button" title="Move down" aria-label="Move line down" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving}>
                           ↓
                         </button>
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => duplicateLine(l.id)}>
-                          Duplicate
+                        <button className="gc-btn gc-btn-icon" type="button" title="Duplicate" aria-label="Duplicate line" onClick={() => duplicateLine(l.id)}>
+                          ⧉
                         </button>
-                        <button className="gc-btn gc-btn-primary" type="button" onClick={() => saveRow(l.id)} disabled={saving}>
-                          {saving ? 'Saving…' : 'Save'}
+                        <button className="gc-btn gc-btn-icon gc-btn-primary" type="button" title="Save" aria-label="Save line" onClick={() => saveRow(l.id)} disabled={saving}>
+                          {saving ? '…' : '✓'}
                         </button>
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deleteLine(l.id)} disabled={saving}>
-                          Delete
+                        <button className="gc-btn gc-btn-icon gc-btn-danger" type="button" title="Delete" aria-label="Delete line" onClick={() => deleteLine(l.id)} disabled={saving}>
+                          🗑
                         </button>
                       </div>
                     </div>
