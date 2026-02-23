@@ -62,9 +62,17 @@ export default function Register() {
   }
 
   return (
-    <div className="gc-auth">
-      <div className="gc-auth-card">
-        <div className="gc-auth-head">
+    <div
+      style={{
+        minHeight: '100vh',
+        display: 'grid',
+        placeItems: 'center',
+        padding: 18,
+        background: 'linear-gradient(180deg, #f6f8fb 0%, #eef3f6 100%)',
+      }}
+    >
+      <div style={{ width: 'min(560px, 92vw)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 18 }}>
           <div
             style={{
               fontSize: 44,
@@ -93,7 +101,15 @@ export default function Register() {
           />
         </div>
 
-        <div className="gc-auth-body">
+        <div
+          style={{
+            background: '#fff',
+            border: '1px solid rgba(15, 23, 42, .10)',
+            borderRadius: 22,
+            boxShadow: '0 18px 50px rgba(2, 6, 23, .08)',
+            padding: 18,
+          }}
+        >
           <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Email</div>
