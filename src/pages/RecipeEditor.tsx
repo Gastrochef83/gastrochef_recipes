@@ -623,7 +623,7 @@ const k = useKitchen()
     }
   }, [id, normalizePositions, showToast])
 
-  const addLineLocal = useCallback(() => {
+  const addLineLocal = useCallback(async () => {
     if (!id) return
     const rid = id
 
@@ -658,7 +658,8 @@ const k = useKitchen()
       }
       setErr(null)
       setLinesSafe([...linesRef.current, newL])
-      showToast('Line added (not saved yet).')
+      await saveLines(next)
+      showToast('Line added & saved.')
       return
     }
 
