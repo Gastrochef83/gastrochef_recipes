@@ -10,12 +10,17 @@ export default function NutritionPanel({
   ingredients: RecipeIngredient[]
   portions: number
 }) {
-  // Placeholder: wire to your nutrition logic/table later.
+  void recipeId
+  void ingredients
   return (
-    <div style={{ color: 'var(--text-secondary)', fontWeight: 700 }}>
-      Nutrition is not wired yet for recipe <strong style={{ color: 'var(--text-primary)' }}>{recipeId}</strong>.
-      <div style={{ marginTop: 10 }}>
-        Ingredients: {ingredients.length} • Portions: {portions}
+    <div className="gc-panel">
+      <h3>Nutrition</h3>
+      <p className="gc-muted">Nutrition calculation is optional. (Hook your DB fields when ready.)</p>
+      <div className="gc-panel__grid">
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Portions</div>
+          <div className="gc-panel__value">{portions}</div>
+        </div>
       </div>
     </div>
   )

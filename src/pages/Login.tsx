@@ -1,150 +1,53 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
+import React, { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
+import Button from '../components/ui/Button'
+import Input from '../components/ui/Input'
 
 export default function Login() {
-  const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
+  const nav = useNavigate()
+  const { signIn } = useAuth()
+  const { theme, toggleTheme } = useTheme()
 
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [checking, setChecking] = useState(true)
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
-  // ✅ If already signed in, go straight to the app (prevents weird loop / blank state)
-  useEffect(() => {
-    let alive = true
-
-    async function check() {
-      try {
-        const { data } = await supabase.auth.getSession()
-        if (!alive) return
-        const hasSession = !!data?.session
-        if (hasSession) {
-          window.location.assign(`${base}#/dashboard`)
-          return
-        }
-      } catch {
-        // ignore
-      } finally {
-        if (alive) setChecking(false)
-      }
-    }
-
-    check()
-    return () => {
-      alive = false
-    }
-  }, [base])
-
-  const onSubmit = async (e: FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (busy) return
-
-    setBusy(true)
-    setErr(null)
-
+    setError(null)
+    setLoading(true)
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
-
-      if (error) {
-        setErr(error.message)
-        return
-      }
-
-      // ✅ HashRouter-safe redirect
-      window.location.assign(`${base}#/dashboard`)
-    } catch (e: any) {
-      setErr(e?.message || 'Login failed.')
+      await signIn(email, password)
+      nav('/dashboard')
+    } catch (err: any) {
+      setError(err?.message ?? 'Failed to sign in')
     } finally {
-      setBusy(false)
+      setLoading(false)
     }
   }
 
   return (
-    <div className="gc-auth">
-      <div className="gc-auth-card">
-        {/* ✅ BRAND LOCK: same logo asset used everywhere */}
-        <div className="gc-auth-head">
-          <div className="gc-auth-logo">
-            <img src={`${base}gastrochef-logo.png`} alt="GastroChef" />
-            <div>
-              <div className="gc-auth-title">GastroChef</div>
-              <div className="gc-auth-sub">Sign in to your kitchen workspace</div>
-            </div>
-          </div>
+    <div className="gc-page" data-theme={theme} style={{ maxWidth: 420, margin: '0 auto', padding: 24 }}>
+      <div className="gc-card" style={{ padding: 18 }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+          <h1 style={{ margin: 0 }}>Sign in</h1>
+          <button className="gc-btn gc-btn--secondary" type="button" onClick={toggleTheme} aria-label="Toggle theme">
+            {theme === 'light' ? '🌙' : '☀️'}
+          </button>
         </div>
+        <p className="gc-muted" style={{ marginTop: 0 }}>Welcome back to GastroChef.</p>
 
-        {/* Card */}
-        <div className="gc-auth-body">
-          {checking ? (
-            <div style={{ padding: 18, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
-          ) : (
-            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-              <div>
-                <div className="gc-label">Email</div>
-                <input
-                  className="gc-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  style={{ marginTop: 6, width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <div className="gc-label">Password</div>
-                <input
-                  className="gc-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  style={{ marginTop: 6, width: '100%' }}
-                />
-              </div>
-
-              {err && (
-                <div
-                  style={{
-                    borderRadius: 14,
-                    background: '#fef2f2',
-                    border: '1px solid rgba(239,68,68,.20)',
-                    color: '#b91c1c',
-                    padding: 12,
-                    fontSize: 13,
-                  }}
-                >
-                  {err}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={busy}
-                className="gc-btn gc-btn-primary"
-                style={{ width: '100%' }}
-              >
-                {busy ? 'Signing in…' : 'Login'}
-              </button>
-            </form>
-          )}
-
-          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--muted)' }}>
-            New here?{' '}
-            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
-              Create an account
-            </Link>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
-          Tip: If logout “bounces”, this build uses hard redirect for stability.
-        </div>
+        <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
+          <Input label="Email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@example.com" />
+          <Input label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+          {error ? <div className="gc-warning">{error}</div> : null}
+          <Button type="submit" disabled={loading} fullWidth>
+            {loading ? 'Signing in…' : 'Sign In'}
+          </Button>
+        </form>
       </div>
     </div>
   )
