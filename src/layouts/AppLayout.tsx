@@ -1,5 +1,5 @@
 // src/layouts/AppLayout.tsx
-import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
@@ -40,9 +40,17 @@ export default function AppLayout() {
   const k = useKitchen()
 
   const loc = useLocation()
+
+  // HashRouter-safe print detection
+  // - In HashRouter, loc.pathname is often '/', and the real route is in loc.hash.
+  const isPrintRoute = useMemo(() => {
+    const path = (loc.pathname || '').toLowerCase()
+    const hash = (loc.hash || '').toLowerCase()
+    return path.includes('/print') || hash.includes('#/print') || hash.includes('/print')
+  }, [loc.pathname, loc.hash])
+
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
-
   const [userEmail, setUserEmail] = useState<string>('')
 
   const menuRef = useRef<HTMLDetailsElement | null>(null)
@@ -51,30 +59,42 @@ export default function AppLayout() {
   const brandIcon = `${base}gastrochef-icon-512.png`
   const brandLogoFallback = `${base}gastrochef-logo.png`
 
+  // Always keep user email in sync (login/logout/switch)
   useEffect(() => {
     let alive = true
+
     async function loadUser() {
       try {
         const { data } = await supabase.auth.getUser()
         const email = data?.user?.email || ''
         if (alive) setUserEmail(email)
-      } catch {}
+      } catch {
+        if (alive) setUserEmail('')
+      }
     }
+
     loadUser()
+
+    const { data: sub } = supabase.auth.onAuthStateChange(() => {
+      loadUser()
+    })
+
     return () => {
       alive = false
+      sub?.subscription?.unsubscribe()
     }
   }, [])
 
   const title = useMemo(() => {
-    const p = (loc.pathname || '').toLowerCase()
+    const p = ((loc.pathname || '') + ' ' + (loc.hash || '')).toLowerCase()
     if (p.includes('ingredients')) return 'Ingredients'
     if (p.includes('recipes')) return 'Recipes'
+    if (p.includes('print')) return 'Print'
+    if (p.includes('cook')) return 'Cook Mode'
     if (p.includes('recipe')) return 'Recipe Editor'
     if (p.includes('settings')) return 'Settings'
-    if (p.includes('cook')) return 'Cook Mode'
     return 'Dashboard'
-  }, [loc.pathname])
+  }, [loc.pathname, loc.hash])
 
   async function handleLogout() {
     if (loggingOut) return
@@ -101,14 +121,18 @@ export default function AppLayout() {
   const avatarText = initialsFrom(userEmail || 'GastroChef')
   const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
 
-  return (
-    isPrintRoute ? (
+  // Print route: minimal layout only
+  if (isPrintRoute) {
+    return (
       <div className={cx('gc-root', dark && 'gc-dark', 'gc-print-route')}>
         <main className="gc-main" style={{ padding: 0 }}>
           <Outlet />
         </main>
       </div>
-    ) : (
+    )
+  }
+
+  return (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
         <aside className="gc-side">
@@ -258,6 +282,5 @@ export default function AppLayout() {
         </main>
       </div>
     </div>
-    )
   )
 }
