@@ -213,7 +213,6 @@ export default function AppLayout() {
                 className="gc-topbar-logo"
                 src={brandIcon}
                 alt="GastroChef"
-                style={{ width: 34, height: 34, borderRadius: 12, border: '1px solid var(--gc-border)' }}
                 onError={(e) => {
                   ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
                 }}

@@ -104,7 +104,7 @@ const PHOTO_BUCKET = 'recipe-photos'
 export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
   const showCost = isMgmt
-  const tableColSpan = 7 + (showCost ? 1 : 0)
+  const tableColSpan = 8 + (showCost ? 1 : 0)
 const k = useKitchen()
 
   const location = useLocation()
@@ -204,6 +204,18 @@ const k = useKitchen()
   const [addUnit, setAddUnit] = useState('g')
   const [addYield, setAddYield] = useState('100')
   const [addGross, setAddGross] = useState('') // optional gross override
+
+  // Auto-calc yield for NEW line when both Net and Gross are provided
+  useEffect(() => {
+    const raw = (addGross || '').trim()
+    if (!raw) return
+    const gross = toNum(raw, NaN as any)
+    if (!Number.isFinite(gross) || gross <= 0) return
+    const net = Math.max(0, toNum(addNetQty, 0))
+    const y = clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100)
+    // Keep it stable for typing
+    setAddYield(String(Math.round(y * 100) / 100))
+  }, [addGross, addNetQty])
 
   // Cost History
   const [costPoints, setCostPoints] = useState(() => (id ? listCostPoints(id) : []))
@@ -616,9 +628,13 @@ const k = useKitchen()
     const rid = id
 
     const basePos = (linesRef.current?.length || 0) + 1
-    const y = clamp(toNum(addYield, 100), 0.0001, 100)
+    const yRaw = clamp(toNum(addYield, 100), 0.0001, 100)
     const net = Math.max(0, toNum(addNetQty, 0))
     const gross = addGross.trim() === '' ? null : Math.max(0, toNum(addGross, 0))
+
+    // If user provided BOTH net and gross, compute yield automatically (best UX):
+    // yield% = (net / gross) * 100. We still store net in qty and keep gross as override.
+    const y = gross != null && gross > 0 && net >= 0 ? clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100) : yRaw
 
     if (addType === 'ingredient') {
       if (!addIngredientId) {
@@ -1421,6 +1437,7 @@ const k = useKitchen()
                         <th style={{ width: '9%' }}>Unit</th>
                         <th style={{ width: '11%' }}>Gross</th>
                         <th style={{ width: '10%' }}>Yield</th>
+                        <th style={{ width: '12%' }}>Note</th>
                         {showCost ? <th style={{ width: '12%' }}>Cost</th> : null}
                         <th style={{ width: '8%' }}>Status</th>
                         <th style={{ width: '5%' }} />
@@ -1539,6 +1556,15 @@ const k = useKitchen()
                               {!showCost ? (
                                 <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
                               ) : null}
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
+                                value={l.notes ?? ''}
+                                onChange={(e) => updateLine(l.id, { notes: e.target.value })}
+                                placeholder="—"
+                              />
                             </td>
 
                             {showCost ? (
