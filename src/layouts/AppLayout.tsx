@@ -277,7 +277,9 @@ export default function AppLayout() {
           </div>
 
           <div className="gc-content">
-            <Outlet />
+            <div className="gc-page">
+              <Outlet />
+            </div>
           </div>
         </main>
       </div>

@@ -1,4 +1,9 @@
 // src/components/RecipeLinesPro.tsx
+// VISUAL BLACK OPS:
+// - UI/layout only
+// - ZERO overflow at any zoom
+// - No changes to yield/cost math
+
 import * as React from 'react'
 
 export type ProLine = {
@@ -77,6 +82,7 @@ export default function RecipeLinesPro(props: {
     [lines, setLines]
   )
 
+  // ✅ COST/YIELD MATH — unchanged
   const totalCost = React.useMemo(() => {
     let sum = 0
     for (const l of sorted) {
@@ -92,27 +98,45 @@ export default function RecipeLinesPro(props: {
   }, [sorted, ingById])
 
   if (!sorted.length) {
-    return <div className="text-sm" style={{ color: 'var(--gc-muted)' }}>No ingredients yet.</div>
+    return (
+      <div className="text-sm" style={{ color: 'var(--muted)' }}>
+        No ingredients yet.
+      </div>
+    )
   }
 
   const cur = (props.currency || 'USD').toUpperCase()
 
   return (
-    <div className="gc-card" style={{ padding: 14 }}>
-      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-        <div>
+    <div className="gc-card" style={{ padding: 14, minWidth: 0 }}>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 12,
+          flexWrap: 'wrap',
+          minWidth: 0,
+        }}
+      >
+        <div style={{ minWidth: 0 }}>
           <div className="gc-label">INGREDIENT LINES</div>
           <div className="gc-hint" style={{ marginTop: 6 }}>
             Net = target amount • Gross = amount to buy/prepare (Net ÷ Yield)
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <button type="button" className="gc-btn gc-btn-ghost" onClick={() => setShowAdvanced((v) => !v)} aria-expanded={showAdvanced}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap', minWidth: 0 }}>
+          <button
+            type="button"
+            className="gc-btn gc-btn-ghost"
+            onClick={() => setShowAdvanced((v) => !v)}
+            aria-expanded={showAdvanced}
+          >
             {showAdvanced ? 'Hide advanced' : 'Advanced'}
           </button>
 
-          <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+          <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14, minWidth: 0 }}>
             <div className="gc-label">TOTAL</div>
             <div style={{ fontWeight: 900, marginTop: 4 }}>
               {totalCost.toFixed(2)} {cur}
@@ -121,7 +145,7 @@ export default function RecipeLinesPro(props: {
         </div>
       </div>
 
-      <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+      <div className="gc-lines" style={{ marginTop: 12 }}>
         {sorted.map((l) => {
           const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
           const unit = safeUnit(l.unit)
@@ -134,86 +158,98 @@ export default function RecipeLinesPro(props: {
           const pct = totalCost > 0 ? (lineCost / totalCost) * 100 : 0
 
           return (
-            <div key={l.id} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div style={{ minWidth: 260 }}>
-                  <div style={{ fontWeight: 900 }}>{ing?.name ?? 'Ingredient'}</div>
-                  <div className="gc-hint" style={{ marginTop: 4 }}>
+            <div key={l.id} className="gc-line">
+              <div className="gc-line-top">
+                <div className="gc-line-name">
+                  <div className="gc-line-name-title" title={ing?.name ?? 'Ingredient'}>
+                    {ing?.name ?? 'Ingredient'}
+                  </div>
+                  <div className="gc-hint gc-line-name-sub">
                     #{l.position} • Unit: {unit}
                     {ing?.pack_unit ? ` • Pack unit: ${safeUnit(ing.pack_unit)}` : ''}
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-                  <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                <div className="gc-line-metrics">
+                  <div className="gc-metric">
                     <div className="gc-label">NET</div>
-                    <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtQty(netQty)} {unit}</div>
+                    <div style={{ fontWeight: 900, marginTop: 4 }}>
+                      {fmtQty(netQty)} {unit}
+                    </div>
                   </div>
 
-                  <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                  <div className="gc-metric">
                     <div className="gc-label">GROSS</div>
-                    <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtQty(grossQty)} {unit}</div>
+                    <div style={{ fontWeight: 900, marginTop: 4 }}>
+                      {fmtQty(grossQty)} {unit}
+                    </div>
                   </div>
 
-                  <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                  <div className="gc-metric">
                     <div className="gc-label">COST</div>
-                    <div style={{ fontWeight: 900, marginTop: 4 }}>{Number.isFinite(lineCost) ? lineCost.toFixed(2) : '0.00'} {cur}</div>
-                    <div className="gc-hint" style={{ marginTop: 4, fontWeight: 900 }}>{fmtQty(pct)}%</div>
+                    <div style={{ fontWeight: 900, marginTop: 4 }}>
+                      {Number.isFinite(lineCost) ? lineCost.toFixed(2) : '0.00'} {cur}
+                    </div>
+                    <div className="gc-hint" style={{ marginTop: 4, fontWeight: 900 }}>
+                      {fmtQty(pct)}%
+                    </div>
                   </div>
-
-                  <button className="gc-btn gc-btn-danger" type="button" onClick={() => remove(l.id)}>
-                    Remove
-                  </button>
                 </div>
               </div>
 
-              <div className="gc-field-row" style={{ marginTop: 12 }}>
-                <div className="gc-col-4">
-                  <div className="gc-field">
-                    <div className="gc-label">NET QTY</div>
+              <div className="gc-line-actions">
+                <button className="gc-btn gc-btn-danger" type="button" onClick={() => remove(l.id)}>
+                  Remove
+                </button>
+              </div>
+
+              <div className="gc-line-fields">
+                <div className="gc-field" style={{ minWidth: 0 }}>
+                  <div className="gc-label">NET QTY</div>
+                  <input
+                    className="gc-input gc-input-num"
+                    value={String(toNum(l.qty, 0))}
+                    onChange={(e) => update(l.id, { qty: Math.max(0, toNum(e.target.value, 0)) })}
+                    inputMode="decimal"
+                    style={{ marginTop: 6 }}
+                  />
+                </div>
+
+                <div className="gc-field" style={{ minWidth: 0 }}>
+                  <div className="gc-label">UNIT</div>
+                  <input
+                    className="gc-input gc-input-unit"
+                    value={l.unit ?? 'g'}
+                    onChange={(e) => update(l.id, { unit: e.target.value })}
+                    style={{ marginTop: 6 }}
+                  />
+                </div>
+
+                {showAdvanced ? (
+                  <div className="gc-field" style={{ minWidth: 0 }}>
+                    <div className="gc-label">YIELD %</div>
                     <input
-                      className="gc-input"
-                      value={String(toNum(l.qty, 0))}
-                      onChange={(e) => update(l.id, { qty: Math.max(0, toNum(e.target.value, 0)) })}
+                      className="gc-input gc-input-num"
+                      value={String(toNum(l.yield_percent, 100))}
+                      onChange={(e) => update(l.id, { yield_percent: clamp(toNum(e.target.value, 100), 0.0001, 100) })}
                       inputMode="decimal"
+                      style={{ marginTop: 6 }}
                     />
                   </div>
-                </div>
+                ) : null}
 
-                <div className="gc-col-4">
-                  <div className="gc-field">
-                    <div className="gc-label">UNIT</div>
-                    <input className="gc-input" value={l.unit ?? 'g'} onChange={(e) => update(l.id, { unit: e.target.value })} />
+                {showAdvanced ? (
+                  <div className="gc-field gc-line-notes">
+                    <div className="gc-label">NOTES</div>
+                    <input
+                      className="gc-input"
+                      value={l.notes ?? ''}
+                      onChange={(e) => update(l.id, { notes: e.target.value })}
+                      placeholder="Optional notes (prep, trimming, etc.)"
+                      style={{ marginTop: 6 }}
+                    />
                   </div>
-                </div>
-
-                {showAdvanced && (
-                  <div className="gc-col-4">
-                    <div className="gc-field">
-                      <div className="gc-label">YIELD %</div>
-                      <input
-                        className="gc-input"
-                        value={String(toNum(l.yield_percent, 100))}
-                        onChange={(e) => update(l.id, { yield_percent: clamp(toNum(e.target.value, 100), 0.0001, 100) })}
-                        inputMode="decimal"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {showAdvanced && (
-                  <div className="gc-col-12">
-                    <div className="gc-field">
-                      <div className="gc-label">NOTES</div>
-                      <input
-                        className="gc-input"
-                        value={l.notes ?? ''}
-                        onChange={(e) => update(l.id, { notes: e.target.value })}
-                        placeholder="Optional notes (prep, trimming, etc.)"
-                      />
-                    </div>
-                  </div>
-                )}
+                ) : null}
               </div>
 
               <div className="gc-hint" style={{ marginTop: 10 }}>
