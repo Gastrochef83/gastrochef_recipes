@@ -516,3 +516,17 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
   .gc-content{ padding: 0 !important; background:#fff !important; overflow: visible !important; }
   .gc-card{ box-shadow:none !important; }
 }
+
+/* =========================================================
+   STRICT CHANGE 1 — NARROW SIDEBAR + SHRINK SAFETY + ELLIPSIS
+   (Add-only rules; no other CSS modifications)
+   ========================================================= */
+
+/* 1) Sidebar width clamp */
+.gc-side{ width: clamp(240px, 18vw, 280px); }
+
+/* 2) Ensure flex children can shrink (prevents overflow) */
+.gc-main{ min-width: 0; }
+
+/* 3) Ingredient/name single-line utility */
+.gc-ellipsis{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
