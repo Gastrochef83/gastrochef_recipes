@@ -135,7 +135,7 @@ export default function AppLayout() {
 
   return (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
-      <div className="gc-shell">
+      <div className="gc-shell" style={{ gridTemplateColumns: 'clamp(240px, 18vw, 280px) minmax(0, 1fr)' }}>
         <aside className="gc-side">
           <div className="gc-side-card">
             <div className="gc-brand">
