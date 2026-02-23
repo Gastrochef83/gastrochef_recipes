@@ -50,7 +50,7 @@ const PrintView = forwardRef<HTMLDivElement, Props>(({ recipe, ingredients, port
         
         <div className="method-section">
           <h2>Method</h2>
-          <p>{recipe.method || 'No method provided.'}</p>
+          <p>{(recipe as any).method || 'No method provided.'}</p>
         </div>
         
         <div className="cost-section">
