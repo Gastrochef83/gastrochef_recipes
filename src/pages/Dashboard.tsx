@@ -234,6 +234,30 @@ export default function Dashboard() {
   const recipeTotalCost = costEngine.totals
   const diag = costEngine.diag
 
+  // ✅ FIX (Metric): DISTINCT ingredients USED IN non-archived recipes missing a valid cost.
+  // Definition:
+  // - DISTINCT ingredient_id referenced by recipe_lines where parent recipe is NOT archived.
+  // - Missing cost = ingredient net_unit_cost is null/undefined/NaN OR <= 0.
+  const ingredientsUsedMissingCost = useMemo(() => {
+    const activeRecipeIds = new Set(activeRecipes.map((r) => r.id))
+    const used = new Set<string>()
+    for (const l of lines) {
+      if (!activeRecipeIds.has(l.recipe_id)) continue
+      if (!l.ingredient_id) continue
+      used.add(l.ingredient_id)
+    }
+
+    const byId = new Map<string, Ingredient>()
+    for (const ing of ingredients) byId.set(ing.id, ing)
+
+    let c = 0
+    for (const id of used) {
+      const v = Number(byId.get(id)?.net_unit_cost)
+      if (!Number.isFinite(v) || v <= 0) c += 1
+    }
+    return c
+  }, [activeRecipes, lines, ingredients])
+
   const avgCostPerPortion = useMemo(() => {
     if (activeRecipes.length === 0) return 0
     const cps = activeRecipes.map((r) => {
@@ -457,8 +481,11 @@ export default function Dashboard() {
                   <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
                 </div>
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Ingredients missing cost</div>
-                  <div className="mt-1 text-2xl font-extrabold">{diag.missingIngredientCostCount}</div>
+                  <div className="text-xs font-semibold text-neutral-600">Ingredients used in recipes missing cost</div>
+                  <div className="mt-1 text-2xl font-extrabold">{ingredientsUsedMissingCost}</div>
+                  <div className="mt-2 text-xs text-neutral-500">
+                    DISTINCT ingredients referenced in non-archived recipe lines with missing or ≤ 0 net unit cost.
+                  </div>
                 </div>
               </div>
 

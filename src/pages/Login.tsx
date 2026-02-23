@@ -65,97 +65,46 @@ export default function Login() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        padding: 18,
-        background: 'linear-gradient(180deg, #f6f8fb 0%, #eef3f6 100%)',
-      }}
-    >
-      <div style={{ width: 'min(520px, 92vw)' }}>
-        {/* Wordmark (Kitopi-like) */}
-        <div style={{ textAlign: 'center', marginBottom: 18 }}>
-          <div
-            style={{
-              fontSize: 44,
-              fontWeight: 900,
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-              color: '#0f172a',
-              display: 'inline-block',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Gastro
-            <span style={{ color: '#0f766e' }}>Chef</span>
+    <div className="gc-auth">
+      <div className="gc-auth-card">
+        {/* ✅ BRAND LOCK: same logo asset used everywhere */}
+        <div className="gc-auth-head">
+          <div className="gc-auth-logo">
+            <img src={`${base}gastrochef-logo.png`} alt="GastroChef" />
+            <div>
+              <div className="gc-auth-title">GastroChef</div>
+              <div className="gc-auth-sub">Sign in to your kitchen workspace</div>
+            </div>
           </div>
-
-          <div style={{ marginTop: 10, fontSize: 13, color: '#64748b' }}>
-            Sign in to your kitchen workspace
-          </div>
-
-          <div
-            style={{
-              width: 72,
-              height: 4,
-              borderRadius: 999,
-              background: '#0f766e',
-              margin: '14px auto 0',
-            }}
-          />
         </div>
 
         {/* Card */}
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(15, 23, 42, .10)',
-            borderRadius: 22,
-            boxShadow: '0 18px 50px rgba(2, 6, 23, .08)',
-            padding: 18,
-          }}
-        >
+        <div className="gc-auth-body">
           {checking ? (
-            <div style={{ padding: 18, color: '#64748b', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
+            <div style={{ padding: 18, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
           ) : (
             <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Email</div>
+                <div className="gc-label">Email</div>
                 <input
+                  className="gc-input"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
                   inputMode="email"
-                  style={{
-                    marginTop: 6,
-                    width: '100%',
-                    padding: '11px 12px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(15,23,42,.14)',
-                    outline: 'none',
-                    background: '#eff6ff',
-                  }}
+                  style={{ marginTop: 6, width: '100%' }}
                 />
               </div>
 
               <div>
-                <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Password</div>
+                <div className="gc-label">Password</div>
                 <input
+                  className="gc-input"
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
-                  style={{
-                    marginTop: 6,
-                    width: '100%',
-                    padding: '11px 12px',
-                    borderRadius: 12,
-                    border: '1px solid rgba(15,23,42,.14)',
-                    outline: 'none',
-                    background: '#eff6ff',
-                  }}
+                  style={{ marginTop: 6, width: '100%' }}
                 />
               </div>
 
@@ -177,32 +126,23 @@ export default function Login() {
               <button
                 type="submit"
                 disabled={busy}
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  borderRadius: 12,
-                  padding: '12px 14px',
-                  background: '#111827',
-                  color: '#fff',
-                  fontWeight: 700,
-                  cursor: busy ? 'not-allowed' : 'pointer',
-                  opacity: busy ? 0.65 : 1,
-                }}
+                className="gc-btn gc-btn-primary"
+                style={{ width: '100%' }}
               >
                 {busy ? 'Signing in…' : 'Login'}
               </button>
             </form>
           )}
 
-          <div style={{ marginTop: 12, fontSize: 13, color: '#64748b' }}>
+          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--muted)' }}>
             New here?{' '}
-            <Link to="/register" style={{ fontWeight: 800, textDecoration: 'underline', color: '#0f172a' }}>
+            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
               Create an account
             </Link>
           </div>
         </div>
 
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: '#94a3b8' }}>
+        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
           Tip: If logout “bounces”, this build uses hard redirect for stability.
         </div>
       </div>

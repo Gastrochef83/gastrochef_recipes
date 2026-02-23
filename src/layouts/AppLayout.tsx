@@ -56,8 +56,9 @@ export default function AppLayout() {
   const menuRef = useRef<HTMLDetailsElement | null>(null)
 
   const base = (import.meta as any).env?.BASE_URL || '/'
-  const brandIcon = `${base}gastrochef-icon-512.png`
-  const brandLogoFallback = `${base}gastrochef-logo.png`
+  // ✅ BRAND LOCK: use the SAME logo asset everywhere (login/sidebar/topbar)
+  const brandLogo = `${base}gastrochef-logo.png`
+  const brandFallback = `${base}gastrochef-icon-512.png`
 
   // Always keep user email in sync (login/logout/switch)
   useEffect(() => {
@@ -140,10 +141,10 @@ export default function AppLayout() {
             <div className="gc-brand">
               <div className="gc-brand-mark" aria-hidden="true">
                 <img
-                  src={brandIcon}
+                  src={brandLogo}
                   alt=""
                   onError={(e) => {
-                    ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
+                    ;(e.currentTarget as HTMLImageElement).src = brandFallback
                   }}
                 />
               </div>
@@ -211,10 +212,10 @@ export default function AppLayout() {
             <div className="gc-topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <img
                 className="gc-topbar-logo"
-                src={brandIcon}
+                src={brandLogo}
                 alt="GastroChef"
                 onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
+                  ;(e.currentTarget as HTMLImageElement).src = brandFallback
                 }}
               />
               <div>
