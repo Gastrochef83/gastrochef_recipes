@@ -1444,8 +1444,8 @@ export default function RecipeEditor() {
             <div className="gc-editor-hero-title">{isKitchen ? 'Kitchen Mode' : 'Management Mode'}</div>
             <div className="gc-editor-hero-sub">Edit recipe meta, build lines, and manage method & pricing.</div>
           </div>
-          <div className="gc-editor-hero-status" />
-</div>
+          <div className="gc-editor-hero-status">{metaBadge}</div>
+        </div>
 
 
         <div className="gc-editor-actionbar">
@@ -1555,7 +1555,8 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-</div>
+            </div>
+          </div>
 
           {/* Stats */}
           {isMgmt && (
