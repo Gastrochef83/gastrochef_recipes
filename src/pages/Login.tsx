@@ -65,16 +65,8 @@ export default function Login() {
   }
 
   return (
-    <div
-      style={{
-        minHeight: '100vh',
-        display: 'grid',
-        placeItems: 'center',
-        padding: 18,
-        background: 'linear-gradient(180deg, #f6f8fb 0%, #eef3f6 100%)',
-      }}
-    >
-      <div style={{ width: 'min(520px, 92vw)' }}>
+    <div className="gc-auth">
+      <div className="gc-auth-card">
         {/* Wordmark (Kitopi-like) */}
         <div style={{ textAlign: 'center', marginBottom: 18 }}>
           <div
@@ -108,15 +100,7 @@ export default function Login() {
         </div>
 
         {/* Card */}
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(15, 23, 42, .10)',
-            borderRadius: 22,
-            boxShadow: '0 18px 50px rgba(2, 6, 23, .08)',
-            padding: 18,
-          }}
-        >
+        <div className="gc-auth-body">
           {checking ? (
             <div style={{ padding: 18, color: '#64748b', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
           ) : (
