@@ -319,3 +319,42 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
   .gc-content{ padding: 0 !important; background:#fff !important; overflow: visible !important; }
   .gc-card{ box-shadow:none !important; }
 }
+
+
+/* =====================
+   Enterprise Buttons + Tabs
+   ===================== */
+.gc-btn-soft{
+  background: rgba(15,23,42,.06);
+  border: 1px solid rgba(15,23,42,.10);
+  color: var(--gc-text);
+}
+.gc-btn-soft:hover{ background: rgba(15,23,42,.10); }
+
+.gc-tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:10px;
+  border:1px solid var(--gc-border);
+  border-radius:14px;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(10px);
+}
+.gc-tab{
+  appearance:none;
+  border:1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.75);
+  color: var(--gc-text);
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:13px;
+  letter-spacing:.2px;
+  cursor:pointer;
+}
+.gc-tab:hover{ background: rgba(15,23,42,.06); }
+.gc-tab-active{
+  background: rgba(37,99,235,.12);
+  border-color: rgba(37,99,235,.28);
+}

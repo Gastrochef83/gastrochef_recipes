@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { getIngredientsCached, invalidateIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
 
 type IngredientRow = {
@@ -148,7 +149,7 @@ export default function Ingredients() {
     setErr(null)
     try {
       await loadKitchen()
-      const { data, error } = await supabase.from('ingredients').select('*').order('name', { ascending: true })
+      const { data, error } = await getIngredientsCached()
       if (error) throw error
       setRows((data ?? []) as IngredientRow[])
       setLoading(false)
@@ -327,6 +328,8 @@ export default function Ingredients() {
         const net = calcNetUnitCost(pp, ps)
 
         const { error } = await supabase.from('ingredients').update({ net_unit_cost: net }).eq('id', r.id)
+      invalidateIngredientsCache()
+      invalidateIngredientsCache()
         if (error) throw error
       }
       showToast('Bulk recalculation done ✅')
@@ -347,6 +350,7 @@ export default function Ingredients() {
     try {
       for (const r of filtered) {
         const { error } = await supabase.from('ingredients').update({ is_active: active }).eq('id', r.id)
+      invalidateIngredientsCache()
         if (error) throw error
       }
       showToast('Bulk update done ✅')

@@ -4,6 +4,8 @@ import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
+import { getIngredientsCached } from '../lib/ingredientsCache'
+import { CostTimeline } from '../components/CostTimeline'
 import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 import { useKitchen } from '../lib/kitchen'
 
@@ -296,11 +298,7 @@ const k = useKitchen()
         if (!alive) return
         setLines((l || []) as Line[])
 
-        const { data: ing, error: iErr } = await supabase
-          .from('ingredients')
-          .select('id,name,pack_unit,net_unit_cost,is_active')
-          .order('name', { ascending: true })
-        if (iErr) throw iErr
+        const ing = await getIngredientsCached()
         if (!alive) return
         setIngredients((ing || []) as Ingredient[])
 
@@ -1674,6 +1672,7 @@ const k = useKitchen()
                   <div className="gc-label">COST HISTORY</div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>
                     Snapshots stored locally per recipe.
+                  <CostTimeline points={costPoints} currency={currency} />
                   </div>
                 </div>
 
