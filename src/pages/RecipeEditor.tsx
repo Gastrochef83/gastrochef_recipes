@@ -2156,7 +2156,7 @@ export default function RecipeEditor() {
               <div className="text-right whitespace-nowrap">Yield %</div>
               <div className="text-right whitespace-nowrap">Gross Qty</div>
               <div className="whitespace-nowrap">Note</div>
-              <div className="text-right whitespace-nowrap gc-lines-actions-head">Actions</div>
+              <div className="text-right whitespace-nowrap">Actions</div>
             </div>
 
             <div className={`divide-y divide-neutral-200 ${density === 'compact' ? 'gc-density-compact' : ''}`}>
@@ -2254,7 +2254,7 @@ export default function RecipeEditor() {
                 return (
                   <div key={l.id} className="px-4 py-3">
                     <div className="gc-line-row gc-lines-grid items-center gap-3">
-                      <div className="pr-2">
+                      <div className="pr-2 gc-cell" data-col="Item">
                         <div className="flex flex-wrap items-center gap-2">
                           <select
                             className="gc-input w-[150px]"
@@ -2294,7 +2294,7 @@ export default function RecipeEditor() {
                         )}
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right gc-cell" data-col="Net Qty">
                         <input
                           className="gc-input w-full text-right tabular-nums"
                           type="number"
@@ -2315,7 +2315,7 @@ export default function RecipeEditor() {
                         />
                       </div>
 
-                      <div className="text-right">
+                      <div className="text-right gc-cell" data-col="Unit">
                         <div className="flex items-center justify-end gap-2">
                           <select className="gc-input w-full text-right" value={safeUnit(r.unit)} onChange={(ev) => {
                             // if unit changes and we're in sync mode, keep gross synced from net
@@ -2335,7 +2335,7 @@ export default function RecipeEditor() {
                       </div>
 
                       {/* Yield % (AUTO from Net/Gross) */}
-                      <div className="text-right">
+                      <div className="text-right gc-cell" data-col="Yield %">
                         <div className="relative">
                           <input
                             className="gc-input w-full pr-8 text-right tabular-nums"
@@ -2357,7 +2357,7 @@ export default function RecipeEditor() {
                         })()}
                       </div>
 {/* Gross Qty (manual + sync) */}
-                      <div className="text-right">
+                      <div className="text-right gc-cell" data-col="Gross Qty">
                         <div className="gc-gross-wrap">
                           <input
                             className="gc-input w-full text-right tabular-nums"
@@ -2398,11 +2398,11 @@ export default function RecipeEditor() {
                         </div>
                       </div>
 
-                      <div>
+                      <div className="gc-cell" data-col="Note">
                         <input className="gc-input w-full" value={r.notes} onChange={(ev) => setRow({ notes: ev.target.value })} placeholder="e.g., chopped / room temp / to taste…" />
                       </div>
 
-                      <div className="gc-line-actions gc-lines-actions-cell flex justify-end gap-2">
+                      <div className="gc-line-actions gc-cell gc-cell-actions flex justify-end gap-2" data-col="Actions">
                         {canExpand && (
                           <button
                             className="gc-btn gc-btn-icon"

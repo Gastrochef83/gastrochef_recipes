@@ -3554,7 +3554,7 @@ select.gc-input{
 
 @media print{
   /* hide app chrome */
-  .gc-shell, .gc-sidebar, .gc-topbar, .gc-screen-only, nav, header, aside{
+  .gc-sidebar, .gc-topbar, .gc-screen-only, nav, header, aside{
     display: none !important;
   }
   /* show print */
@@ -3683,19 +3683,69 @@ select.gc-input{
   display: grid !important;
   grid-template-columns: var(--gc-lines-cols) !important;
   align-items: center;
-  /* ensure Actions is always reachable and never clipped */
-  min-width: 1020px;
+  gap: 12px;
+  min-width: 0;
 }
 
+/* Desktop columns (no forced min-width; prevents horizontal scroll) */
+.gc-lines-wrap{
+  --gc-lines-cols: minmax(0, 1.55fr)
+                  minmax(0, .55fr)
+                  minmax(0, .50fr)
+                  minmax(0, .55fr)
+                  minmax(0, .60fr)
+                  minmax(0, 1fr)
+                  minmax(0, 170px);
+}
+
+/* Mobile / narrow: stack into labeled rows (no horizontal scroll ever) */
+@media (max-width: 980px){
+  .gc-lines-wrap{
+    --gc-lines-cols: 1fr;
+  }
+  .gc-lines-head{ display:none !important; }
+
+  .gc-line-row.gc-lines-grid{
+    gap: 10px !important;
+  }
+
+  .gc-line-row .gc-cell{
+    display: grid;
+    grid-template-columns: 120px 1fr;
+    align-items: center;
+    gap: 12px;
+  }
+  .gc-line-row .gc-cell::before{
+    content: attr(data-col);
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: rgba(15,23,42,.55);
+  }
+  .gc-line-row .gc-cell.gc-cell-actions{
+    grid-template-columns: 1fr;
+  }
+  .gc-line-row .gc-cell.gc-cell-actions::before{ content: "Actions"; }
+  .gc-line-row .gc-line-actions{
+    justify-content: flex-start !important;
+    flex-wrap: wrap;
+  }
+  .gc-line-row .gc-gross-wrap{
+    justify-content: flex-start;
+  }
+}
+
+
 /* Slightly tighter last column so the right side fits more often */
-:root{
+.gc-lines-wrap{
   --gc-lines-cols: minmax(320px, 1.55fr)
                   minmax(92px, .55fr)
                   minmax(86px, .50fr)
                   minmax(92px, .55fr)
                   minmax(110px, .60fr)
                   minmax(220px, 1fr)
-                  var(--gc-lines-actions-w, 190px);
+                  160px;
 }
 
 /* Mobile/Small laptop: allow a bit more room for Notes, keep Actions compact */
@@ -3707,7 +3757,7 @@ select.gc-input{
                     minmax(88px, .55fr)
                     minmax(100px, .60fr)
                     minmax(200px, 1fr)
-                    var(--gc-lines-actions-w, 176px);
+                    150px;
   }
 }
 
@@ -3743,48 +3793,3 @@ select.gc-input{
 .gc-line-row > div:nth-child(6) .gc-input{
   min-width: 180px;
 }
-
-/* =========================================================
-   ABSOLUTE V15 — RECIPE EDITOR LINES (STICKY ACTIONS)
-   Goal: keep Actions visible without horizontal scrolling.
-   UI only — no logic change.
-   ========================================================= */
-
-/* Make the last column sticky to the right (header + rows). */
-.gc-lines-actions-head,
-.gc-lines-actions-cell{
-  position: sticky;
-  right: 0;
-  z-index: 5;
-  background: linear-gradient(90deg, rgba(255,255,255,0) 0%, rgba(255,255,255,.92) 20%, rgba(255,255,255,1) 60%);
-  padding-left: 10px;
-}
-
-/* Header needs its own background + border so it reads like a fixed column */
-.gc-lines-actions-head{
-  z-index: 10;
-  background: linear-gradient(90deg, rgba(250,250,250,0) 0%, rgba(250,250,250,.95) 25%, rgba(250,250,250,1) 65%);
-  border-left: 1px solid rgba(15,23,42,.10);
-}
-
-/* Rows: subtle divider and shadow to separate sticky column from scroll content */
-.gc-lines-actions-cell{
-  border-left: 1px solid rgba(15,23,42,.08);
-  box-shadow: -12px 0 18px rgba(2,6,23,.05);
-}
-
-/* Ensure the scroll container can show sticky items properly */
-.gc-scroll{
-  position: relative;
-}
-
-/* Give the Actions column a stable width (icons + optional expand) */
-:root{
-  --gc-lines-actions-w: 190px;
-}
-.gc-line-actions{ min-width: var(--gc-lines-actions-w); }
-
-@media (max-width: 1100px){
-  :root{ --gc-lines-actions-w: 176px; }
-}
-
