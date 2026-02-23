@@ -128,27 +128,6 @@ export default function Dashboard() {
     for (const r of recipes) m.set(r.id, r)
     return m
   }, [recipes])
-  // Ingredients USED IN non-archived recipes that are missing a valid cost.
-  // Definition:
-  // - DISTINCT ingredient_id referenced by recipe_lines where parent recipe is NOT archived.
-  // - Missing cost = net_unit_cost is null/undefined/NaN OR <= 0.
-  const usedIngredientsMissingCostCount = useMemo(() => {
-    const activeRecipeIds = new Set(recipes.filter((r) => !r.is_archived).map((r) => r.id))
-    const used = new Set<string>()
-    for (const l of lines) {
-      if (!activeRecipeIds.has(l.recipe_id)) continue
-      if (!l.ingredient_id) continue
-      used.add(l.ingredient_id)
-    }
-    let c = 0
-    for (const id of used) {
-      const ing = ingById.get(id)
-      const v = Number(ing?.net_unit_cost)
-      if (!Number.isFinite(v) || v <= 0) c += 1
-    }
-    return c
-  }, [recipes, lines, ingById])
-
 
   const activeRecipes = useMemo(() => recipes.filter((r) => !r.is_archived), [recipes])
   const activeIngredientsCount = useMemo(() => ingredients.filter((i) => i.is_active !== false).length, [ingredients])
@@ -478,8 +457,8 @@ export default function Dashboard() {
                   <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
                 </div>
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Ingredients used in recipes missing cost</div>
-                  <div className="mt-1 text-2xl font-extrabold">{usedIngredientsMissingCostCount}</div>
+                  <div className="text-xs font-semibold text-neutral-600">Ingredients missing cost</div>
+                  <div className="mt-1 text-2xl font-extrabold">{diag.missingIngredientCostCount}</div>
                 </div>
               </div>
 
