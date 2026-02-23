@@ -1,3 +1,4 @@
+// src/components/RecipeLinesPro.tsx
 import * as React from 'react'
 
 export type ProLine = {
@@ -34,7 +35,6 @@ function clamp(n: number, a: number, b: number) {
 
 function fmtQty(n: number) {
   const v = Number.isFinite(n) ? n : 0
-  // human-friendly but still precise for kitchen work
   if (Math.abs(v) >= 100) return v.toFixed(1)
   if (Math.abs(v) >= 10) return v.toFixed(2)
   return v.toFixed(3)
@@ -47,9 +47,6 @@ export default function RecipeLinesPro(props: {
   currency: string
 }) {
   const { lines, setLines, ingredients } = props
-
-  // UI-only: keep the same data + calculations, but reduce visual noise by
-  // collapsing advanced fields (Yield %, Notes) behind a toggle.
   const [showAdvanced, setShowAdvanced] = React.useState(false)
 
   const ingById = React.useMemo(() => {
@@ -59,22 +56,26 @@ export default function RecipeLinesPro(props: {
   }, [ingredients])
 
   const sorted = React.useMemo(() => {
-    // keep existing ordering semantics (position asc)
     return [...lines].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
   }, [lines])
 
-  const update = (id: string, patch: Partial<ProLine>) => {
-    setLines(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)))
-  }
+  const update = React.useCallback(
+    (id: string, patch: Partial<ProLine>) => {
+      setLines(lines.map((l) => (l.id === id ? { ...l, ...patch } : l)))
+    },
+    [lines, setLines]
+  )
 
-  const remove = (id: string) => {
-    const next = lines.filter((l) => l.id !== id)
-    // keep positions stable-ish: reindex from 1
-    const re = next
-      .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-      .map((l, idx) => ({ ...l, position: idx + 1 }))
-    setLines(re)
-  }
+  const remove = React.useCallback(
+    (id: string) => {
+      const next = lines.filter((l) => l.id !== id)
+      const re = next
+        .sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+        .map((l, idx) => ({ ...l, position: idx + 1 }))
+      setLines(re)
+    },
+    [lines, setLines]
+  )
 
   const totalCost = React.useMemo(() => {
     let sum = 0
@@ -91,158 +92,136 @@ export default function RecipeLinesPro(props: {
   }, [sorted, ingById])
 
   if (!sorted.length) {
-    return <div className="text-sm text-neutral-600">No ingredients yet.</div>
+    return <div className="text-sm" style={{ color: 'var(--gc-muted)' }}>No ingredients yet.</div>
   }
 
+  const cur = (props.currency || 'USD').toUpperCase()
+
   return (
-    <div className="gc-card p-4">
-      <div className="flex items-center justify-between gap-3">
+    <div className="gc-card" style={{ padding: 14 }}>
+      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
         <div>
-          <div className="gc-label">INGREDIENTS</div>
-          <div className="mt-1 text-sm text-neutral-600">
-            Net = recipe target amount • Gross = amount to buy/prepare (Net ÷ Yield)
+          <div className="gc-label">INGREDIENT LINES</div>
+          <div className="gc-hint" style={{ marginTop: 6 }}>
+            Net = target amount • Gross = amount to buy/prepare (Net ÷ Yield)
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            className="gc-btn gc-btn-ghost"
-            onClick={() => setShowAdvanced((v) => !v)}
-            aria-expanded={showAdvanced}
-          >
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+          <button type="button" className="gc-btn gc-btn-ghost" onClick={() => setShowAdvanced((v) => !v)} aria-expanded={showAdvanced}>
             {showAdvanced ? 'Hide advanced' : 'Advanced'}
           </button>
 
-          <div className="text-xs text-neutral-500">
-            Total cost contribution:&nbsp;
-            <span className="font-semibold">{totalCost.toFixed(2)}</span> {props.currency?.toUpperCase() || 'USD'}
+          <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+            <div className="gc-label">TOTAL</div>
+            <div style={{ fontWeight: 900, marginTop: 4 }}>
+              {totalCost.toFixed(2)} {cur}
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="mt-4 overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="text-left text-xs font-semibold text-neutral-500">
-            <tr>
-              <th className="py-2 pr-4">Ingredient</th>
-              <th className="py-2 pr-4">Net Qty</th>
-              <th className="py-2 pr-4">Gross Qty</th>
-              {showAdvanced && <th className="py-2 pr-4">Yield</th>}
-              <th className="py-2 pr-4">Cost Contribution</th>
-              <th className="py-2 pr-0 text-right">Actions</th>
-            </tr>
-          </thead>
+      <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+        {sorted.map((l) => {
+          const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+          const unit = safeUnit(l.unit)
+          const netQty = Math.max(0, toNum(l.qty, 0))
+          const y = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
+          const grossQty = netQty / (y / 100)
 
-          <tbody className="align-top">
-            {sorted.map((l) => {
-              const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
-              const unit = safeUnit(l.unit)
-              const netQty = Math.max(0, toNum(l.qty, 0))
-              const y = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
-              const grossQty = netQty / (y / 100)
+          const unitCost = toNum(ing?.net_unit_cost, 0)
+          const lineCost = grossQty * unitCost
+          const pct = totalCost > 0 ? (lineCost / totalCost) * 100 : 0
 
-              const unitCost = toNum(ing?.net_unit_cost, 0)
-              const lineCost = grossQty * unitCost
-              const pct = totalCost > 0 ? (lineCost / totalCost) * 100 : 0
+          return (
+            <div key={l.id} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ minWidth: 260 }}>
+                  <div style={{ fontWeight: 900 }}>{ing?.name ?? 'Ingredient'}</div>
+                  <div className="gc-hint" style={{ marginTop: 4 }}>
+                    #{l.position} • Unit: {unit}
+                    {ing?.pack_unit ? ` • Pack unit: ${safeUnit(ing.pack_unit)}` : ''}
+                  </div>
+                </div>
 
-              return (
-                <tr key={l.id} className="border-t">
-                  <td className="py-3 pr-4">
-                    <div className="font-semibold">{ing?.name ?? 'Ingredient'}</div>
-                    <div className="text-xs text-neutral-500">
-                      #{l.position} • Unit: {unit}
-                      {ing?.pack_unit ? ` • Pack unit: ${safeUnit(ing.pack_unit)}` : ''}
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                  <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                    <div className="gc-label">NET</div>
+                    <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtQty(netQty)} {unit}</div>
+                  </div>
+
+                  <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                    <div className="gc-label">GROSS</div>
+                    <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtQty(grossQty)} {unit}</div>
+                  </div>
+
+                  <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                    <div className="gc-label">COST</div>
+                    <div style={{ fontWeight: 900, marginTop: 4 }}>{Number.isFinite(lineCost) ? lineCost.toFixed(2) : '0.00'} {cur}</div>
+                    <div className="gc-hint" style={{ marginTop: 4, fontWeight: 900 }}>{fmtQty(pct)}%</div>
+                  </div>
+
+                  <button className="gc-btn gc-btn-danger" type="button" onClick={() => remove(l.id)}>
+                    Remove
+                  </button>
+                </div>
+              </div>
+
+              <div className="gc-field-row" style={{ marginTop: 12 }}>
+                <div className="gc-col-4">
+                  <div className="gc-field">
+                    <div className="gc-label">NET QTY</div>
+                    <input
+                      className="gc-input"
+                      value={String(toNum(l.qty, 0))}
+                      onChange={(e) => update(l.id, { qty: Math.max(0, toNum(e.target.value, 0)) })}
+                      inputMode="decimal"
+                    />
+                  </div>
+                </div>
+
+                <div className="gc-col-4">
+                  <div className="gc-field">
+                    <div className="gc-label">UNIT</div>
+                    <input className="gc-input" value={l.unit ?? 'g'} onChange={(e) => update(l.id, { unit: e.target.value })} />
+                  </div>
+                </div>
+
+                {showAdvanced && (
+                  <div className="gc-col-4">
+                    <div className="gc-field">
+                      <div className="gc-label">YIELD %</div>
+                      <input
+                        className="gc-input"
+                        value={String(toNum(l.yield_percent, 100))}
+                        onChange={(e) => update(l.id, { yield_percent: clamp(toNum(e.target.value, 100), 0.0001, 100) })}
+                        inputMode="decimal"
+                      />
                     </div>
+                  </div>
+                )}
 
-                    <div className="mt-2 grid gap-2 sm:grid-cols-12">
-                      <div className="sm:col-span-4">
-                        <div className="gc-label">NET QTY</div>
-                        <input
-                          className="gc-input w-full"
-                          value={String(toNum(l.qty, 0))}
-                          onChange={(e) => update(l.id, { qty: Math.max(0, toNum(e.target.value, 0)) })}
-                          inputMode="decimal"
-                        />
-                      </div>
-
-                      <div className="sm:col-span-4">
-                        <div className="gc-label">UNIT</div>
-                        <input
-                          className="gc-input w-full"
-                          value={l.unit ?? 'g'}
-                          onChange={(e) => update(l.id, { unit: e.target.value })}
-                        />
-                      </div>
-
-                      {showAdvanced && (
-                        <div className="sm:col-span-4">
-                          <div className="gc-label">YIELD %</div>
-                          <input
-                            className="gc-input w-full"
-                            value={String(toNum(l.yield_percent, 100))}
-                            onChange={(e) =>
-                              update(l.id, { yield_percent: clamp(toNum(e.target.value, 100), 0.0001, 100) })
-                            }
-                            inputMode="decimal"
-                          />
-                        </div>
-                      )}
+                {showAdvanced && (
+                  <div className="gc-col-12">
+                    <div className="gc-field">
+                      <div className="gc-label">NOTES</div>
+                      <input
+                        className="gc-input"
+                        value={l.notes ?? ''}
+                        onChange={(e) => update(l.id, { notes: e.target.value })}
+                        placeholder="Optional notes (prep, trimming, etc.)"
+                      />
                     </div>
+                  </div>
+                )}
+              </div>
 
-                    {showAdvanced ? (
-                      <div className="mt-2">
-                        <div className="gc-label">NOTES</div>
-                        <input
-                          className="gc-input w-full"
-                          value={l.notes ?? ''}
-                          onChange={(e) => update(l.id, { notes: e.target.value })}
-                          placeholder="Optional notes (prep, trimming, etc.)"
-                        />
-                      </div>
-                    ) : (
-                      l.notes != null &&
-                      l.notes !== '' && (
-                        <div className="mt-2 text-xs text-neutral-500">Notes: {l.notes}</div>
-                      )
-                    )}
-                  </td>
-
-                  <td className="py-3 pr-4">
-                    <div className="font-semibold">{fmtQty(netQty)} {unit}</div>
-                  </td>
-
-                  <td className="py-3 pr-4">
-                    <div className="font-semibold">{fmtQty(grossQty)} {unit}</div>
-                  </td>
-
-                  {showAdvanced && (
-                    <td className="py-3 pr-4">
-                      <div className="font-semibold">{fmtQty(y)}%</div>
-                    </td>
-                  )}
-
-                  <td className="py-3 pr-4">
-                    <div className="font-semibold">{fmtQty(pct)}%</div>
-                    <div className="text-xs text-neutral-500">
-                      {Number.isFinite(lineCost) ? lineCost.toFixed(2) : '0.00'} {props.currency?.toUpperCase() || 'USD'}
-                    </div>
-                  </td>
-
-                  <td className="py-3 pr-0 text-right whitespace-nowrap">
-                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => remove(l.id)}>
-                      Remove
-                    </button>
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-3 text-xs text-neutral-500">
-        Gross Qty = Net Qty ÷ (Yield% / 100). Example: 50g net at 97% yield → 51.546g gross.
+              <div className="gc-hint" style={{ marginTop: 10 }}>
+                Gross Qty = Net Qty ÷ (Yield% / 100). Example: 50g net at 97% yield → 51.546g gross.
+              </div>
+            </div>
+          )
+        })}
       </div>
     </div>
   )
