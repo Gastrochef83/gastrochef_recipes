@@ -3726,6 +3726,22 @@ select.gc-input{
   white-space: nowrap;
 }
 
+/* --- V14 Rebuild: make the right side NEVER disappear ---
+   The Actions cell is sticky on the right inside the horizontal scroll container.
+   This eliminates the "cut off" issue even on narrow viewports.
+*/
+.gc-lines-actions-cell{
+  position: sticky;
+  right: 0;
+  z-index: 6;
+  background: #fff;
+  box-shadow: -18px 0 18px rgba(15, 23, 42, .06);
+  padding-left: 10px;
+}
+.gc-lines-head .gc-lines-actions-cell{
+  background: #fafafa;
+}
+
 /* Icon buttons: consistent size so the Actions column stays compact */
 .gc-btn.gc-btn-icon{
   width: 36px;

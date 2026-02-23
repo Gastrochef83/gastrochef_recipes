@@ -2156,7 +2156,7 @@ export default function RecipeEditor() {
               <div className="text-right whitespace-nowrap">Yield %</div>
               <div className="text-right whitespace-nowrap">Gross Qty</div>
               <div className="whitespace-nowrap">Note</div>
-              <div className="text-right whitespace-nowrap">Actions</div>
+              <div className="gc-lines-actions-cell text-right whitespace-nowrap">Actions</div>
             </div>
 
             <div className={`divide-y divide-neutral-200 ${density === 'compact' ? 'gc-density-compact' : ''}`}>
@@ -2199,7 +2199,7 @@ export default function RecipeEditor() {
                           />
                         </div>
 
-                        <div className="gc-line-actions flex gap-2 justify-end">
+                        <div className="gc-line-actions gc-lines-actions-cell flex gap-2 justify-end">
                           <button className="gc-btn gc-btn-icon" type="button" title="Move up" aria-label="Move line up" onClick={() => moveLine(l.id, -1)} disabled={reorderSaving}>↑</button>
                           <button className="gc-btn gc-btn-icon" type="button" title="Move down" aria-label="Move line down" onClick={() => moveLine(l.id, 1)} disabled={reorderSaving}>↓</button>
                           <button className="gc-btn gc-btn-icon" type="button" title="Duplicate" aria-label="Duplicate line" onClick={() => duplicateLine(l.id)}>⧉</button>
@@ -2402,7 +2402,7 @@ export default function RecipeEditor() {
                         <input className="gc-input w-full" value={r.notes} onChange={(ev) => setRow({ notes: ev.target.value })} placeholder="e.g., chopped / room temp / to taste…" />
                       </div>
 
-                      <div className="gc-line-actions flex justify-end gap-2">
+                      <div className="gc-line-actions gc-lines-actions-cell flex justify-end gap-2">
                         {canExpand && (
                           <button
                             className="gc-btn gc-btn-icon"
