@@ -154,6 +154,7 @@ export default function RecipeLinesPro(props: {
           const grossQty = netQty / (y / 100)
 
           const unitCost = toNum(ing?.net_unit_cost, 0)
+          const missingPrice = !(Number.isFinite(unitCost) && unitCost > 0)
           const lineCost = grossQty * unitCost
           const pct = totalCost > 0 ? (lineCost / totalCost) * 100 : 0
 
@@ -161,13 +162,10 @@ export default function RecipeLinesPro(props: {
             <div key={l.id} className="gc-line">
               <div className="gc-line-top">
                 <div className="gc-line-name">
-                  <div className="gc-line-name-title" title={ing?.name ?? 'Ingredient'}>
+                  <div className="gc-line-name-title gc-ellipsis" title={ing?.name ?? 'Ingredient'}>
                     {ing?.name ?? 'Ingredient'}
                   </div>
-                  <div className="gc-hint gc-line-name-sub">
-                    #{l.position} • Unit: {unit}
-                    {ing?.pack_unit ? ` • Pack unit: ${safeUnit(ing.pack_unit)}` : ''}
-                  </div>
+                  {missingPrice ? <div className="gc-hint gc-line-name-sub">Ingredient without price</div> : null}
                 </div>
 
                 <div className="gc-line-metrics">
