@@ -6,7 +6,9 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "nuclear:zip:linux": "bash ./scripts/nuclear_build.sh",
+    "nuclear:zip:win": "powershell -ExecutionPolicy Bypass -File ./scripts/nuclear_build.ps1"
   },
   "dependencies": {
     "react": "^18.2.0",
