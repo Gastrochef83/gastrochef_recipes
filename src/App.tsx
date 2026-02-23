@@ -1,55 +1,84 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+// App.tsx - Root with optimized routing and auth
+import React, { lazy, Suspense, useEffect } from 'react';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { ThemeProvider } from './contexts/ThemeContext';
+import { DatabaseProvider } from './contexts/DatabaseContext';
+import Layout from './components/Layout';
+import LoadingSpinner from './components/LoadingSpinner';
+import ErrorBoundary from './components/ErrorBoundary';
 
-import AppLayout from './layouts/AppLayout'
-import AuthGate from './components/AuthGate'
+// Lazy load for performance
+const Login = lazy(() => import('./pages/Login'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const Recipes = lazy(() => import('./pages/Recipes'));
+const RecipeEditor = lazy(() => import('./pages/RecipeEditor'));
+const CostHistory = lazy(() => import('./pages/CostHistory'));
+const Settings = lazy(() => import('./pages/Settings'));
 
-import Dashboard from './pages/Dashboard'
-import Ingredients from './pages/Ingredients'
-import Recipes from './pages/Recipes'
-import RecipeEditor from './pages/RecipeEditor'
-import RecipeCookMode from './pages/RecipeCookMode'
-import RecipePrintCard from './pages/RecipePrintCard'
-import Settings from './pages/Settings'
+const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+  const { user, loading } = useAuth();
+  
+  if (loading) return <LoadingSpinner />;
+  return user ? <>{children}</> : <Navigate to="/login" />;
+};
 
-import Login from './pages/Login'
-import Register from './pages/Register'
-
-/**
- * ✅ ABSOLUTE FINAL CORE — FIXED (Vercel build)
- * - DOES NOT import HashRouter here (HashRouter stays in main.tsx)
- * - Fixes Cook mode import: RecipeCookMode.tsx
- * - Protects app routes with AuthGate (no bounce-back after logout)
- * - No changes to your business logic
- */
-export default function App() {
+function AppRoutes() {
   return (
     <Routes>
-      {/* Public */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-
-      {/* Protected App */}
-      <Route
-        path="/"
-        element={
-          <AuthGate redirectTo="/login">
-            <AppLayout />
-          </AuthGate>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="ingredients" element={<Ingredients />} />
-        <Route path="recipes" element={<Recipes />} />
-        <Route path="recipe" element={<RecipeEditor />} />
-        {/* Cook mode is opened from RecipeEditor via /cook?id=... */}
-        <Route path="cook" element={<RecipeCookMode />} />
-        <Route path="print" element={<RecipePrintCard />} />
-        <Route path="settings" element={<Settings />} />
+      <Route path="/login" element={
+        <Suspense fallback={<LoadingSpinner />}>
+          <Login />
+        </Suspense>
+      } />
+      <Route path="/" element={
+        <PrivateRoute>
+          <Layout />
+        </PrivateRoute>
+      }>
+        <Route index element={<Navigate to="/dashboard" />} />
+        <Route path="dashboard" element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <Dashboard />
+          </Suspense>
+        } />
+        <Route path="recipes" element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <Recipes />
+          </Suspense>
+        } />
+        <Route path="recipe/:id" element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <RecipeEditor />
+          </Suspense>
+        } />
+        <Route path="cost-history" element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <CostHistory />
+          </Suspense>
+        } />
+        <Route path="settings" element={
+          <Suspense fallback={<LoadingSpinner />}>
+            <Settings />
+          </Suspense>
+        } />
       </Route>
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
-  )
+  );
+}
+
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <ThemeProvider>
+        <AuthProvider>
+          <DatabaseProvider>
+            <HashRouter>
+              <AppRoutes />
+            </HashRouter>
+          </DatabaseProvider>
+        </AuthProvider>
+      </ThemeProvider>
+    </ErrorBoundary>
+  );
 }

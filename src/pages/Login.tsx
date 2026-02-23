@@ -1,151 +1,163 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
+// pages/Login.tsx - Premium first impression
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import Button from '../components/ui/Button';
+import Input from '../components/ui/Input';
 
 export default function Login() {
-  const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
-
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [checking, setChecking] = useState(true)
-
-  // ✅ If already signed in, go straight to the app (prevents weird loop / blank state)
-  useEffect(() => {
-    let alive = true
-
-    async function check() {
-      try {
-        const { data } = await supabase.auth.getSession()
-        if (!alive) return
-        const hasSession = !!data?.session
-        if (hasSession) {
-          window.location.assign(`${base}#/dashboard`)
-          return
-        }
-      } catch {
-        // ignore
-      } finally {
-        if (alive) setChecking(false)
-      }
-    }
-
-    check()
-    return () => {
-      alive = false
-    }
-  }, [base])
-
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (busy) return
-
-    setBusy(true)
-    setErr(null)
-
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  
+  const { signIn } = useAuth();
+  const { theme, toggleTheme } = useTheme();
+  const navigate = useNavigate();
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
-
-      if (error) {
-        setErr(error.message)
-        return
-      }
-
-      // ✅ HashRouter-safe redirect
-      window.location.assign(`${base}#/dashboard`)
-    } catch (e: any) {
-      setErr(e?.message || 'Login failed.')
+      await signIn(email, password);
+      navigate('/dashboard');
+    } catch (err) {
+      setError('Invalid email or password');
     } finally {
-      setBusy(false)
+      setLoading(false);
     }
-  }
-
+  };
+  
   return (
-    <div className="gc-auth">
-      <div className="gc-auth-card">
-        {/* ✅ BRAND LOCK: same logo asset used everywhere */}
-        <div className="gc-auth-head">
-          <div className="gc-auth-logo">
-            <img src={`${base}gastrochef-logo.png`} alt="GastroChef" />
-            <div>
-              <div className="gc-auth-title">GastroChef</div>
-              <div className="gc-auth-sub">Sign in to your kitchen workspace</div>
-            </div>
-          </div>
+    <div className="login-container" data-theme={theme}>
+      <div className="login-card">
+        <div className="login-header">
+          <img src="/logo.svg" alt="GastroChef" className="logo" />
+          <h1>GastroChef</h1>
+          <p>Professional Kitchen Management</p>
         </div>
-
-        {/* Card */}
-        <div className="gc-auth-body">
-          {checking ? (
-            <div style={{ padding: 18, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
-          ) : (
-            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-              <div>
-                <div className="gc-label">Email</div>
-                <input
-                  className="gc-input"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  style={{ marginTop: 6, width: '100%' }}
-                />
-              </div>
-
-              <div>
-                <div className="gc-label">Password</div>
-                <input
-                  className="gc-input"
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  style={{ marginTop: 6, width: '100%' }}
-                />
-              </div>
-
-              {err && (
-                <div
-                  style={{
-                    borderRadius: 14,
-                    background: '#fef2f2',
-                    border: '1px solid rgba(239,68,68,.20)',
-                    color: '#b91c1c',
-                    padding: 12,
-                    fontSize: 13,
-                  }}
-                >
-                  {err}
-                </div>
-              )}
-
-              <button
-                type="submit"
-                disabled={busy}
-                className="gc-btn gc-btn-primary"
-                style={{ width: '100%' }}
-              >
-                {busy ? 'Signing in…' : 'Login'}
-              </button>
-            </form>
-          )}
-
-          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--muted)' }}>
-            New here?{' '}
-            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
-              Create an account
-            </Link>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
-          Tip: If logout “bounces”, this build uses hard redirect for stability.
-        </div>
+        
+        <form onSubmit={handleSubmit} className="login-form">
+          {error && <div className="error-message">{error}</div>}
+          
+          <Input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            autoFocus
+          />
+          
+          <Input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+          />
+          
+          <Button
+            type="submit"
+            disabled={loading}
+            fullWidth
+          >
+            {loading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
+        
+        <button
+          onClick={toggleTheme}
+          className="theme-toggle"
+          aria-label="Toggle theme"
+        >
+          {theme === 'light' ? '🌙' : '☀️'}
+        </button>
       </div>
+      
+      <style>{`
+        .login-container {
+          min-height: 100vh;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          background: var(--surface-secondary);
+          padding: 1rem;
+        }
+        
+        .login-card {
+          max-width: 400px;
+          width: 100%;
+          background: var(--surface);
+          border-radius: 16px;
+          padding: 2rem;
+          box-shadow: var(--shadow-lg);
+          position: relative;
+        }
+        
+        .login-header {
+          text-align: center;
+          margin-bottom: 2rem;
+        }
+        
+        .logo {
+          width: 80px;
+          height: 80px;
+          margin-bottom: 1rem;
+        }
+        
+        .login-header h1 {
+          font-size: 2rem;
+          font-weight: 700;
+          color: var(--text-primary);
+          margin: 0 0 0.5rem 0;
+        }
+        
+        .login-header p {
+          color: var(--text-secondary);
+          margin: 0;
+        }
+        
+        .login-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        
+        .error-message {
+          background: var(--danger);
+          color: white;
+          padding: 0.75rem;
+          border-radius: 8px;
+          font-size: 0.875rem;
+          text-align: center;
+        }
+        
+        .theme-toggle {
+          position: absolute;
+          top: 1rem;
+          right: 1rem;
+          background: var(--surface-secondary);
+          border: none;
+          width: 40px;
+          height: 40px;
+          border-radius: 20px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          cursor: pointer;
+          font-size: 1.25rem;
+          color: var(--text-primary);
+          transition: all 0.2s;
+        }
+        
+        .theme-toggle:hover {
+          background: var(--surface-tertiary);
+        }
+      `}</style>
     </div>
-  )
+  );
 }
