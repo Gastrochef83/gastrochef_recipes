@@ -134,7 +134,7 @@ export default function Ingredients() {
   const [bulkWorking, setBulkWorking] = useState(false)
 
   const loadKitchen = async () => {
-    const { data, error } = await supabase   .from('ingredients')   .select('*') as any = await supabase.rpc('current_kitchen_id')
+    const { data, error } = await supabase.rpc('current_kitchen_id')
     if (!error) {
       const kid = (data as string) ?? null
       setKitchenId(kid)
@@ -149,8 +149,7 @@ export default function Ingredients() {
     setErr(null)
     try {
       await loadKitchen()
-      const { data, error } = await supabase   .from('ingredients')   .select('*') as any = await getIngredientsCached()
-      if (error) throw error
+      const data = await getIngredientsCached()
       setRows((data ?? []) as IngredientRow[])
       setLoading(false)
     } catch (e: any) {
