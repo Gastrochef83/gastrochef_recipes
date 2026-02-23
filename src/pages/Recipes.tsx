@@ -1,13 +1,10 @@
+// src/pages/Recipes.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
-
-/**
- * ✅ Your kitchens.id (FK target)
- */
-const KITCHEN_ID = '9ca989dc-3115-4cf6-ba0f-af1f25374721'
+import { useKitchen } from '../lib/kitchen'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -60,25 +57,6 @@ function toNum(x: any, fallback = 0) {
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
-function fmtMoney(n: number, currency: string) {
-  const v = Number.isFinite(n) ? n : 0
-  const cur = (currency || 'USD').toUpperCase()
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
-  } catch {
-    return `${v.toFixed(2)} ${cur}`
-  }
-}
-function convertQty(qty: number, fromUnit: string, toUnit: string) {
-  const f = safeUnit(fromUnit)
-  const t = safeUnit(toUnit)
-  if (f === t) return { ok: true, value: qty }
-  if (f === 'g' && t === 'kg') return { ok: true, value: qty / 1000 }
-  if (f === 'kg' && t === 'g') return { ok: true, value: qty * 1000 }
-  if (f === 'ml' && t === 'l') return { ok: true, value: qty / 1000 }
-  if (f === 'l' && t === 'ml') return { ok: true, value: qty * 1000 }
-  return { ok: false, value: 0 }
-}
 function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
   const u = safeUnit(lineUnit)
   const p = safeUnit(packUnit)
@@ -126,6 +104,7 @@ export default function Recipes() {
   const nav = useNavigate()
   const { isKitchen } = useMode()
   const isMgmt = !isKitchen
+  const k = useKitchen()
 
   const mountedRef = useRef(true)
   useEffect(() => {
@@ -153,18 +132,10 @@ export default function Recipes() {
     return v === 'dense' ? 'dense' : 'comfortable'
   })
 
-  // lines cache like RecipeEditor
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
   const loadingLinesRef = useRef<Set<string>>(new Set())
 
-  // cost cache (memory + localStorage)
   const [costCache, setCostCache] = useState<Record<string, CostPoint>>(() => loadCostCache())
-
-  const recipeById = useMemo(() => {
-    const m = new Map<string, RecipeRow>()
-    for (const r of recipes) m.set(r.id, r)
-    return m
-  }, [recipes])
 
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
@@ -191,171 +162,104 @@ export default function Recipes() {
     }
 
     try {
+      // RLS handles tenancy; do not filter by kitchen_id on client
       const selectRecipes =
         'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
 
       const { data: r, error: rErr } = await supabase
         .from('recipes')
         .select(selectRecipes)
-        .eq('kitchen_id', KITCHEN_ID)
         .order('is_archived', { ascending: true })
         .order('name', { ascending: true })
 
       if (rErr) throw rErr
       if (mountedRef.current) setRecipes((r ?? []) as RecipeRow[])
 
-      const { data: i, error: iErr } = (await supabase
+      // ingredients (RLS-safe)
+      const { data: i, error: iErr } = await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active')
-        .eq('kitchen_id', KITCHEN_ID)) as any
+        .order('name', { ascending: true })
 
-      if (iErr && String(iErr.message || '').toLowerCase().includes('kitchen_id')) {
-        const { data: i2, error: i2Err } = await supabase
-          .from('ingredients')
-          .select('id,name,pack_unit,net_unit_cost,is_active')
-          .order('name', { ascending: true })
-        if (i2Err) throw i2Err
-        if (mountedRef.current) setIngredients((i2 ?? []) as Ingredient[])
-      } else {
-        if (iErr) throw iErr
-        if (mountedRef.current) setIngredients((i ?? []) as Ingredient[])
-      }
+      if (iErr) throw iErr
+      if (mountedRef.current) setIngredients((i ?? []) as Ingredient[])
     } catch (e: any) {
-      if (mountedRef.current) setErr(e?.message || 'Failed to load')
+      if (mountedRef.current) setErr(e?.message || 'Failed to load recipes')
     } finally {
       if (mountedRef.current) setLoading(false)
     }
   }
 
   useEffect(() => {
-    loadAll()
+    loadAll().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  function normalizeLine(row: any): Line {
-    // ✅ handles either "note" or "notes" from DB
-    const notes = row?.notes ?? row?.note ?? null
-    const lt = (row?.line_type ?? 'ingredient') as LineType
-    return {
-      id: String(row?.id ?? ''),
-      recipe_id: String(row?.recipe_id ?? ''),
-      ingredient_id: row?.ingredient_id ?? null,
-      sub_recipe_id: row?.sub_recipe_id ?? null,
-      qty: toNum(row?.qty, 0),
-      unit: String(row?.unit ?? 'g'),
-      notes,
-      position: toNum(row?.position, 0),
-      line_type: lt,
-      group_title: row?.group_title ?? null,
-    }
-  }
-
-  async function ensureRecipeLinesLoaded(recipeIds: string[]) {
-    const ids = Array.from(new Set(recipeIds)).filter(Boolean)
+  async function ensureRecipeLinesLoaded(ids: string[]) {
     const need = ids.filter((id) => !recipeLinesCache[id] && !loadingLinesRef.current.has(id))
     if (!need.length) return
 
-    need.forEach((id) => loadingLinesRef.current.add(id))
+    for (const id of need) loadingLinesRef.current.add(id)
+
     try {
       const { data, error } = await supabase
         .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,notes,position,line_type,group_title')
+        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,notes,position,line_type,group_title')
         .in('recipe_id', need)
         .order('position', { ascending: true })
 
       if (error) throw error
 
-      const fetched: Record<string, Line[]> = {}
-      for (const rid of need) fetched[rid] = []
-
+      const grouped: Record<string, Line[]> = {}
       for (const row of (data ?? []) as any[]) {
-        const rid = String(row?.recipe_id ?? '')
-        if (!rid) continue
-        if (!fetched[rid]) fetched[rid] = []
-        fetched[rid].push(normalizeLine(row))
+        const rid = row.recipe_id
+        if (!grouped[rid]) grouped[rid] = []
+        grouped[rid].push(row as Line)
       }
 
       if (mountedRef.current) {
-        setRecipeLinesCache((p) => ({ ...p, ...fetched }))
+        setRecipeLinesCache((prev) => ({ ...prev, ...grouped }))
       }
     } finally {
-      need.forEach((id) => loadingLinesRef.current.delete(id))
+      for (const id of need) loadingLinesRef.current.delete(id)
     }
-  }
-
-  /** Same engine as RecipeEditor (no logic change) */
-  const getRecipeTotalCost = (recipeId: string, visited: Set<string>): { cost: number; warnings: string[] } => {
-    const warnings: string[] = []
-    if (visited.has(recipeId)) {
-      warnings.push(`Loop detected in sub-recipes at ${recipeId}`)
-      return { cost: 0, warnings }
-    }
-    visited.add(recipeId)
-
-    const rr = recipeById.get(recipeId)
-    const rLines = recipeLinesCache[recipeId] ?? []
-    let sum = 0
-
-    for (const l of rLines) {
-      if (l.line_type === 'group') continue
-
-      if (l.line_type === 'ingredient') {
-        if (!l.ingredient_id) continue
-        const ing = ingById.get(l.ingredient_id)
-        const net = toNum(ing?.net_unit_cost, 0)
-        const packUnit = safeUnit(ing?.pack_unit ?? 'g')
-        const conv = convertQtyToPackUnit(toNum(l.qty, 0), l.unit, packUnit)
-        sum += conv * net
-        continue
-      }
-
-      if (l.line_type === 'subrecipe') {
-        if (!l.sub_recipe_id) continue
-        const childId = l.sub_recipe_id
-        const child = recipeById.get(childId)
-        const childLines = recipeLinesCache[childId]
-        if (!child || !childLines) continue
-
-        const childRes = getRecipeTotalCost(childId, visited)
-        for (const w of childRes.warnings) warnings.push(w)
-
-        const yq = toNum(child.yield_qty, 0)
-        const yu = safeUnit(child.yield_unit ?? '')
-        if (yq <= 0 || !yu) {
-          warnings.push(`Missing yield for subrecipe: ${child.name}`)
-          continue
-        }
-
-        const qtyParent = toNum(l.qty, 0)
-        const conv = convertQty(qtyParent, l.unit, yu)
-        if (!conv.ok) {
-          warnings.push(`Unit mismatch for subrecipe "${child.name}" (${safeUnit(l.unit)} -> ${yu})`)
-          continue
-        }
-
-        const costPerYieldUnit = childRes.cost / yq
-        sum += conv.value * costPerYieldUnit
-        continue
-      }
-    }
-
-    visited.delete(recipeId)
-    if (!rr) return { cost: sum, warnings }
-    return { cost: sum, warnings }
   }
 
   const costMemo = useMemo(() => {
-    const cache = new Map<string, { cost: number; warnings: string[] }>()
-    const get = (rid: string) => {
-      const hit = cache.get(rid)
-      if (hit) return hit
-      const res = getRecipeTotalCost(rid, new Set<string>())
-      cache.set(rid, res)
-      return res
+    const memo = new Map<string, { cost: number; warnings: string[] }>()
+    for (const r of recipes) {
+      const lines = recipeLinesCache[r.id]
+      if (!lines) continue
+
+      let cost = 0
+      const warnings: string[] = []
+
+      for (const l of lines) {
+        if (l.line_type === 'group') continue
+
+        if (l.line_type === 'subrecipe') {
+          // subrecipe costing would be from its own lines
+          // current behavior: treat as 0 unless expanded elsewhere
+          continue
+        }
+
+        const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+        if (!ing) continue
+
+        const unitCost = toNum(ing.net_unit_cost, 0)
+        if (!Number.isFinite(unitCost) || unitCost <= 0) warnings.push('Ingredient without price')
+
+        const netQty = Math.max(0, toNum(l.qty, 0))
+        const packUnit = ing.pack_unit || l.unit
+        const qtyInPack = convertQtyToPackUnit(netQty, l.unit, packUnit)
+        const lineCost = qtyInPack * unitCost
+        cost += Number.isFinite(lineCost) ? lineCost : 0
+      }
+
+      memo.set(r.id, { cost, warnings })
     }
-    return { get }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [recipeLinesCache, ingById, recipeById])
+    return memo
+  }, [recipes, recipeLinesCache, ingById])
 
   useEffect(() => {
     if (loading) return
@@ -363,16 +267,6 @@ export default function Recipes() {
 
     const visible = filtered.slice(0, 28)
     ensureRecipeLinesLoaded(visible.map((r) => r.id)).catch(() => {})
-
-    const subIds: string[] = []
-    for (const r of visible) {
-      const lines = recipeLinesCache[r.id]
-      if (!lines) continue
-      for (const l of lines) {
-        if (l.line_type === 'subrecipe' && l.sub_recipe_id) subIds.push(l.sub_recipe_id)
-      }
-    }
-    if (subIds.length) ensureRecipeLinesLoaded(subIds).catch(() => {})
 
     const now = Date.now()
     const nextCache: Record<string, CostPoint> = { ...costCache }
@@ -384,8 +278,9 @@ export default function Recipes() {
       if (hit && now - hit.at < COST_TTL_MS) continue
       if (!recipeLinesCache[rid]) continue
 
-      const totalRes = costMemo.get(rid)
+      const totalRes = costMemo.get(rid) || { cost: 0, warnings: [] }
       const totalCost = totalRes.cost
+
       const portionsN = Math.max(1, toNum(r.portions, 1))
       const cpp = portionsN > 0 ? totalCost / portionsN : 0
 
@@ -416,8 +311,10 @@ export default function Recipes() {
   async function createNewRecipe() {
     if (mountedRef.current) setErr(null)
     try {
+      if (!k.kitchenId) throw new Error('Kitchen not ready yet. Please wait a second and try again.')
+
       const payload: Partial<RecipeRow> = {
-        kitchen_id: KITCHEN_ID,
+        kitchen_id: k.kitchenId,
         name: 'New Recipe',
         category: null,
         portions: 1,
@@ -455,14 +352,7 @@ export default function Recipes() {
   function toggleSelect(id: string) {
     setSelected((p) => ({ ...p, [id]: !p[id] }))
   }
-  function selectVisible() {
-    const ids = filtered.slice(0, 64).map((r) => r.id)
-    setSelected((p) => {
-      const next = { ...p }
-      ids.forEach((id) => (next[id] = true))
-      return next
-    })
-  }
+
   function clearSelection() {
     setSelected({})
   }
@@ -498,249 +388,150 @@ export default function Recipes() {
     }
   }
 
-  async function bulkDeleteSelected() {
-    if (!selectedIds.length) return
+  // UI
+  const headerRight = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <button className="gc-btn gc-btn-primary" type="button" onClick={createNewRecipe} disabled={loading || k.loading}>
+        New recipe
+      </button>
 
-    const ok = window.confirm(
-      `Delete ${selectedIds.length} recipes permanently?\n\nThis will also delete their recipe lines.\nThis action cannot be undone.`
-    )
-    if (!ok) return
+      <button
+        className="gc-btn gc-btn-ghost"
+        type="button"
+        onClick={() => {
+          setShowArchived((v) => !v)
+        }}
+      >
+        {showArchived ? 'Hide archived' : 'Show archived'}
+      </button>
 
-    if (mountedRef.current) setErr(null)
-    try {
-      const { error: lErr } = await supabase.from('recipe_lines').delete().in('recipe_id', selectedIds)
-      if (lErr) throw lErr
+      <button
+        className="gc-btn gc-btn-ghost"
+        type="button"
+        onClick={() => {
+          setDensity((v) => {
+            const next = v === 'dense' ? 'comfortable' : 'dense'
+            localStorage.setItem('gc_v5_density', next)
+            return next
+          })
+        }}
+      >
+        Density: {density}
+      </button>
 
-      const { error: rErr } = await supabase.from('recipes').delete().in('id', selectedIds)
-      if (rErr) throw rErr
-
-      if (mountedRef.current) {
-        setRecipes((prev) => prev.filter((r) => !selectedIds.includes(r.id)))
-        setRecipeLinesCache((p) => {
-          const next = { ...p }
-          selectedIds.forEach((id) => delete next[id])
-          return next
-        })
-        setSelected({})
-        setToast(`Deleted ${selectedIds.length} recipe(s).`)
-      }
-    } catch (e: any) {
-      if (mountedRef.current) setErr(e?.message || 'Bulk delete failed')
-    }
-  }
-
-  function toggleDensity() {
-    const next: Density = density === 'dense' ? 'comfortable' : 'dense'
-    setDensity(next)
-    localStorage.setItem('gc_v5_density', next)
-  }
-
-  const gridClass =
-    density === 'dense'
-      ? 'grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5'
-      : 'grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+      {selectedIds.length > 0 && (
+        <button className="gc-btn gc-btn-danger" type="button" onClick={() => clearSelection()}>
+          Clear selection ({selectedIds.length})
+        </button>
+      )}
+    </div>
+  )
 
   return (
-    <div className="space-y-4">
-      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
-
-      {/* Sticky top header */}
-      <div className="gc-card">
-        <div className="p-5">
+    <div className="gc-card">
+      <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div>
           <div className="gc-label">RECIPES</div>
-
-          <div className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="text-2xl font-extrabold tracking-tight">Recipe Library</div>
-              <div className="mt-1 text-sm text-neutral-600">
-                V5 ULTRA cards + accurate costing (cached). Mgmt mode enables delete & bulk cleanup.
-              </div>
-            </div>
-
-            <div className="gc-recipes-toolbar">
-              <input
-                className="gc-input gc-recipes-search"
-                placeholder="Search by name or category..."
-                value={q}
-                onChange={(e) => setQ(e.target.value)}
-              />
-
-              <button className="gc-btn gc-btn-ghost gc-recipes-btn" type="button" onClick={loadAll} disabled={loading}>
-                Refresh
-              </button>
-
-              <button className="gc-btn gc-btn-primary" type="button" onClick={createNewRecipe}>
-                + New
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <label className="text-sm text-neutral-600">
-                <input
-                  type="checkbox"
-                  checked={showArchived}
-                  onChange={(e) => setShowArchived(e.target.checked)}
-                  style={{ marginRight: 8 }}
-                />
-                Show archived
-              </label>
-
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={toggleDensity}>
-                Density: {density === 'dense' ? 'Dense' : 'Comfort'}
-              </button>
-
-              {isMgmt && (
-                <>
-                  <button className="gc-btn" type="button" onClick={selectVisible} disabled={loading || !filtered.length}>
-                    Select visible
-                  </button>
-                  <button className="gc-btn" type="button" onClick={clearSelection} disabled={!selectedIds.length}>
-                    Clear
-                  </button>
-                </>
-              )}
-            </div>
-
-            {isMgmt && (
-              <div className="flex items-center gap-2">
-                <div className="text-sm text-neutral-600">
-                  Selected: <b>{selectedIds.length}</b>
-                </div>
-                <button className="gc-btn gc-btn-soft" type="button" onClick={bulkDeleteSelected} disabled={!selectedIds.length}>
-                  Delete Selected
-                </button>
-              </div>
-            )}
-          </div>
-
-          {err && <div className="mt-3 text-sm text-red-600">{err}</div>}
+          <div className="gc-hint">{isMgmt ? 'Mgmt view: costing & pricing' : 'Kitchen view: fast operations'}</div>
         </div>
+        {headerRight}
       </div>
 
-      <div className={`gc-recipes-grid ${gridClass}`}>
-        {loading &&
-          Array.from({ length: 10 }).map((_, i) => (
-            <div key={i} className="gc-menu-card">
-              <div className="gc-menu-hero" />
-              <div className="p-4">
-                <div className="h-4 w-2/3 rounded bg-neutral-200" />
-                <div className="mt-3 h-3 w-full rounded bg-neutral-100" />
-                <div className="mt-2 h-3 w-5/6 rounded bg-neutral-100" />
-                <div className="mt-4 h-9 w-full rounded bg-neutral-100" />
-              </div>
-            </div>
-          ))}
+      <div className="gc-card-body">
+        <div className="gc-field" style={{ maxWidth: 560 }}>
+          <div className="gc-label">SEARCH</div>
+          <input className="gc-input" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by recipe name or category…" />
+        </div>
 
-        {!loading &&
-          filtered.map((r) => {
-            const title = r.name || 'Untitled'
-            const cat = (r.category || 'Uncategorized').toUpperCase()
-            const portions = Math.max(1, toNum(r.portions, 1))
-            const cur = (r.currency || 'USD').toUpperCase()
+        {err && (
+          <div style={{ marginTop: 12 }} className="gc-card-soft">
+            <div style={{ padding: 12, color: 'var(--gc-danger)', fontWeight: 900 }}>{err}</div>
+          </div>
+        )}
 
-            const c = costCache[r.id]
-            const fresh = c && Date.now() - c.at < COST_TTL_MS
-            const cpp = fresh ? c.cpp : null
-            const fcPct = fresh ? c.fcPct : null
-            const margin = fresh ? c.margin : null
+        {loading ? (
+          <div style={{ marginTop: 14 }} className="text-sm">
+            Loading…
+          </div>
+        ) : !filtered.length ? (
+          <div style={{ marginTop: 14 }} className="text-sm">
+            No recipes found.
+          </div>
+        ) : (
+          <div style={{ marginTop: 14, display: 'grid', gap: 12 }}>
+            {filtered.map((r) => {
+              const c = costCache[r.id]
+              const cur = (r.currency || 'USD').toUpperCase()
 
-            return (
-              <div key={r.id} className="gc-menu-card">
-                <div className="gc-menu-hero" style={density === 'dense' ? { height: 160 } : undefined}>
-                  {r.photo_url ? (
-                    <img src={r.photo_url} alt={title} loading="lazy" />
-                  ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-neutral-500">No Photo</div>
-                  )}
-                  <div className="gc-menu-overlay" />
-                  <div className="gc-menu-badges">
-                    <span className="gc-chip">{cat}</span>
-                    <span className="gc-chip">Portions: {portions}</span>
-                    {r.is_archived && <span className="gc-chip warn">Archived</span>}
-                    {isKitchen && <span className="gc-chip">Kitchen</span>}
+              return (
+                <div
+                  key={r.id}
+                  className="gc-card"
+                  style={{
+                    padding: density === 'dense' ? 12 : 14,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 12,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <div style={{ minWidth: 260 }}>
+                    <div style={{ fontWeight: 900, fontSize: 14 }}>{r.name}</div>
+                    <div className="gc-hint" style={{ marginTop: 6 }}>
+                      {r.category || 'Uncategorized'} • Portions: {toNum(r.portions, 1)}
+                      {r.is_subrecipe ? ' • Subrecipe' : ''}
+                      {r.is_archived ? ' • Archived' : ''}
+                    </div>
+
+                    {c?.warnings?.length ? (
+                      <div className="gc-hint" style={{ marginTop: 6, color: 'var(--gc-warn)', fontWeight: 900 }}>
+                        {c.warnings[0]}
+                      </div>
+                    ) : null}
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+                    <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                      <div className="gc-label">COST/PORTION</div>
+                      <div style={{ fontWeight: 900, marginTop: 4 }}>{c ? `${c.cpp.toFixed(2)} ${cur}` : '—'}</div>
+                    </div>
+
+                    <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                      <div className="gc-label">FC%</div>
+                      <div style={{ fontWeight: 900, marginTop: 4 }}>{c?.fcPct != null ? `${c.fcPct.toFixed(1)}%` : '—'}</div>
+                    </div>
+
+                    <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                      <div className="gc-label">MARGIN</div>
+                      <div style={{ fontWeight: 900, marginTop: 4 }}>{c ? `${c.margin.toFixed(2)} ${cur}` : '—'}</div>
+                    </div>
+
+                    <button className="gc-btn gc-btn-primary" type="button" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
+                      Open editor
+                    </button>
+
+                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleArchive(r)}>
+                      {r.is_archived ? 'Restore' : 'Archive'}
+                    </button>
+
+                    <button className="gc-btn gc-btn-danger" type="button" onClick={() => deleteOneRecipe(r.id)}>
+                      Delete
+                    </button>
+
+                    <label style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 12, fontWeight: 900 }}>
+                      <input type="checkbox" checked={!!selected[r.id]} onChange={() => toggleSelect(r.id)} />
+                      Select
+                    </label>
                   </div>
                 </div>
-
-                <div className="gc-menu-body" style={density === 'dense' ? { padding: '12px 12px 14px' } : undefined}>
-                  <div className="gc-menu-head">
-                    <div className="gc-menu-kicker">RECIPE</div>
-
-                    {isMgmt && (
-                      <label title="Select for bulk delete" className="gc-select">
-                        <input type="checkbox" checked={!!selected[r.id]} onChange={() => toggleSelect(r.id)} />
-                      </label>
-                    )}
-                  </div>
-
-                  <div className="gc-menu-title" title={title}>
-                    {title}
-                  </div>
-
-                  <div className="gc-menu-desc" style={density === 'dense' ? ({ WebkitLineClamp: 1 } as any) : undefined}>
-                    {r.description?.trim() ? r.description : 'Add a short menu description…'}
-                  </div>
-
-                  <div className="gc-menu-metrics" style={density === 'dense' ? { marginTop: 8, fontSize: 12.5 } : undefined}>
-                    <div>
-                      <span className="text-neutral-600">Cost/portion:</span> <b>{cpp == null ? '…' : fmtMoney(cpp, cur)}</b>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600">FC%:</span> <b>{fcPct == null ? '…' : `${fcPct.toFixed(1)}%`}</b>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600">Margin:</span> <b>{margin == null ? '…' : fmtMoney(margin, cur)}</b>
-                    </div>
-                    <div>
-                      <span className="text-neutral-600">Price:</span>{' '}
-                      <b>{r.selling_price == null ? '—' : fmtMoney(toNum(r.selling_price, 0), cur)}</b>
-                    </div>
-                  </div>
-
-                  <div className="gc-menu-actions" style={density === 'dense' ? { marginTop: 10 } : undefined}>
-                    <div className="gc-actions-row">
-                      <button type="button" className="gc-action primary" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                        Open Editor
-                      </button>
-
-                      <button type="button" className="gc-action secondary" onClick={() => nav(`/cook?id=${encodeURIComponent(r.id)}`)}>
-                        Cook Mode
-                      </button>
-                    </div>
-
-                    <div className="gc-actions-row secondary">
-                      <button type="button" className="gc-action warn" onClick={() => toggleArchive(r)}>
-                        {r.is_archived ? 'Restore' : 'Archive'}
-                      </button>
-
-                      {isMgmt && (
-                        <button type="button" className="gc-action danger" onClick={() => deleteOneRecipe(r.id)}>
-                          Delete
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
-                  {!!c?.warnings?.length && (
-                    <div className="mt-3 text-xs text-amber-700">
-                      {c.warnings.slice(0, 2).map((w, i) => (
-                        <div key={i}>⚠️ {w}</div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            )
-          })}
+              )
+            })}
+          </div>
+        )}
       </div>
 
-      {!loading && filtered.length === 0 && (
-        <div className="gc-card p-8 text-center">
-          <div className="text-xl font-extrabold">No recipes found</div>
-          <div className="mt-2 text-sm text-neutral-600">Try another search, or create a new recipe.</div>
-        </div>
-      )}
+      {toast && <Toast message={toast} onClose={() => setToast(null)} />}
     </div>
   )
 }
