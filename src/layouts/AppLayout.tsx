@@ -1,14 +1,9 @@
 // src/layouts/AppLayout.tsx
-// ✅ UI polish + logout hard-redirect (HashRouter-safe)
-// ✅ Global header: User Avatar + Dropdown (Dark Mode + Logout)
-// ✅ Adds a visible Sidebar Logout button (same handler) — UI clarity
-// ✅ Makes Topbar feel like a real header card (visual fix)
-// ✅ No business-logic change to recipes/ingredients/costing
-
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
+import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -27,36 +22,44 @@ function initialsFrom(emailOrName: string) {
   return (a + b).toUpperCase()
 }
 
+function clearAppCaches() {
+  try {
+    // mode UI
+    localStorage.removeItem('gc-mode')
+    // cost cache in Recipes page
+    localStorage.removeItem('gc_v5_cost_cache_v1')
+    // kitchen profile cache
+    clearKitchenCache()
+    // keep other app localStorage keys unless known safe
+    sessionStorage.clear()
+  } catch {}
+}
+
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
+  const k = useKitchen()
 
   const loc = useLocation()
-
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
 
-  // ✅ user (UI only)
   const [userEmail, setUserEmail] = useState<string>('')
+
   const menuRef = useRef<HTMLDetailsElement | null>(null)
 
-  // Use Vite BASE_URL so the brand icon works in all deployments (root, subpath, HashRouter)
   const base = (import.meta as any).env?.BASE_URL || '/'
   const brandIcon = `${base}gastrochef-icon-512.png`
   const brandLogoFallback = `${base}gastrochef-logo.png`
 
   useEffect(() => {
     let alive = true
-
     async function loadUser() {
       try {
         const { data } = await supabase.auth.getUser()
         const email = data?.user?.email || ''
         if (alive) setUserEmail(email)
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
-
     loadUser()
     return () => {
       alive = false
@@ -65,42 +68,28 @@ export default function AppLayout() {
 
   const title = useMemo(() => {
     const p = (loc.pathname || '').toLowerCase()
-
     if (p.includes('ingredients')) return 'Ingredients'
     if (p.includes('recipes')) return 'Recipes'
     if (p.includes('recipe')) return 'Recipe Editor'
     if (p.includes('settings')) return 'Settings'
     if (p.includes('cook')) return 'Cook Mode'
-
     return 'Dashboard'
   }, [loc.pathname])
 
-  /* ======================================================
-     LOG OUT (REAL SIGN OUT) — robust + HashRouter safe
-     - avoids "bounce back to dashboard" by forcing a reload
-     ====================================================== */
   async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
 
     try {
-      // ✅ end Supabase session (server + client)
       await supabase.auth.signOut()
     } catch {
-      // ignore — we still want to move the user to login
+      // ignore
     }
 
     try {
-      // ✅ reset ONLY local UI state
-      localStorage.removeItem('gc-mode')
-      localStorage.removeItem('kitchen_id')
-      sessionStorage.clear()
-
-      // default mode (so UI doesn't keep kitchen state)
+      clearAppCaches()
       setMode('mgmt')
     } finally {
-      // ✅ Hard redirect (prevents router state glitches / cached outlet)
-      // HashRouter friendly: BASE_URL + "#/login"
       window.location.assign(`${base}#/login`)
     }
   }
@@ -110,11 +99,11 @@ export default function AppLayout() {
   }
 
   const avatarText = initialsFrom(userEmail || 'GastroChef')
+  const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
 
   return (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
-        {/* Sidebar */}
         <aside className="gc-side">
           <div className="gc-side-card">
             <div className="gc-brand">
@@ -132,14 +121,12 @@ export default function AppLayout() {
                 <div className="gc-brand-name">
                   Gastro<span className="gc-brand-accent">Chef</span>
                 </div>
-                <div className="gc-brand-sub">v4 MVP</div>
+                <div className="gc-brand-sub">{kitchenLabel}</div>
               </div>
             </div>
 
-            {/* MODE */}
-            <div className="gc-side-block">
+            <div className="gc-side-block" style={{ marginTop: 14 }}>
               <div className="gc-label">MODE</div>
-
               <div className="gc-seg">
                 <button className={cx('gc-seg-btn', isKitchen && 'is-active')} type="button" onClick={() => setMode('kitchen')}>
                   Kitchen
@@ -152,8 +139,7 @@ export default function AppLayout() {
               <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
             </div>
 
-            {/* NAV */}
-            <div className="gc-side-block">
+            <div className="gc-side-block" style={{ marginTop: 14 }}>
               <div className="gc-label">NAVIGATION</div>
 
               <nav className="gc-nav">
@@ -174,8 +160,7 @@ export default function AppLayout() {
               <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
             </div>
 
-            {/* ✅ Visible Logout (UI clarity) */}
-            <div className="gc-side-block">
+            <div className="gc-side-block" style={{ marginTop: 14 }}>
               <button
                 className="gc-btn gc-btn-danger w-full"
                 type="button"
@@ -190,25 +175,24 @@ export default function AppLayout() {
           </div>
         </aside>
 
-        {/* Main */}
         <main className="gc-main">
           <div className="gc-topbar gc-topbar-card">
-            <div className="gc-topbar-brand">
+            <div className="gc-topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <img
                 className="gc-topbar-logo"
                 src={brandIcon}
                 alt="GastroChef"
+                style={{ width: 34, height: 34, borderRadius: 12, border: '1px solid var(--gc-border)' }}
                 onError={(e) => {
                   ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
                 }}
               />
               <div>
                 <div className="gc-title">{title}</div>
-                <div className="gc-subtitle">GastroChef</div>
+                <div className="gc-subtitle">{k.error ? `Kitchen error: ${k.error}` : kitchenLabel}</div>
               </div>
             </div>
 
-            {/* ✅ User menu (Avatar Dropdown) */}
             <div className="gc-actions">
               <details ref={menuRef} className="gc-actions-menu">
                 <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
@@ -216,7 +200,7 @@ export default function AppLayout() {
                     {avatarText}
                   </span>
                   <span className="gc-user-label">
-                    <span className="gc-user-name">Account</span>
+                    <span className="gc-user-name">{k.profile?.role ? `Role: ${k.profile.role}` : 'Account'}</span>
                     <span className="gc-user-email">{userEmail || 'Signed in'}</span>
                   </span>
                 </summary>
@@ -231,6 +215,17 @@ export default function AppLayout() {
                     }}
                   >
                     {dark ? 'Light Mode' : 'Dark Mode'}
+                  </button>
+
+                  <button
+                    className="gc-actions-item"
+                    type="button"
+                    onClick={async () => {
+                      closeMenu()
+                      await k.refresh().catch(() => {})
+                    }}
+                  >
+                    Refresh kitchen
                   </button>
 
                   <button
