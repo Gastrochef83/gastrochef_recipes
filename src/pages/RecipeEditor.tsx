@@ -173,6 +173,28 @@ export default function RecipeEditor() {
   // Inline add
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [ingSearch, setIngSearch] = useState('')
+
+
+  // Derived (must be declared BEFORE any early returns to keep hooks order stable)
+  const cur = (currency || 'USD').toUpperCase()
+
+  const visibleLines = useMemo(
+    () => [...lines].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
+    [lines]
+  )
+
+  const filteredIngredients = useMemo(() => {
+    const s = ingSearch.trim().toLowerCase()
+    let list = ingredients
+    if (s) list = list.filter((i) => (i.name || '').toLowerCase().includes(s))
+    return list.slice(0, 60)
+  }, [ingredients, ingSearch])
+
+  const subRecipeOptions = useMemo(() => {
+    const list = allRecipes.filter((r) => !!r.is_subrecipe && !r.is_archived)
+    return list.slice(0, 200)
+  }, [allRecipes])
+
   const [addIngredientId, setAddIngredientId] = useState('')
   const [addSubRecipeId, setAddSubRecipeId] = useState('')
   const [addGroupTitle, setAddGroupTitle] = useState('')
@@ -908,24 +930,6 @@ export default function RecipeEditor() {
       </div>
     )
   }
-
-  const cur = (currency || 'USD').toUpperCase()
-  const visibleLines = [...lines].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
-
-  const filteredIngredients = useMemo(() => {
-    const s = ingSearch.trim().toLowerCase()
-    let list = ingredients
-    if (s) {
-      list = list.filter((i) => (i.name || '').toLowerCase().includes(s))
-    }
-    return list.slice(0, 60)
-  }, [ingredients, ingSearch])
-
-  const subRecipeOptions = useMemo(() => {
-    const list = allRecipes.filter((r) => !!r.is_subrecipe && !r.is_archived)
-    return list.slice(0, 200)
-  }, [allRecipes])
-
   const headerLeft = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
       <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
