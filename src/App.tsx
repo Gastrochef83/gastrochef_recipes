@@ -8,6 +8,7 @@ import Ingredients from './pages/Ingredients'
 import Recipes from './pages/Recipes'
 import RecipeEditor from './pages/RecipeEditor'
 import RecipeCookMode from './pages/RecipeCookMode'
+import RecipePrintCard from './pages/RecipePrintCard'
 import Settings from './pages/Settings'
 
 import Login from './pages/Login'
@@ -43,6 +44,7 @@ export default function App() {
         <Route path="recipe" element={<RecipeEditor />} />
         {/* Cook mode is opened from RecipeEditor via /cook?id=... */}
         <Route path="cook" element={<RecipeCookMode />} />
+        <Route path="print" element={<RecipePrintCard />} />
         <Route path="settings" element={<Settings />} />
       </Route>
 

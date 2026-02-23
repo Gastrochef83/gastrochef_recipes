@@ -960,8 +960,22 @@ export default function RecipeEditor() {
         Save lines
       </button>
 
-      <button className="gc-btn gc-btn-primary" type="button" onClick={printNow}>
-        Print Card
+      <button
+        className="gc-btn gc-btn-ghost"
+        type="button"
+        onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)}
+        disabled={!id}
+      >
+        Print A4
+      </button>
+
+      <button
+        className="gc-btn gc-btn-primary"
+        type="button"
+        onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)}
+        disabled={!id}
+      >
+        Cook Mode
       </button>
     </div>
   )
@@ -1394,203 +1408,161 @@ export default function RecipeEditor() {
               {!visibleLines.length ? (
                 <div className="gc-hint">No lines yet.</div>
               ) : (
-                <div style={{ display: 'grid', gap: 10 }}>
-                  {visibleLines.map((l) => {
-                    const c = lineComputed.get(l.id)
-                    const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
-                    const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
+                <div className="gc-kitopi-table-wrap">
+                  <table className="gc-kitopi-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '34%' }}>Ingredient</th>
+                        <th style={{ width: '11%' }}>Net</th>
+                        <th style={{ width: '9%' }}>Unit</th>
+                        <th style={{ width: '11%' }}>Gross</th>
+                        <th style={{ width: '10%' }}>Yield</th>
+                        <th style={{ width: '12%' }}>Cost</th>
+                        <th style={{ width: '10%' }}>Contribution</th>
+                        <th style={{ width: '8%' }}>Status</th>
+                        <th style={{ width: '5%' }} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleLines.map((l) => {
+                        const c = lineComputed.get(l.id)
+                        const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+                        const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
 
-                    if (l.line_type === 'group') {
-                      return (
-                        <div key={l.id} className="gc-card-soft" style={{ padding: density === 'compact' ? 10 : 12, borderRadius: 16 }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
-                            <div style={{ fontWeight: 900, fontSize: 14 }}>{l.group_title || 'Group'}</div>
-                            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, -1)}>
-                                ↑
-                              </button>
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, 1)}>
-                                ↓
-                              </button>
-                              <button className="gc-btn gc-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)}>
-                                Delete
-                              </button>
-                            </div>
-                          </div>
+                        if (l.line_type === 'group') {
+                          return (
+                            <tr key={l.id} className="gc-kitopi-group">
+                              <td colSpan={9}>
+                                <div className="gc-kitopi-group-row">
+                                  <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>
+                                  <span className="gc-kitopi-group-actions">
+                                    <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, -1)} title="Move up">↑</button>
+                                    <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, 1)} title="Move down">↓</button>
+                                    <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        }
 
-                          <div className="gc-field" style={{ marginTop: 10 }}>
-                            <div className="gc-label">GROUP TITLE</div>
-                            <input
-                              className="gc-input"
-                              value={l.group_title || ''}
-                              onChange={(e) => updateLine(l.id, { group_title: e.target.value })}
-                              placeholder="Group title…"
-                            />
-                          </div>
-                        </div>
-                      )
-                    }
+                        const title =
+                          l.line_type === 'ingredient'
+                            ? ing?.name || 'Ingredient'
+                            : l.line_type === 'subrecipe'
+                              ? sub?.name || 'Subrecipe'
+                              : 'Line'
 
-                    const title =
-                      l.line_type === 'ingredient'
-                        ? ing?.name || 'Ingredient'
-                        : l.line_type === 'subrecipe'
-                          ? sub?.name || 'Subrecipe'
-                          : 'Line'
+                        const status = c?.warnings?.length ? 'Needs Attention' : 'Active'
+                        const contribution = totals.totalCost > 0 && c ? (c.lineCost / totals.totalCost) * 100 : 0
 
-                    const warn = c?.warnings?.[0]
+                        return (
+                          <tr key={l.id}>
+                            <td>
+                              <div className="gc-kitopi-item">
+                                <div className="gc-kitopi-item-name">{title}</div>
+                                <div className="gc-kitopi-item-sub">
+                                  #{l.position} • {l.line_type} • {safeUnit(l.unit)}
+                                  {ing?.pack_unit ? ` • pack ${safeUnit(ing.pack_unit)}` : ''}
+                                </div>
 
-                    return (
-                      <div key={l.id} className="gc-card-soft" style={{ padding: density === 'compact' ? 10 : 12, borderRadius: 16 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-                          <div style={{ minWidth: 260 }}>
-                            <div style={{ fontWeight: 900, fontSize: 14 }}>{title}</div>
-                            <div className="gc-hint" style={{ marginTop: 4 }}>
-                              #{l.position} • Type: {l.line_type} • Unit: {safeUnit(l.unit)}
-                              {ing?.pack_unit ? ` • Pack: ${safeUnit(ing.pack_unit)}` : ''}
-                            </div>
-                            {warn ? (
-                              <div className="gc-hint" style={{ marginTop: 6, color: 'var(--gc-warn)', fontWeight: 900 }}>
-                                {warn}
+                                <div className="gc-kitopi-item-select">
+                                  {l.line_type === 'ingredient' ? (
+                                    <select
+                                      className="gc-select gc-select-compact"
+                                      value={l.ingredient_id || ''}
+                                      onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                    >
+                                      <option value="">— Select ingredient —</option>
+                                      {ingredients.map((i) => (
+                                        <option key={i.id} value={i.id}>
+                                          {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <select
+                                      className="gc-select gc-select-compact"
+                                      value={l.sub_recipe_id || ''}
+                                      onChange={(e) => updateLine(l.id, { sub_recipe_id: e.target.value || null })}
+                                    >
+                                      <option value="">— Select subrecipe —</option>
+                                      {subRecipeOptions.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                          {r.name || 'Untitled'}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+
+                                {c?.warnings?.[0] ? <div className="gc-kitopi-warn">{c.warnings[0]}</div> : null}
                               </div>
-                            ) : null}
-                          </div>
+                            </td>
 
-                          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, -1)}>
-                              ↑
-                            </button>
-                            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => moveLine(l.id, 1)}>
-                              ↓
-                            </button>
-                            <button className="gc-btn gc-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)}>
-                              Delete
-                            </button>
-                          </div>
-                        </div>
-
-                        {/* Fields */}
-                        <div className="gc-field-row" style={{ marginTop: 12 }}>
-                          {l.line_type === 'ingredient' ? (
-                            <div className="gc-col-6">
-                              <div className="gc-field">
-                                <div className="gc-label">INGREDIENT</div>
-                                <select
-                                  className="gc-select"
-                                  value={l.ingredient_id || ''}
-                                  onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
-                                >
-                                  <option value="">— Select —</option>
-                                  {ingredients.map((i) => (
-                                    <option key={i.id} value={i.id}>
-                                      {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          ) : (
-                            <div className="gc-col-6">
-                              <div className="gc-field">
-                                <div className="gc-label">SUBRECIPE</div>
-                                <select
-                                  className="gc-select"
-                                  value={l.sub_recipe_id || ''}
-                                  onChange={(e) => updateLine(l.id, { sub_recipe_id: e.target.value || null })}
-                                >
-                                  <option value="">— Select —</option>
-                                  {subRecipeOptions.map((r) => (
-                                    <option key={r.id} value={r.id}>
-                                      {r.name || 'Untitled'}
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
-                            </div>
-                          )}
-
-                          <div className="gc-col-3">
-                            <div className="gc-field">
-                              <div className="gc-label">NET QTY</div>
-                              <input className="gc-input" value={String(toNum(l.qty, 0))} onChange={(e) => onNetChange(l.id, e.target.value)} inputMode="decimal" />
-                            </div>
-                          </div>
-
-                          <div className="gc-col-3">
-                            <div className="gc-field">
-                              <div className="gc-label">UNIT</div>
-                              <input className="gc-input" value={l.unit || 'g'} onChange={(e) => updateLine(l.id, { unit: e.target.value })} />
-                            </div>
-                          </div>
-
-                          <div className="gc-col-3">
-                            <div className="gc-field">
-                              <div className="gc-label">YIELD %</div>
+                            <td>
                               <input
-                                className="gc-input"
-                                value={String(clamp(toNum(l.yield_percent, 100), 0.0001, 100))}
-                                onChange={(e) => onYieldChange(l.id, e.target.value)}
+                                className="gc-input gc-input-compact"
+                                value={String(toNum(l.qty, 0))}
+                                onChange={(e) => onNetChange(l.id, e.target.value)}
                                 inputMode="decimal"
                               />
-                              <div className="gc-hint" style={{ marginTop: 6 }}>
-                                Editing yield clears gross override.
-                              </div>
-                            </div>
-                          </div>
+                            </td>
 
-                          <div className="gc-col-3">
-                            <div className="gc-field">
-                              <div className="gc-label">GROSS QTY</div>
+                            <td>
                               <input
-                                className="gc-input"
+                                className="gc-input gc-input-compact"
+                                value={l.unit || 'g'}
+                                onChange={(e) => updateLine(l.id, { unit: e.target.value })}
+                              />
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
                                 value={l.gross_qty_override != null ? String(l.gross_qty_override) : ''}
                                 onChange={(e) => onGrossChange(l.id, e.target.value)}
                                 inputMode="decimal"
                                 placeholder={c ? fmtQty(c.gross) : ''}
                               />
-                              <div className="gc-hint" style={{ marginTop: 6 }}>
-                                Leave empty → auto gross.
-                              </div>
-                            </div>
-                          </div>
+                            </td>
 
-                          <div className="gc-col-12">
-                            <div className="gc-field">
-                              <div className="gc-label">NOTES</div>
+                            <td>
                               <input
-                                className="gc-input"
-                                value={l.notes || ''}
-                                onChange={(e) => updateLine(l.id, { notes: e.target.value })}
-                                placeholder="Prep notes (optional)…"
+                                className="gc-input gc-input-compact"
+                                value={String(clamp(toNum(l.yield_percent, 100), 0.0001, 100))}
+                                onChange={(e) => onYieldChange(l.id, e.target.value)}
+                                inputMode="decimal"
                               />
-                            </div>
-                          </div>
-                        </div>
+                            </td>
 
-                        {/* Summary chips */}
-                        <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                          <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                            <div className="gc-label">NET</div>
-                            <div style={{ fontWeight: 900, marginTop: 4 }}>
-                              {c ? `${fmtQty(c.net)} ${safeUnit(l.unit)}` : '—'}
-                            </div>
-                          </div>
+                            <td>
+                              <div className="gc-kitopi-money">{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
+                              <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
+                            </td>
 
-                          <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                            <div className="gc-label">GROSS</div>
-                            <div style={{ fontWeight: 900, marginTop: 4 }}>
-                              {c ? `${fmtQty(c.gross)} ${safeUnit(l.unit)}` : '—'}
-                            </div>
-                          </div>
+                            <td>
+                              <div className="gc-kitopi-money">{contribution.toFixed(2)}%</div>
+                            </td>
 
-                          <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                            <div className="gc-label">LINE COST</div>
-                            <div style={{ fontWeight: 900, marginTop: 4 }}>{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
+                            <td>
+                              <span className={status === 'Active' ? 'gc-chip gc-chip-active' : 'gc-chip gc-chip-warn'}>
+                                {status}
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="gc-kitopi-row-actions">
+                                <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, -1)} title="Move up">↑</button>
+                                <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, 1)} title="Move down">↓</button>
+                                <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
                 </div>
               )}
             </div>

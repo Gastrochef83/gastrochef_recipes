@@ -1,5 +1,5 @@
 // src/layouts/AppLayout.tsx
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
@@ -24,12 +24,13 @@ function initialsFrom(emailOrName: string) {
 
 function clearAppCaches() {
   try {
-    // ✅ keep consistent with ModeProvider
+    // mode UI
     localStorage.removeItem('gc-mode')
     // cost cache in Recipes page
     localStorage.removeItem('gc_v5_cost_cache_v1')
     // kitchen profile cache
     clearKitchenCache()
+    // keep other app localStorage keys unless known safe
     sessionStorage.clear()
   } catch {}
 }
@@ -50,31 +51,18 @@ export default function AppLayout() {
   const brandIcon = `${base}gastrochef-icon-512.png`
   const brandLogoFallback = `${base}gastrochef-logo.png`
 
-  // ✅ keep user info always in sync (login/logout/account switch)
   useEffect(() => {
     let alive = true
-
     async function loadUser() {
       try {
         const { data } = await supabase.auth.getUser()
         const email = data?.user?.email || ''
         if (alive) setUserEmail(email)
-      } catch {
-        // ignore
-      }
+      } catch {}
     }
-
     loadUser()
-
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      loadUser()
-    })
-
     return () => {
       alive = false
-      try {
-        sub?.subscription?.unsubscribe()
-      } catch {}
     }
   }, [])
 
@@ -114,6 +102,13 @@ export default function AppLayout() {
   const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
 
   return (
+    isPrintRoute ? (
+      <div className={cx('gc-root', dark && 'gc-dark', 'gc-print-route')}>
+        <main className="gc-main" style={{ padding: 0 }}>
+          <Outlet />
+        </main>
+      </div>
+    ) : (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
       <div className="gc-shell">
         <aside className="gc-side">
@@ -140,30 +135,15 @@ export default function AppLayout() {
             <div className="gc-side-block" style={{ marginTop: 14 }}>
               <div className="gc-label">MODE</div>
               <div className="gc-seg">
-                <button
-                  className={cx('gc-seg-btn', isKitchen && 'is-active')}
-                  type="button"
-                  onClick={() => setMode('kitchen')}
-                  aria-pressed={isKitchen}
-                  title="Kitchen mode"
-                >
+                <button className={cx('gc-seg-btn', isKitchen && 'is-active')} type="button" onClick={() => setMode('kitchen')}>
                   Kitchen
                 </button>
-                <button
-                  className={cx('gc-seg-btn', isMgmt && 'is-active')}
-                  type="button"
-                  onClick={() => setMode('mgmt')}
-                  aria-pressed={isMgmt}
-                  title="Management mode"
-                >
+                <button className={cx('gc-seg-btn', isMgmt && 'is-active')} type="button" onClick={() => setMode('mgmt')}>
                   Mgmt
                 </button>
               </div>
 
-              {/* ✅ Make mode change visibly obvious */}
-              <div className="gc-hint">
-                Active: <b>{isKitchen ? 'Kitchen' : 'Mgmt'}</b>
-              </div>
+              <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
             </div>
 
             <div className="gc-side-block" style={{ marginTop: 14 }}>
@@ -209,68 +189,63 @@ export default function AppLayout() {
                 className="gc-topbar-logo"
                 src={brandIcon}
                 alt="GastroChef"
+                style={{ width: 34, height: 34, borderRadius: 12, border: '1px solid var(--gc-border)' }}
                 onError={(e) => {
                   ;(e.currentTarget as HTMLImageElement).src = brandLogoFallback
                 }}
               />
               <div>
-                <div className="gc-topbar-title">{title}</div>
-                <div className="gc-topbar-sub">
-                  {isKitchen ? 'Kitchen' : 'Mgmt'} · {kitchenLabel}
-                </div>
+                <div className="gc-title">{title}</div>
+                <div className="gc-subtitle">{k.error ? `Kitchen error: ${k.error}` : kitchenLabel}</div>
               </div>
             </div>
 
             <div className="gc-actions">
-              <button className="gc-btn gc-btn-soft" type="button" onClick={() => setDark((v) => !v)} title="Toggle theme">
-                {dark ? 'Light' : 'Dark'}
-              </button>
-
-              <details ref={menuRef} className="gc-actions-menu" onToggle={() => void 0}>
-                <summary className="gc-actions-trigger" onClick={(e) => e.preventDefault()}>
-                  <button
-                    type="button"
-                    className="gc-user-trigger-btn"
-                    onClick={() => {
-                      // toggle details open manually for consistent behavior
-                      if (!menuRef.current) return
-                      menuRef.current.open = !menuRef.current.open
-                    }}
-                  >
-                    <div className="gc-avatar" aria-hidden="true">
-                      {avatarText}
-                    </div>
-                    <div className="gc-user-label">
-                      <div className="gc-user-name">Role: owner</div>
-                      <div className="gc-user-email" title={userEmail || ''}>
-                        {userEmail || '—'}
-                      </div>
-                    </div>
-                  </button>
+              <details ref={menuRef} className="gc-actions-menu">
+                <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
+                  <span className="gc-avatar" aria-hidden="true">
+                    {avatarText}
+                  </span>
+                  <span className="gc-user-label">
+                    <span className="gc-user-name">{k.profile?.role ? `Role: ${k.profile.role}` : 'Account'}</span>
+                    <span className="gc-user-email">{userEmail || 'Signed in'}</span>
+                  </span>
                 </summary>
 
-                <div className="gc-menu">
+                <div className="gc-actions-panel gc-user-panel" role="menu">
                   <button
-                    className="gc-menu-item"
+                    className="gc-actions-item"
                     type="button"
                     onClick={() => {
+                      setDark((v) => !v)
                       closeMenu()
-                      clearAppCaches()
-                      window.location.reload()
                     }}
                   >
-                    Clear caches & reload
+                    {dark ? 'Light Mode' : 'Dark Mode'}
                   </button>
 
                   <button
-                    className="gc-menu-item gc-menu-danger"
+                    className="gc-actions-item"
                     type="button"
-                    onClick={() => {
+                    onClick={async () => {
                       closeMenu()
-                      handleLogout()
+                      await k.refresh().catch(() => {})
                     }}
                   >
-                    Log out
+                    Refresh kitchen
+                  </button>
+
+                  <button
+                    className="gc-actions-item gc-actions-danger"
+                    type="button"
+                    onClick={async () => {
+                      closeMenu()
+                      await handleLogout()
+                    }}
+                    disabled={loggingOut}
+                    aria-disabled={loggingOut}
+                  >
+                    {loggingOut ? 'Logging out…' : 'Log out'}
                   </button>
                 </div>
               </details>
@@ -283,5 +258,6 @@ export default function AppLayout() {
         </main>
       </div>
     </div>
+    )
   )
 }
