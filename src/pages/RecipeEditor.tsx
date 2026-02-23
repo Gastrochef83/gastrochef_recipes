@@ -103,7 +103,9 @@ const PHOTO_BUCKET = 'recipe-photos'
 
 export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
-  const k = useKitchen()
+  const showCost = isMgmt
+  const tableColSpan = 7 + (showCost ? 1 : 0)
+const k = useKitchen()
 
   const location = useLocation()
   const navigate = useNavigate()
@@ -944,6 +946,8 @@ export default function RecipeEditor() {
 
   const headerRight = (
     <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>{isKitchen ? 'Kitchen' : 'Mgmt'}</span>
+
       <button className="gc-btn gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
         Density: {density}
       </button>
@@ -1417,8 +1421,7 @@ export default function RecipeEditor() {
                         <th style={{ width: '9%' }}>Unit</th>
                         <th style={{ width: '11%' }}>Gross</th>
                         <th style={{ width: '10%' }}>Yield</th>
-                        <th style={{ width: '12%' }}>Cost</th>
-                        <th style={{ width: '10%' }}>Contribution</th>
+                        {showCost ? <th style={{ width: '12%' }}>Cost</th> : null}
                         <th style={{ width: '8%' }}>Status</th>
                         <th style={{ width: '5%' }} />
                       </tr>
@@ -1432,7 +1435,7 @@ export default function RecipeEditor() {
                         if (l.line_type === 'group') {
                           return (
                             <tr key={l.id} className="gc-kitopi-group">
-                              <td colSpan={9}>
+                              <td colSpan={tableColSpan}>
                                 <div className="gc-kitopi-group-row">
                                   <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>
                                   <span className="gc-kitopi-group-actions">
@@ -1454,7 +1457,6 @@ export default function RecipeEditor() {
                               : 'Line'
 
                         const status = c?.warnings?.length ? 'Needs Attention' : 'Active'
-                        const contribution = totals.totalCost > 0 && c ? (c.lineCost / totals.totalCost) * 100 : 0
 
                         return (
                           <tr key={l.id}>
@@ -1534,16 +1536,17 @@ export default function RecipeEditor() {
                                 onChange={(e) => onYieldChange(l.id, e.target.value)}
                                 inputMode="decimal"
                               />
+                              {!showCost ? (
+                                <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
+                              ) : null}
                             </td>
 
-                            <td>
-                              <div className="gc-kitopi-money">{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
-                              <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
-                            </td>
-
-                            <td>
-                              <div className="gc-kitopi-money">{contribution.toFixed(2)}%</div>
-                            </td>
+                            {showCost ? (
+                              <td>
+                                <div className="gc-kitopi-money">{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
+                                <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
+                              </td>
+                            ) : null}
 
                             <td>
                               <span className={status === 'Active' ? 'gc-chip gc-chip-active' : 'gc-chip gc-chip-warn'}>

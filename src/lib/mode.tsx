@@ -13,7 +13,7 @@ type ModeCtx = {
 
 const ModeContext = createContext<ModeCtx | null>(null)
 
-const KEY = 'gc_mode_v1'
+const KEY = 'gc-mode'
 
 export function ModeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setModeState] = useState<AppMode>('kitchen')
