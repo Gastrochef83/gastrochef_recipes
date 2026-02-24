@@ -440,7 +440,8 @@ a{
 
 .gc-kitopi-table-wrap{
   width: 100%;
-  overflow-x: clip; /* requirement: no horizontal scroll */
+  overflow-x: auto; /* internal scroll when needed (prevents deformation) */
+  -webkit-overflow-scrolling: touch;
   border-radius: 16px;
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.55);
@@ -622,3 +623,104 @@ a{
   .gc-brand-name{ font-size: 16px; }
   .gc-card-body{ padding: 12px; }
 }
+
+
+/* =========================================================
+   RecipeEditor — Deformation Guard (clean enterprise table)
+   ========================================================= */
+.gc-kitopi-table{
+  min-width: 980px; /* stable base */
+}
+
+.gc-td-ingredient{ min-width: 0; }
+.gc-td-ingredient .gc-kitopi-item{ min-width: 0; display: grid; gap: 6px; }
+.gc-td-ingredient .gc-kitopi-item-name{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gc-td-ingredient .gc-kitopi-item-sub{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+.gc-td-ingredient .gc-kitopi-item-select{ min-width: 0; }
+.gc-td-ingredient select.gc-select{ width: 100%; min-width: 0; }
+.gc-td-ingredient .gc-kitopi-warn{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.gc-td-status{ white-space: nowrap; }
+.gc-td-actions{ width: 96px; }
+.gc-td-actions .gc-icon-btn{ margin-left: 6px; }
+.gc-td-actions{ text-align: right; }
+
+/* Prevent pills/icons from squeezing */
+.gc-status-pill{ display:inline-flex; align-items:center; justify-content:center; max-width: 100%; }
+
+
+
+/* =========================================================
+   Auth (Login/Register) — Premium
+   ========================================================= */
+.gc-auth{
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 36px 16px;
+  background:
+    radial-gradient(900px 400px at 15% 10%, rgba(20,184,166,.18), transparent 60%),
+    radial-gradient(700px 360px at 85% 20%, rgba(255,90,61,.12), transparent 55%),
+    radial-gradient(900px 500px at 50% 95%, rgba(37,99,235,.10), transparent 60%),
+    var(--gc-bg);
+}
+
+.gc-auth-card{
+  width: min(520px, 100%);
+  border-radius: 22px;
+  background: rgba(255,255,255,.72);
+  border: 1px solid rgba(15,23,42,.10);
+  box-shadow: 0 24px 80px rgba(2,6,23,.12);
+  padding: 22px;
+  backdrop-filter: blur(10px);
+}
+
+.gc-dark .gc-auth-card{
+  background: rgba(14,18,30,.55);
+  border-color: rgba(255,255,255,.10);
+}
+
+.gc-auth-head{ padding: 6px 6px 14px; }
+.gc-auth-logo-centered{
+  display:flex;
+  align-items:center;
+  gap: 12px;
+  justify-content:center;
+  text-align:left;
+}
+.gc-auth-logo-centered img{
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  object-fit: contain;
+  box-shadow: 0 10px 26px rgba(2,6,23,.12);
+  background: rgba(255,255,255,.65);
+  border: 1px solid rgba(15,23,42,.10);
+}
+.gc-auth-title{
+  font-size: 18px;
+  font-weight: 900;
+  letter-spacing: .4px;
+}
+.gc-auth-sub{
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .12em;
+  color: var(--gc-muted);
+}
+
+.gc-auth-body{ padding: 8px 6px 10px; }
+

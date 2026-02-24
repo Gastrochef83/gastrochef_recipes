@@ -1498,29 +1498,29 @@ const k = useKitchen()
                 <div className="gc-hint">No lines yet.</div>
               ) : (
                 <div className="gc-kitopi-table-wrap">
-                  <table className="gc-kitopi-table gc-kitopi-lines-table">
+                  <table className="gc-kitopi-table">
                     <colgroup>
-                      <col className="gc-col-ingredient" />
-                      <col className="gc-col-net" />
-                      <col className="gc-col-unit" />
-                      <col className="gc-col-gross" />
-                      <col className="gc-col-yield" />
-                      <col className="gc-col-note" />
-                      {showCost ? <col className="gc-col-cost" /> : null}
-                      <col className="gc-col-status" />
-                      <col className="gc-col-actions" />
+                      <col style={{ width: 360 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 150 }} />
+                      {showCost ? <col style={{ width: 150 }} /> : null}
+                      <col style={{ width: 150 }} />
+                      <col style={{ width: 96 }} />
                     </colgroup>
                     <thead>
                       <tr>
-                        <th className="gc-th-ingredient">Ingredient</th>
-                        <th className="gc-th-num">Net</th>
-                        <th className="gc-th-center">Unit</th>
-                        <th className="gc-th-num">Gross</th>
-                        <th className="gc-th-num">Yield</th>
-                        <th className="gc-th-note">Note</th>
-                        {showCost ? <th className="gc-th-cost">Cost</th> : null}
-                        <th className="gc-th-status">Status</th>
-                        <th className="gc-th-actions" />
+                        <th>Ingredient</th>
+                        <th>Net</th>
+                        <th>Unit</th>
+                        <th>Gross</th>
+                        <th>Yield</th>
+                        <th>Note</th>
+                        {showCost ? <th>Cost</th> : null}
+                        <th>Status</th>
+                        <th />
                       </tr>
                     </thead>
                     <tbody>
@@ -1557,7 +1557,7 @@ const k = useKitchen()
 
                         return (
                           <tr key={l.id}>
-                            <td>
+                            <td className="gc-td-ingredient">
                               <div className="gc-kitopi-item">
                                 <div className="gc-kitopi-item-name">{title}</div>
                                 <div className="gc-kitopi-item-sub">
@@ -1654,13 +1654,13 @@ const k = useKitchen()
                               </td>
                             ) : null}
 
-                            <td>
-                              <span className={status === 'Active' ? 'gc-chip gc-chip-active' : 'gc-chip gc-chip-warn'}>
+                            <td className="gc-td-status">
+                              <span className={status === 'Active' ? 'gc-chip gc-chip-active gc-status-pill' : 'gc-chip gc-chip-warn gc-status-pill'}>
                                 {status}
                               </span>
                             </td>
 
-                            <td>
+                            <td className="gc-td-actions">
                               <div className="gc-kitopi-row-actions">
                                 <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, -1)} title="Move up">↑</button>
                                 <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, 1)} title="Move down">↓</button>
@@ -1835,14 +1835,30 @@ const k = useKitchen()
           <div className="gc-print-section">
             <div className="gc-print-title">Ingredients</div>
             <table className="gc-print-table">
-              <thead>
-                <tr>
-                  <th>Item</th>
-                  <th>Net</th>
-                  <th>Yield%</th>
-                  <th>Gross</th>
-                </tr>
-              </thead>
+              <colgroup>
+                      <col style={{ width: 360 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 100 }} />
+                      <col style={{ width: 150 }} />
+                      {showCost ? <col style={{ width: 150 }} /> : null}
+                      <col style={{ width: 150 }} />
+                      <col style={{ width: 96 }} />
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>Ingredient</th>
+                        <th>Net</th>
+                        <th>Unit</th>
+                        <th>Gross</th>
+                        <th>Yield</th>
+                        <th>Note</th>
+                        {showCost ? <th>Cost</th> : null}
+                        <th>Status</th>
+                        <th />
+                      </tr>
+                    </thead>
               <tbody>
                 {visibleLines
                   .filter((l) => l.line_type !== 'group')
