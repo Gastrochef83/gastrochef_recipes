@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
+import Button from '../components/ui/Button'
 import { useMode } from '../lib/mode'
 import { getIngredientsCached } from '../lib/ingredientsCache'
 import { CostTimeline } from '../components/CostTimeline'
@@ -1473,12 +1474,12 @@ const k = useKitchen()
               </div>
 
               <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                <button className="gc-btn gc-btn-primary" type="button" onClick={addLineLocal}>
+                <Button variant="primary" type="button" onClick={addLineLocal}>
                   Add line
-                </button>
-                <button className="gc-btn gc-btn-ghost" type="button" onClick={saveLinesNow}>
+                </Button>
+                <Button variant="ghost" type="button" onClick={saveLinesNow}>
                   Save lines
-                </button>
+                </Button>
               </div>
             </div>
           </div>

@@ -511,9 +511,9 @@ export default function Recipes() {
                       Open editor
                     </button>
 
-                    <button className="gc-btn gc-btn-ghost" type="button" onClick={() => toggleArchive(r)}>
+                    <Button variant="ghost" type="button" onClick={() => toggleArchive(r)}>
                       {r.is_archived ? 'Restore' : 'Archive'}
-                    </button>
+                    </Button>
 
                     <button className="gc-btn gc-btn-danger" type="button" onClick={() => deleteOneRecipe(r.id)}>
                       Delete
