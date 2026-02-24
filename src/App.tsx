@@ -1,55 +1,55 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import React from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from './contexts/ThemeContext';
+import AppLayout from './layouts/AppLayout';
+import DashboardPage from './pages/DashboardPage';
+import RecipesPage from './pages/RecipesPage';
+import IngredientsPage from './pages/IngredientsPage';
+import SettingsPage from './pages/SettingsPage';
+import LoginPage from './pages/LoginPage';
 
-import AppLayout from './layouts/AppLayout'
-import AuthGate from './components/AuthGate'
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000, // 5 minutes
+      retry: 1,
+    },
+  },
+});
 
-import Dashboard from './pages/Dashboard'
-import Ingredients from './pages/Ingredients'
-import Recipes from './pages/Recipes'
-import RecipeEditor from './pages/RecipeEditor'
-import RecipeCookMode from './pages/RecipeCookMode'
-import RecipePrintCard from './pages/RecipePrintCard'
-import Settings from './pages/Settings'
-
-import Login from './pages/Login'
-import Register from './pages/Register'
-
-/**
- * ✅ ABSOLUTE FINAL CORE — FIXED (Vercel build)
- * - DOES NOT import HashRouter here (HashRouter stays in main.tsx)
- * - Fixes Cook mode import: RecipeCookMode.tsx
- * - Protects app routes with AuthGate (no bounce-back after logout)
- * - No changes to your business logic
- */
-export default function App() {
+function App() {
   return (
-    <Routes>
-      {/* Public */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
-
-      {/* Protected App */}
-      <Route
-        path="/"
-        element={
-          <AuthGate redirectTo="/login">
-            <AppLayout />
-          </AuthGate>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="ingredients" element={<Ingredients />} />
-        <Route path="recipes" element={<Recipes />} />
-        <Route path="recipe" element={<RecipeEditor />} />
-        {/* Cook mode is opened from RecipeEditor via /cook?id=... */}
-        <Route path="cook" element={<RecipeCookMode />} />
-        <Route path="print" element={<RecipePrintCard />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  )
+    <QueryClientProvider client={queryClient}>
+      <ThemeProvider>
+        <Router>
+          <Routes>
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/" element={
+              <AppLayout>
+                <DashboardPage />
+              </AppLayout>
+            } />
+            <Route path="/recipes" element={
+              <AppLayout>
+                <RecipesPage />
+              </AppLayout>
+            } />
+            <Route path="/ingredients" element={
+              <AppLayout>
+                <IngredientsPage />
+              </AppLayout>
+            } />
+            <Route path="/settings" element={
+              <AppLayout>
+                <SettingsPage />
+              </AppLayout>
+            } />
+          </Routes>
+        </Router>
+      </ThemeProvider>
+    </QueryClientProvider>
+  );
 }
+
+export default App;
