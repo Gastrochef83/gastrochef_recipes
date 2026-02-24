@@ -1498,7 +1498,8 @@ const k = useKitchen()
                 <div className="gc-hint">No lines yet.</div>
               ) : (
                 <div className="gc-kitopi-table-wrap">
-                  <table className="gc-kitopi-table gc-kitopi-table-fixed"<colgroup>
+                  <table className="gc-kitopi-table gc-kitopi-table-fixed">
+                    <colgroup>
                       <col className="gc-col-item" />
                       <col className="gc-col-net" />
                       <col className="gc-col-unit" />
@@ -1521,7 +1522,7 @@ const k = useKitchen()
                         <th>Status</th>
                         <th aria-label="Actions" />
                       </tr>
-                    </thead>              </thead>
+                    </thead>
                     <tbody>
                       {visibleLines.map((l) => {
                         const c = lineComputed.get(l.id)
