@@ -1498,18 +1498,29 @@ const k = useKitchen()
                 <div className="gc-hint">No lines yet.</div>
               ) : (
                 <div className="gc-kitopi-table-wrap">
-                  <table className="gc-kitopi-table">
+                  <table className="gc-kitopi-table gc-kitopi-lines-table">
+                    <colgroup>
+                      <col className="gc-col-ingredient" />
+                      <col className="gc-col-net" />
+                      <col className="gc-col-unit" />
+                      <col className="gc-col-gross" />
+                      <col className="gc-col-yield" />
+                      <col className="gc-col-note" />
+                      {showCost ? <col className="gc-col-cost" /> : null}
+                      <col className="gc-col-status" />
+                      <col className="gc-col-actions" />
+                    </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ width: '34%' }}>Ingredient</th>
-                        <th style={{ width: '11%' }}>Net</th>
-                        <th style={{ width: '9%' }}>Unit</th>
-                        <th style={{ width: '11%' }}>Gross</th>
-                        <th style={{ width: '10%' }}>Yield</th>
-                        <th style={{ width: '12%' }}>Note</th>
-                        {showCost ? <th style={{ width: '12%' }}>Cost</th> : null}
-                        <th style={{ width: '8%' }}>Status</th>
-                        <th style={{ width: '5%' }} />
+                        <th className="gc-th-ingredient">Ingredient</th>
+                        <th className="gc-th-num">Net</th>
+                        <th className="gc-th-center">Unit</th>
+                        <th className="gc-th-num">Gross</th>
+                        <th className="gc-th-num">Yield</th>
+                        <th className="gc-th-note">Note</th>
+                        {showCost ? <th className="gc-th-cost">Cost</th> : null}
+                        <th className="gc-th-status">Status</th>
+                        <th className="gc-th-actions" />
                       </tr>
                     </thead>
                     <tbody>
