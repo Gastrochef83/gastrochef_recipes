@@ -949,3 +949,30 @@ a{
     height: 150px;
   }
 }
+
+
+/* =========================================================
+   GOD RECIPEEDITOR CLEAN ERP (UI only)
+   ========================================================= */
+.gc-kitopi-table{
+  border-collapse: collapse;
+}
+.gc-kitopi-table thead th{
+  position: sticky;
+  top: 0;
+  background: rgba(255,255,255,.96);
+  backdrop-filter: blur(6px);
+  z-index: 2;
+}
+.gc-kitopi-table td, .gc-kitopi-table th{
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+.gc-kitopi-table td{
+  vertical-align: top;
+}
+.gc-kitopi-table .gc-row-actions{
+  display:flex;
+  gap: 10px;
+  justify-content: flex-end;
+}

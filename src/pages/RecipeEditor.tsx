@@ -625,7 +625,65 @@ const k = useKitchen()
     }
   }, [id, normalizePositions, showToast])
 
-  const addLineLocal = useCallback(async () => {
+  
+  // ---------- Debounced lines auto-save (ERP: save every step) ----------
+  const [savingLines, setSavingLines] = useState(false)
+  const linesSaveTimer = useRef<number | null>(null)
+  const linesDidInit = useRef(false)
+  const lastSavedSig = useRef<string>('')
+
+  const linesSignature = useCallback((arr: Line[]) => {
+    const stable = normalizePositions(arr).map((l) => ({
+      id: l.id,
+      position: l.position,
+      line_type: l.line_type,
+      ingredient_id: l.ingredient_id,
+      sub_recipe_id: l.sub_recipe_id,
+      qty: toNum(l.qty, 0),
+      unit: l.unit || 'g',
+      yield_percent: clamp(toNum(l.yield_percent, 100), 0.0001, 100),
+      notes: l.notes || null,
+      gross_qty_override: l.gross_qty_override != null && l.gross_qty_override > 0 ? l.gross_qty_override : null,
+      group_title: l.group_title || null,
+    }))
+    return JSON.stringify(stable)
+  }, [normalizePositions])
+
+  const saveLinesNowSafe = useCallback(async () => {
+    if (!id) return
+    const sig = linesSignature(linesRef.current || [])
+    if (sig === lastSavedSig.current) return
+    setSavingLines(true)
+    try {
+      await saveLinesNow()
+      lastSavedSig.current = linesSignature(linesRef.current || [])
+    } finally {
+      setSavingLines(false)
+    }
+  }, [id, saveLinesNow, linesSignature])
+
+  const scheduleLinesSave = useCallback(() => {
+    if (!id) return
+    if (linesSaveTimer.current) window.clearTimeout(linesSaveTimer.current)
+    linesSaveTimer.current = window.setTimeout(() => {
+      saveLinesNowSafe().catch(() => {})
+    }, 650)
+  }, [id, saveLinesNowSafe])
+
+  // Skip initial load; then auto-save on any line change.
+  useEffect(() => {
+    if (!recipe) return
+    if (!linesDidInit.current) {
+      // initialize signature from first loaded state
+      lastSavedSig.current = linesSignature(linesRef.current || [])
+      linesDidInit.current = true
+      return
+    }
+    scheduleLinesSave()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lines])
+
+const addLineLocal = useCallback(async () => {
     if (!id) return
     const rid = id
 
@@ -1072,7 +1130,12 @@ const k = useKitchen()
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                   <button className="gc-btn gc-btn-primary" type="button" onClick={printNow}>Print now</button>
                   <button className="gc-btn gc-btn-ghost" type="button" onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)} disabled={!id}>Open Print Page</button>
+                
+                <div className="gc-hint" style={{ marginTop: 10 }}>
+                  {savingMeta || savingLines ? 'Auto-saving…' : 'Auto-save ready.'}
                 </div>
+
+</div>
               </div>
             </div>
           )}
@@ -1485,8 +1548,7 @@ const k = useKitchen()
                       <col className="gc-col-yield" />
                       <col className="gc-col-note" />
                       {showCost ? <col className="gc-col-cost" /> : null}
-                      <col className="gc-col-status" />
-                      <col className="gc-col-actions" />
+<col className="gc-col-actions" />
                     </colgroup>
                     <thead>
                       <tr>
