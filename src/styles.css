@@ -603,3 +603,177 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 
 /* 3) Ingredient/name single-line utility */
 .gc-ellipsis{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* =========================================================
+   MONSTER FIX — KITOPI LOGIN + SIDEBAR + LINES DENSITY
+   UI ONLY — No logic change
+   ========================================================= */
+
+/* ---------- Sidebar (Kitopi-like pill nav + tighter width) ---------- */
+.gc-shell{ max-width: 1480px; }
+.gc-side{
+  background: rgba(255,255,255,.78);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(15,26,34,.10);
+}
+.gc-side-card{
+  background:
+    linear-gradient(180deg, rgba(14,143,132,.10), rgba(255,255,255,.72));
+}
+.gc-side-block{ padding: 12px 14px; }
+.gc-nav{ padding: 8px 8px 12px 8px; }
+.gc-nav-item{
+  border-radius: 14px;
+  padding: 10px 12px;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  background: transparent;
+  border: 1px solid transparent;
+  position: relative;
+}
+.gc-nav-item:hover{
+  background: rgba(14,143,132,.06);
+  border-color: rgba(14,143,132,.14);
+  transform: translateY(-1px);
+}
+.gc-nav-item.is-active{
+  background: rgba(14,143,132,.10);
+  border-color: rgba(14,143,132,.20);
+  color: var(--text);
+}
+.gc-nav-item.is-active::before{
+  content:'';
+  position:absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 18px;
+  border-radius: 999px;
+  background: var(--accent);
+  opacity: .95;
+}
+.gc-nav-item.is-active{ padding-left: 22px; }
+
+/* Mode segmented control: more Kitopi */
+.gc-seg{
+  background: rgba(15,26,34,.04);
+  border: 1px solid rgba(15,26,34,.08);
+  border-radius: 16px;
+  padding: 4px;
+}
+.gc-seg-btn{
+  border-radius: 12px;
+  font-weight: 900;
+}
+.gc-seg-btn.is-active{
+  box-shadow: 0 10px 24px rgba(2,6,23,.10);
+}
+
+/* ---------- Login: punchier hero brand ---------- */
+.gc-auth-card{
+  border-radius: 22px;
+  box-shadow: 0 26px 80px rgba(2,6,23,.12);
+}
+.gc-auth-head{
+  background:
+    radial-gradient(800px 220px at 50% 0%, rgba(14,143,132,.18), transparent 60%),
+    var(--surface);
+}
+.gc-auth-sub{
+  letter-spacing: .24em;
+  opacity: .85;
+}
+.gc-auth-body .gc-input{
+  height: 44px;
+  border-radius: 14px;
+}
+.gc-auth-body .gc-btn{
+  height: 44px;
+  border-radius: 14px;
+}
+
+/* ---------- RecipeEditor Lines: reduce “crowding” ---------- */
+.gc-kitopi-table-wrap{ width: 100%; overflow: hidden; border-radius: 18px; }
+table.gc-kitopi-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 10px; /* card rows */
+  table-layout: fixed;
+}
+table.gc-kitopi-table thead th{
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  color: var(--muted);
+  padding: 10px 10px;
+}
+table.gc-kitopi-table tbody td{
+  vertical-align: middle;
+  padding: 10px 10px;
+}
+table.gc-kitopi-table tbody tr.gc-kitopi-item td{
+  background: rgba(255,255,255,.72);
+  border-top: 1px solid rgba(15,26,34,.08);
+  border-bottom: 1px solid rgba(15,26,34,.08);
+}
+table.gc-kitopi-table tbody tr.gc-kitopi-item td:first-child{
+  border-left: 1px solid rgba(15,26,34,.08);
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+table.gc-kitopi-table tbody tr.gc-kitopi-item td:last-child{
+  border-right: 1px solid rgba(15,26,34,.08);
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+}
+.gc-kitopi-item-name{ font-weight: 950; letter-spacing: -0.02em; }
+.gc-kitopi-item-sub{
+  margin-top: 4px;
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.25;
+}
+.gc-kitopi-muted{ color: var(--muted); }
+
+.gc-input.gc-input-compact,
+.gc-select.gc-select-compact{
+  height: 38px;
+  border-radius: 12px;
+  padding: 0 10px;
+}
+.gc-input.gc-input-compact{
+  background: rgba(255,255,255,.92);
+}
+.gc-select.gc-select-compact{
+  background: rgba(255,255,255,.92);
+}
+.gc-input.gc-input-compact:focus,
+.gc-select.gc-select-compact:focus{
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.gc-kitopi-warn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 950;
+  font-size: 12px;
+  background: rgba(200,162,77,.18);
+  border: 1px solid rgba(200,162,77,.28);
+  color: rgba(15,26,34,.88);
+}
+
+/* Group rows more readable */
+tr.gc-kitopi-group td{
+  background: rgba(14,143,132,.08);
+  border: 1px solid rgba(14,143,132,.16);
+}
+.gc-kitopi-group-title{
+  font-weight: 950;
+  letter-spacing: -0.02em;
+}
+.gc-kitopi-group-actions{ opacity: .85; }
