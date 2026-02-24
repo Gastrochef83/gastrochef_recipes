@@ -2,25 +2,21 @@
 # Dependencies
 node_modules/
 
-# Build outputs
+# Build artifacts
 dist/
 build/
-target/
+*.css.map
 
-# Python cache
-__pycache__/
-*.pyc
-*.pyo
-*.pyd
+# Cache directories
+.cache/
+.node_cache/
 
-# Virtual environments
-venv/
-.venv/
+# Environment
 .env
 .env.local
 .env.*
 
-# IDE specific
+# Editors
 .vscode/
 .idea/
 *.swp
@@ -29,18 +25,43 @@ venv/
 # Logs
 *.log
 
+# Temporary files
+*.tmp
+
 # Coverage
-.coverage
 coverage/
 htmlcov/
+.coverage
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.coverage
+.nox/
+.pytest_cache/
+.mypy_cache/
+
+# Compiled and binary
+*.o
+*.obj
+*.so
+*.a
+*.dll
+*.exe
+*.out
 
 # OS generated
 .DS_Store
 Thumbs.db
-
-# Temporary files
-*.tmp
-*.temp
 
 # Compressed files
 *.zip
