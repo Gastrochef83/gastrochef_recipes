@@ -1,0 +1,239 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                   String           @id @default(cuid())
+  email                String           @unique
+  password             String
+  firstName            String?
+  lastName             String?
+  avatar               String?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  kitchenMemberships   KitchenMembership[]
+  profiles             UserProfile[]
+  apiKey               ApiKey?
+}
+
+model UserProfile {
+  id                   String           @id @default(cuid())
+  userId               String           @unique
+  kitchenId            String
+  role                 UserRole         @default(STAFF)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  user                 User             @relation(fields: [userId], references: [id])
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+}
+
+enum UserRole {
+  OWNER
+  STAFF
+  VIEWER
+}
+
+model Kitchen {
+  id                   String           @id @default(cuid())
+  name                 String
+  description          String?
+  currency             String           @default("USD")
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  memberships          KitchenMembership[]
+  ingredients          Ingredient[]
+  recipes              Recipe[]
+  suppliers            Supplier[]
+  categories           Category[]
+  auditLogs            AuditLog[]
+}
+
+model KitchenMembership {
+  id                   String           @id @default(cuid())
+  kitchenId            String
+  userId               String
+  role                 UserRole         @default(STAFF)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+  user                 User             @relation(fields: [userId], references: [id])
+  
+  @@unique([kitchenId, userId])
+}
+
+model Ingredient {
+  id                   String           @id @default(cuid())
+  name                 String
+  description          String?
+  categoryId           String?
+  supplierId           String?
+  packSize             Float            // Size of the package (e.g., 1000g)
+  packPrice            Float            // Price of the package
+  yieldPercent         Float            // Percentage yield after preparation (e.g., 85%)
+  unitOfMeasure        String           // Unit of measure (e.g., g, ml, pieces)
+  storageConditions    String?
+  shelfLifeDays        Int?
+  minStockLevel        Int?
+  maxStockLevel        Int?
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  kitchenId            String
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+  category             Category?        @relation(fields: [categoryId], references: [id])
+  supplier             Supplier?        @relation(fields: [supplierId], references: [id])
+  recipeLines          RecipeLine[]
+  costHistory          IngredientCostHistory[]
+  
+  @@map("ingredients")
+}
+
+model IngredientCostHistory {
+  id                   String           @id @default(cuid())
+  ingredientId         String
+  packSize             Float
+  packPrice            Float
+  yieldPercent         Float
+  effectiveDate        DateTime         @default(now())
+  createdAt            DateTime         @default(now())
+  ingredient           Ingredient       @relation(fields: [ingredientId], references: [id])
+  
+  @@map("ingredient_cost_history")
+}
+
+model Recipe {
+  id                   String           @id @default(cuid())
+  name                 String
+  description          String?
+  categoryId           String?
+  prepTimeMinutes      Int?
+  cookTimeMinutes      Int?
+  totalServings        Int              // Number of portions recipe yields
+  yieldPercent         Float            // Percentage yield of the entire recipe
+  instructions         String?
+  notes                String?
+  image                String?
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  kitchenId            String
+  createdBy            String
+  updatedBy            String
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+  category             Category?        @relation(fields: [categoryId], references: [id])
+  lines                RecipeLine[]
+  costSnapshots        RecipeCostSnapshot[]
+  
+  @@map("recipes")
+}
+
+model RecipeLine {
+  id                   String           @id @default(cuid())
+  recipeId             String
+  ingredientId         String?
+  subRecipeId          String?          // Reference to another recipe
+  quantity             Float            // Quantity needed
+  unitOfMeasure        String           // Unit of measure
+  sortOrder            Int              // Order in which the line appears
+  notes                String?
+  overrideYield        Float?           // Override the ingredient's yield percent for this line
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  recipe               Recipe           @relation(fields: [recipeId], references: [id])
+  ingredient           Ingredient?      @relation(fields: [ingredientId], references: [id])
+  subRecipe            Recipe?          @relation("SubRecipeToRecipeLine", fields: [subRecipeId], references: [id])
+  
+  @@map("recipe_lines")
+}
+
+model RecipeCostSnapshot {
+  id                   String           @id @default(cuid())
+  recipeId             String
+  snapshotDate         DateTime         @default(now())
+  grossUnitCost        Float            // Calculated at snapshot time
+  netUnitCost          Float            // Calculated at snapshot time
+  totalRecipeCost      Float            // Calculated at snapshot time
+  costPerPortion       Float            // Calculated at snapshot time
+  foodCostPercentage   Float            // Calculated at snapshot time
+  data                 Json             // Full recipe data at time of snapshot
+  createdAt            DateTime         @default(now())
+  recipe               Recipe           @relation(fields: [recipeId], references: [id])
+  
+  @@map("recipe_cost_snapshots")
+}
+
+model Supplier {
+  id                   String           @id @default(cuid())
+  name                 String
+  contactName          String?
+  phone                String?
+  email                String?
+  address              String?
+  notes                String?
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  kitchenId            String
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+  ingredients          Ingredient[]
+  
+  @@map("suppliers")
+}
+
+model Category {
+  id                   String           @id @default(cuid())
+  name                 String
+  description          String?
+  color                String?          // Color code for UI
+  icon                 String?          // Icon identifier
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  kitchenId            String
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+  ingredients          Ingredient[]
+  recipes              Recipe[]
+  
+  @@map("categories")
+}
+
+model AuditLog {
+  id                   String           @id @default(cuid())
+  action               String           // Action performed (CREATE, UPDATE, DELETE)
+  entity               String           // Entity type (Ingredient, Recipe, etc.)
+  entityId             String           // ID of the entity affected
+  userId               String?          // User who performed the action
+  kitchenId            String           // Kitchen where action occurred
+  oldValue             Json?            // Previous values (for updates)
+  newValue             Json?            // New values (for updates/creates)
+  ipAddress            String?
+  userAgent            String?
+  createdAt            DateTime         @default(now())
+  user                 User?            @relation(fields: [userId], references: [id])
+  kitchen              Kitchen          @relation(fields: [kitchenId], references: [id])
+  
+  @@map("audit_logs")
+}
+
+model ApiKey {
+  id                   String           @id @default(cuid())
+  userId               String           @unique
+  key                  String           @unique
+  name                 String           // Name for identification
+  permissions          String[]         // List of permissions
+  expiresAt            DateTime?
+  isActive             Boolean          @default(true)
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
+  user                 User             @relation(fields: [userId], references: [id])
+  
+  @@map("api_keys")
+}
