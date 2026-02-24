@@ -1,46 +1,218 @@
-SYSTEM / MASTER PROMPT — GASTROCHEF NUCLEAR ZIP FINAL (KITOPI SIMPLE + PRO SaaS)
+import { FormEvent, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabase'
+import { Link } from 'react-router-dom'
 
-You are a Principal SaaS Engineer + UX Director + QA Lead.
-You have full access to this repository.
+export default function Register() {
+  const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
 
-GOAL
-Deliver a FINAL, production-ready ZIP of the project with:
-- Premium minimal UI inspired by Kitopi (clean, airy, confident)
-- Professional SaaS engineering standards
-- Stable routing (no blank screen on refresh)
-- Reliable auth + logout
-- Recipe Editor and Lines: no freezes, correct CRUD, correct yield logic
-- Consistent design system across ALL pages
-- Brand pack: logo usage consistent (favicon, header, login)
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const [password2, setPassword2] = useState('')
+  const [err, setErr] = useState<string | null>(null)
+  const [okMsg, setOkMsg] = useState<string | null>(null)
+  const [busy, setBusy] = useState(false)
 
-RULES
-1) Output ALL code in English.
-2) Deliver COMPLETE FILES only (no diffs).
-3) You may improve logic if it is objectively better (stability/performance/UX), but keep backward compatibility.
-4) If database changes are needed, provide SAFE idempotent SQL migrations.
-5) No regressions: add a test checklist and verify critical flows.
-6) Provide a final ZIP packaging guide (script).
+  const onSubmit = async (e: FormEvent) => {
+    e.preventDefault()
+    if (busy) return
 
-WHAT TO DO
-1) Run a full audit:
-   - Visual/UI: spacing, typography, buttons, forms, cards, tables, modals, dark/light.
-   - Functional: routing, auth, CRUD, yield, image upload, error handling.
-   - Performance: re-render reduction, memoization, debounced search.
-2) Build a design system:
-   - Tokens: colors, radius, shadows, typography scale
-   - Components: Button, Input, Select, Card, Modal, Table
-3) Apply consistently across ALL pages.
-4) Add ErrorBoundary to prevent white-screen and show a clean crash UI.
-5) Ensure React hooks are not conditional (avoid invariant #310).
-6) Ensure Vercel build is zero-fail.
+    setErr(null)
+    setOkMsg(null)
 
-DELIVERABLES
-A) NUCLEAR REVIEW REPORT (Critical/High/Medium/Low)
-B) EXECUTION PLAN (24h / 7d / 30d)
-C) FULL UPDATED FILES (every changed file, complete)
-D) SQL MIGRATIONS (if any)
-E) INSTALL + ZIP BUILD GUIDE
-F) TEST CHECKLIST
+    const em = email.trim()
+    if (!em.includes('@')) {
+      setErr('Please enter a valid email.')
+      return
+    }
+    if (password.length < 6) {
+      setErr('Password must be at least 6 characters.')
+      return
+    }
+    if (password !== password2) {
+      setErr('Passwords do not match.')
+      return
+    }
 
-START NOW.
-First, inspect the repository tree and identify the key pages and global styles. Then propose the plan and produce the full files.
+    setBusy(true)
+    try {
+      const { data, error } = await supabase.auth.signUp({
+        email: em,
+        password,
+      })
+
+      if (error) {
+        setErr(error.message)
+        return
+      }
+
+      // If email confirmations are enabled, session may be null.
+      const hasSession = !!data?.session
+
+      if (hasSession) {
+        window.location.assign(`${base}#/dashboard`)
+        return
+      }
+
+      setOkMsg('Account created. Please check your email to confirm, then login.')
+    } catch (e: any) {
+      setErr(e?.message || 'Register failed.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div className="gc-auth">
+      <div className="gc-auth-card">
+        <div className="gc-auth-head">
+          <div
+            style={{
+              fontSize: 44,
+              fontWeight: 900,
+              letterSpacing: '-0.03em',
+              lineHeight: 1,
+              color: '#0f172a',
+              display: 'inline-block',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            Gastro
+            <span style={{ color: 'var(--accent)' }}>Chef</span>
+          </div>
+
+          <div style={{ marginTop: 10, fontSize: 13, color: '#64748b' }}>Create your account</div>
+
+          <div
+            style={{
+              width: 72,
+              height: 4,
+              borderRadius: 999,
+              background: 'var(--accent)',
+              margin: '14px auto 0',
+            }}
+          />
+        </div>
+
+        <div className="gc-auth-body">
+          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Email</div>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                autoComplete="email"
+                inputMode="email"
+                style={{
+                  marginTop: 6,
+                  width: '100%',
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(15,23,42,.14)',
+                  outline: 'none',
+                  background: '#eff6ff',
+                }}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Password</div>
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                autoComplete="new-password"
+                style={{
+                  marginTop: 6,
+                  width: '100%',
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(15,23,42,.14)',
+                  outline: 'none',
+                  background: '#eff6ff',
+                }}
+              />
+            </div>
+
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Confirm Password</div>
+              <input
+                type="password"
+                value={password2}
+                onChange={(e) => setPassword2(e.target.value)}
+                autoComplete="new-password"
+                style={{
+                  marginTop: 6,
+                  width: '100%',
+                  padding: '11px 12px',
+                  borderRadius: 12,
+                  border: '1px solid rgba(15,23,42,.14)',
+                  outline: 'none',
+                  background: '#eff6ff',
+                }}
+              />
+            </div>
+
+            {err && (
+              <div
+                style={{
+                  borderRadius: 14,
+                  background: '#fef2f2',
+                  border: '1px solid rgba(239,68,68,.20)',
+                  color: '#b91c1c',
+                  padding: 12,
+                  fontSize: 13,
+                }}
+              >
+                {err}
+              </div>
+            )}
+
+            {okMsg && (
+              <div
+                style={{
+                  borderRadius: 14,
+                  background: '#ecfdf5',
+                  border: '1px solid rgba(16,185,129,.20)',
+                  color: '#065f46',
+                  padding: 12,
+                  fontSize: 13,
+                }}
+              >
+                {okMsg}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={busy}
+              style={{
+                width: '100%',
+                border: 'none',
+                borderRadius: 12,
+                padding: '12px 14px',
+                background: '#111827',
+                color: '#fff',
+                fontWeight: 700,
+                cursor: busy ? 'not-allowed' : 'pointer',
+                opacity: busy ? 0.65 : 1,
+              }}
+            >
+              {busy ? 'Creating…' : 'Create Account'}
+            </button>
+          </form>
+
+          <div style={{ marginTop: 12, fontSize: 13, color: '#64748b' }}>
+            Already have an account?{' '}
+            <Link to="/login" style={{ fontWeight: 800, textDecoration: 'underline', color: '#0f172a' }}>
+              Login
+            </Link>
+          </div>
+        </div>
+
+        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: '#94a3b8' }}>
+          Secure auth powered by Supabase.
+        </div>
+      </div>
+    </div>
+  )
+}
