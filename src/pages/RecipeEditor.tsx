@@ -1498,18 +1498,29 @@ const k = useKitchen()
                 <div className="gc-hint">No lines yet.</div>
               ) : (
                 <div className="gc-kitopi-table-wrap">
-                  <table className="gc-kitopi-table">
+                  <table className="gc-kitopi-table gc-kitopi-table-fixed">
+                    <colgroup>
+                      <col style={{ width: '360px' }} />
+                      <col style={{ width: '96px' }} />
+                      <col style={{ width: '88px' }} />
+                      <col style={{ width: '96px' }} />
+                      <col style={{ width: '96px' }} />
+                      <col style={{ width: '160px' }} />
+                      {showCost ? <col style={{ width: '160px' }} /> : null}
+                      <col style={{ width: '160px' }} />
+                      <col style={{ width: '120px' }} />
+                    </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ width: '34%' }}>Ingredient</th>
-                        <th style={{ width: '11%' }}>Net</th>
-                        <th style={{ width: '9%' }}>Unit</th>
-                        <th style={{ width: '11%' }}>Gross</th>
-                        <th style={{ width: '10%' }}>Yield</th>
-                        <th style={{ width: '12%' }}>Note</th>
-                        {showCost ? <th style={{ width: '12%' }}>Cost</th> : null}
-                        <th style={{ width: '8%' }}>Status</th>
-                        <th style={{ width: '5%' }} />
+                        <th>Ingredient</th>
+                        <th>Net</th>
+                        <th>Unit</th>
+                        <th>Gross</th>
+                        <th>Yield</th>
+                        <th>Note</th>
+                        {showCost ? <th>Cost</th> : null}
+                        <th>Status</th>
+                        <th />
                       </tr>
                     </thead>
                     <tbody>
