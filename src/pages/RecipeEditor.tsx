@@ -1497,18 +1497,18 @@ const k = useKitchen()
               {!visibleLines.length ? (
                 <div className="gc-hint">No lines yet.</div>
               ) : (
-                <div className="gc-kitopi-table-wrap">
-                  <table className="gc-kitopi-table gc-kitopi-table-fixed">
+                <div className="gc-kitopi-table-wrap" role="region" aria-label="Recipe lines" tabIndex={0}>
+                  <table className="gc-kitopi-table">
                     <colgroup>
-                      <col style={{ width: '360px' }} />
-                      <col style={{ width: '96px' }} />
-                      <col style={{ width: '88px' }} />
-                      <col style={{ width: '96px' }} />
-                      <col style={{ width: '96px' }} />
-                      <col style={{ width: '160px' }} />
-                      {showCost ? <col style={{ width: '160px' }} /> : null}
-                      <col style={{ width: '160px' }} />
-                      <col style={{ width: '120px' }} />
+                      <col style={{ width: 360 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 90 }} />
+                      <col style={{ width: 120 }} />
+                      <col style={{ width: 110 }} />
+                      <col style={{ width: 160 }} />
+                      {showCost ? <col style={{ width: 160 }} /> : null}
+                      <col style={{ width: 150 }} />
+                      <col style={{ width: 120 }} />
                     </colgroup>
                     <thead>
                       <tr>
@@ -1520,7 +1520,7 @@ const k = useKitchen()
                         <th>Note</th>
                         {showCost ? <th>Cost</th> : null}
                         <th>Status</th>
-                        <th />
+                        <th aria-label="Actions" />
                       </tr>
                     </thead>
                     <tbody>

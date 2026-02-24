@@ -440,7 +440,10 @@ a{
 
 .gc-kitopi-table-wrap{
   width: 100%;
-  overflow-x: auto; /* requirement: no horizontal scroll */
+  /* Keep the PAGE free of horizontal scroll.
+     If the table needs more space (zoom / long ingredient names),
+     contain scroll INSIDE this wrapper only. */
+  overflow-x: auto;
   border-radius: 16px;
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.55);
@@ -481,6 +484,50 @@ a{
 
 .gc-kitopi-table tbody tr:hover td{
   background: rgba(14,165,166,.05);
+}
+
+/* Ingredient cell layout (prevents visual deformation)
+   - single-line name/meta/warn (ellipsis)
+   - compact select
+   - never pushes other columns */
+.gc-kitopi-item{ min-width: 0; }
+.gc-kitopi-item-name{
+  font-weight: 950;
+  font-size: var(--gc-fs-sm);
+  color: var(--gc-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gc-kitopi-item-sub{
+  margin-top: 2px;
+  font-size: var(--gc-fs-xs);
+  color: var(--gc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gc-kitopi-item-select{ margin-top: 8px; min-width: 0; }
+.gc-kitopi-item-select select{
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+.gc-kitopi-warn{
+  margin-top: 8px;
+  font-size: var(--gc-fs-xs);
+  color: rgba(180, 83, 9, .95);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Row actions column: keep icons centered and stable */
+.gc-kitopi-row-actions{
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
 }
 
 .gc-kitopi-table input,
@@ -622,73 +669,3 @@ a{
   .gc-brand-name{ font-size: 16px; }
   .gc-card-body{ padding: 12px; }
 }
-
-
-/* =========================================================
-   RecipeEditor Table — ERP Clean Alignment Guard (UI only)
-   - Prevents column deformation, wrapping, and icon overlap
-   ========================================================= */
-.gc-kitopi-table-wrap{
-  max-width: 100%;
-  -webkit-overflow-scrolling: touch;
-}
-
-.gc-kitopi-table{
-  width: 100%;
-  table-layout: fixed; /* critical for stable columns */
-}
-
-.gc-kitopi-table th,
-.gc-kitopi-table td{
-  vertical-align: top;
-}
-
-.gc-kitopi-item{
-  min-width: 0; /* allow ellipsis inside */
-}
-
-.gc-kitopi-item-name{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.gc-kitopi-item-sub{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.gc-kitopi-warn{
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  max-width: 100%;
-}
-
-.gc-select,
-.gc-input{
-  min-width: 0;
-}
-
-.gc-chip{
-  white-space: nowrap;
-  min-width: 120px;
-  justify-content: center;
-}
-
-.gc-kitopi-row-actions{
-  display: flex;
-  justify-content: flex-end;
-  gap: 6px;
-  white-space: nowrap;
-}
-
-.gc-icon-btn{
-  width: 32px;
-  height: 32px;
-  line-height: 30px;
-}
-
