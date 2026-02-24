@@ -1,43 +1,46 @@
 /* src/styles.css
 =========================================================
-GastroChef — VISUAL BLACK OPS (KITOPI MATCH + ZERO OVERFLOW)
+GastroChef — CEO SIGNATURE EDITION (B)
 
 ABSOLUTE RULES:
 - UI/CSS/layout only (NO business logic change)
 - ZERO horizontal scroll anywhere
 - Works at zoom: 100% / 110% / 125% / 150%
-- Works on wide + small screens
+- Calm premium SaaS feel (Kitopi calm + Paprika clarity)
 
 This file is the SINGLE SOURCE OF TRUTH for the design system.
 ========================================================= */
 
 /* -------------------------
-   TOKENS — Kitopi calm
+   TOKENS — GastroChef Signature
 -------------------------- */
 :root{
-  /* GastroChef Signature — Teal + Charcoal + Soft Gold */
-  --bg: #F4F7F7;
-  --surface: #FFFFFF;
-  --surface-2: #EEF3F3;
+  /* Teal + Olive + Soft Gold (unique GastroChef) */
+  --bg: #F6F7F4;            /* warm-white canvas */
+  --surface: #FFFFFF;       /* cards */
+  --surface-2: #F0F3F1;     /* subtle panels */
 
-  --text: #182430;
-  --text-strong: #0F1720;
-  --muted: #5C6B76;
-  --soft: #8A95A8;
+  --text: #0F1A22;          /* deep charcoal */
+  --text-strong: #08111A;
+  --muted: #566372;
+  --soft: #7A8797;
 
-  --accent: #0E8F84;
+  --accent: #0E8F84;        /* GastroChef Teal */
   --accent-hover: #0A756C;
-  --accent-strong: #12A79A;
+  --accent-strong: #13B3A5;
   --accent-soft: rgba(14, 143, 132, .12);
+
+  --olive: #2F6B4F;
+  --olive-soft: rgba(47, 107, 79, .10);
 
   --gold: #C8A24D;
   --gold-soft: rgba(200, 162, 77, .14);
 
-  --border: rgba(15, 23, 32, .10);
-  --border-strong: rgba(15, 23, 32, .16);
+  --border: rgba(15, 26, 34, .10);
+  --border-strong: rgba(15, 26, 34, .16);
 
-  --shadow-soft: 0 10px 30px rgba(15, 23, 32, .08);
-  --shadow: 0 20px 60px rgba(15, 23, 32, .12);
+  --shadow-soft: 0 14px 34px rgba(8, 17, 26, .08);
+  --shadow: 0 26px 76px rgba(8, 17, 26, .14);
 
   --r-xs: 12px;
   --r-sm: 14px;
@@ -48,6 +51,10 @@ This file is the SINGLE SOURCE OF TRUTH for the design system.
   --h-ctl-sm: 36px;
 
   --ring: rgba(14, 143, 132, .22);
+
+  /* brand gradients */
+  --brand-grad: linear-gradient(180deg, var(--accent-strong) 0%, var(--accent) 100%);
+  --brand-grad-2: linear-gradient(135deg, rgba(14,143,132,.18) 0%, rgba(47,107,79,.12) 52%, rgba(200,162,77,.16) 100%);
 
   --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
@@ -154,7 +161,7 @@ img{ display:block; max-width:100%; height:auto; }
 .gc-btn:active{ transform: translateY(0); }
 .gc-btn:disabled{ opacity: .60; cursor: not-allowed; transform: none; }
 
-.gc-btn-primary{ border-color: rgba(14,143,132,.32); background: linear-gradient(180deg, var(--accent-strong) 0%, var(--accent) 100%); color: #fff; }
+.gc-btn-primary{ border-color: rgba(14,143,132,.32); background: var(--brand-grad); color: #fff; }
 .gc-btn-secondary{ background: rgba(15,23,42,.03); }
 .gc-btn-ghost{ background: transparent; box-shadow: none; }
 .gc-btn-danger{ border-color: rgba(220,38,38,.25); background: rgba(220,38,38,.10); }
@@ -267,7 +274,19 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 /* -------------------------
    LAYOUT SHELL (NO CLIPPING / NO VW WIDTHS)
 -------------------------- */
-.gc-root{ min-height: 100dvh; background: var(--bg); overflow-x: hidden; }
+.gc-root{ min-height: 100dvh; background: var(--bg); overflow-x: hidden; position: relative; }
+.gc-root::before{
+  content:"";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(900px 520px at 10% 0%, rgba(14,143,132,.10), transparent 60%),
+    radial-gradient(900px 520px at 90% 10%, rgba(47,107,79,.08), transparent 60%),
+    radial-gradient(760px 520px at 70% 90%, rgba(200,162,77,.10), transparent 55%);
+}
+.gc-shell, .gc-auth, .gc-print-route{ position: relative; z-index: 1; }
 
 .gc-shell{
   display:grid;
@@ -366,15 +385,20 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
   display:grid;
   place-items:center;
   padding: 28px 18px;
-  background: var(--bg);
+  background:
+    radial-gradient(900px 520px at 20% 0%, rgba(14,143,132,.12), transparent 60%),
+    radial-gradient(900px 520px at 90% 10%, rgba(47,107,79,.10), transparent 60%),
+    radial-gradient(760px 520px at 70% 90%, rgba(200,162,77,.12), transparent 55%),
+    var(--bg);
   overflow-x: hidden;
 }
 .gc-auth-card{
   width: min(520px, 100%);
-  background: var(--surface);
-  border: 1px solid var(--border);
+  background: rgba(255,255,255,.82);
+  border: 1px solid rgba(15,26,34,.12);
   border-radius: 26px;
-  box-shadow: var(--shadow-soft);
+  box-shadow: var(--shadow);
+  backdrop-filter: blur(10px);
   overflow:hidden;
 }
 .gc-auth-head{
@@ -425,8 +449,8 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 .gc-auth .gc-label{ font-size: 11px; letter-spacing: .08em; }
 .gc-auth .gc-input{
   height: 46px;
-  background: #EAF3FF;
-  border-color: rgba(15,23,32,.12);
+  background: rgba(255,255,255,.88);
+  border-color: rgba(15,26,34,.14);
   border-radius: 14px;
   font-size: 14px;
 }
