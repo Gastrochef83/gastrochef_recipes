@@ -1,15 +1,79 @@
-import { ReactNode } from 'react'
-import SideNav from './SideNav'
-import TopBar from './TopBar'
+import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
-export default function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <TopBar />
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
-        <SideNav />
-        <main className="w-full">{children}</main>
+type Props = {
+  children: React.ReactNode
+  /** where to send unauth users */
+  redirectTo?: string
+}
+
+/**
+ * ✅ AuthGate (HashRouter-safe)
+ * - Prevents accessing app pages without a valid session
+ * - Prevents weird "bounce back" after logout by hard redirect
+ * - No changes to your recipe/ingredient logic — only routing safety
+ */
+export default function AuthGate({ children, redirectTo = '/login' }: Props) {
+  const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
+  const [checking, setChecking] = useState(true)
+  const [ok, setOk] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+
+    async function run() {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!alive) return
+        const has = !!data?.session
+        setOk(has)
+
+        if (!has) {
+          // ✅ hard redirect avoids outlet stuck / cached renders
+          window.location.assign(`${base}#${redirectTo}`)
+        }
+      } catch {
+        if (!alive) return
+        setOk(false)
+        window.location.assign(`${base}#${redirectTo}`)
+      } finally {
+        if (alive) setChecking(false)
+      }
+    }
+
+    run()
+
+    // Also listen for auth state changes (logout/login)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const has = !!session
+      setOk(has)
+      if (!has) window.location.assign(`${base}#${redirectTo}`)
+    })
+
+    return () => {
+      alive = false
+      sub?.subscription?.unsubscribe()
+    }
+  }, [base, redirectTo])
+
+  if (checking) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'grid',
+          placeItems: 'center',
+          background: '#f6f8fb',
+          color: '#64748b',
+          fontSize: 14,
+        }}
+      >
+        Checking session…
       </div>
-    </div>
-  )
+    )
+  }
+
+  if (!ok) return null
+
+  return <>{children}</>
 }

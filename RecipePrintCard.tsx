@@ -1,53 +1,25 @@
-export type Snapshot = {
-  id: string
-  createdAt: string
-  label: string
-  recipeId: string
-  payload: any
+import { createClient } from '@supabase/supabase-js'
+
+/**
+ * ✅ FINAL GOD — Supabase client hardening (no business-logic change)
+ * - Better HashRouter compatibility (detectSessionInUrl: false)
+ * - Stable session persistence + token refresh
+ * - Clear error if env vars are missing (prevents silent blank screens)
+ */
+
+const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string
+const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string
+
+if (!supabaseUrl || !supabaseAnonKey) {
+  // Fail loudly (Vercel logs + ErrorBoundary) instead of a silent crash later
+  throw new Error('Missing Supabase env vars: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
 }
 
-const KEY_PREFIX = 'gc_recipe_snapshots_v1:'
-
-function key(recipeId: string) {
-  return `${KEY_PREFIX}${recipeId}`
-}
-
-function safeJsonParse<T>(s: string | null, fallback: T): T {
-  try {
-    if (!s) return fallback
-    return JSON.parse(s) as T
-  } catch {
-    return fallback
-  }
-}
-
-export function listSnapshots(recipeId: string): Snapshot[] {
-  const raw = localStorage.getItem(key(recipeId))
-  const arr = safeJsonParse<Snapshot[]>(raw, [])
-  return Array.isArray(arr) ? arr : []
-}
-
-export function saveSnapshot(recipeId: string, label: string, payload: any): Snapshot {
-  const snap: Snapshot = {
-    id: `${Date.now()}_${Math.random().toString(16).slice(2)}`,
-    createdAt: new Date().toISOString(),
-    label: (label || 'Version').trim() || 'Version',
-    recipeId,
-    payload,
-  }
-
-  const all = listSnapshots(recipeId)
-  const next = [snap, ...all].slice(0, 30) // keep last 30
-  localStorage.setItem(key(recipeId), JSON.stringify(next))
-  return snap
-}
-
-export function deleteSnapshot(recipeId: string, snapshotId: string) {
-  const all = listSnapshots(recipeId)
-  const next = all.filter((s) => s.id !== snapshotId)
-  localStorage.setItem(key(recipeId), JSON.stringify(next))
-}
-
-export function clearSnapshots(recipeId: string) {
-  localStorage.removeItem(key(recipeId))
-}
+export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
+  auth: {
+    persistSession: true,
+    autoRefreshToken: true,
+    // ✅ Important with HashRouter + manual redirects (#/login, #/dashboard)
+    detectSessionInUrl: false,
+  },
+})

@@ -1,8 +1,46 @@
-export default function KPI({ label, value }: { label: string; value: string }) {
+import React from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { useAuth } from '../contexts/AuthContext'
+import { useTheme } from '../contexts/ThemeContext'
+
+export default function Layout() {
+  const { signOut, user } = useAuth()
+  const { theme, toggleTheme } = useTheme()
+  const nav = useNavigate()
+
+  const onLogout = async () => {
+    await signOut()
+    nav('/login')
+  }
+
   return (
-    <div className="rounded-2xl border bg-white p-4">
-      <div className="text-xs font-semibold text-neutral-500">{label}</div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
+    <div className="gc-app" data-theme={theme}>
+      <aside className="gc-sidebar">
+        <div className="gc-brand">
+          <div className="gc-brand__logo">G</div>
+          <div className="gc-brand__text">
+            <div className="gc-brand__name">GastroChef</div>
+            <div className="gc-brand__sub">Kitchen OS</div>
+          </div>
+        </div>
+
+        <nav className="gc-nav">
+          <NavLink to="/dashboard" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Dashboard</NavLink>
+          <NavLink to="/recipes" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Recipes</NavLink>
+          <NavLink to="/cost-history" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Cost History</NavLink>
+          <NavLink to="/settings" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Settings</NavLink>
+        </nav>
+
+        <div className="gc-sidebar__footer">
+          <button className="gc-nav__item" onClick={toggleTheme} type="button">Toggle Theme</button>
+          <button className="gc-nav__item gc-nav__danger" onClick={onLogout} type="button">Logout</button>
+          <div className="gc-user">{user?.email ?? ''}</div>
+        </div>
+      </aside>
+
+      <main className="gc-main">
+        <Outlet />
+      </main>
     </div>
   )
 }

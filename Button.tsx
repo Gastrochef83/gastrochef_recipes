@@ -1,27 +1,26 @@
-import React, { useState } from 'react'
-import Button from '../ui/Button'
-import { useDatabase } from '../../contexts/DatabaseContext'
+import React from 'react'
+import type { RecipeIngredient } from '../../types'
 
-export default function NotesPanel({ recipeId, initialNotes }: { recipeId: string; initialNotes: string }) {
-  const { updateRecipe } = useDatabase()
-  const [notes, setNotes] = useState(initialNotes)
-  const [saving, setSaving] = useState(false)
-
-  const save = async () => {
-    setSaving(true)
-    try {
-      await updateRecipe(recipeId, { notes })
-    } finally {
-      setSaving(false)
-    }
-  }
-
+export default function NutritionPanel({
+  recipeId,
+  ingredients,
+  portions
+}: {
+  recipeId: string
+  ingredients: RecipeIngredient[]
+  portions: number
+}) {
+  void recipeId
+  void ingredients
   return (
     <div className="gc-panel">
-      <h3>Notes</h3>
-      <textarea className="gc-textarea" value={notes} onChange={(e) => setNotes(e.target.value)} rows={10} />
-      <div className="gc-row">
-        <Button onClick={save} disabled={saving}>{saving ? 'Saving…' : 'Save Notes'}</Button>
+      <h3>Nutrition</h3>
+      <p className="gc-muted">Nutrition calculation is optional. (Hook your DB fields when ready.)</p>
+      <div className="gc-panel__grid">
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Portions</div>
+          <div className="gc-panel__value">{portions}</div>
+        </div>
       </div>
     </div>
   )

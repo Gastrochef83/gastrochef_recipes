@@ -1,0 +1,35 @@
+{
+  "name": "gastrochef-v4-mvp",
+  "version": "4.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "nuclear:zip:linux": "bash ./scripts/nuclear_build.sh",
+    "nuclear:zip:win": "powershell -ExecutionPolicy Bypass -File ./scripts/nuclear_build.ps1"
+  },
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "lucide-react": "^0.379.0",
+    "framer-motion": "^11.0.0",
+    "react-router-dom": "^6.22.0",
+    "@supabase/supabase-js": "^2.45.1",
+    "recharts": "^2.12.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.0",
+    "vite": "^5.4.0",
+    "tailwindcss": "^3.4.10",
+    "postcss": "^8.4.41",
+    "autoprefixer": "^10.4.20",
+    "typescript": "^5.5.4",
+    "@types/react": "^18.2.79",
+    "@types/react-dom": "^18.2.25"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

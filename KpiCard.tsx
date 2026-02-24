@@ -1,34 +1,25 @@
 import React from 'react'
 
-export default function DateRangePicker({
+export default function RecipeSelector({
+  recipes,
   value,
   onChange
 }: {
-  value: [Date, Date]
-  onChange: (v: [Date, Date]) => void
+  recipes: any[]
+  value: string
+  onChange: (v: string) => void
 }) {
-  const [from, to] = value
-
   return (
-    <div className="gc-range">
-      <label className="gc-field">
-        <span className="gc-field__label">From</span>
-        <input
-          className="gc-input"
-          type="date"
-          value={from.toISOString().slice(0, 10)}
-          onChange={(e) => onChange([new Date(e.target.value + 'T00:00:00'), to])}
-        />
-      </label>
-      <label className="gc-field">
-        <span className="gc-field__label">To</span>
-        <input
-          className="gc-input"
-          type="date"
-          value={to.toISOString().slice(0, 10)}
-          onChange={(e) => onChange([from, new Date(e.target.value + 'T23:59:59')])}
-        />
-      </label>
-    </div>
+    <label className="gc-field">
+      <span className="gc-field__label">Recipe</span>
+      <select className="gc-select" value={value} onChange={(e) => onChange(e.target.value)}>
+        <option value="all">All</option>
+        {(recipes ?? []).map((r) => (
+          <option key={r.id} value={r.id}>
+            {r.name}
+          </option>
+        ))}
+      </select>
+    </label>
   )
 }

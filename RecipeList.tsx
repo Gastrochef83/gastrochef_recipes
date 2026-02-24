@@ -1,25 +1,23 @@
 import React from 'react'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
 
-export default function RecipeSelector({
-  recipes,
-  value,
-  onChange
-}: {
-  recipes: any[]
-  value: string
-  onChange: (v: string) => void
-}) {
+export default function TimelineChart({ data }: { data: any[] }) {
+  const normalized = (data ?? []).map((d) => ({
+    ...d,
+    x: d.created_at ?? d.date,
+    y: Number(d.total_cost ?? d.cost ?? 0)
+  }))
+
   return (
-    <label className="gc-field">
-      <span className="gc-field__label">Recipe</span>
-      <select className="gc-select" value={value} onChange={(e) => onChange(e.target.value)}>
-        <option value="all">All</option>
-        {(recipes ?? []).map((r) => (
-          <option key={r.id} value={r.id}>
-            {r.name}
-          </option>
-        ))}
-      </select>
-    </label>
+    <div style={{ width: '100%', height: 320 }}>
+      <ResponsiveContainer>
+        <LineChart data={normalized}>
+          <XAxis dataKey="x" hide />
+          <YAxis />
+          <Tooltip />
+          <Line type="monotone" dataKey="y" dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
   )
 }

@@ -1,47 +1,59 @@
-import React, { useMemo, useState } from 'react'
-import type { Recipe, RecipeIngredient } from '../../types'
-import Button from '../ui/Button'
+import React, { useMemo } from 'react'
+import type { RecipeIngredient } from '../../types'
 
-export default function CookMode({ recipe, ingredients }: { recipe: Recipe; ingredients: RecipeIngredient[] }) {
-  const [checked, setChecked] = useState<Record<string, boolean>>({})
-
-  const steps = useMemo(() => {
+export default function CostPanel({
+  totalCost,
+  costPerPortion,
+  ingredients,
+  portions
+}: {
+  totalCost: number
+  costPerPortion: number
+  ingredients: RecipeIngredient[]
+  portions: number
+}) {
+  const rows = useMemo(() => {
     return ingredients.map((i) => ({
-      id: i.id,
-      text: `${i.name} — ${i.quantity} ${i.unit}`
+      name: i.name,
+      cost: (i.quantity * i.cost_per_unit) * ((i.yield_percent || 100) / 100)
     }))
   }, [ingredients])
 
-  const doneCount = Object.values(checked).filter(Boolean).length
-
   return (
     <div className="gc-panel">
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
-        <div>
-          <h3 style={{ margin: 0 }}>Cook Mode</h3>
-          <div className="gc-muted">{recipe.name}</div>
+      <h3>Cost Analysis</h3>
+      <div className="gc-panel__grid">
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Total Cost</div>
+          <div className="gc-panel__value">${totalCost.toFixed(2)}</div>
         </div>
-        <div className="gc-muted">{doneCount}/{steps.length} done</div>
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Cost / Portion</div>
+          <div className="gc-panel__value">${costPerPortion.toFixed(2)}</div>
+        </div>
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Portions</div>
+          <div className="gc-panel__value">{portions}</div>
+        </div>
       </div>
 
-      <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
-        {steps.map((s) => (
-          <label key={s.id} className="gc-card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
-            <input
-              type="checkbox"
-              checked={!!checked[s.id]}
-              onChange={(e) => setChecked((p) => ({ ...p, [s.id]: e.target.checked }))}
-            />
-            <span style={{ textDecoration: checked[s.id] ? 'line-through' : 'none' }}>{s.text}</span>
-          </label>
-        ))}
-        {!steps.length ? <div className="gc-muted">No ingredients yet.</div> : null}
-      </div>
-
-      <div className="gc-row">
-        <Button variant="secondary" onClick={() => setChecked({})}>
-          Reset
-        </Button>
+      <div className="gc-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Ingredient</th>
+              <th className="right">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, idx) => (
+              <tr key={idx}>
+                <td>{r.name}</td>
+                <td className="right">${r.cost.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )

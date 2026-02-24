@@ -1,9 +1,15 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { NavLink, useSearchParams } from 'react-router-dom'
+// src/pages/RecipeEditor.tsx
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { NavLink, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
-import { loadCookSession, saveCookSession, clearCookSession } from '../lib/cookSession'
+import { getIngredientsCached } from '../lib/ingredientsCache'
+import { CostTimeline } from '../components/CostTimeline'
+import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
+import { useKitchen } from '../lib/kitchen'
+
+type LineType = 'ingredient' | 'subrecipe' | 'group'
 
 type Recipe = {
   id: string
@@ -11,500 +17,1868 @@ type Recipe = {
   name: string
   category: string | null
   portions: number
-  photo_url: string | null
-  description: string | null
-  method_steps: string[] | null
+  yield_qty: number | null
+  yield_unit: string | null
+  is_subrecipe: boolean
+  is_archived: boolean
+  photo_url?: string | null
+  description?: string | null
+  method?: string | null
+  method_steps?: string[] | null
   method_step_photos?: string[] | null
-  calories: number | null
-  protein_g: number | null
-  carbs_g: number | null
-  fat_g: number | null
-  currency?: string | null
+  calories?: number | null
+  protein_g?: number | null
+  carbs_g?: number | null
+  fat_g?: number | null
   selling_price?: number | null
-}
-
-type LineType = 'ingredient' | 'subrecipe' | 'group'
-type Line = {
-  id: string
-  recipe_id: string
-  ingredient_id: string | null
-  sub_recipe_id: string | null
-  qty: number
-  unit: string
-  note: string | null
-  sort_order: number
-  line_type: LineType
-  group_title: string | null
+  currency?: string | null
+  target_food_cost_pct?: number | null
 }
 
 type Ingredient = {
   id: string
-  name: string | null
-  pack_unit: string | null
+  name?: string | null
+  pack_unit?: string | null
+  net_unit_cost?: number | null
+  is_active?: boolean | null
+}
+
+type Line = {
+  id: string
+  kitchen_id: string | null
+  recipe_id: string
+  ingredient_id: string | null
+  sub_recipe_id: string | null
+  position: number
+  qty: number // NET qty
+  unit: string
+  yield_percent: number
+  notes: string | null
+  gross_qty_override: number | null // manual gross
+  line_type: LineType
+  group_title: string | null
 }
 
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
-
+function clamp(n: number, a: number, b: number) {
+  return Math.min(b, Math.max(a, n))
+}
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
-
-function normalizeSteps(steps: string[] | null | undefined) {
-  return (steps ?? []).map((s) => (s ?? '').trim()).filter(Boolean)
+function fmtMoney(n: number, currency: string) {
+  const v = Number.isFinite(n) ? n : 0
+  const cur = (currency || 'USD').toUpperCase()
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
+  } catch {
+    return `${v.toFixed(2)} ${cur}`
+  }
+}
+function fmtQty(n: number) {
+  const v = Number.isFinite(n) ? n : 0
+  if (Math.abs(v) >= 100) return v.toFixed(1)
+  if (Math.abs(v) >= 10) return v.toFixed(2)
+  return v.toFixed(3)
 }
 
-function alignPhotos(cleanSteps: string[], photos: string[] | null | undefined) {
-  const p = (photos ?? []).map((x) => (x ?? '').trim())
-  return cleanSteps.map((_, i) => p[i] ?? '')
+function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
+  const u = safeUnit(lineUnit)
+  const p = safeUnit(packUnit)
+  let conv = qty
+  if (u === 'g' && p === 'kg') conv = qty / 1000
+  else if (u === 'kg' && p === 'g') conv = qty * 1000
+  else if (u === 'ml' && p === 'l') conv = qty / 1000
+  else if (u === 'l' && p === 'ml') conv = qty * 1000
+  return conv
 }
 
-function fmtQty(q: number) {
-  const v = Number.isFinite(q) ? q : 0
-  if (Math.abs(v) >= 100) return String(Math.round(v))
-  if (Math.abs(v) >= 10) return String(Math.round(v * 10) / 10)
-  return String(Math.round(v * 100) / 100)
+function uid() {
+  // client-side ID for optimistic rows (will be replaced by DB id on insert)
+  return `tmp_${Math.random().toString(16).slice(2)}_${Date.now()}`
 }
 
-type PrepItem = {
-  label: string
-  qty: number
-  unit: string
-  note: string
-}
+const PHOTO_BUCKET = 'recipe-photos'
 
-export default function RecipeCookMode() {
+export default function RecipeEditor() {
+  const { isKitchen, isMgmt } = useMode()
+  const showCost = isMgmt
+  const tableColSpan = 8 + (showCost ? 1 : 0)
+const k = useKitchen()
+
+  const location = useLocation()
+  const navigate = useNavigate()
   const [sp] = useSearchParams()
   const id = sp.get('id')
 
-  const { isKitchen, isMgmt } = useMode()
-
-  const [loading, setLoading] = useState(true)
-  const [recipe, setRecipe] = useState<Recipe | null>(null)
-
-  const [lines, setLines] = useState<Line[]>([])
-  const [ings, setIngs] = useState<Ingredient[]>([])
-
-  const [toastMsg, setToastMsg] = useState('')
-  const [toastOpen, setToastOpen] = useState(false)
-  const showToast = (msg: string) => {
-    setToastMsg(msg)
-    setToastOpen(true)
-  }
-
-  const [servings, setServings] = useState(1)
-  const [checked, setChecked] = useState<Record<number, boolean>>({})
-  const [timers, setTimers] = useState<Record<number, number>>({})
-  const [prepOpen, setPrepOpen] = useState(false)
-
-  const tickRef = useRef<number | null>(null)
-
-  const load = async (recipeId: string) => {
-    setLoading(true)
-    try {
-      const selectWithPhotos =
-        'id,kitchen_id,name,category,portions,photo_url,description,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,currency,selling_price'
-      const selectNoPhotos =
-        'id,kitchen_id,name,category,portions,photo_url,description,method_steps,calories,protein_g,carbs_g,fat_g,currency,selling_price'
-
-      let r: any = null
-      let rErr: any = null
-
-      const res = await supabase.from('recipes').select(selectWithPhotos).eq('id', recipeId).single()
-      r = res.data
-      rErr = res.error
-
-      if (rErr && String(rErr.message || '').toLowerCase().includes('method_step_photos')) {
-        const res2 = await supabase.from('recipes').select(selectNoPhotos).eq('id', recipeId).single()
-        r = res2.data
-        rErr = res2.error
-      }
-      if (rErr) throw rErr
-
-      const rr = r as Recipe
-      setRecipe(rr)
-
-      // load lines
-      const { data: l, error: lErr } = await supabase
-        .from('recipe_lines')
-        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,note,sort_order,line_type,group_title')
-        .eq('recipe_id', recipeId)
-        .order('sort_order', { ascending: true })
-        .order('id', { ascending: true })
-      if (lErr) throw lErr
-      setLines((l ?? []) as Line[])
-
-      // load ingredients (for labels)
-      const { data: i, error: iErr } = await supabase.from('ingredients').select('id,name,pack_unit').order('name', { ascending: true })
-      if (iErr) throw iErr
-      setIngs((i ?? []) as Ingredient[])
-
-      // restore session
-      const sess = loadCookSession(recipeId)
-      const base = Math.max(1, toNum(rr.portions, 1))
-      setServings(sess?.servings && sess.servings > 0 ? sess.servings : base)
-      setChecked(sess?.checkedSteps ?? {})
-      setTimers(sess?.timers ?? {})
-    } catch (e: any) {
-      showToast(e?.message ?? 'Load failed')
-    } finally {
-      setLoading(false)
-    }
-  }
-
+  const mounted = useRef(true)
   useEffect(() => {
-    if (!id) {
-      setLoading(false)
-      showToast('Missing recipe id (?id=...)')
-      return
-    }
-    load(id).catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [id])
-
-  const basePortions = Math.max(1, toNum(recipe?.portions, 1))
-  const scale = servings / basePortions
-
-  const ingById = useMemo(() => {
-    const m = new Map<string, Ingredient>()
-    for (const i of ings) m.set(i.id, i)
-    return m
-  }, [ings])
-
-  const cleanSteps = useMemo(() => normalizeSteps(recipe?.method_steps), [recipe?.method_steps])
-  const stepPhotos = useMemo(() => alignPhotos(cleanSteps, recipe?.method_step_photos), [cleanSteps, recipe?.method_step_photos])
-
-  // persist session (servings/checked/timers)
-  useEffect(() => {
-    if (!id) return
-    saveCookSession(id, { servings, checkedSteps: checked, timers })
-  }, [id, servings, checked, timers])
-
-  // timer tick
-  useEffect(() => {
-    if (tickRef.current) window.clearInterval(tickRef.current)
-    tickRef.current = window.setInterval(() => {
-      setTimers((prev) => {
-        let changed = false
-        const next: Record<number, number> = { ...prev }
-        for (const k of Object.keys(next)) {
-          const idx = Number(k)
-          const v = toNum(next[idx], 0)
-          if (v > 0) {
-            next[idx] = v - 1
-            changed = true
-          }
-          if (next[idx] <= 0) next[idx] = 0
-        }
-        return changed ? next : prev
-      })
-    }, 1000)
+    mounted.current = true
     return () => {
-      if (tickRef.current) window.clearInterval(tickRef.current)
-      tickRef.current = null
+      mounted.current = false
     }
   }, [])
 
-  const toggleStep = (idx: number) => setChecked((p) => ({ ...p, [idx]: !p[idx] }))
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
-  const setTimerPreset = (idx: number, minutes: number) => {
-    setTimers((p) => ({ ...p, [idx]: Math.max(0, Math.floor(minutes * 60)) }))
-  }
+  const [recipe, setRecipe] = useState<Recipe | null>(null)
+  const [lines, setLines] = useState<Line[]>([])
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
-  const print = () => window.print()
+  // Toast
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastOpen, setToastOpen] = useState(false)
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg)
+    setToastOpen(true)
+  }, [])
 
-  const resetSession = () => {
+  // Meta fields
+  const [name, setName] = useState('')
+  const [category, setCategory] = useState('')
+  const [portions, setPortions] = useState('1')
+  const [description, setDescription] = useState('')
+
+  // Steps
+  const [steps, setSteps] = useState<string[]>([])
+  const [newStep, setNewStep] = useState('')
+  const [methodLegacy, setMethodLegacy] = useState('')
+  const [stepPhotos, setStepPhotos] = useState<string[]>([])
+
+  // Nutrition
+  const [calories, setCalories] = useState('')
+  const [protein, setProtein] = useState('')
+  const [carbs, setCarbs] = useState('')
+  const [fat, setFat] = useState('')
+
+  // Pricing
+  const [currency, setCurrency] = useState('USD')
+  const [sellingPrice, setSellingPrice] = useState('')
+  const [targetFC, setTargetFC] = useState('30')
+
+  // Subrecipe settings
+  const [isSubRecipe, setIsSubRecipe] = useState(false)
+  const [yieldQty, setYieldQty] = useState('')
+  const [yieldUnit, setYieldUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
+
+  // Uploading
+  const [uploading, setUploading] = useState(false)
+  const [stepUploading, setStepUploading] = useState(false)
+
+  // UI
+  const [density, setDensity] = useState<'comfort' | 'compact'>('comfort')
+  const [tab, setTab] = useState<'ingredients'|'cost'|'nutrition'|'notes'|'print'|'cook'>('ingredients')
+
+  // Inline add
+  const [addType, setAddType] = useState<LineType>('ingredient')
+  const [ingSearch, setIngSearch] = useState('')
+
+
+  // Derived (must be declared BEFORE any early returns to keep hooks order stable)
+  const cur = (currency || 'USD').toUpperCase()
+
+  const visibleLines = useMemo(
+    () => [...lines].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)),
+    [lines]
+  )
+
+  const filteredIngredients = useMemo(() => {
+    const s = ingSearch.trim().toLowerCase()
+    let list = ingredients
+    if (s) list = list.filter((i) => (i.name || '').toLowerCase().includes(s))
+    return list.slice(0, 60)
+  }, [ingredients, ingSearch])
+
+  const subRecipeOptions = useMemo(() => {
+    const list = allRecipes.filter((r) => !!r.is_subrecipe && !r.is_archived)
+    return list.slice(0, 200)
+  }, [allRecipes])
+
+  const [addIngredientId, setAddIngredientId] = useState('')
+  const [addSubRecipeId, setAddSubRecipeId] = useState('')
+  const [addGroupTitle, setAddGroupTitle] = useState('')
+  const [addNetQty, setAddNetQty] = useState('1')
+  const [addUnit, setAddUnit] = useState('g')
+  const [addYield, setAddYield] = useState('100')
+  const [addGross, setAddGross] = useState('') // optional gross override
+
+  // Auto-calc yield for NEW line when both Net and Gross are provided
+  useEffect(() => {
+    const raw = (addGross || '').trim()
+    if (!raw) return
+    const gross = toNum(raw, NaN as any)
+    if (!Number.isFinite(gross) || gross <= 0) return
+    const net = Math.max(0, toNum(addNetQty, 0))
+    const y = clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100)
+    // Keep it stable for typing
+    setAddYield(String(Math.round(y * 100) / 100))
+  }, [addGross, addNetQty])
+
+  // Cost History
+  const [costPoints, setCostPoints] = useState(() => (id ? listCostPoints(id) : []))
+  useEffect(() => {
     if (!id) return
-    clearCookSession(id)
-    setChecked({})
-    setTimers({})
-    setPrepOpen(false)
-    // keep servings as-is
-    showToast('Cook session cleared ✅')
-  }
+    setCostPoints(listCostPoints(id))
+  }, [id])
 
-  const prepList = useMemo(() => {
-    // Only ingredient lines (no subrecipe expansion here to keep it fast + no logic change)
-    const items: PrepItem[] = []
+  // ---------- Refs to avoid freeze ----------
+  const recipeRef = useRef<Recipe | null>(null)
+  const linesRef = useRef<Line[]>([])
+  useEffect(() => {
+    recipeRef.current = recipe
+  }, [recipe])
+  useEffect(() => {
+    linesRef.current = lines
+  }, [lines])
+
+  // ---------- Load ----------
+  useEffect(() => {
+    if (!id) {
+      setErr('Missing recipe id.')
+      setLoading(false)
+      return
+    }
+
+    let alive = true
+    async function load() {
+      if (!alive) return
+      setLoading(true)
+      setErr(null)
+
+      try {
+        const { data: r, error: rErr } = await supabase
+          .from('recipes')
+          .select(
+            'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+          )
+          .eq('id', id)
+          .single()
+        if (rErr) throw rErr
+
+        const recipeRow = r as Recipe
+        if (!alive) return
+
+        setRecipe(recipeRow)
+
+        setName(recipeRow.name || '')
+        setCategory(recipeRow.category || '')
+        setPortions(String(recipeRow.portions ?? 1))
+        setDescription(recipeRow.description || '')
+
+        setSteps((recipeRow.method_steps || []).filter((x) => typeof x === 'string'))
+        setStepPhotos((recipeRow.method_step_photos || []).filter((x) => typeof x === 'string'))
+        setMethodLegacy(recipeRow.method || '')
+
+        setCalories(recipeRow.calories != null ? String(recipeRow.calories) : '')
+        setProtein(recipeRow.protein_g != null ? String(recipeRow.protein_g) : '')
+        setCarbs(recipeRow.carbs_g != null ? String(recipeRow.carbs_g) : '')
+        setFat(recipeRow.fat_g != null ? String(recipeRow.fat_g) : '')
+
+        setCurrency((recipeRow.currency || 'USD').toUpperCase())
+        setSellingPrice(recipeRow.selling_price != null ? String(recipeRow.selling_price) : '')
+        setTargetFC(recipeRow.target_food_cost_pct != null ? String(recipeRow.target_food_cost_pct) : '30')
+
+        setIsSubRecipe(!!recipeRow.is_subrecipe)
+        setYieldQty(recipeRow.yield_qty != null ? String(recipeRow.yield_qty) : '')
+        setYieldUnit((safeUnit(recipeRow.yield_unit || 'g') as any) || 'g')
+
+        const { data: l, error: lErr } = await supabase
+          .from('recipe_lines')
+          .select(
+            'id,kitchen_id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,notes,gross_qty_override,line_type,group_title'
+          )
+          .eq('recipe_id', id)
+          .order('position', { ascending: true })
+        if (lErr) throw lErr
+        if (!alive) return
+        setLines((l || []) as Line[])
+
+        const ing = await getIngredientsCached()
+        if (!alive) return
+        setIngredients((ing || []) as Ingredient[])
+
+        // list recipes for subrecipe picker
+        const { data: rs, error: rsErr } = await supabase
+          .from('recipes')
+          .select('id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,currency')
+          .order('name', { ascending: true })
+        if (rsErr) throw rsErr
+        if (!alive) return
+        setAllRecipes((rs || []) as Recipe[])
+      } catch (e: any) {
+        if (!alive) return
+        setErr(e?.message || 'Failed to load recipe.')
+      } finally {
+        if (!alive) return
+        setLoading(false)
+      }
+    }
+
+    load().catch(() => {})
+    return () => {
+      alive = false
+    }
+  }, [id])
+
+  // ---------- Derived maps ----------
+  const ingById = useMemo(() => {
+    const m = new Map<string, Ingredient>()
+    for (const i of ingredients) m.set(i.id, i)
+    return m
+  }, [ingredients])
+
+  const recipeById = useMemo(() => {
+    const m = new Map<string, Recipe>()
+    for (const r of allRecipes) m.set(r.id, r)
+    return m
+  }, [allRecipes])
+
+  // ---------- Smart math per line ----------
+  const lineComputed = useMemo(() => {
+    const res = new Map<
+      string,
+      { net: number; gross: number; yieldPct: number; unitCost: number; lineCost: number; warnings: string[] }
+    >()
+
+    const cur = (currency || 'USD').toUpperCase()
+    void cur
+
     for (const l of lines) {
-      if (l.line_type !== 'ingredient') continue
-      if (!l.ingredient_id) continue
-      const ing = ingById.get(l.ingredient_id)
-      const label = ing?.name ?? 'Ingredient'
-      const qtyScaled = Math.max(0, toNum(l.qty, 0) * scale)
-      items.push({
-        label,
-        qty: qtyScaled,
-        unit: safeUnit(l.unit),
-        note: (l.note ?? '').trim(),
+      const warnings: string[] = []
+
+      const net = Math.max(0, toNum(l.qty, 0))
+      const yieldPct = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
+
+      // gross logic: if override exists use it else compute from yield
+      const gross = l.gross_qty_override != null && l.gross_qty_override > 0 ? Math.max(0, l.gross_qty_override) : net / (yieldPct / 100)
+
+      let unitCost = 0
+      let lineCost = 0
+
+      if (l.line_type === 'ingredient') {
+        const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+        unitCost = toNum(ing?.net_unit_cost, 0)
+        if (!ing) warnings.push('Missing ingredient')
+        if (!Number.isFinite(unitCost) || unitCost <= 0) warnings.push('Ingredient without price')
+
+        const packUnit = ing?.pack_unit || l.unit
+        const qtyInPack = convertQtyToPackUnit(gross, l.unit, packUnit)
+        lineCost = qtyInPack * unitCost
+      } else if (l.line_type === 'subrecipe') {
+        // keep safe: do not recursively compute (can be heavy)
+        // later can compute from snapshots/view
+        warnings.push('Subrecipe cost not expanded')
+      } else {
+        // group title line: no cost
+      }
+
+      res.set(l.id, {
+        net,
+        gross,
+        yieldPct,
+        unitCost,
+        lineCost: Number.isFinite(lineCost) ? lineCost : 0,
+        warnings,
       })
     }
 
-    // group by label+unit+note
-    const m = new Map<string, PrepItem>()
-    for (const it of items) {
-      const key = `${it.label}__${it.unit}__${it.note}`
-      const cur = m.get(key)
-      if (!cur) m.set(key, { ...it })
-      else m.set(key, { ...cur, qty: cur.qty + it.qty })
+    return res
+  }, [lines, ingById, currency])
+
+  const totals = useMemo(() => {
+    let totalCost = 0
+    let warnings: string[] = []
+
+    for (const l of lines) {
+      if (l.line_type === 'group') continue
+      const c = lineComputed.get(l.id)
+      if (!c) continue
+      totalCost += c.lineCost
+      if (c.warnings.length) warnings = warnings.concat(c.warnings)
     }
 
-    return Array.from(m.values()).sort((a, b) => a.label.localeCompare(b.label))
-  }, [lines, ingById, scale])
+    const p = Math.max(1, toNum(portions, 1))
+    const cpp = p > 0 ? totalCost / p : 0
 
-  if (loading) return <div className="gc-card p-6">Loading cook mode…</div>
+    const sell = Math.max(0, toNum(sellingPrice, 0))
+    const fcPct = sell > 0 ? (cpp / sell) * 100 : null
+    const margin = sell - cpp
+    const marginPct = sell > 0 ? (margin / sell) * 100 : null
 
-  if (!recipe) {
+    const uniqWarnings = Array.from(new Set(warnings)).slice(0, 4)
+
+    return { totalCost, cpp, fcPct, margin, marginPct, warnings: uniqWarnings }
+  }, [lines, lineComputed, portions, sellingPrice])
+
+  // ---------- Debounced meta save ----------
+  const [savingMeta, setSavingMeta] = useState(false)
+  const metaSaveTimer = useRef<number | null>(null)
+
+  const buildMetaPatch = useCallback(() => {
+    const patch: any = {
+      name: (name || '').trim() || 'Untitled',
+      category: (category || '').trim() || null,
+      portions: Math.max(1, Math.floor(toNum(portions, 1))),
+      description: description || '',
+      method_steps: steps,
+      method_step_photos: stepPhotos,
+      method: methodLegacy || '',
+      calories: calories === '' ? null : toNum(calories, null as any),
+      protein_g: protein === '' ? null : toNum(protein, null as any),
+      carbs_g: carbs === '' ? null : toNum(carbs, null as any),
+      fat_g: fat === '' ? null : toNum(fat, null as any),
+      currency: (currency || 'USD').toUpperCase(),
+      selling_price: sellingPrice === '' ? null : toNum(sellingPrice, null as any),
+      target_food_cost_pct: targetFC === '' ? null : toNum(targetFC, null as any),
+      is_subrecipe: !!isSubRecipe,
+      yield_qty: yieldQty === '' ? null : toNum(yieldQty, null as any),
+      yield_unit: safeUnit(yieldUnit),
+    }
+    return patch
+  }, [
+    name,
+    category,
+    portions,
+    description,
+    steps,
+    stepPhotos,
+    methodLegacy,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+  ])
+
+  const saveMetaNow = useCallback(async () => {
+    if (!id) return
+    setErr(null)
+    setSavingMeta(true)
+    try {
+      const patch = buildMetaPatch()
+      const { error } = await supabase.from('recipes').update(patch).eq('id', id)
+      if (error) throw error
+      showToast('Saved.')
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to save.')
+    } finally {
+      setSavingMeta(false)
+    }
+  }, [id, buildMetaPatch, showToast])
+
+  const scheduleMetaSave = useCallback(() => {
+    if (!id) return
+    if (metaSaveTimer.current) window.clearTimeout(metaSaveTimer.current)
+    metaSaveTimer.current = window.setTimeout(() => {
+      saveMetaNow().catch(() => {})
+    }, 650)
+  }, [id, saveMetaNow])
+
+  // auto schedule save on most meta changes
+  useEffect(() => {
+    if (!recipe) return
+    scheduleMetaSave()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    name,
+    category,
+    portions,
+    description,
+    steps,
+    stepPhotos,
+    methodLegacy,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+  ])
+
+  // ---------- Lines CRUD ----------
+  const normalizePositions = useCallback((arr: Line[]) => {
+    const sorted = [...arr].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+    return sorted.map((l, idx) => ({ ...l, position: idx + 1 }))
+  }, [])
+
+  const setLinesSafe = useCallback(
+    (next: Line[]) => {
+      setLines(normalizePositions(next))
+    },
+    [normalizePositions]
+  )
+
+  const updateLine = useCallback(
+    (lineId: string, patch: Partial<Line>) => {
+      setLines((prev) => prev.map((l) => (l.id === lineId ? { ...l, ...patch } : l)))
+    },
+    []
+  )
+
+  const deleteLineLocal = useCallback(
+    async (lineId: string) => {
+      const ok = window.confirm('Delete this line?')
+      if (!ok) return
+      setErr(null)
+      try {
+        // optimistic
+        setLinesSafe(linesRef.current.filter((l) => l.id !== lineId))
+        // if it is a temp line, stop
+        if (lineId.startsWith('tmp_')) return
+
+        const { error } = await supabase.from('recipe_lines').delete().eq('id', lineId)
+        if (error) throw error
+        showToast('Line deleted.')
+      } catch (e: any) {
+        setErr(e?.message || 'Failed to delete line.')
+      }
+    },
+    [setLinesSafe, showToast]
+  )
+
+  const saveLinesNow = useCallback(async () => {
+    if (!id) return
+    setErr(null)
+
+    // Save order/edits in batch.
+    // Strategy: upsert all lines except group lines without IDs? (group has ID too)
+    // For tmp_ lines: insert then reload.
+    try {
+      const curr = normalizePositions(linesRef.current)
+
+      // separate new (tmp) vs existing
+      const newLines = curr.filter((l) => l.id.startsWith('tmp_'))
+      const oldLines = curr.filter((l) => !l.id.startsWith('tmp_'))
+
+      if (oldLines.length) {
+        const payload = oldLines.map((l) => ({
+          id: l.id,
+          recipe_id: l.recipe_id,
+          kitchen_id: l.kitchen_id,
+          ingredient_id: l.ingredient_id,
+          sub_recipe_id: l.sub_recipe_id,
+          position: l.position,
+          qty: toNum(l.qty, 0),
+          unit: l.unit || 'g',
+          yield_percent: clamp(toNum(l.yield_percent, 100), 0.0001, 100),
+          notes: l.notes || null,
+          gross_qty_override: l.gross_qty_override != null && l.gross_qty_override > 0 ? l.gross_qty_override : null,
+          line_type: l.line_type,
+          group_title: l.group_title || null,
+        }))
+
+        const { error } = await supabase.from('recipe_lines').upsert(payload as any, { onConflict: 'id' })
+        if (error) throw error
+      }
+
+      if (newLines.length) {
+        const payload = newLines.map((l) => ({
+          recipe_id: l.recipe_id,
+          kitchen_id: l.kitchen_id,
+          ingredient_id: l.ingredient_id,
+          sub_recipe_id: l.sub_recipe_id,
+          position: l.position,
+          qty: toNum(l.qty, 0),
+          unit: l.unit || 'g',
+          yield_percent: clamp(toNum(l.yield_percent, 100), 0.0001, 100),
+          notes: l.notes || null,
+          gross_qty_override: l.gross_qty_override != null && l.gross_qty_override > 0 ? l.gross_qty_override : null,
+          line_type: l.line_type,
+          group_title: l.group_title || null,
+        }))
+
+        const { error } = await supabase.from('recipe_lines').insert(payload as any)
+        if (error) throw error
+      }
+
+      // reload from DB to get real IDs and consistent order
+      const { data: l, error: lErr } = await supabase
+        .from('recipe_lines')
+        .select(
+          'id,kitchen_id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,notes,gross_qty_override,line_type,group_title'
+        )
+        .eq('recipe_id', id)
+        .order('position', { ascending: true })
+      if (lErr) throw lErr
+      setLines((l || []) as Line[])
+      showToast('Lines saved.')
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to save lines.')
+    }
+  }, [id, normalizePositions, showToast])
+
+  const addLineLocal = useCallback(async () => {
+    if (!id) return
+    const rid = id
+
+    const basePos = (linesRef.current?.length || 0) + 1
+    const yRaw = clamp(toNum(addYield, 100), 0.0001, 100)
+    const net = Math.max(0, toNum(addNetQty, 0))
+    const gross = addGross.trim() === '' ? null : Math.max(0, toNum(addGross, 0))
+
+    // If user provided BOTH net and gross, compute yield automatically (best UX):
+    // yield% = (net / gross) * 100. We still store net in qty and keep gross as override.
+    const y = gross != null && gross > 0 && net >= 0 ? clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100) : yRaw
+
+    if (addType === 'ingredient') {
+      if (!addIngredientId) {
+        setErr('Pick an ingredient first.')
+        return
+      }
+      const newL: Line = {
+        id: uid(),
+        kitchen_id: recipeRef.current?.kitchen_id ?? k.kitchenId ?? null,
+        recipe_id: rid,
+        ingredient_id: addIngredientId,
+        sub_recipe_id: null,
+        position: basePos,
+        qty: net,
+        unit: addUnit || 'g',
+        yield_percent: y,
+        notes: null,
+        gross_qty_override: gross,
+        line_type: 'ingredient',
+        group_title: null,
+      }
+      setErr(null)
+      setLinesSafe([...linesRef.current, newL])
+      await saveLinesNow()
+      showToast('Line added & saved.')
+      return
+    }
+
+    if (addType === 'subrecipe') {
+      if (!addSubRecipeId) {
+        setErr('Pick a subrecipe first.')
+        return
+      }
+      const newL: Line = {
+        id: uid(),
+        kitchen_id: recipeRef.current?.kitchen_id ?? k.kitchenId ?? null,
+        recipe_id: rid,
+        ingredient_id: null,
+        sub_recipe_id: addSubRecipeId,
+        position: basePos,
+        qty: net,
+        unit: addUnit || 'g',
+        yield_percent: y,
+        notes: null,
+        gross_qty_override: gross,
+        line_type: 'subrecipe',
+        group_title: null,
+      }
+      setErr(null)
+      setLinesSafe([...linesRef.current, newL])
+      showToast('Subrecipe line added (not saved yet).')
+      return
+    }
+
+    // group
+    const title = (addGroupTitle || '').trim()
+    if (!title) {
+      setErr('Enter group title.')
+      return
+    }
+    const newL: Line = {
+      id: uid(),
+      kitchen_id: recipeRef.current?.kitchen_id ?? k.kitchenId ?? null,
+      recipe_id: rid,
+      ingredient_id: null,
+      sub_recipe_id: null,
+      position: basePos,
+      qty: 0,
+      unit: 'g',
+      yield_percent: 100,
+      notes: null,
+      gross_qty_override: null,
+      line_type: 'group',
+      group_title: title,
+    }
+    setErr(null)
+    setLinesSafe([...linesRef.current, newL])
+    showToast('Group added (not saved yet).')
+  }, [
+    id,
+    addType,
+    addIngredientId,
+    addSubRecipeId,
+    addGroupTitle,
+    addNetQty,
+    addUnit,
+    addYield,
+    addGross,
+    setLinesSafe,
+    showToast,
+    k.kitchenId,
+  ])
+
+  // ---------- Smart syncing handlers ----------
+  const onNetChange = useCallback(
+    (lineId: string, value: string) => {
+      const net = Math.max(0, toNum(value, 0))
+      const line = linesRef.current.find((x) => x.id === lineId)
+      if (!line) return
+
+      // if gross override exists -> yield becomes net/gross*100
+      if (line.gross_qty_override != null && line.gross_qty_override > 0) {
+        const gross = Math.max(0.0000001, line.gross_qty_override)
+        const y = clamp((net / gross) * 100, 0.0001, 100)
+        updateLine(lineId, { qty: net, yield_percent: y })
+      } else {
+        updateLine(lineId, { qty: net })
+      }
+    },
+    [updateLine]
+  )
+
+  const onGrossChange = useCallback(
+    (lineId: string, value: string) => {
+      const raw = value.trim()
+      const line = linesRef.current.find((x) => x.id === lineId)
+      if (!line) return
+
+      if (raw === '') {
+        // remove override: gross becomes computed from yield
+        updateLine(lineId, { gross_qty_override: null })
+        return
+      }
+
+      const gross = Math.max(0, toNum(raw, 0))
+      if (gross <= 0) {
+        updateLine(lineId, { gross_qty_override: null })
+        return
+      }
+
+      const net = Math.max(0, toNum(line.qty, 0))
+      const y = clamp((net / gross) * 100, 0.0001, 100)
+      updateLine(lineId, { gross_qty_override: gross, yield_percent: y })
+    },
+    [updateLine]
+  )
+
+  const onYieldChange = useCallback(
+    (lineId: string, value: string) => {
+      const y = clamp(toNum(value, 100), 0.0001, 100)
+      // rule: if user edits yield, we clear gross override to avoid conflicts
+      updateLine(lineId, { yield_percent: y, gross_qty_override: null })
+    },
+    [updateLine]
+  )
+
+  // ---------- Reorder ----------
+  const moveLine = useCallback(
+    (lineId: string, dir: -1 | 1) => {
+      const arr = [...linesRef.current].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      const idx = arr.findIndex((x) => x.id === lineId)
+      if (idx < 0) return
+      const j = idx + dir
+      if (j < 0 || j >= arr.length) return
+      const tmp = arr[idx]
+      arr[idx] = arr[j]
+      arr[j] = tmp
+      setLinesSafe(arr)
+    },
+    [setLinesSafe]
+  )
+
+  // ---------- Photo upload ----------
+  const uploadRecipePhoto = useCallback(
+    async (file: File) => {
+      if (!id) return
+      setErr(null)
+      setUploading(true)
+      try {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        const path = `${id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
+
+        const { error: upErr } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
+          cacheControl: '3600',
+          upsert: true,
+        })
+        if (upErr) throw upErr
+
+        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+        const url = pub?.publicUrl || null
+
+        const { error: rErr } = await supabase.from('recipes').update({ photo_url: url }).eq('id', id)
+        if (rErr) throw rErr
+
+        setRecipe((prev) => (prev ? { ...prev, photo_url: url } : prev))
+        showToast('Photo updated.')
+      } catch (e: any) {
+        setErr(e?.message || 'Failed to upload photo.')
+      } finally {
+        setUploading(false)
+      }
+    },
+    [id, showToast]
+  )
+
+  const uploadStepPhoto = useCallback(
+    async (file: File, stepIndex: number) => {
+      if (!id) return
+      setErr(null)
+      setStepUploading(true)
+      try {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        const path = `${id}/steps/${stepIndex}_${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
+
+        const { error: upErr } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
+          cacheControl: '3600',
+          upsert: true,
+        })
+        if (upErr) throw upErr
+
+        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+        const url = pub?.publicUrl || ''
+
+        setStepPhotos((prev) => {
+          const next = [...prev]
+          next[stepIndex] = url
+          return next
+        })
+        showToast('Step photo updated.')
+      } catch (e: any) {
+        setErr(e?.message || 'Failed to upload step photo.')
+      } finally {
+        setStepUploading(false)
+      }
+    },
+    [id, showToast]
+  )
+
+  // ---------- Steps ----------
+  const addStep = useCallback(() => {
+    const s = (newStep || '').trim()
+    if (!s) return
+    setSteps((prev) => [...prev, s])
+    setStepPhotos((prev) => [...prev, ''])
+    setNewStep('')
+  }, [newStep])
+
+  const removeStep = useCallback((idx: number) => {
+    setSteps((prev) => prev.filter((_, i) => i !== idx))
+    setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
+  }, [])
+
+  const updateStep = useCallback((idx: number, value: string) => {
+    setSteps((prev) => prev.map((s, i) => (i === idx ? value : s)))
+  }, [])
+
+  // ---------- Cost point snapshot ----------
+  const addSnapshot = useCallback(() => {
+    if (!id) return
+    const p = Math.max(1, Math.floor(toNum(portions, 1)))
+    const cur = (currency || 'USD').toUpperCase()
+    const totalCost = totals.totalCost
+    const cpp = totals.cpp
+    addCostPoint(id, {
+      createdAt: Date.now(),
+      totalCost,
+      cpp,
+      portions: p,
+      currency: cur,
+    } as any)
+    setCostPoints(listCostPoints(id))
+    showToast('Cost snapshot added.')
+  }, [id, portions, currency, totals.totalCost, totals.cpp, showToast])
+
+  const clearSnapshots = useCallback(() => {
+    if (!id) return
+    const ok = window.confirm('Clear all cost snapshots for this recipe?')
+    if (!ok) return
+    clearCostPoints(id)
+    setCostPoints(listCostPoints(id))
+    showToast('Cost snapshots cleared.')
+  }, [id, showToast])
+
+  const removeSnapshot = useCallback(
+    (pid: string) => {
+      if (!id) return
+      deleteCostPoint(id, pid)
+      setCostPoints(listCostPoints(id))
+      showToast('Snapshot removed.')
+    },
+    [id, showToast]
+  )
+
+  // ---------- Print ----------
+  const printNow = useCallback(() => {
+    setTimeout(() => {
+      try {
+        window.print()
+      } catch {}
+    }, 50)
+  }, [])
+
+  // ---------- Guards ----------
+  if (loading) {
     return (
-      <div className="gc-card p-6 space-y-3">
-        <div className="gc-label">NOT FOUND</div>
-        <div className="text-sm text-neutral-600">Recipe not found.</div>
-        <NavLink className="gc-btn gc-btn-primary" to="/recipes">
-          Back to Recipes
-        </NavLink>
+      <div className="gc-card" style={{ padding: 16 }}>
+        <div className="gc-label">RECIPE EDITOR</div>
+        <div className="gc-hint" style={{ marginTop: 10 }}>
+          Loading…
+        </div>
       </div>
     )
   }
 
+  if (!id) {
+    return (
+      <div className="gc-card" style={{ padding: 16 }}>
+        <div className="gc-label">ERROR</div>
+        <div className="gc-hint" style={{ marginTop: 10 }}>
+          Missing recipe id.
+        </div>
+      </div>
+    )
+  }
+  const headerLeft = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
+        ← Back
+      </NavLink>
+      <div>
+        <div className="gc-label">RECIPE</div>
+        <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
+      </div>
+    </div>
+  )
+
+  const headerRight = (
+    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>{isKitchen ? 'Kitchen' : 'Mgmt'}</span>
+
+      <button className="gc-btn gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
+        Density: {density}
+      </button>
+    </div>
+  )
+
+  // Print-only CSS injected here (so print works even if global CSS changes)
+  const PrintCss = (
+    <style>{`
+      @media print{
+        .gc-shell, .gc-side, .gc-topbar-card, .gc-screen-only, nav, header, aside { display:none !important; }
+        .gc-print-only{ display:block !important; }
+        body{ background:#fff !important; }
+      }
+      .gc-print-only{ display:none; }
+      .gc-print-page{
+        width: 210mm;
+        min-height: 297mm;
+        padding: 16mm;
+        box-sizing: border-box;
+        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
+        color: #0f172a;
+      }
+      .gc-print-header{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap: 12mm;
+        border-bottom: 1px solid rgba(15,23,42,.18);
+        padding-bottom: 6mm;
+        margin-bottom: 6mm;
+      }
+      .gc-print-name{ font-size: 20pt; font-weight: 900; }
+      .gc-print-sub{ font-size: 10pt; color:#334155; margin-top: 2mm; }
+      .gc-print-photo{
+        width: 60mm;
+        height: 40mm;
+        border: 1px solid rgba(15,23,42,.18);
+        border-radius: 6mm;
+        overflow:hidden;
+        background:#f1f5f9;
+      }
+      .gc-print-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
+      .gc-print-section{ margin-top: 6mm; }
+      .gc-print-title{ font-size: 11pt; letter-spacing: .12em; font-weight: 900; color:#475569; text-transform: uppercase; }
+      .gc-print-text{ margin-top: 2mm; font-size: 10.5pt; line-height: 1.35; white-space: pre-wrap; }
+      .gc-print-table{
+        width:100%;
+        border-collapse: collapse;
+        margin-top: 3mm;
+        font-size: 10pt;
+      }
+      .gc-print-table th, .gc-print-table td{
+        border-bottom: 1px solid rgba(15,23,42,.14);
+        padding: 2.5mm 2mm;
+        text-align: left;
+        vertical-align: top;
+      }
+      .gc-print-table th{ font-size: 9.5pt; color:#475569; letter-spacing:.08em; text-transform:uppercase; }
+      .gc-print-kpis{ display:flex; gap: 4mm; flex-wrap: wrap; margin-top: 3mm; }
+      .gc-print-chip{
+        border: 1px solid rgba(15,23,42,.18);
+        border-radius: 4mm;
+        padding: 2mm 3mm;
+        font-size: 10pt;
+      }
+    `}</style>
+  )
+
   return (
-    <div className="gc-cook-wrap space-y-6">
-      <div className="gc-card p-6 gc-print-surface">
-        <div className="flex flex-wrap items-start justify-between gap-6">
-          <div className="flex items-start gap-4">
-            <div className="h-24 w-24 overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
-              {recipe.photo_url ? (
-                <img src={recipe.photo_url} alt={recipe.name} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-xs text-neutral-500">No Photo</div>
-              )}
+    <>
+      {PrintCss}
+
+      <div className="gc-card gc-screen-only">
+        <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          {headerLeft}
+          {headerRight}
+        </div>
+
+        <div className="gc-card-body">
+          {err && (
+            <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12 }}>
+              <div style={{ fontWeight: 900, color: 'var(--gc-danger)' }}>{err}</div>
+            </div>
+          )}
+
+
+
+          <div className="gc-tabs" style={{ marginTop: 14 }}>
+            <button type="button" className={tab==='ingredients' ? 'gc-tab gc-tab-active' : 'gc-tab'} onClick={() => setTab('ingredients')}>Ingredients</button>
+            <button type="button" className={tab==='cost' ? 'gc-tab gc-tab-active' : 'gc-tab'} onClick={() => setTab('cost')}>Cost</button>
+            <button type="button" className={tab==='nutrition' ? 'gc-tab gc-tab-active' : 'gc-tab'} onClick={() => setTab('nutrition')}>Nutrition</button>
+            <button type="button" className={tab==='notes' ? 'gc-tab gc-tab-active' : 'gc-tab'} onClick={() => setTab('notes')}>Notes</button>
+            <button type="button" className={tab==='print' ? 'gc-tab gc-tab-active' : 'gc-tab'} onClick={() => setTab('print')}>Print</button>
+            <button type="button" className={tab==='cook' ? 'gc-tab gc-tab-active' : 'gc-tab'} onClick={() => setTab('cook')}>Cook Mode</button>
+          </div>
+
+          {tab === 'ingredients' && (
+            <div style={{ marginTop: 14 }} className="gc-card-soft">
+              <div style={{ padding: 12 }}>
+                <div className="gc-label">RECIPE</div>
+                <div className="gc-field-row" style={{ marginTop: 10 }}>
+                  <div className="gc-col-9">
+                    <div className="gc-field">
+                      <div className="gc-label">NAME</div>
+                      <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
+                    </div>
+                  </div>
+                  <div className="gc-col-3">
+                    <div className="gc-field">
+                      <div className="gc-label">PORTIONS</div>
+                      <input className="gc-input" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="numeric" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+
+          {tab === 'print' && (
+            <div style={{ marginTop: 14 }} className="gc-card-soft">
+              <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <div className="gc-label">PRINT (A4)</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
+                </div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={printNow}>Print now</button>
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)} disabled={!id}>Open Print Page</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tab === 'cook' && (
+            <div style={{ marginTop: 14 }} className="gc-card-soft">
+              <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <div className="gc-label">COOK MODE</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>Zero distraction cooking workflow.</div>
+                </div>
+                <button className="gc-btn gc-btn-primary" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>Open Cook Mode</button>
+              </div>
+            </div>
+          )}
+
+
+          {/* KPI Row */}
+          {tab === 'cost' && (
+          <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+            <div className="gc-label">KPI</div>
+            <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                <div className="gc-label">TOTAL COST</div>
+                <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtMoney(totals.totalCost, cur)}</div>
+              </div>
+
+              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                <div className="gc-label">COST/PORTION</div>
+                <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtMoney(totals.cpp, cur)}</div>
+              </div>
+
+              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                <div className="gc-label">FC%</div>
+                <div style={{ fontWeight: 900, marginTop: 4 }}>{totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}</div>
+              </div>
+
+              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
+                <div className="gc-label">MARGIN</div>
+                <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtMoney(totals.margin, cur)}</div>
+              </div>
+
+              {totals.warnings?.length ? (
+                <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14, borderColor: 'rgba(245,158,11,.35)' }}>
+                  <div className="gc-label" style={{ color: 'var(--gc-warn)' }}>
+                    WARN
+                  </div>
+                  <div style={{ fontWeight: 900, marginTop: 4, color: 'var(--gc-warn)' }}>{totals.warnings[0]}</div>
+                </div>
+              ) : null}
+            </div>
+          </div>
+          )}
+
+
+          {tab === 'cost' && (
+            <div style={{ marginTop: 14 }} className="gc-card-soft">
+              <div style={{ padding: 12 }}>
+                <div className="gc-label">PRICING / PORTION</div>
+                <div className="gc-field-row" style={{ marginTop: 10 }}>
+                  <div className="gc-col-4"><div className="gc-field"><div className="gc-label">CURRENCY</div><input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} /></div></div>
+                  <div className="gc-col-4"><div className="gc-field"><div className="gc-label">SELLING PRICE</div><input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" /></div></div>
+                  <div className="gc-col-4"><div className="gc-field"><div className="gc-label">TARGET FC%</div><input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" /></div></div>
+                </div>
+                <div className="gc-hint" style={{ marginTop: 8 }}>FC% = cost/portion ÷ selling price.</div>
+              </div>
+            </div>
+          )}
+
+
+          {tab === 'nutrition' && (
+            <div style={{ marginTop: 14 }} className="gc-card-soft">
+              <div style={{ padding: 12 }}>
+                <div className="gc-label">NUTRITION / PORTION</div>
+                <div className="gc-field-row" style={{ marginTop: 10 }}>
+                  <div className="gc-col-3"><div className="gc-field"><div className="gc-label">CAL</div><input className="gc-input" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="decimal" /></div></div>
+                  <div className="gc-col-3"><div className="gc-field"><div className="gc-label">PROTEIN g</div><input className="gc-input" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" /></div></div>
+                  <div className="gc-col-3"><div className="gc-field"><div className="gc-label">CARBS g</div><input className="gc-input" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" /></div></div>
+                  <div className="gc-col-3"><div className="gc-field"><div className="gc-label">FAT g</div><input className="gc-input" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" /></div></div>
+                </div>
+                <div className="gc-hint" style={{ marginTop: 8 }}>Manual fields (no auto nutrition calc).</div>
+              </div>
+            </div>
+          )}
+
+          {/* Meta */}
+          {tab === 'notes' && (
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label">META</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Labels are always above inputs (premium SaaS). Auto-save is enabled.
+              </div>
             </div>
 
-            <div className="min-w-[min(640px,92vw)]">
-              <div className="gc-label">COOK MODE — PRO</div>
-              <div className="mt-2 text-2xl font-extrabold">{recipe.name}</div>
-
-              <div className="mt-2 text-sm text-neutral-600">
-                {recipe.description?.trim() ? recipe.description : 'Add a premium description in the editor…'}
-              </div>
-
-              <div className="mt-4 grid gap-3 md:grid-cols-3">
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Base Portions</div>
-                  <div className="gc-kpi-value">{basePortions}</div>
+            <div className="gc-card-body">
+              <div className="gc-field-row">
+                <div className="gc-col-6">
+                  <div className="gc-field">
+                    <div className="gc-label">NAME</div>
+                    <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
+                  </div>
                 </div>
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Servings Now</div>
-                  <div className="gc-kpi-value">{servings}</div>
-                </div>
-                <div className="gc-kpi">
-                  <div className="gc-kpi-label">Scale</div>
-                  <div className="gc-kpi-value">x {Math.round(scale * 100) / 100}</div>
-                </div>
-              </div>
 
-              <div className="mt-4">
-                <div className="gc-label">SERVINGS</div>
-                <div className="mt-2 flex items-center gap-3">
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setServings((v) => Math.max(1, v - 1))}>
-                    −
-                  </button>
-                  <input
-                    className="gc-input w-[120px] text-center"
-                    type="number"
-                    min={1}
-                    step="1"
-                    value={servings}
-                    onChange={(e) => setServings(Math.max(1, toNum(e.target.value, 1)))}
-                  />
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setServings((v) => v + 1)}>
-                    +
-                  </button>
-                  <input
-                    className="gc-range"
-                    type="range"
-                    min={1}
-                    max={Math.max(10, basePortions * 6)}
-                    value={servings}
-                    onChange={(e) => setServings(Math.max(1, toNum(e.target.value, 1)))}
-                  />
+                <div className="gc-col-3">
+                  <div className="gc-field">
+                    <div className="gc-label">CATEGORY</div>
+                    <input className="gc-input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Salad" />
+                  </div>
+                </div>
+
+                <div className="gc-col-3">
+                  <div className="gc-field">
+                    <div className="gc-label">PORTIONS</div>
+                    <input className="gc-input" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="numeric" />
+                  </div>
+                </div>
+
+                <div className="gc-col-12">
+                  <div className="gc-field">
+                    <div className="gc-label">DESCRIPTION</div>
+                    <textarea className="gc-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description…" />
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                {(recipe.calories != null || recipe.protein_g != null || recipe.carbs_g != null || recipe.fat_g != null) && (
+              {/* Photo */}
+              <div style={{ marginTop: 12 }} className="gc-card-soft">
+                <div style={{ padding: 12 }}>
+                  <div className="gc-label">PHOTO</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                    Upload uses Supabase bucket: <b>{PHOTO_BUCKET}</b>
+                  </div>
+
+                  <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
+                      {recipe?.photo_url ? (
+                        <img src={recipe.photo_url} alt="Recipe" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      ) : (
+                        <div style={{ padding: 12 }} className="gc-hint">
+                          No photo.
+                        </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (!f) return
+                          uploadRecipePhoto(f).catch(() => {})
+                          e.currentTarget.value = ''
+                        }}
+                      />
+                      <div className="gc-hint" style={{ marginTop: 8 }}>
+                        {uploading ? 'Uploading…' : 'PNG/JPG recommended.'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Subrecipe settings */}
+              <div style={{ marginTop: 12 }} className="gc-card-soft">
+                <div style={{ padding: 12 }}>
+                  <div className="gc-label">SUBRECIPE SETTINGS</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                    If enabled, this recipe can be used inside other recipes.
+                  </div>
+
+                  <div className="gc-field-row" style={{ marginTop: 10 }}>
+                    <div className="gc-col-4">
+                      <div className="gc-field">
+                        <div className="gc-label">IS SUBRECIPE</div>
+                        <select className="gc-select" value={isSubRecipe ? 'yes' : 'no'} onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}>
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="gc-col-4">
+                      <div className="gc-field">
+                        <div className="gc-label">YIELD QTY</div>
+                        <input className="gc-input" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} inputMode="decimal" />
+                      </div>
+                    </div>
+
+                    <div className="gc-col-4">
+                      <div className="gc-field">
+                        <div className="gc-label">YIELD UNIT</div>
+                        <select className="gc-select" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)}>
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="l">l</option>
+                          <option value="pcs">pcs</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Nutrition + Pricing */}
+              <div style={{ marginTop: 12 }} className="gc-field-row">
+                <div className="gc-col-6">
+                  <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+                    <div className="gc-label">NUTRITION / PORTION</div>
+                    <div className="gc-field-row" style={{ marginTop: 10 }}>
+                      <div className="gc-col-3">
+                        <div className="gc-field">
+                          <div className="gc-label">CAL</div>
+                          <input className="gc-input" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="decimal" />
+                        </div>
+                      </div>
+                      <div className="gc-col-3">
+                        <div className="gc-field">
+                          <div className="gc-label">PROTEIN g</div>
+                          <input className="gc-input" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" />
+                        </div>
+                      </div>
+                      <div className="gc-col-3">
+                        <div className="gc-field">
+                          <div className="gc-label">CARBS g</div>
+                          <input className="gc-input" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" />
+                        </div>
+                      </div>
+                      <div className="gc-col-3">
+                        <div className="gc-field">
+                          <div className="gc-label">FAT g</div>
+                          <input className="gc-input" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="gc-hint" style={{ marginTop: 8 }}>
+                      Manual fields (no auto nutrition calc).
+                    </div>
+                  </div>
+                </div>
+
+                <div className="gc-col-6">
+                  <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+                    <div className="gc-label">PRICING / PORTION</div>
+                    <div className="gc-field-row" style={{ marginTop: 10 }}>
+                      <div className="gc-col-4">
+                        <div className="gc-field">
+                          <div className="gc-label">CURRENCY</div>
+                          <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+                        </div>
+                      </div>
+                      <div className="gc-col-4">
+                        <div className="gc-field">
+                          <div className="gc-label">SELLING PRICE</div>
+                          <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
+                        </div>
+                      </div>
+                      <div className="gc-col-4">
+                        <div className="gc-field">
+                          <div className="gc-label">TARGET FC%</div>
+                          <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="gc-hint" style={{ marginTop: 8 }}>
+                      FC% = cost/portion ÷ selling price.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          )}
+
+          {/* Add line */}
+          {tab === 'ingredients' && (
+          <>
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label">ADD LINE</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Smart rule: edit <b>Gross</b> → yield auto. edit <b>Yield%</b> → clears gross override.
+              </div>
+            </div>
+
+            <div className="gc-card-body">
+              <div className="gc-field-row">
+                <div className="gc-col-3">
+                  <div className="gc-field">
+                    <div className="gc-label">TYPE</div>
+                    <select className="gc-select" value={addType} onChange={(e) => setAddType(e.target.value as LineType)}>
+                      <option value="ingredient">Ingredient</option>
+                      <option value="subrecipe">Subrecipe</option>
+                      <option value="group">Group title</option>
+                    </select>
+                  </div>
+                </div>
+
+                {addType === 'group' ? (
+                  <div className="gc-col-9">
+                    <div className="gc-field">
+                      <div className="gc-label">GROUP TITLE</div>
+                      <input className="gc-input" value={addGroupTitle} onChange={(e) => setAddGroupTitle(e.target.value)} placeholder="e.g. Sauce / Toppings / Marinade" />
+                    </div>
+                  </div>
+                ) : (
                   <>
-                    {recipe.calories != null ? <span className="gc-chip">{recipe.calories} kcal</span> : null}
-                    {recipe.protein_g != null ? <span className="gc-chip">P {toNum(recipe.protein_g, 0)}g</span> : null}
-                    {recipe.carbs_g != null ? <span className="gc-chip">C {toNum(recipe.carbs_g, 0)}g</span> : null}
-                    {recipe.fat_g != null ? <span className="gc-chip">F {toNum(recipe.fat_g, 0)}g</span> : null}
+                    <div className="gc-col-3">
+                      <div className="gc-field">
+                        <div className="gc-label">SEARCH</div>
+                        <input className="gc-input" value={ingSearch} onChange={(e) => setIngSearch(e.target.value)} placeholder="Type to filter…" />
+                      </div>
+                    </div>
+
+                    <div className="gc-col-6">
+                      <div className="gc-field">
+                        <div className="gc-label">{addType === 'ingredient' ? 'INGREDIENT' : 'SUBRECIPE'}</div>
+                        {addType === 'ingredient' ? (
+                          <select className="gc-select" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
+                            <option value="">— Select —</option>
+                            {filteredIngredients.map((i) => (
+                              <option key={i.id} value={i.id}>
+                                {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                              </option>
+                            ))}
+                          </select>
+                        ) : (
+                          <select className="gc-select" value={addSubRecipeId} onChange={(e) => setAddSubRecipeId(e.target.value)}>
+                            <option value="">— Select —</option>
+                            {subRecipeOptions.map((r) => (
+                              <option key={r.id} value={r.id}>
+                                {r.name || 'Untitled'}
+                              </option>
+                            ))}
+                          </select>
+                        )}
+                      </div>
+                    </div>
                   </>
                 )}
 
-                {isMgmt && recipe.selling_price != null ? (
-                  <span className="gc-chip gc-chip-dark">
-                    Price {toNum(recipe.selling_price, 0)} {(recipe.currency ?? 'USD').toUpperCase()}
-                  </span>
-                ) : null}
+                {addType !== 'group' ? (
+                  <>
+                    <div className="gc-col-3">
+                      <div className="gc-field">
+                        <div className="gc-label">NET</div>
+                        <input className="gc-input" value={addNetQty} onChange={(e) => setAddNetQty(e.target.value)} inputMode="decimal" />
+                      </div>
+                    </div>
 
-                {isKitchen ? <span className="gc-chip">Kitchen view</span> : <span className="gc-chip">Mgmt view</span>}
+                    <div className="gc-col-3">
+                      <div className="gc-field">
+                        <div className="gc-label">UNIT</div>
+                        <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
+                      </div>
+                    </div>
+
+                    <div className="gc-col-3">
+                      <div className="gc-field">
+                        <div className="gc-label">YIELD %</div>
+                        <input className="gc-input" value={addYield} onChange={(e) => setAddYield(e.target.value)} inputMode="decimal" />
+                      </div>
+                    </div>
+
+                    <div className="gc-col-3">
+                      <div className="gc-field">
+                        <div className="gc-label">GROSS (optional)</div>
+                        <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="leave empty to auto" />
+                      </div>
+                    </div>
+                  </>
+                ) : null}
               </div>
 
-              <div className="mt-4 flex flex-wrap gap-2">
-                <NavLink className="gc-btn gc-btn-primary" to={`/recipe?id=${recipe.id}`}>
-                  Back to Editor
-                </NavLink>
-                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen((v) => !v)}>
-                  Prep List
+              <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button className="gc-btn gc-btn-primary" type="button" onClick={addLineLocal}>
+                  Add line
                 </button>
-                <button className="gc-btn gc-btn-ghost" type="button" onClick={print}>
-                  Print A4
+                <button className="gc-btn gc-btn-ghost" type="button" onClick={saveLinesNow}>
+                  Save lines
                 </button>
-                <button className="gc-btn gc-btn-ghost" type="button" onClick={resetSession}>
-                  Reset
-                </button>
-                <NavLink className="gc-btn gc-btn-ghost" to="/recipes">
-                  Recipes
-                </NavLink>
               </div>
             </div>
           </div>
-        </div>
 
+          {/* Lines */}
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label">LINES</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Edit Net/Gross/Yield safely. Groups have no cost. Subrecipe cost expansion can be added later via SQL view.
+              </div>
+            </div>
 
+            <div className="gc-card-body">
+              {!visibleLines.length ? (
+                <div className="gc-hint">No lines yet.</div>
+              ) : (
+                <div className="gc-kitopi-table-wrap">
+                  <table className="gc-kitopi-table">
+                    <thead>
+                      <tr>
+                        <th style={{ width: '34%' }}>Ingredient</th>
+                        <th style={{ width: '11%' }}>Net</th>
+                        <th style={{ width: '9%' }}>Unit</th>
+                        <th style={{ width: '11%' }}>Gross</th>
+                        <th style={{ width: '10%' }}>Yield</th>
+                        <th style={{ width: '12%' }}>Note</th>
+                        {showCost ? <th style={{ width: '12%' }}>Cost</th> : null}
+                        <th style={{ width: '8%' }}>Status</th>
+                        <th style={{ width: '5%' }} />
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleLines.map((l) => {
+                        const c = lineComputed.get(l.id)
+                        const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+                        const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
 
-            {/* ===== INGREDIENTS (SCALED) — ALWAYS VISIBLE ===== */}
-            {prepList.length > 0 && (
-              <div className="mt-5 rounded-2xl border border-neutral-200 bg-white p-4">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <div className="gc-label">INGREDIENTS (SCALED)</div>
-                    <div className="text-xs text-neutral-500">Updates automatically when you change servings.</div>
-                  </div>
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen(true)}>
-                    Open Full Prep List
+                        if (l.line_type === 'group') {
+                          return (
+                            <tr key={l.id} className="gc-kitopi-group">
+                              <td colSpan={tableColSpan}>
+                                <div className="gc-kitopi-group-row">
+                                  <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>
+                                  <span className="gc-kitopi-group-actions">
+                                    <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, -1)} title="Move up">↑</button>
+                                    <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, 1)} title="Move down">↓</button>
+                                    <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+                                  </span>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        }
+
+                        const title =
+                          l.line_type === 'ingredient'
+                            ? ing?.name || 'Ingredient'
+                            : l.line_type === 'subrecipe'
+                              ? sub?.name || 'Subrecipe'
+                              : 'Line'
+
+                        const status = c?.warnings?.length ? 'Needs Attention' : 'Active'
+
+                        return (
+                          <tr key={l.id}>
+                            <td>
+                              <div className="gc-kitopi-item">
+                                <div className="gc-kitopi-item-name">{title}</div>
+                                <div className="gc-kitopi-item-sub">
+                                  #{l.position} • {l.line_type} • {safeUnit(l.unit)}
+                                  {ing?.pack_unit ? ` • pack ${safeUnit(ing.pack_unit)}` : ''}
+                                </div>
+
+                                <div className="gc-kitopi-item-select">
+                                  {l.line_type === 'ingredient' ? (
+                                    <select
+                                      className="gc-select gc-select-compact"
+                                      value={l.ingredient_id || ''}
+                                      onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                    >
+                                      <option value="">— Select ingredient —</option>
+                                      {ingredients.map((i) => (
+                                        <option key={i.id} value={i.id}>
+                                          {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  ) : (
+                                    <select
+                                      className="gc-select gc-select-compact"
+                                      value={l.sub_recipe_id || ''}
+                                      onChange={(e) => updateLine(l.id, { sub_recipe_id: e.target.value || null })}
+                                    >
+                                      <option value="">— Select subrecipe —</option>
+                                      {subRecipeOptions.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                          {r.name || 'Untitled'}
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </div>
+
+                                {c?.warnings?.[0] ? <div className="gc-kitopi-warn">{c.warnings[0]}</div> : null}
+                              </div>
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
+                                value={String(toNum(l.qty, 0))}
+                                onChange={(e) => onNetChange(l.id, e.target.value)}
+                                inputMode="decimal"
+                              />
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
+                                value={l.unit || 'g'}
+                                onChange={(e) => updateLine(l.id, { unit: e.target.value })}
+                              />
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
+                                value={l.gross_qty_override != null ? String(l.gross_qty_override) : ''}
+                                onChange={(e) => onGrossChange(l.id, e.target.value)}
+                                inputMode="decimal"
+                                placeholder={c ? fmtQty(c.gross) : ''}
+                              />
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
+                                value={String(clamp(toNum(l.yield_percent, 100), 0.0001, 100))}
+                                onChange={(e) => onYieldChange(l.id, e.target.value)}
+                                inputMode="decimal"
+                              />
+                              {!showCost ? (
+                                <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
+                              ) : null}
+                            </td>
+
+                            <td>
+                              <input
+                                className="gc-input gc-input-compact"
+                                value={l.notes ?? ''}
+                                onChange={(e) => updateLine(l.id, { notes: e.target.value })}
+                                placeholder="—"
+                              />
+                            </td>
+
+                            {showCost ? (
+                              <td>
+                                <div className="gc-kitopi-money">{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
+                                <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
+                              </td>
+                            ) : null}
+
+                            <td>
+                              <span className={status === 'Active' ? 'gc-chip gc-chip-active' : 'gc-chip gc-chip-warn'}>
+                                {status}
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="gc-kitopi-row-actions">
+                                <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, -1)} title="Move up">↑</button>
+                                <button className="gc-icon-btn" type="button" onClick={() => moveLine(l.id, 1)} title="Move down">↓</button>
+                                <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+          </>
+          )}
+
+          {/* Method steps */}
+          {tab === 'notes' && (
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label">METHOD</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Add steps. You can upload a photo per step.
+              </div>
+            </div>
+
+            <div className="gc-card-body">
+              <div className="gc-field">
+                <div className="gc-label">NEW STEP</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
+                    Add step
                   </button>
                 </div>
+              </div>
 
-                <div className="mt-3 grid gap-2">
-                  {prepList.slice(0, 10).map((it, idx) => (
-                    <div
-                      key={idx}
-                      className="flex items-center justify-between gap-3 rounded-xl border border-neutral-200 bg-neutral-50 px-3 py-2"
-                    >
-                      <div className="min-w-0">
-                        <div className="truncate font-semibold text-neutral-900">{it.label}</div>
-                        {it.note ? <div className="truncate text-xs text-neutral-500">{it.note}</div> : null}
+              {steps.length ? (
+                <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+                  {steps.map((s, idx) => (
+                    <div key={idx} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+                      <div className="gc-label">STEP {idx + 1}</div>
+                      <textarea className="gc-textarea" value={s} onChange={(e) => updateStep(idx, e.target.value)} />
+
+                      <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={stepUploading}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            if (!f) return
+                            uploadStepPhoto(f, idx).catch(() => {})
+                            e.currentTarget.value = ''
+                          }}
+                        />
+                        <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeStep(idx)}>
+                          Remove step
+                        </button>
                       </div>
-                      <div className="shrink-0 font-bold tabular-nums text-neutral-900">
-                        {fmtQty(it.qty)} {it.unit}
-                      </div>
+
+                      {stepPhotos[idx] ? (
+                        <div style={{ marginTop: 10, width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)' }}>
+                          <img src={stepPhotos[idx]} alt={`Step ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        </div>
+                      ) : null}
                     </div>
                   ))}
                 </div>
+              ) : (
+                <div className="gc-hint" style={{ marginTop: 10 }}>
+                  No steps yet.
+                </div>
+              )}
 
-                {prepList.length > 10 ? (
-                  <div className="mt-2 text-xs text-neutral-500">Showing 10 of {prepList.length} items.</div>
-                ) : null}
+              {/* Legacy method */}
+              <div style={{ marginTop: 12 }} className="gc-card-soft">
+                <div style={{ padding: 12 }}>
+                  <div className="gc-label">LEGACY METHOD (OPTIONAL)</div>
+                  <textarea className="gc-textarea" value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="Optional long method text…" />
+                </div>
               </div>
-            )}
-
-        {prepOpen && (
-          <div className="mt-6 rounded-2xl border border-neutral-200 bg-white p-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <div className="gc-label">PREP LIST (SCALED)</div>
-                <div className="text-xs text-neutral-500">Ingredient-only list · scaled by servings.</div>
-              </div>
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setPrepOpen(false)}>
-                Close
-              </button>
             </div>
-
-            {prepList.length === 0 ? (
-              <div className="mt-3 text-sm text-neutral-600">No ingredient lines yet.</div>
-            ) : (
-              <div className="mt-3 space-y-2">
-                {prepList.map((it, i) => (
-                  <div key={i} className="flex items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-50 p-3">
-                    <div className="min-w-0">
-                      <div className="text-sm font-extrabold truncate">{it.label}</div>
-                      {it.note ? <div className="text-xs text-neutral-500 truncate">{it.note}</div> : null}
-                    </div>
-                    <div className="text-sm font-extrabold">
-                      {fmtQty(it.qty)} {it.unit}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
-        )}
-      </div>
+          )}
 
-      <div className="gc-card p-6 gc-print-surface">
-        <div className="gc-label">STEPS</div>
-
-        {cleanSteps.length === 0 ? (
-          <div className="mt-3 text-sm text-neutral-600">No steps yet. Add steps in the editor.</div>
-        ) : (
-          <div className="mt-4 space-y-3">
-            {cleanSteps.map((s, idx) => {
-              const photo = (stepPhotos[idx] ?? '').trim()
-              const done = checked[idx] === true
-              const t = toNum(timers[idx], 0)
-
-              const mm = Math.floor(t / 60)
-              const ss = t % 60
-              const timerLabel = t > 0 ? `${mm}:${String(ss).padStart(2, '0')}` : '—'
-
-              return (
-                <div key={idx} className={`gc-step ${done ? 'gc-step-done' : ''}`}>
-                  <button type="button" className="gc-step-check" onClick={() => toggleStep(idx)} aria-label={`Toggle step ${idx + 1}`}>
-                    <span className="gc-step-dot" />
-                  </button>
-
-                  <div className="flex-1">
-                    <div className="flex flex-wrap items-center justify-between gap-3">
-                      <div className="gc-step-title">Step {idx + 1}</div>
-
-                      <div className="flex flex-wrap items-center gap-2">
-                        {done ? <span className="gc-chip gc-chip-dark">Done</span> : <span className="gc-chip">Todo</span>}
-
-                        <span className="gc-chip">Timer {timerLabel}</span>
-
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimerPreset(idx, 1)}>
-                          +1m
-                        </button>
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimerPreset(idx, 5)}>
-                          +5m
-                        </button>
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimerPreset(idx, 10)}>
-                          +10m
-                        </button>
-                        <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setTimers((p) => ({ ...p, [idx]: 0 }))}>
-                          Clear
-                        </button>
-                      </div>
-                    </div>
-
-                    <div className="mt-2 text-sm text-neutral-800 leading-relaxed">{s}</div>
-
-                    {photo ? (
-                      <div className="mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                        <img src={photo} alt={`Step ${idx + 1}`} className="w-full max-h-[320px] object-cover" />
-                      </div>
-                    ) : null}
+          {/* Cost panel */}
+          {tab === 'cost' && (
+            <div style={{ marginTop: 14 }} className="gc-card">
+              <div className="gc-card-head" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                <div>
+                  <div className="gc-label">COST HISTORY</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                    Snapshots stored locally per recipe.
+                  </div>
+                  <div style={{ marginTop: 10 }}>
+                    <CostTimeline points={costPoints} currency={currency} />
+                  </div>
+                  <div className="gc-hint" style={{ marginTop: 8 }}>
                   </div>
                 </div>
-              )
-            })}
-          </div>
-        )}
+
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={addSnapshot}>
+                    Add snapshot
+                  </button>
+                  <button className="gc-btn gc-btn-danger" type="button" onClick={clearSnapshots}>
+                    Clear
+                  </button>
+                </div>
+              </div>
+
+              <div className="gc-card-body">
+                {!costPoints.length ? (
+                  <div className="gc-hint">No snapshots yet.</div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 10 }}>
+                    {costPoints.map((p: any) => (
+                      <div key={p.id} className="gc-card-soft" style={{ padding: 12, borderRadius: 16, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                        <div>
+                          <div style={{ fontWeight: 900 }}>{new Date(p.createdAt).toLocaleString()}</div>
+                          <div className="gc-hint" style={{ marginTop: 6 }}>
+                            Total: {fmtMoney(p.totalCost, p.currency)} • CPP: {fmtMoney(p.cpp, p.currency)} • Portions: {p.portions}
+                          </div>
+                        </div>
+
+                        <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeSnapshot(p.id)}>
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
-      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
-    </div>
+      {/* PRINT ONLY */}
+      <div className="gc-print-only">
+        <div className="gc-print-page">
+          <div className="gc-print-header">
+            <div style={{ flex: 1 }}>
+              <div className="gc-print-name">{(name || 'Untitled').trim()}</div>
+              <div className="gc-print-sub">
+                {(category || 'Uncategorized').trim()} • Portions: {Math.max(1, Math.floor(toNum(portions, 1)))} • Currency: {cur}
+              </div>
+
+              <div className="gc-print-kpis">
+                <div className="gc-print-chip">Total: {fmtMoney(totals.totalCost, cur)}</div>
+                <div className="gc-print-chip">CPP: {fmtMoney(totals.cpp, cur)}</div>
+                <div className="gc-print-chip">FC%: {totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}</div>
+                <div className="gc-print-chip">Margin: {fmtMoney(totals.margin, cur)}</div>
+              </div>
+            </div>
+
+            <div className="gc-print-photo">
+              {recipe?.photo_url ? <img src={recipe.photo_url} alt="Recipe" /> : null}
+            </div>
+          </div>
+
+          {description ? (
+            <div className="gc-print-section">
+              <div className="gc-print-title">Description</div>
+              <div className="gc-print-text">{description}</div>
+            </div>
+          ) : null}
+
+          <div className="gc-print-section">
+            <div className="gc-print-title">Ingredients</div>
+            <table className="gc-print-table">
+              <thead>
+                <tr>
+                  <th>Item</th>
+                  <th>Net</th>
+                  <th>Yield%</th>
+                  <th>Gross</th>
+                </tr>
+              </thead>
+              <tbody>
+                {visibleLines
+                  .filter((l) => l.line_type !== 'group')
+                  .map((l) => {
+                    const c = lineComputed.get(l.id)
+                    const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+                    const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
+                    const title =
+                      l.line_type === 'ingredient'
+                        ? ing?.name || 'Ingredient'
+                        : l.line_type === 'subrecipe'
+                          ? sub?.name || 'Subrecipe'
+                          : 'Line'
+
+                    return (
+                      <tr key={l.id}>
+                        <td>{title}</td>
+                        <td>
+                          {c ? `${fmtQty(c.net)} ${safeUnit(l.unit)}` : '—'}
+                        </td>
+                        <td>{c ? `${c.yieldPct.toFixed(2)}%` : '—'}</td>
+                        <td>
+                          {c ? `${fmtQty(c.gross)} ${safeUnit(l.unit)}` : '—'}
+                        </td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
+          </div>
+
+          {steps.length ? (
+            <div className="gc-print-section">
+              <div className="gc-print-title">Method</div>
+              <div className="gc-print-text">
+                {steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+              </div>
+            </div>
+          ) : methodLegacy ? (
+            <div className="gc-print-section">
+              <div className="gc-print-title">Method</div>
+              <div className="gc-print-text">{methodLegacy}</div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {toastOpen && <Toast message={toastMsg} onClose={() => setToastOpen(false)} />}
+    </>
   )
 }

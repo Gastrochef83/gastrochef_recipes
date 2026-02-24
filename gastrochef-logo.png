@@ -1,34 +1,15 @@
-{
-  "demo_recipes": [
-    {
-      "name": "Cajun Chicken Bowl",
-      "portions": 1,
-      "selling_price": 9.5,
-      "nutrition": {
-        "calories": 620,
-        "protein_g": 45
-      },
-      "note": "Demo WOW recipe"
-    },
-    {
-      "name": "Lentil Salad",
-      "portions": 1,
-      "selling_price": 6.0,
-      "nutrition": {
-        "calories": 380,
-        "protein_g": 18
-      },
-      "note": "Demo WOW recipe"
-    },
-    {
-      "name": "Vegetable Lasagne",
-      "portions": 1,
-      "selling_price": 11.0,
-      "nutrition": {
-        "calories": 710,
-        "protein_g": 26
-      },
-      "note": "Demo WOW recipe"
-    }
-  ]
-}
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>GastroChef</title>
+    <link rel="icon" type="image/svg+xml" href="/logo.svg" />
+    <link rel="icon" type="image/png" href="/gastrochef-icon-512.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0E8F84" />
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

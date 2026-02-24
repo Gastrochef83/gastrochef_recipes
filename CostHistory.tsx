@@ -1,23 +1,51 @@
-const keyFor = (recipeId: string) => `gc_allergens__${recipeId}`
+export type CookSession = {
+  recipeId: string
+  servings: number
+  checkedSteps: Record<number, boolean>
+  timers: Record<number, number> // seconds remaining
+  updatedAt: string
+}
 
-export function getAllergens(recipeId: string): string[] {
+const KEY_PREFIX = 'gc_cook_session_v1:'
+
+function key(recipeId: string) {
+  return `${KEY_PREFIX}${recipeId}`
+}
+
+function safeParse<T>(s: string | null, fallback: T): T {
   try {
-    const raw = localStorage.getItem(keyFor(recipeId))
-    const arr = raw ? (JSON.parse(raw) as any) : []
-    if (!Array.isArray(arr)) return []
-    return arr.map((x) => String(x || '').trim()).filter(Boolean).slice(0, 20)
+    if (!s) return fallback
+    return JSON.parse(s) as T
   } catch {
-    return []
+    return fallback
   }
 }
 
-export function setAllergens(recipeId: string, tags: string[]) {
-  try {
-    const clean = (tags || [])
-      .map((x) => String(x || '').trim())
-      .filter(Boolean)
-      .slice(0, 20)
-    localStorage.setItem(keyFor(recipeId), JSON.stringify(clean))
-  } catch {}
+export function loadCookSession(recipeId: string): CookSession | null {
+  const raw = localStorage.getItem(key(recipeId))
+  const s = safeParse<CookSession | null>(raw, null)
+  if (!s || s.recipeId !== recipeId) return null
+  return s
 }
 
+export function saveCookSession(recipeId: string, patch: Partial<CookSession>) {
+  const current = loadCookSession(recipeId) || {
+    recipeId,
+    servings: 1,
+    checkedSteps: {},
+    timers: {},
+    updatedAt: new Date().toISOString(),
+  }
+  const next: CookSession = {
+    ...current,
+    ...patch,
+    recipeId,
+    updatedAt: new Date().toISOString(),
+  }
+  localStorage.setItem(key(recipeId), JSON.stringify(next))
+  return next
+}
+
+export function clearCookSession(recipeId: string) {
+  localStorage.removeItem(key(recipeId))
+}

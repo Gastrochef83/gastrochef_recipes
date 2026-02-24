@@ -1,25 +1,31 @@
-import { createClient } from '@supabase/supabase-js'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { HashRouter } from 'react-router-dom'
+import App from './App'
+
+// ✅ Tailwind utilities (your app uses Tailwind classes heavily)
+import './index.css'
+
+// ✅ GastroChef theme
+import './styles.css'
+
+import { ModeProvider } from './lib/mode'
+import ErrorBoundary from './components/ErrorBoundary'
 
 /**
- * ✅ FINAL GOD — Supabase client hardening (no business-logic change)
- * - Better HashRouter compatibility (detectSessionInUrl: false)
- * - Stable session persistence + token refresh
- * - Clear error if env vars are missing (prevents silent blank screens)
+ * ✅ FINAL GOD — render stability
+ * Notes:
+ * - We intentionally DO NOT wrap with React.StrictMode here
+ *   to avoid double-mount/double-fetch issues in dev that can look like freezes.
+ * - Production build is unchanged, but this makes local + preview behavior stable.
  */
 
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Fail loudly (Vercel logs + ErrorBoundary) instead of a silent crash later
-  throw new Error('Missing Supabase env vars: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
-}
-
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    // ✅ Important with HashRouter + manual redirects (#/login, #/dashboard)
-    detectSessionInUrl: false,
-  },
-})
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <HashRouter>
+    <ModeProvider>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </ModeProvider>
+  </HashRouter>
+)

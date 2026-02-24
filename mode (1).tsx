@@ -1,30 +1,23 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import { getIngredientsCached, invalidateIngredientsCache } from '../lib/ingredientsCache'
+import { Toast } from '../components/Toast'
 
-type Recipe = {
+type IngredientRow = {
   id: string
-  name: string
-  portions: number
-  yield_qty: number | null
-  yield_unit: string | null
-  is_archived: boolean
-  is_subrecipe: boolean
-}
+  name?: string
+  category?: string | null
+  supplier?: string | null
 
-type Line = {
-  recipe_id: string
-  ingredient_id: string | null
-  sub_recipe_id: string | null
-  qty: number
-  unit: string
-}
+  // Required (NOT NULL in your DB)
+  pack_size?: number | null
+  pack_price?: number | null
 
-type Ingredient = {
-  id: string
-  name?: string | null
   pack_unit?: string | null
   net_unit_cost?: number | null
+
   is_active?: boolean
+  kitchen_id?: string
 }
 
 function toNum(x: any, fallback = 0) {
@@ -32,80 +25,132 @@ function toNum(x: any, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
 }
 
+function money(n: number) {
+  const v = Number.isFinite(n) ? n : 0
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(v)
+}
+
+function cls(...xs: (string | false | undefined | null)[]) {
+  return xs.filter(Boolean).join(' ')
+}
+
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
 
-function unitFamily(u: string) {
-  const x = safeUnit(u)
-  if (x === 'g' || x === 'kg') return 'mass'
-  if (x === 'ml' || x === 'l') return 'volume'
-  if (x === 'pcs') return 'count'
-  if (x === 'portion') return 'portion'
-  return 'other'
+function calcNetUnitCost(packPrice: number, packSize: number) {
+  const ps = Math.max(1e-9, packSize)
+  const pp = Math.max(0, packPrice)
+  return pp / ps
 }
 
-function convertQty(qty: number, fromUnit: string, toUnit: string) {
-  const from = safeUnit(fromUnit)
-  const to = safeUnit(toUnit)
-  if (from === to) return { ok: true, value: qty }
+function sanityFlag(net: number, unit: string) {
+  // Simple heuristics: if cost per "g/ml" is extremely high, probably wrong units.
+  // We keep it gentle; it’s a hint, not a blocker.
+  const u = safeUnit(unit)
+  if (!Number.isFinite(net) || net <= 0) return { level: 'missing' as const, msg: 'Missing cost' }
 
-  const ff = unitFamily(from)
-  const tf = unitFamily(to)
-  if (ff !== tf) return { ok: false, value: qty }
-
-  if (ff === 'mass') {
-    if (from === 'g' && to === 'kg') return { ok: true, value: qty / 1000 }
-    if (from === 'kg' && to === 'g') return { ok: true, value: qty * 1000 }
+  if (u === 'g' || u === 'ml') {
+    if (net > 1) return { level: 'warn' as const, msg: 'Looks too high per g/ml (unit mismatch?)' }
   }
-  if (ff === 'volume') {
-    if (from === 'ml' && to === 'l') return { ok: true, value: qty / 1000 }
-    if (from === 'l' && to === 'ml') return { ok: true, value: qty * 1000 }
+  if (u === 'kg' || u === 'l') {
+    if (net > 200) return { level: 'warn' as const, msg: 'Looks too high per kg/L' }
   }
-
-  // pcs/portion/other: no conversion
-  return { ok: true, value: qty }
+  if (u === 'pcs') {
+    if (net > 500) return { level: 'warn' as const, msg: 'Looks too high per piece' }
+  }
+  return { level: 'ok' as const, msg: '' }
 }
 
-function money(n: number, currency = 'USD') {
-  const v = Number.isFinite(n) ? n : 0
-  try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency }).format(v)
-  } catch {
-    return `${v.toFixed(2)} ${currency}`
-  }
+function Modal({
+  open,
+  title,
+  children,
+  onClose,
+}: {
+  open: boolean
+  title: string
+  children: React.ReactNode
+  onClose: () => void
+}) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2">
+        <div className="gc-card p-6 shadow-2xl">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <div className="gc-label">INGREDIENT</div>
+              <div className="mt-1 text-xl font-extrabold">{title}</div>
+            </div>
+            <button className="gc-btn gc-btn-ghost" onClick={onClose} type="button">
+              Close
+            </button>
+          </div>
+          <div className="mt-4">{children}</div>
+        </div>
+      </div>
+    </div>
+  )
 }
 
-export default function Dashboard() {
+export default function Ingredients() {
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
-  const [recipes, setRecipes] = useState<Recipe[]>([])
-  const [lines, setLines] = useState<Line[]>([])
-  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [rows, setRows] = useState<IngredientRow[]>([])
+  const [search, setSearch] = useState('')
+  const [category, setCategory] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
+  const [sortBy, setSortBy] = useState<'name' | 'cost' | 'pack_price'>('name')
+
+  const [kitchenId, setKitchenId] = useState<string | null>(null)
+
+  // Toast
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastOpen, setToastOpen] = useState(false)
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setToastOpen(true)
+  }
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const [fName, setFName] = useState('')
+  const [fCategory, setFCategory] = useState('')
+  const [fSupplier, setFSupplier] = useState('')
+
+  // Required fields
+  const [fPackSize, setFPackSize] = useState('1')
+  const [fPackPrice, setFPackPrice] = useState('0')
+
+  const [fPackUnit, setFPackUnit] = useState('g')
+  const [fNetUnitCost, setFNetUnitCost] = useState('0')
+
+  const [saving, setSaving] = useState(false)
+  const [bulkWorking, setBulkWorking] = useState(false)
+
+  const loadKitchen = async () => {
+    const { data, error } = await supabase.rpc('current_kitchen_id')
+    if (!error) {
+      const kid = (data as string) ?? null
+      setKitchenId(kid)
+      return kid
+    }
+    setKitchenId(null)
+    return null
+  }
 
   const load = async () => {
     setLoading(true)
     setErr(null)
     try {
-      const { data: r, error: re } = await supabase
-        .from('recipes')
-        .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
-      if (re) throw re
-
-      const { data: l, error: le } = await supabase
-        .from('recipe_lines')
-        .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
-      if (le) throw le
-
-      const { data: i, error: ie } = await supabase
-        .from('ingredients')
-        .select('id,name,pack_unit,net_unit_cost,is_active')
-      if (ie) throw ie
-
-      setRecipes((r ?? []) as Recipe[])
-      setLines((l ?? []) as Line[])
-      setIngredients((i ?? []) as Ingredient[])
+      await loadKitchen()
+      const data = await getIngredientsCached()
+      setRows((data ?? []) as IngredientRow[])
       setLoading(false)
     } catch (e: any) {
       setErr(e?.message ?? 'Unknown error')
@@ -115,214 +160,279 @@ export default function Dashboard() {
 
   useEffect(() => {
     load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  const ingById = useMemo(() => {
-    const m = new Map<string, Ingredient>()
-    for (const i of ingredients) m.set(i.id, i)
-    return m
-  }, [ingredients])
+  const normalized = useMemo(() => {
+    return rows.filter((r) => (showInactive ? true : r.is_active !== false))
+  }, [rows, showInactive])
 
-  const recipeById = useMemo(() => {
-    const m = new Map<string, Recipe>()
-    for (const r of recipes) m.set(r.id, r)
-    return m
-  }, [recipes])
+  const categories = useMemo(() => {
+    const s = new Set<string>()
+    for (const r of normalized) {
+      const c = (r.category ?? '').trim()
+      if (c) s.add(c)
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b))
+  }, [normalized])
 
-  const activeRecipes = useMemo(() => recipes.filter((r) => !r.is_archived), [recipes])
-  const activeIngredientsCount = useMemo(() => ingredients.filter((i) => i.is_active !== false).length, [ingredients])
-  const subRecipeCount = useMemo(() => recipes.filter((r) => r.is_subrecipe && !r.is_archived).length, [recipes])
+  const filtered = useMemo(() => {
+    const s = search.trim().toLowerCase()
+    let list = normalized.filter((r) => {
+      const name = (r.name ?? '').toLowerCase()
+      const sup = (r.supplier ?? '').toLowerCase()
+      const okSearch = !s || name.includes(s) || sup.includes(s)
+      const okCat = !category || (r.category ?? '') === category
+      return okSearch && okCat
+    })
 
-  // === cost engine with diagnostics ===
-  const costEngine = useMemo(() => {
-    const totals = new Map<string, number>()
-    const diag = {
-      unitMismatchCount: 0,
-      missingYieldSubrecipeCount: 0,
-      missingIngredientCostCount: 0,
+    if (sortBy === 'name') {
+      list = list.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+    } else if (sortBy === 'cost') {
+      list = list.sort((a, b) => toNum(b.net_unit_cost, 0) - toNum(a.net_unit_cost, 0))
+    } else {
+      list = list.sort((a, b) => toNum(b.pack_price, 0) - toNum(a.pack_price, 0))
     }
 
-    for (const r of recipes) totals.set(r.id, 0)
+    return list
+  }, [normalized, search, category, sortBy])
 
-    const linesByRecipe = new Map<string, Line[]>()
-    for (const l of lines) {
-      if (!linesByRecipe.has(l.recipe_id)) linesByRecipe.set(l.recipe_id, [])
-      linesByRecipe.get(l.recipe_id)!.push(l)
-    }
+  const stats = useMemo(() => {
+    const items = filtered.length
+    const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
+    const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
 
-    const maxPass = 12
-    for (let pass = 0; pass < maxPass; pass++) {
-      let changed = false
+    const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
+    const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
 
-      for (const r of recipes) {
-        const rLines = linesByRecipe.get(r.id) ?? []
-        let sum = 0
+    return { items, avgNet, maxPack, missingCost, warnUnits }
+  }, [filtered])
 
-        for (const l of rLines) {
-          const qty = Math.max(0, toNum(l.qty, 0))
-          const u = safeUnit(l.unit)
+  const openCreate = () => {
+    setEditingId(null)
+    setFName('')
+    setFCategory('')
+    setFSupplier('')
+    setFPackSize('1')
+    setFPackPrice('0')
+    setFPackUnit('g')
+    setFNetUnitCost('0')
+    setModalOpen(true)
+  }
 
-          // Ingredient line
-          if (l.ingredient_id) {
-            const ing = ingById.get(l.ingredient_id)
-            if (!ing || ing.is_active === false) continue
+  const openEdit = (r: IngredientRow) => {
+    setEditingId(r.id)
+    setFName(r.name ?? '')
+    setFCategory(r.category ?? '')
+    setFSupplier(r.supplier ?? '')
+    setFPackSize(String(Math.max(1, toNum(r.pack_size, 1))))
+    setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
+    setFPackUnit(r.pack_unit ?? 'g')
+    setFNetUnitCost(String(Math.max(0, toNum(r.net_unit_cost, 0))))
+    setModalOpen(true)
+  }
 
-            const net = toNum(ing.net_unit_cost, 0)
-            const packUnit = safeUnit(ing.pack_unit ?? 'g')
+  const smartRecalcNetCost = () => {
+    const ps = Math.max(1, toNum(fPackSize, 1))
+    const pp = Math.max(0, toNum(fPackPrice, 0))
+    const net = calcNetUnitCost(pp, ps)
+    setFNetUnitCost(String(Math.round(net * 1000000) / 1000000))
+    showToast('Net Unit Cost recalculated from Pack ✅')
+  }
 
-            if (!Number.isFinite(net) || net <= 0) {
-              diag.missingIngredientCostCount += 1
-              continue
-            }
+  const save = async () => {
+    const name = fName.trim()
+    if (!name) return showToast('Name is required')
 
-            const conv = convertQty(qty, u, packUnit)
-            if (!conv.ok) diag.unitMismatchCount += 1
+    const packSize = Math.max(1, toNum(fPackSize, 1))
+    const packPrice = Math.max(0, toNum(fPackPrice, 0))
 
-            sum += conv.value * net
-            continue
-          }
+    const unit = safeUnit(fPackUnit || 'g')
+    const net = Math.max(0, toNum(fNetUnitCost, 0))
 
-          // Sub-recipe line
-          if (l.sub_recipe_id) {
-            const sub = recipeById.get(l.sub_recipe_id)
-            const subTotal = totals.get(l.sub_recipe_id) ?? 0
+    // If user left net cost empty/zero, auto compute from pack
+    const netFinal = net > 0 ? net : calcNetUnitCost(packPrice, packSize)
 
-            if (!sub) continue
-            const subPortions = Math.max(1, toNum(sub.portions, 1))
-            const subCpp = subTotal / subPortions
+    setSaving(true)
+    try {
+      const payload: any = {
+        name,
+        category: fCategory.trim() || null,
+        supplier: fSupplier.trim() || null,
 
-            // If line uses "portion"
-            if (u === 'portion') {
-              sum += qty * subCpp
-              continue
-            }
+        pack_size: packSize,
+        pack_price: packPrice,
 
-            // If subrecipe has yield => use yield-based costing
-            const yq = toNum(sub.yield_qty, 0)
-            const yu = safeUnit(sub.yield_unit ?? '')
-
-            if (yq > 0 && yu && (unitFamily(u) === unitFamily(yu))) {
-              const costPerYieldUnit = subTotal / yq
-              const conv = convertQty(qty, u, yu)
-              if (!conv.ok) diag.unitMismatchCount += 1
-              sum += conv.value * costPerYieldUnit
-              continue
-            }
-
-            // Missing yield (but line is not portion)
-            if (sub.is_subrecipe) diag.missingYieldSubrecipeCount += 1
-
-            // Fallback to cpp
-            sum += qty * subCpp
-            continue
-          }
-        }
-
-        const prev = totals.get(r.id) ?? 0
-        if (Math.abs(prev - sum) > 1e-7) {
-          totals.set(r.id, sum)
-          changed = true
-        }
+        pack_unit: unit,
+        net_unit_cost: netFinal,
+        is_active: true,
       }
 
-      if (!changed) break
+      if (kitchenId) payload.kitchen_id = kitchenId
+
+      if (editingId) {
+        let { error } = await supabase.from('ingredients').update(payload).eq('id', editingId)
+        if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
+          delete payload.kitchen_id
+          ;({ error } = await supabase.from('ingredients').update(payload).eq('id', editingId))
+        }
+        if (error) throw error
+        showToast('Ingredient updated ✅')
+      } else {
+        let { error } = await supabase.from('ingredients').insert(payload)
+        if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
+          delete payload.kitchen_id
+          ;({ error } = await supabase.from('ingredients').insert(payload))
+        }
+        if (error) throw error
+        showToast('Ingredient created ✅')
+      }
+
+      setModalOpen(false)
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Save failed')
+    } finally {
+      setSaving(false)
     }
+  }
 
-    return { totals, diag }
-  }, [recipes, lines, ingById, recipeById])
+  const deactivate = async (id: string) => {
+    const ok = confirm('Deactivate ingredient? It will be hidden from pickers.')
+    if (!ok) return
+    const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
+    if (error) return showToast(error.message)
+    showToast('Ingredient deactivated ✅')
+    await load()
+  }
 
-  const recipeTotalCost = costEngine.totals
-  const diag = costEngine.diag
+  const restore = async (id: string) => {
+    const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
+    if (error) return showToast(error.message)
+    showToast('Ingredient restored ✅')
+    await load()
+  }
 
-  // ✅ FIX (Metric): DISTINCT ingredients USED IN non-archived recipes missing a valid cost.
-  // Definition:
-  // - DISTINCT ingredient_id referenced by recipe_lines where parent recipe is NOT archived.
-  // - Missing cost = ingredient net_unit_cost is null/undefined/NaN OR <= 0.
-  const ingredientsUsedMissingCost = useMemo(() => {
-    const activeRecipeIds = new Set(activeRecipes.map((r) => r.id))
-    const used = new Set<string>()
-    for (const l of lines) {
-      if (!activeRecipeIds.has(l.recipe_id)) continue
-      if (!l.ingredient_id) continue
-      used.add(l.ingredient_id)
+  const bulkRecalcNetCosts = async () => {
+    if (filtered.length === 0) return
+    const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
+    if (!ok) return
+
+    setBulkWorking(true)
+    try {
+      // Update sequentially to keep it simple and safe (no RPC required)
+      for (const r of filtered) {
+        const ps = Math.max(1, toNum(r.pack_size, 1))
+        const pp = Math.max(0, toNum(r.pack_price, 0))
+        const net = calcNetUnitCost(pp, ps)
+
+        const { error } = await supabase.from('ingredients').update({ net_unit_cost: net }).eq('id', r.id)
+      invalidateIngredientsCache()
+      invalidateIngredientsCache()
+        if (error) throw error
+      }
+      showToast('Bulk recalculation done ✅')
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Bulk recalculation failed')
+    } finally {
+      setBulkWorking(false)
     }
+  }
 
-    const byId = new Map<string, Ingredient>()
-    for (const ing of ingredients) byId.set(ing.id, ing)
+  const bulkSetActive = async (active: boolean) => {
+    if (filtered.length === 0) return
+    const ok = confirm(`${active ? 'Activate' : 'Deactivate'} ${filtered.length} ingredients?`)
+    if (!ok) return
 
-    let c = 0
-    for (const id of used) {
-      const v = Number(byId.get(id)?.net_unit_cost)
-      if (!Number.isFinite(v) || v <= 0) c += 1
+    setBulkWorking(true)
+    try {
+      for (const r of filtered) {
+        const { error } = await supabase.from('ingredients').update({ is_active: active }).eq('id', r.id)
+      invalidateIngredientsCache()
+        if (error) throw error
+      }
+      showToast('Bulk update done ✅')
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Bulk update failed')
+    } finally {
+      setBulkWorking(false)
     }
-    return c
-  }, [activeRecipes, lines, ingredients])
-
-  const avgCostPerPortion = useMemo(() => {
-    if (activeRecipes.length === 0) return 0
-    const cps = activeRecipes.map((r) => {
-      const total = recipeTotalCost.get(r.id) ?? 0
-      const portions = Math.max(1, toNum(r.portions, 1))
-      return total / portions
-    })
-    return cps.reduce((a, b) => a + b, 0) / cps.length
-  }, [activeRecipes, recipeTotalCost])
-
-  const mostExpensiveRecipe = useMemo(() => {
-    let best: { id: string; name: string; total: number } | null = null
-    for (const r of activeRecipes) {
-      const total = recipeTotalCost.get(r.id) ?? 0
-      if (!best || total > best.total) best = { id: r.id, name: r.name, total }
-    }
-    return best
-  }, [activeRecipes, recipeTotalCost])
-
-  const cheapestRecipe = useMemo(() => {
-    let best: { id: string; name: string; total: number } | null = null
-    for (const r of activeRecipes) {
-      const total = recipeTotalCost.get(r.id) ?? 0
-      if (!best || total < best.total) best = { id: r.id, name: r.name, total }
-    }
-    return best
-  }, [activeRecipes, recipeTotalCost])
-
-  const totalActiveCost = useMemo(() => {
-    return activeRecipes.reduce((sum, r) => sum + (recipeTotalCost.get(r.id) ?? 0), 0)
-  }, [activeRecipes, recipeTotalCost])
-
-  const top5 = useMemo(() => {
-    return [...activeRecipes]
-      .map((r) => ({
-        id: r.id,
-        name: r.name,
-        total: recipeTotalCost.get(r.id) ?? 0,
-        cpp: (recipeTotalCost.get(r.id) ?? 0) / Math.max(1, toNum(r.portions, 1)),
-      }))
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 5)
-  }, [activeRecipes, recipeTotalCost])
-
-  const subRecipesMissingYield = useMemo(() => {
-    return recipes
-      .filter((r) => r.is_subrecipe && !r.is_archived)
-      .filter((r) => toNum(r.yield_qty, 0) <= 0 || !safeUnit(r.yield_unit ?? ''))
-  }, [recipes])
-
-  // Detect insane costs (to help you debug pack_unit/net_unit_cost)
-  const hasOutliers = useMemo(() => {
-    const big = top5.find((x) => x.total > 10000) // threshold
-    return !!big
-  }, [top5])
+  }
 
   return (
-    <div className="gc-dashboard space-y-6">
+    <div className="gc-ingredients space-y-6">
+      {/* Header */}
       <div className="gc-card p-6 gc-page-header">
-        <div className="gc-label">DASHBOARD</div>
-        <div className="mt-2 text-2xl font-extrabold">Overview</div>
-        <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="gc-label">INGREDIENTS — PRO</div>
+            <div className="mt-2 text-2xl font-extrabold">Database</div>
+            <div className="mt-2 text-sm text-neutral-600">Search, filter, sort, validate costs, and manage ingredients.</div>
+            <div className="mt-3 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+              Show inactive
+            </label>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={bulkRecalcNetCosts} disabled={bulkWorking}>
+              {bulkWorking ? 'Working…' : 'Recalc net cost (filtered)'}
+            </button>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => bulkSetActive(true)} disabled={bulkWorking}>
+              Activate (filtered)
+            </button>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => bulkSetActive(false)} disabled={bulkWorking}>
+              Deactivate (filtered)
+            </button>
+
+            <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
+              + Add ingredient
+            </button>
+          </div>
+        </div>
+
+        {/* Filters */}
+        <div className="mt-4 flex flex-wrap items-end gap-3">
+          <div className="min-w-[260px] flex-1">
+            <div className="gc-label">SEARCH</div>
+            <input className="gc-input mt-2 w-full" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or supplier…" />
+          </div>
+
+          <div className="min-w-[240px]">
+            <div className="gc-label">CATEGORY</div>
+            <select className="gc-input mt-2 w-full" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">All categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="min-w-[220px]">
+            <div className="gc-label">SORT</div>
+            <select className="gc-input mt-2 w-full" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+              <option value="name">Name (A→Z)</option>
+              <option value="cost">Net Unit Cost (High→Low)</option>
+              <option value="pack_price">Pack Price (High→Low)</option>
+            </select>
+          </div>
+        </div>
       </div>
 
-      {loading && <div className="gc-card p-6">Loading…</div>}
+      {/* Loading/Error */}
+      {loading && (
+        <div className="gc-card p-6">
+          <div className="text-sm text-neutral-600">Loading…</div>
+        </div>
+      )}
 
       {err && (
         <div className="gc-card p-6">
@@ -331,173 +441,218 @@ export default function Dashboard() {
         </div>
       )}
 
+      {/* Body */}
       {!loading && !err && (
         <>
-          {activeRecipes.length === 0 && activeIngredientsCount === 0 && (
-            <div className="gc-card p-6">
-              <div className="gc-empty">
-                <div className="gc-empty-ico">✨</div>
-                <div>
-                  <div className="text-lg font-extrabold">You’re one minute away from WOW.</div>
-                  <div className="mt-1 text-sm text-neutral-600">
-                    Add a few ingredients, then create your first recipe. This dashboard will instantly show cost insights.
-                  </div>
-                  <div className="mt-4 grid gap-2 text-sm">
-                    <div className="gc-empty-step">
-                      <span className="gc-empty-dot">1</span>
-                      <span>Add 5–10 ingredients (with pack unit + net cost)</span>
-                    </div>
-                    <div className="gc-empty-step">
-                      <span className="gc-empty-dot">2</span>
-                      <span>Create 1 recipe and add ingredients</span>
-                    </div>
-                    <div className="gc-empty-step">
-                      <span className="gc-empty-dot">3</span>
-                      <span>Return here to see Top Costs + Diagnostics</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {hasOutliers && (
-            <div className="gc-card p-6">
-              <div className="gc-label">WARNING</div>
-              <div className="mt-2 text-sm text-amber-700">
-                Some recipe costs are extremely high. This is usually caused by an incorrect <span className="font-semibold">pack_unit</span> or{' '}
-                <span className="font-semibold">net_unit_cost</span> (e.g., cost per kg but pack_unit set to g).
-              </div>
-            </div>
-          )}
-
+          {/* KPIs */}
           <div className="grid gap-4 md:grid-cols-4">
             <div className="gc-card p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  🍳
-                </span>
-                <div className="gc-label">RECIPES</div>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{activeRecipes.length}</div>
-              <div className="mt-1 text-xs text-neutral-500">Active</div>
+              <div className="gc-label">ITEMS</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.items}</div>
+              <div className="mt-1 text-xs text-neutral-500">Filtered results</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  🧩
-                </span>
-                <div className="gc-label">SUB-RECIPES</div>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{subRecipeCount}</div>
-              <div className="mt-1 text-xs text-neutral-500">Active</div>
+              <div className="gc-label">AVG NET UNIT</div>
+              <div className="mt-2 text-2xl font-extrabold">{money(stats.avgNet)}</div>
+              <div className="mt-1 text-xs text-neutral-500">Average net unit cost</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  🧂
-                </span>
-                <div className="gc-label">INGREDIENTS</div>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{activeIngredientsCount}</div>
-              <div className="mt-1 text-xs text-neutral-500">Active</div>
+              <div className="gc-label">MISSING COST</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.missingCost}</div>
+              <div className="mt-1 text-xs text-neutral-500">net_unit_cost = 0 or empty</div>
             </div>
 
             <div className="gc-card p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  💵
-                </span>
-                <div className="gc-label">AVG COST / PORTION</div>
+              <div className="gc-label">UNIT WARNINGS</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.warnUnits}</div>
+              <div className="mt-1 text-xs text-neutral-500">Possible unit mismatch</div>
+            </div>
+          </div>
+
+          {/* Category chips */}
+          <div className="gc-card p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <button className={cls('gc-btn', 'gc-btn-ghost', !category && 'ring-2 ring-black/10')} type="button" onClick={() => setCategory('')}>
+                All
+              </button>
+              {categories.slice(0, 14).map((c) => (
+                <button key={c} className={cls('gc-btn', 'gc-btn-ghost', category === c && 'ring-2 ring-black/10')} type="button" onClick={() => setCategory(c)}>
+                  {c}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* List */}
+          <div className="gc-card p-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="gc-label">LIST</div>
+                <div className="mt-1 text-sm text-neutral-600">Click Edit to validate pack + cost.</div>
               </div>
-              <div className="mt-2 text-2xl font-extrabold">{money(avgCostPerPortion)}</div>
-              <div className="mt-1 text-xs text-neutral-500">Across active recipes</div>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
+                Refresh
+              </button>
             </div>
 
-            <div className="gc-card p-5 md:col-span-2">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  ∑
-                </span>
-                <div className="gc-label">TOTAL ACTIVE COST</div>
-              </div>
-              <div className="mt-2 text-2xl font-extrabold">{money(totalActiveCost)}</div>
-              <div className="mt-1 text-xs text-neutral-500">Sum of all active recipe totals</div>
-            </div>
+            {filtered.length === 0 ? (
+              <div className="mt-3 text-sm text-neutral-600">No ingredients found.</div>
+            ) : (
+              <div className="mt-4 overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs font-semibold text-neutral-500">
+                    <tr>
+                      <th className="py-2 pr-4">Name</th>
+                      <th className="py-2 pr-4">Category</th>
+                      <th className="py-2 pr-4">Supplier</th>
+                      <th className="py-2 pr-4">Pack</th>
+                      <th className="py-2 pr-4">Unit</th>
+                      <th className="py-2 pr-4">Pack Price</th>
+                      <th className="py-2 pr-4">Net Unit Cost</th>
+                      <th className="py-2 pr-0 text-right">Actions</th>
+                    </tr>
+                  </thead>
 
-            <div className="gc-card p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  🟢
-                </span>
-                <div className="gc-label">CHEAPEST RECIPE</div>
-              </div>
-              <div className="mt-2 text-lg font-extrabold">{cheapestRecipe?.name ?? '—'}</div>
-              <div className="mt-1 text-xs text-neutral-500">{money(cheapestRecipe?.total ?? 0)}</div>
-            </div>
+                  <tbody className="align-top">
+                    {filtered.map((r) => {
+                      const active = r.is_active !== false
+                      const net = toNum(r.net_unit_cost, 0)
+                      const unit = r.pack_unit ?? 'g'
+                      const flag = sanityFlag(net, unit)
 
-            <div className="gc-card p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  🔴
-                </span>
-                <div className="gc-label">MOST EXPENSIVE</div>
-              </div>
-              <div className="mt-2 text-lg font-extrabold">{mostExpensiveRecipe?.name ?? '—'}</div>
-              <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
-            </div>
+                      return (
+                        <tr key={r.id} className="border-t">
+                          <td className="py-3 pr-4">
+                            <div className="font-semibold flex flex-wrap items-center gap-2">
+                              <span>{r.name ?? '—'}</span>
 
-            <div className="gc-card p-5 md:col-span-4">
-              <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
-              <div className="mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                <div className="grid grid-cols-[1.2fr_.6fr_.6fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
-                  <div>Recipe</div>
-                  <div className="text-right">Total</div>
-                  <div className="text-right">Cost/Portion</div>
-                </div>
-                <div className="divide-y divide-neutral-200">
-                  {top5.map((x) => (
-                    <div key={x.id} className="grid grid-cols-[1.2fr_.6fr_.6fr] items-center px-4 py-3 text-sm">
-                      <div className="font-semibold">{x.name}</div>
-                      <div className="text-right">{money(x.total)}</div>
-                      <div className="text-right">{money(x.cpp)}</div>
-                    </div>
-                  ))}
+                              {!active && (
+                                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
+                              )}
+
+                              {flag.level === 'missing' && (
+                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Missing cost</span>
+                              )}
+
+                              {flag.level === 'warn' && (
+                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
+                              )}
+                            </div>
+                            <div className="text-xs text-neutral-500">ID: {r.id}</div>
+                            {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
+                          </td>
+
+                          <td className="py-3 pr-4">{r.category ?? '—'}</td>
+                          <td className="py-3 pr-4">{r.supplier ?? '—'}</td>
+                          <td className="py-3 pr-4">{Math.max(1, toNum(r.pack_size, 1))}</td>
+                          <td className="py-3 pr-4">{unit}</td>
+                          <td className="py-3 pr-4 font-semibold">{money(toNum(r.pack_price, 0))}</td>
+                          <td className="py-3 pr-4 font-semibold">{money(net)}</td>
+
+                          <td className="py-3 pr-0 text-right whitespace-nowrap">
+                            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
+                              Edit
+                            </button>
+
+                            {active ? (
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
+                                Delete
+                              </button>
+                            ) : (
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => restore(r.id)}>
+                                Restore
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+
+                <div className="mt-3 text-xs text-neutral-500">
+                  * Delete = Deactivate (Soft Delete) to prevent FK issues with recipe_lines.
                 </div>
               </div>
-            </div>
-
-            <div className="gc-card p-5 md:col-span-4">
-              <div className="gc-label">DIAGNOSTICS</div>
-              <div className="mt-2 grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Unit mismatches</div>
-                  <div className="mt-1 text-2xl font-extrabold">{diag.unitMismatchCount}</div>
-                </div>
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Missing yield (sub-recipes)</div>
-                  <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
-                </div>
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Ingredients used in recipes missing cost</div>
-                  <div className="mt-1 text-2xl font-extrabold">{ingredientsUsedMissingCost}</div>
-                  <div className="mt-2 text-xs text-neutral-500">
-                    DISTINCT ingredients referenced in non-archived recipe lines with missing or ≤ 0 net unit cost.
-                  </div>
-                </div>
-              </div>
-
-              {subRecipesMissingYield.length > 0 && (
-                <div className="mt-4 text-sm text-amber-700">
-                  Missing yield examples: {subRecipesMissingYield.slice(0, 6).map((x) => x.name).join(', ')}
-                </div>
-              )}
-            </div>
+            )}
           </div>
         </>
       )}
+
+      {/* Modal */}
+      <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <div className="gc-label">NAME</div>
+            <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
+          </div>
+
+          <div>
+            <div className="gc-label">CATEGORY</div>
+            <input className="gc-input mt-2 w-full" value={fCategory} onChange={(e) => setFCategory(e.target.value)} />
+          </div>
+
+          <div>
+            <div className="gc-label">SUPPLIER</div>
+            <input className="gc-input mt-2 w-full" value={fSupplier} onChange={(e) => setFSupplier(e.target.value)} />
+          </div>
+
+          <div>
+            <div className="gc-label">PACK SIZE</div>
+            <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={fPackSize} onChange={(e) => setFPackSize(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
+          </div>
+
+          <div>
+            <div className="gc-label">UNIT</div>
+            <select className="gc-input mt-2 w-full" value={fPackUnit} onChange={(e) => setFPackUnit(e.target.value)}>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">L</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+
+          <div>
+            <div className="gc-label">PACK PRICE</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.01" value={fPackPrice} onChange={(e) => setFPackPrice(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
+          </div>
+
+          <div>
+            <div className="gc-label">NET UNIT COST</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.000001" value={fNetUnitCost} onChange={(e) => setFNetUnitCost(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">If left 0 → auto-calculated from pack.</div>
+          </div>
+
+          {/* Smart helpers */}
+          <div className="md:col-span-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <div className="text-xs font-semibold text-neutral-600">SMART HELPERS</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={smartRecalcNetCost}>
+                Recalculate net cost from pack
+              </button>
+              <div className="text-xs text-neutral-500 flex items-center">
+                net = pack_price ÷ pack_size
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 flex justify-end gap-2">
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setModalOpen(false)}>
+              Cancel
+            </button>
+            <button className="gc-btn gc-btn-primary" type="button" onClick={save} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
     </div>
   )
 }

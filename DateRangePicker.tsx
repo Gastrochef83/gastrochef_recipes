@@ -1,31 +1,86 @@
-import { NavLink } from 'react-router-dom'
+import { useEffect, useMemo } from 'react'
 
-const Item = ({ to, label }: { to: string; label: string }) => (
-  <NavLink
-    to={to}
-    className={({ isActive }) =>
-      [
-        'block rounded-xl px-3 py-2 text-sm',
-        isActive ? 'bg-neutral-900 text-white' : 'text-neutral-700 hover:bg-neutral-100',
-      ].join(' ')
+type Props = {
+  /** Optional legacy prop: if provided and false, Toast won't render */
+  open?: boolean
+  message: string
+  onClose: () => void
+  durationMs?: number
+}
+
+/**
+ * ✅ Toast PRO (COMPAT)
+ * - Backward compatible with old usage: <Toast open={...} message={...} />
+ * - If message is empty/whitespace, don't render (prevents "black box")
+ * - Auto dismiss (default 2600ms) + Escape to close
+ * - No business-logic change
+ */
+export function Toast({ open, message, onClose, durationMs = 2600 }: Props) {
+  const text = useMemo(() => (message ?? '').toString(), [message])
+  const visible = (open ?? true) && text.trim().length > 0
+
+  useEffect(() => {
+    if (!visible) return
+    const t = window.setTimeout(onClose, Math.max(800, durationMs))
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose()
     }
-  >
-    {label}
-  </NavLink>
-)
+    window.addEventListener('keydown', onKey)
+    return () => {
+      window.clearTimeout(t)
+      window.removeEventListener('keydown', onKey)
+    }
+  }, [onClose, durationMs, visible])
 
-export default function SideNav() {
+  if (!visible) return null
+
   return (
-    <aside className="w-56 shrink-0">
-      <div className="rounded-2xl border bg-white p-3">
-        <div className="px-2 pb-2 text-xs font-semibold text-neutral-500">NAVIGATION</div>
-        <div className="space-y-1">
-          <Item to="/" label="Dashboard" />
-          <Item to="/ingredients" label="Ingredients" />
-          <Item to="/recipes" label="Recipes" />
-          <Item to="/settings" label="Settings" />
-        </div>
+    <div
+      className="gc-toast"
+      style={{
+        position: 'fixed',
+        right: 16,
+        bottom: 16,
+        zIndex: 2000,
+      }}
+      role="status"
+      aria-live="polite"
+    >
+      <div
+        style={{
+          background: '#111827',
+          color: '#fff',
+          borderRadius: 14,
+          padding: '12px 14px',
+          boxShadow: '0 18px 50px rgba(2,6,23,.20)',
+          maxWidth: 520,
+          display: 'flex',
+          alignItems: 'center',
+          gap: 10,
+        }}
+      >
+        <div style={{ fontWeight: 800, fontSize: 13, lineHeight: 1.2 }}>{text}</div>
+
+        <button
+          type="button"
+          onClick={onClose}
+          style={{
+            marginLeft: 'auto',
+            border: 'none',
+            background: 'rgba(255,255,255,.12)',
+            color: '#fff',
+            borderRadius: 10,
+            padding: '6px 10px',
+            cursor: 'pointer',
+            fontWeight: 800,
+            fontSize: 12,
+          }}
+          aria-label="Close"
+          title="Close"
+        >
+          ×
+        </button>
       </div>
-    </aside>
+    </div>
   )
 }

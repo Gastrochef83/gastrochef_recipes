@@ -1,17 +1,30 @@
 import React from 'react'
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
 
-export default function CostChart({ data }: { data: any[] }) {
+export default function KpiCard({
+  title,
+  value,
+  trend,
+  status,
+  icon
+}: {
+  title: string
+  value: string
+  trend?: number
+  status?: 'success' | 'warning' | 'danger'
+  icon?: string
+}) {
   return (
-    <div style={{ width: '100%', height: 260 }}>
-      <ResponsiveContainer>
-        <LineChart data={data ?? []}>
-          <XAxis dataKey="created_at" hide />
-          <YAxis />
-          <Tooltip />
-          <Line type="monotone" dataKey="total_cost" dot={false} />
-        </LineChart>
-      </ResponsiveContainer>
+    <div className={`gc-card gc-kpi ${status ? `is-${status}` : ''}`.trim()}>
+      <div className="gc-kpi__top">
+        <div>
+          <div className="gc-kpi__title">{title}</div>
+          <div className="gc-kpi__value">{value}</div>
+        </div>
+        <div className="gc-kpi__icon">{icon ?? ''}</div>
+      </div>
+      {typeof trend === 'number' ? (
+        <div className={`gc-kpi__trend ${trend >= 0 ? 'up' : 'down'}`}>{trend >= 0 ? '+' : ''}{trend.toFixed(1)}%</div>
+      ) : null}
     </div>
   )
 }

@@ -1,39 +1,38 @@
-// contexts/ThemeContext.tsx - Unified token system
-import React, { createContext, useContext, useEffect, useState } from 'react';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-type Theme = 'light' | 'dark';
+/* =========================================================
+   GastroChef — Global containment (ZERO overflow guarantee)
+   UI/CSS only.
 
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
+   Goals:
+   - Box sizing containment
+   - ZERO horizontal scroll (body & app)
+   - Safe at zoom 100/110/125/150
+   - Safe on wide + small screens
+   ========================================================= */
+
+/* 1) Box sizing containment */
+*, *::before, *::after{ box-sizing: border-box; }
+
+/* 2) Kill page-level horizontal scroll */
+html, body{ width: 100%; max-width: 100%; overflow-x: hidden; }
+html, body, #root{ height: 100%; }
+
+/* 3) Keep body stable (no layout jumps) */
+body{
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
+/* 4) Common overflow traps */
+img, video, canvas, svg{ max-width: 100%; height: auto; }
+table{ max-width: 100%; }
 
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) throw new Error('useTheme must be used within ThemeProvider');
-  return context;
-};
+/* 5) Prevent vw-based utilities from causing overflow */
+.w-screen{ width: 100% !important; }
+.min-w-\[100vw\]{ min-width: 100% !important; }
 
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('theme') as Theme;
-    return saved || 'light';
-  });
-  
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-  
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-  
-  return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-};
