@@ -135,7 +135,7 @@ export default class ErrorBoundary extends React.Component<Props, State> {
               <button
                 onClick={() => this.copy()}
                 style={{
-                  background: '#0f766e',
+                  background: 'var(--accent)',
                   color: '#fff',
                   border: 'none',
                   padding: '10px 14px',

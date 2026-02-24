@@ -15,44 +15,40 @@ This file is the SINGLE SOURCE OF TRUTH for the design system.
    TOKENS — Kitopi calm
 -------------------------- */
 :root{
-  /* Canvas (cool gray-green tint, calm) */
-  --bg: #f2f6f5;
+  /* GastroChef Signature — Teal + Charcoal + Soft Gold */
+  --bg: #F4F7F7;
+  --surface: #FFFFFF;
+  --surface-2: #EEF3F3;
 
-  /* Surfaces */
-  --surface: #ffffff;
-  --surface-2: #f8fbfa;
+  --text: #182430;
+  --text-strong: #0F1720;
+  --muted: #5C6B76;
+  --soft: #8A95A8;
 
-  /* Text */
-  --text: #0f172a;
-  --muted: #5b667a;
-  --soft: #8a95a8;
+  --accent: #0E8F84;
+  --accent-hover: #0A756C;
+  --accent-strong: #12A79A;
+  --accent-soft: rgba(14, 143, 132, .12);
 
-  /* Accent — muted teal (Kitopi-like) */
-  --accent: #0f766e;
-  --accent-soft: rgba(15, 118, 110, .12);
+  --gold: #C8A24D;
+  --gold-soft: rgba(200, 162, 77, .14);
 
-  /* Borders */
-  --border: rgba(15, 23, 42, .10);
-  --border-strong: rgba(15, 23, 42, .16);
+  --border: rgba(15, 23, 32, .10);
+  --border-strong: rgba(15, 23, 32, .16);
 
-  /* Shadows */
-  --shadow-soft: 0 10px 22px rgba(15, 23, 42, .08);
-  --shadow: 0 18px 46px rgba(15, 23, 42, .12);
+  --shadow-soft: 0 10px 30px rgba(15, 23, 32, .08);
+  --shadow: 0 20px 60px rgba(15, 23, 32, .12);
 
-  /* Radius */
   --r-xs: 12px;
   --r-sm: 14px;
   --r-md: 18px;
   --r-lg: 22px;
 
-  /* Controls */
-  --h-ctl: 40px;
+  --h-ctl: 42px;
   --h-ctl-sm: 36px;
 
-  /* Focus */
-  --ring: rgba(15, 118, 110, .28);
+  --ring: rgba(14, 143, 132, .22);
 
-  /* Typography */
   --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
 
@@ -148,7 +144,7 @@ img{ display:block; max-width:100%; height:auto; }
   padding: 0 14px;
   border-radius: var(--r-sm);
   border: 1px solid var(--border);
-  background: var(--surface);
+  background: rgba(255,255,255,.88);
   color: var(--text);
   font-weight: 950;
   box-shadow: var(--shadow-soft);
@@ -158,7 +154,7 @@ img{ display:block; max-width:100%; height:auto; }
 .gc-btn:active{ transform: translateY(0); }
 .gc-btn:disabled{ opacity: .60; cursor: not-allowed; transform: none; }
 
-.gc-btn-primary{ border-color: rgba(15,118,110,.30); background: rgba(15,118,110,.12); }
+.gc-btn-primary{ border-color: rgba(14,143,132,.32); background: linear-gradient(180deg, var(--accent-strong) 0%, var(--accent) 100%); color: #fff; }
 .gc-btn-secondary{ background: rgba(15,23,42,.03); }
 .gc-btn-ghost{ background: transparent; box-shadow: none; }
 .gc-btn-danger{ border-color: rgba(220,38,38,.25); background: rgba(220,38,38,.10); }
@@ -183,7 +179,7 @@ img{ display:block; max-width:100%; height:auto; }
   max-width: 100%;
   transition: box-shadow .15s ease, border-color .15s ease;
 }
-.gc-input:focus{ border-color: rgba(15,118,110,.45); box-shadow: 0 0 0 4px var(--ring); }
+.gc-input:focus{ border-color: rgba(14,143,132,.45); box-shadow: 0 0 0 4px var(--ring); }
 .gc-input-compact{ height: var(--h-ctl-sm); border-radius: var(--r-xs); }
 textarea.gc-input{ height:auto; padding: 10px 12px; }
 
@@ -265,7 +261,7 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.gc-table tbody tr:hover{ background: rgba(15,118,110,.04); }
+.gc-table tbody tr:hover{ background: rgba(14,143,132,.04); }
 .gc-tabnums{ font-variant-numeric: tabular-nums; }
 
 /* -------------------------
@@ -303,8 +299,8 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 .gc-side-card{ padding: 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
 
 .gc-brand{ display:flex; align-items:center; gap: 10px; min-width: 0; }
-.gc-brand-mark{ width: 36px; height: 36px; border-radius: var(--r-xs); background: var(--accent-soft); display:grid; place-items:center; overflow:hidden; flex: 0 0 auto; }
-.gc-brand-mark img{ width: 22px; height: 22px; object-fit: contain; }
+.gc-brand-mark{ width: 38px; height: 38px; border-radius: 14px; background: var(--accent-soft); display:grid; place-items:center; overflow:hidden; flex: 0 0 auto; border: 1px solid rgba(14,143,132,.18); }
+.gc-brand-mark img{ width: 26px; height: 26px; object-fit: contain; }
 .gc-brand-name{ font-weight: 950; letter-spacing: -0.02em; }
 .gc-brand-accent{ color: var(--accent); }
 .gc-brand-sub{ margin-top: 2px; font-size: 12px; color: var(--muted); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
@@ -313,25 +309,25 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 .gc-nav{ padding: 8px 10px 14px 10px; }
 .gc-nav-item{ display:flex; align-items:center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); color: var(--muted); border: 1px solid transparent; transition: background .12s ease, transform .12s ease, color .12s ease; }
 .gc-nav-item:hover{ background: rgba(15,23,42,.04); color: var(--text); transform: translateY(-1px); }
-.gc-nav-item.is-active{ background: var(--accent-soft); border-color: rgba(15,118,110,.20); color: var(--text); }
+.gc-nav-item.is-active{ background: var(--accent-soft); border-color: rgba(14,143,132,.20); color: var(--text); }
 
 .gc-seg{ display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: rgba(15,23,42,.03); }
 .gc-seg-btn{ width: 100%; height: var(--h-ctl); border-radius: var(--r-sm); border: 1px solid transparent; background: transparent; color: var(--muted); font-weight: 950; transition: background .12s ease, transform .12s ease, border-color .12s ease, color .12s ease; }
 .gc-seg-btn:hover{ transform: translateY(-1px); }
-.gc-seg-btn.is-active{ background: var(--surface); border-color: rgba(15,118,110,.26); box-shadow: var(--shadow-soft); color: var(--text); }
+.gc-seg-btn.is-active{ background: var(--surface); border-color: rgba(14,143,132,.26); box-shadow: var(--shadow-soft); color: var(--text); }
 
 .gc-main{ min-width: 0; display:flex; flex-direction: column; min-height: 0; }
 
 .gc-topbar{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-soft); padding: 14px 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; min-width: 0; }
 .gc-topbar-card{ margin-bottom: 14px; }
-.gc-topbar-logo{ width: 22px; height: 22px; object-fit: contain; flex: 0 0 auto; }
+.gc-topbar-logo{ width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; }
 .gc-title{ font-weight: 950; letter-spacing: -0.02em; }
 .gc-subtitle{ font-size: 12px; color: var(--muted); margin-top: 2px; }
 .gc-actions{ display:flex; align-items:center; gap: 10px; min-width: 0; }
 
 .gc-actions-menu{ position: relative; }
-.gc-user-trigger-btn{ display:inline-flex; align-items:center; gap: 10px; border: 1px solid var(--border); background: var(--surface-2); padding: 8px 10px; border-radius: var(--r-md); min-width: 0; }
-.gc-avatar{ width: 32px; height: 32px; border-radius: var(--r-xs); display:grid; place-items:center; background: rgba(15,23,42,.06); font-weight: 950; flex: 0 0 auto; }
+.gc-user-trigger-btn{ display:inline-flex; align-items:center; gap: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.86); padding: 8px 10px; border-radius: 999px; min-width: 0; box-shadow: 0 10px 22px rgba(15,23,32,.06); }
+.gc-avatar{ width: 34px; height: 34px; border-radius: 999px; display:grid; place-items:center; background: var(--accent-soft); color: var(--accent); font-weight: 950; flex: 0 0 auto; }
 .gc-user-label{ min-width: 0; display:flex; flex-direction: column; }
 .gc-user-email{ font-size: 12px; color: var(--muted); max-width: 280px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gc-user-name{ font-size: 12px; font-weight: 950; }
@@ -363,12 +359,41 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 }
 
 /* -------------------------
-   AUTH PAGE (Logo centered + crisp)
+   AUTH PAGE (Kitopi-like, premium, crisp logo)
 -------------------------- */
-.gc-auth{ min-height: 100vh; display:grid; place-items:center; padding: 22px; background: var(--bg); overflow-x: hidden; }
-.gc-auth-card{ width: min(520px, 100%); background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow); overflow:hidden; }
-.gc-auth-head{ padding: 20px 18px 12px 18px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
-.gc-auth-body{ padding: 18px; }
+.gc-auth{
+  min-height: 100vh;
+  display:grid;
+  place-items:center;
+  padding: 28px 18px;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+.gc-auth-card{
+  width: min(520px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  box-shadow: var(--shadow-soft);
+  overflow:hidden;
+}
+.gc-auth-head{
+  padding: 34px 28px 16px 28px;
+  background: var(--surface);
+  border-bottom: 0;
+  position: relative;
+}
+.gc-auth-head::after{
+  content:'';
+  display:block;
+  width: 44px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--gold);
+  margin: 14px auto 0 auto;
+  opacity: .95;
+}
+.gc-auth-body{ padding: 16px 28px 26px 28px; }
 
 .gc-auth-logo-centered{
   display:flex;
@@ -376,16 +401,40 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
   align-items: center;
   justify-content: center;
   text-align: center;
-  gap: 10px;
+  gap: 12px;
 }
 .gc-auth-logo-centered img{
-  width: 58px;
-  height: 58px;
+  height: clamp(54px, 7vw, 68px);
+  width: auto;
   object-fit: contain;
   image-rendering: -webkit-optimize-contrast;
 }
-.gc-auth-title{ font-weight: 950; letter-spacing: -0.02em; font-size: 18px; }
-.gc-auth-sub{ color: var(--muted); font-size: 12.5px; margin-top: 2px; }
+.gc-auth-title{
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 20px;
+  color: var(--text-strong);
+}
+.gc-auth-sub{
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Auth inputs: Kitopi-like light field */
+.gc-auth .gc-label{ font-size: 11px; letter-spacing: .08em; }
+.gc-auth .gc-input{
+  height: 46px;
+  background: #EAF3FF;
+  border-color: rgba(15,23,32,.12);
+  border-radius: 14px;
+  font-size: 14px;
+}
+.gc-auth .gc-input:focus{
+  border-color: rgba(14,143,132,.45);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
 
 /* -------------------------
    TABS (Enterprise)
@@ -415,8 +464,8 @@ textarea.gc-input{ height:auto; padding: 10px 12px; }
 }
 .gc-tab:hover{ background: rgba(15,23,42,.06); }
 .gc-tab-active{
-  background: rgba(15,118,110,.14);
-  border-color: rgba(15,118,110,.28);
+  background: rgba(14,143,132,.14);
+  border-color: rgba(14,143,132,.28);
 }
 
 /* -------------------------

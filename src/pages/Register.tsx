@@ -77,7 +77,7 @@ export default function Register() {
             }}
           >
             Gastro
-            <span style={{ color: '#0f766e' }}>Chef</span>
+            <span style={{ color: 'var(--accent)' }}>Chef</span>
           </div>
 
           <div style={{ marginTop: 10, fontSize: 13, color: '#64748b' }}>Create your account</div>
@@ -87,7 +87,7 @@ export default function Register() {
               width: 72,
               height: 4,
               borderRadius: 999,
-              background: '#0f766e',
+              background: 'var(--accent)',
               margin: '14px auto 0',
             }}
           />

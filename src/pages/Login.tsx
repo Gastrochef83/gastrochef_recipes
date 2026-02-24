@@ -82,7 +82,7 @@ export default function Login() {
             />
             <div>
               <div className="gc-auth-title">GastroChef</div>
-              <div className="gc-auth-sub">Sign in to your kitchen workspace</div>
+              <div className="gc-auth-sub">CONCIERGE LOGIN</div>
             </div>
           </div>
         </div>
@@ -93,9 +93,11 @@ export default function Login() {
           ) : (
             <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
               <div style={{ minWidth: 0 }}>
-                <div className="gc-label">Email</div>
+                <div className="gc-label">ENTER EMAIL</div>
                 <input
                   className="gc-input"
+                  type="email"
+                  placeholder="name@company.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   autoComplete="email"
@@ -105,10 +107,11 @@ export default function Login() {
               </div>
 
               <div style={{ minWidth: 0 }}>
-                <div className="gc-label">Password</div>
+                <div className="gc-label">ENTER PASSWORD</div>
                 <input
                   className="gc-input"
                   type="password"
+                  placeholder="••••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   autoComplete="current-password"
