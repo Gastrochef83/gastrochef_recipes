@@ -1,157 +1,90 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
+#!/usr/bin/env bash
+set -euo pipefail
 
-export default function Login() {
-  const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
+# =========================================================
+# GastroChef — NUCLEAR ZIP BUILDER
+# - Runs a clean install
+# - Typecheck + Build
+# - Produces a deployable ZIP artifact
+# =========================================================
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [err, setErr] = useState<string | null>(null)
-  const [busy, setBusy] = useState(false)
-  const [checking, setChecking] = useState(true)
+ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$ROOT_DIR"
 
-  // ✅ If already signed in, go straight to the app (prevents weird loop / blank state)
-  useEffect(() => {
-    let alive = true
+echo "==> Node version"
+node -v || true
+echo "==> NPM version"
+npm -v || true
 
-    async function check() {
-      try {
-        const { data } = await supabase.auth.getSession()
-        if (!alive) return
-        const hasSession = !!data?.session
-        if (hasSession) {
-          window.location.assign(`${base}#/dashboard`)
-          return
-        }
-      } catch {
-        // ignore
-      } finally {
-        if (alive) setChecking(false)
-      }
-    }
+echo "==> Clean install"
+rm -rf node_modules
+npm ci
 
-    check()
-    return () => {
-      alive = false
-    }
-  }, [base])
+echo "==> Lint (if configured)"
+npm run lint --if-present
 
-  const onSubmit = async (e: FormEvent) => {
-    e.preventDefault()
-    if (busy) return
+echo "==> Typecheck (if configured)"
+npm run typecheck --if-present
 
-    setBusy(true)
-    setErr(null)
+echo "==> Build"
+npm run build
 
-    try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      })
+echo "==> Create ZIP (source + config, excluding node_modules, .git, caches)"
+OUT_DIR="$ROOT_DIR/__dist"
+mkdir -p "$OUT_DIR"
 
-      if (error) {
-        setErr(error.message)
-        return
-      }
+ZIP_NAME="gastrochef_NUCLEAR_FINAL_$(date +%Y%m%d_%H%M%S).zip"
+ZIP_PATH="$OUT_DIR/$ZIP_NAME"
 
-      // ✅ HashRouter-safe redirect
-      window.location.assign(`${base}#/dashboard`)
-    } catch (e: any) {
-      setErr(e?.message || 'Login failed.')
-    } finally {
-      setBusy(false)
-    }
-  }
+# Use zip if available; otherwise fall back to python zip
+if command -v zip >/dev/null 2>&1; then
+  (cd "$ROOT_DIR" && \
+    zip -r "$ZIP_PATH" . \
+      -x "node_modules/*" ".git/*" ".vercel/*" "__dist/*" "dist/*" "build/*" \
+         ".DS_Store" "npm-debug.log" "yarn.lock" "pnpm-lock.yaml" \
+         "*.zip")
+else
+  python - <<'PY'
+import os, zipfile, time
+from pathlib import Path
 
-  const logoSrc = `${base}gastrochef-logo.png`
-  const logoFallback = `${base}gastrochef-icon-512.png`
+root = Path(".").resolve()
+out_dir = root/"__dist"
+out_dir.mkdir(exist_ok=True)
+zip_name = f"gastrochef_NUCLEAR_FINAL_{time.strftime('%Y%m%d_%H%M%S')}.zip"
+zip_path = out_dir/zip_name
 
-  return (
-    <div className="gc-auth">
-      <div className="gc-auth-card">
-        {/* ✅ BRAND LOGO (Centered, crisp, Vercel-safe) */}
-        <div className="gc-auth-head">
-          <div className="gc-auth-logo-centered">
-            <img
-              src={logoSrc}
-              alt="GastroChef"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).src = logoFallback
-              }}
-            />
-            <div>
-              <div className="gc-auth-title">GastroChef</div>
-              <div className="gc-auth-sub">CONCIERGE LOGIN</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="gc-auth-body">
-          {checking ? (
-            <div style={{ padding: 18, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
-          ) : (
-            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
-              <div style={{ minWidth: 0 }}>
-                <div className="gc-label">ENTER EMAIL</div>
-                <input
-                  className="gc-input"
-                  type="email"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  style={{ marginTop: 6 }}
-                />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <div className="gc-label">ENTER PASSWORD</div>
-                <input
-                  className="gc-input"
-                  type="password"
-                  placeholder="••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  style={{ marginTop: 6 }}
-                />
-              </div>
-
-              {err && (
-                <div
-                  style={{
-                    borderRadius: 14,
-                    background: 'rgba(220,38,38,.08)',
-                    border: '1px solid rgba(220,38,38,.18)',
-                    color: '#b91c1c',
-                    padding: 12,
-                    fontSize: 13,
-                  }}
-                >
-                  {err}
-                </div>
-              )}
-
-              <button type="submit" disabled={busy} className="gc-btn gc-btn-primary" style={{ width: '100%' }}>
-                {busy ? 'Signing in…' : 'Login'}
-              </button>
-            </form>
-          )}
-
-          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--muted)' }}>
-            New here?{' '}
-            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
-              Create an account
-            </Link>
-          </div>
-        </div>
-
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
-          Tip: If logout “bounces”, this build uses hard redirect for stability.
-        </div>
-      </div>
-    </div>
-  )
+exclude_prefixes = {
+  str(root/"node_modules"),
+  str(root/".git"),
+  str(root/".vercel"),
+  str(root/"__dist"),
+  str(root/"dist"),
+  str(root/"build"),
 }
+
+def excluded(p: Path) -> bool:
+  sp = str(p)
+  for ex in exclude_prefixes:
+    if sp.startswith(ex):
+      return True
+  if p.name.endswith(".zip"):
+    return True
+  if p.name in {".DS_Store", "npm-debug.log"}:
+    return True
+  return False
+
+with zipfile.ZipFile(zip_path, "w", compression=zipfile.ZIP_DEFLATED) as z:
+  for path in root.rglob("*"):
+    if path.is_dir():
+      continue
+    if excluded(path):
+      continue
+    z.write(path, path.relative_to(root))
+
+print(zip_path)
+PY
+fi
+
+echo "==> DONE: $ZIP_PATH"
+echo "Upload this ZIP to GitHub (replace repo) or keep as release artifact."

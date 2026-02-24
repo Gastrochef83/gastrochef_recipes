@@ -1,16 +1,23 @@
 import React from 'react'
-import { NavLink } from 'react-router-dom'
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip } from 'recharts'
 
-export default function RecipeList({ recipes }: { recipes: any[] }) {
+export default function TimelineChart({ data }: { data: any[] }) {
+  const normalized = (data ?? []).map((d) => ({
+    ...d,
+    x: d.created_at ?? d.date,
+    y: Number(d.total_cost ?? d.cost ?? 0)
+  }))
+
   return (
-    <div className="gc-list">
-      {(recipes ?? []).map((r) => (
-        <NavLink key={r.id} to={`/recipe/${r.id}`} className="gc-list__item">
-          <div className="gc-list__title">{r.name}</div>
-          <div className="gc-list__meta">{r.category ?? '—'}</div>
-        </NavLink>
-      ))}
-      {!recipes?.length ? <div className="gc-muted">No recipes yet.</div> : null}
+    <div style={{ width: '100%', height: 320 }}>
+      <ResponsiveContainer>
+        <LineChart data={normalized}>
+          <XAxis dataKey="x" hide />
+          <YAxis />
+          <Tooltip />
+          <Line type="monotone" dataKey="y" dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   )
 }

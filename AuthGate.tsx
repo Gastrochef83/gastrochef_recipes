@@ -1,55 +1,31 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import React from 'react'
+import ReactDOM from 'react-dom/client'
+import { HashRouter } from 'react-router-dom'
+import App from './App'
 
-import AppLayout from './layouts/AppLayout'
-import AuthGate from './components/AuthGate'
+// ✅ Tailwind utilities (your app uses Tailwind classes heavily)
+import './index.css'
 
-import Dashboard from './pages/Dashboard'
-import Ingredients from './pages/Ingredients'
-import Recipes from './pages/Recipes'
-import RecipeEditor from './pages/RecipeEditor'
-import RecipeCookMode from './pages/RecipeCookMode'
-import RecipePrintCard from './pages/RecipePrintCard'
-import Settings from './pages/Settings'
+// ✅ GastroChef theme
+import './styles.css'
 
-import Login from './pages/Login'
-import Register from './pages/Register'
+import { ModeProvider } from './lib/mode'
+import ErrorBoundary from './components/ErrorBoundary'
 
 /**
- * ✅ ABSOLUTE FINAL CORE — FIXED (Vercel build)
- * - DOES NOT import HashRouter here (HashRouter stays in main.tsx)
- * - Fixes Cook mode import: RecipeCookMode.tsx
- * - Protects app routes with AuthGate (no bounce-back after logout)
- * - No changes to your business logic
+ * ✅ FINAL GOD — render stability
+ * Notes:
+ * - We intentionally DO NOT wrap with React.StrictMode here
+ *   to avoid double-mount/double-fetch issues in dev that can look like freezes.
+ * - Production build is unchanged, but this makes local + preview behavior stable.
  */
-export default function App() {
-  return (
-    <Routes>
-      {/* Public */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
 
-      {/* Protected App */}
-      <Route
-        path="/"
-        element={
-          <AuthGate redirectTo="/login">
-            <AppLayout />
-          </AuthGate>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="ingredients" element={<Ingredients />} />
-        <Route path="recipes" element={<Recipes />} />
-        <Route path="recipe" element={<RecipeEditor />} />
-        {/* Cook mode is opened from RecipeEditor via /cook?id=... */}
-        <Route path="cook" element={<RecipeCookMode />} />
-        <Route path="print" element={<RecipePrintCard />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  )
-}
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <HashRouter>
+    <ModeProvider>
+      <ErrorBoundary>
+        <App />
+      </ErrorBoundary>
+    </ModeProvider>
+  </HashRouter>
+)

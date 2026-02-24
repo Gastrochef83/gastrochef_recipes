@@ -1,288 +1,147 @@
-// src/layouts/AppLayout.tsx
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { useMode } from '../lib/mode'
+import React, { createContext, useContext, useMemo, useState, useCallback } from 'react'
 import { supabase } from '../lib/supabase'
-import { useKitchen, clearKitchenCache } from '../lib/kitchen'
+import type { Recipe, RecipeIngredient, CostPoint } from '../types'
 
-function cx(...arr: Array<string | false | null | undefined>) {
-  return arr.filter(Boolean).join(' ')
+type DB = {
+  loading: boolean
+  getRecipes: () => Promise<Recipe[]>
+  getRecipe: (id: string) => Promise<Recipe | null>
+  getIngredients: (recipeId: string) => Promise<RecipeIngredient[]>
+  updateRecipe: (id: string, patch: Partial<Recipe> & { ingredients?: RecipeIngredient[] }) => Promise<void>
+  createRecipe: (name?: string) => Promise<Recipe>
+  getCostHistory: (recipeId?: string) => Promise<CostPoint[]>
 }
 
-function initialsFrom(emailOrName: string) {
-  const s = (emailOrName || '').trim()
-  if (!s) return 'GC'
-  const parts = s
-    .replace(/[@._-]+/g, ' ')
-    .split(' ')
-    .map((x) => x.trim())
-    .filter(Boolean)
-  const a = (parts[0] || 'G')[0]
-  const b = (parts[1] || parts[0] || 'C')[0]
-  return (a + b).toUpperCase()
-}
+const DatabaseContext = createContext<DB | null>(null)
 
-function clearAppCaches() {
-  try {
-    // mode UI
-    localStorage.removeItem('gc-mode')
-    // cost cache in Recipes page
-    localStorage.removeItem('gc_v5_cost_cache_v1')
-    // kitchen profile cache
-    clearKitchenCache()
-    // keep other app localStorage keys unless known safe
-    sessionStorage.clear()
-  } catch {}
-}
+export function DatabaseProvider({ children }: { children: React.ReactNode }) {
+  const [loading, setLoading] = useState(false)
 
-export default function AppLayout() {
-  const { isKitchen, isMgmt, setMode } = useMode()
-  const k = useKitchen()
+  // Default table names. Change here if your schema differs.
+  const T_RECIPES = 'recipes'
+  const T_LINES = 'recipe_lines'
+  const T_COST = 'cost_history'
 
-  const loc = useLocation()
-
-  // HashRouter-safe print detection
-  // - In HashRouter, loc.pathname is often '/', and the real route is in loc.hash.
-  const isPrintRoute = useMemo(() => {
-    const path = (loc.pathname || '').toLowerCase()
-    const hash = (loc.hash || '').toLowerCase()
-    return path.includes('/print') || hash.includes('#/print') || hash.includes('/print')
-  }, [loc.pathname, loc.hash])
-
-  const [dark, setDark] = useState(false)
-  const [loggingOut, setLoggingOut] = useState(false)
-  const [userEmail, setUserEmail] = useState<string>('')
-
-  const menuRef = useRef<HTMLDetailsElement | null>(null)
-
-  const base = (import.meta as any).env?.BASE_URL || '/'
-  // ✅ BRAND LOCK: use the SAME logo asset everywhere (login/sidebar/topbar)
-  const brandLogo = `${base}gastrochef-logo.png`
-  const brandFallback = `${base}gastrochef-icon-512.png`
-
-  // Always keep user email in sync (login/logout/switch)
-  useEffect(() => {
-    let alive = true
-
-    async function loadUser() {
-      try {
-        const { data } = await supabase.auth.getUser()
-        const email = data?.user?.email || ''
-        if (alive) setUserEmail(email)
-      } catch {
-        if (alive) setUserEmail('')
-      }
-    }
-
-    loadUser()
-
-    const { data: sub } = supabase.auth.onAuthStateChange(() => {
-      loadUser()
-    })
-
-    return () => {
-      alive = false
-      sub?.subscription?.unsubscribe()
+  const getRecipes = useCallback(async () => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase.from(T_RECIPES).select('*').order('updated_at', { ascending: false })
+      if (error) throw error
+      return (data ?? []) as Recipe[]
+    } finally {
+      setLoading(false)
     }
   }, [])
 
-  const title = useMemo(() => {
-    const p = ((loc.pathname || '') + ' ' + (loc.hash || '')).toLowerCase()
-    if (p.includes('ingredients')) return 'Ingredients'
-    if (p.includes('recipes')) return 'Recipes'
-    if (p.includes('print')) return 'Print'
-    if (p.includes('cook')) return 'Cook Mode'
-    if (p.includes('recipe')) return 'Recipe Editor'
-    if (p.includes('settings')) return 'Settings'
-    return 'Dashboard'
-  }, [loc.pathname, loc.hash])
-
-  async function handleLogout() {
-    if (loggingOut) return
-    setLoggingOut(true)
-
+  const getRecipe = useCallback(async (id: string) => {
+    setLoading(true)
     try {
-      await supabase.auth.signOut()
-    } catch {
-      // ignore
-    }
-
-    try {
-      clearAppCaches()
-      setMode('mgmt')
+      const { data, error } = await supabase.from(T_RECIPES).select('*').eq('id', id).maybeSingle()
+      if (error) throw error
+      return (data ?? null) as Recipe | null
     } finally {
-      window.location.assign(`${base}#/login`)
+      setLoading(false)
     }
-  }
+  }, [])
 
-  function closeMenu() {
-    if (menuRef.current) menuRef.current.open = false
-  }
+  const getIngredients = useCallback(async (recipeId: string) => {
+    setLoading(true)
+    try {
+      const { data, error } = await supabase.from(T_LINES).select('*').eq('recipe_id', recipeId).order('id', { ascending: true })
+      if (error) throw error
 
-  const avatarText = initialsFrom(userEmail || 'GastroChef')
-  const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
+      // Map DB rows to UI model (best-effort, schema-agnostic)
+      const rows = (data ?? []) as any[]
+      return rows.map((r) => ({
+        id: String(r.id ?? crypto.randomUUID()),
+        name: String(r.name ?? r.ingredient_name ?? ''),
+        quantity: Number(r.quantity ?? r.net_qty ?? 0),
+        unit: String(r.unit ?? 'g'),
+        cost_per_unit: Number(r.cost_per_unit ?? r.unit_cost ?? 0),
+        yield_percent: Number(r.yield_percent ?? r.yield_pct ?? 100),
+        note: r.note ?? null,
+        recipe_id: r.recipe_id
+      })) as RecipeIngredient[]
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-  // Print route: minimal layout only
-  if (isPrintRoute) {
-    return (
-      <div className={cx('gc-root', dark && 'gc-dark', 'gc-print-route')}>
-        <main className="gc-main" style={{ padding: 0 }}>
-          <Outlet />
-        </main>
-      </div>
-    )
-  }
+  const updateRecipe = useCallback(async (id: string, patch: Partial<Recipe> & { ingredients?: RecipeIngredient[] }) => {
+    setLoading(true)
+    try {
+      const { ingredients, ...recipePatch } = patch
 
-  return (
-    <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
-      <div className="gc-shell" style={{ gridTemplateColumns: 'clamp(240px, 18vw, 280px) minmax(0, 1fr)' }}>
-        <aside className="gc-side">
-          <div className="gc-side-card">
-            <div className="gc-brand">
-              <div className="gc-brand-mark" aria-hidden="true">
-                <img
-                  src={brandLogo}
-                  alt=""
-                  onError={(e) => {
-                    ;(e.currentTarget as HTMLImageElement).src = brandFallback
-                  }}
-                />
-              </div>
+      if (Object.keys(recipePatch).length) {
+        const { error } = await supabase
+          .from(T_RECIPES)
+          .update({ ...recipePatch, updated_at: new Date().toISOString() } as any)
+          .eq('id', id)
+        if (error) throw error
+      }
 
-              <div>
-                <div className="gc-brand-name">
-                  Gastro<span className="gc-brand-accent">Chef</span>
-                </div>
-                <div className="gc-brand-sub">{kitchenLabel}</div>
-              </div>
-            </div>
+      if (ingredients) {
+        // Replace lines (schema-agnostic)
+        await supabase.from(T_LINES).delete().eq('recipe_id', id)
+        if (ingredients.length) {
+          const payload = ingredients.map((l) => ({
+            recipe_id: id,
+            name: l.name,
+            quantity: l.quantity,
+            unit: l.unit,
+            cost_per_unit: l.cost_per_unit,
+            yield_percent: l.yield_percent,
+            note: l.note ?? null
+          }))
+          const { error } = await supabase.from(T_LINES).insert(payload as any)
+          if (error) throw error
+        }
+      }
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-            <div className="gc-side-block" style={{ marginTop: 14 }}>
-              <div className="gc-label">MODE</div>
-              <div className="gc-seg">
-                <button className={cx('gc-seg-btn', isKitchen && 'is-active')} type="button" onClick={() => setMode('kitchen')}>
-                  Kitchen
-                </button>
-                <button className={cx('gc-seg-btn', isMgmt && 'is-active')} type="button" onClick={() => setMode('mgmt')}>
-                  Mgmt
-                </button>
-              </div>
+  const createRecipe = useCallback(async (name?: string) => {
+    setLoading(true)
+    try {
+      const payload: any = {
+        name: name ?? 'New Recipe',
+        portions: 4,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+      const { data, error } = await supabase.from(T_RECIPES).insert(payload).select('*').single()
+      if (error) throw error
+      return data as Recipe
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-              <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
-            </div>
+  const getCostHistory = useCallback(async (recipeId?: string) => {
+    setLoading(true)
+    try {
+      let q: any = supabase.from(T_COST).select('*').order('created_at', { ascending: true })
+      if (recipeId) q = q.eq('recipe_id', recipeId)
+      const { data, error } = await q
+      if (error) throw error
+      return (data ?? []) as CostPoint[]
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
-            <div className="gc-side-block" style={{ marginTop: 14 }}>
-              <div className="gc-label">NAVIGATION</div>
-
-              <nav className="gc-nav">
-                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                  Dashboard
-                </NavLink>
-                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                  Ingredients
-                </NavLink>
-                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                  Recipes
-                </NavLink>
-                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                  Settings
-                </NavLink>
-              </nav>
-
-              <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
-            </div>
-
-            <div className="gc-side-block" style={{ marginTop: 14 }}>
-              <button
-                className="gc-btn gc-btn-danger w-full"
-                type="button"
-                onClick={handleLogout}
-                disabled={loggingOut}
-                aria-disabled={loggingOut}
-                title="Sign out"
-              >
-                {loggingOut ? 'Logging out…' : 'Log out'}
-              </button>
-            </div>
-          </div>
-        </aside>
-
-        <main className="gc-main">
-          <div className="gc-topbar gc-topbar-card">
-            <div className="gc-topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img
-                className="gc-topbar-logo"
-                src={brandLogo}
-                alt="GastroChef"
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).src = brandFallback
-                }}
-              />
-              <div>
-                <div className="gc-title">{title}</div>
-                <div className="gc-subtitle">{k.error ? `Kitchen error: ${k.error}` : kitchenLabel}</div>
-              </div>
-            </div>
-
-            <div className="gc-actions">
-              <details ref={menuRef} className="gc-actions-menu">
-                <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
-                  <span className="gc-avatar" aria-hidden="true">
-                    {avatarText}
-                  </span>
-                  <span className="gc-user-label">
-                    <span className="gc-user-name">{k.profile?.role ? `Role: ${k.profile.role}` : 'Account'}</span>
-                    <span className="gc-user-email">{userEmail || 'Signed in'}</span>
-                  </span>
-                </summary>
-
-                <div className="gc-actions-panel gc-user-panel" role="menu">
-                  <button
-                    className="gc-actions-item"
-                    type="button"
-                    onClick={() => {
-                      setDark((v) => !v)
-                      closeMenu()
-                    }}
-                  >
-                    {dark ? 'Light Mode' : 'Dark Mode'}
-                  </button>
-
-                  <button
-                    className="gc-actions-item"
-                    type="button"
-                    onClick={async () => {
-                      closeMenu()
-                      await k.refresh().catch(() => {})
-                    }}
-                  >
-                    Refresh kitchen
-                  </button>
-
-                  <button
-                    className="gc-actions-item gc-actions-danger"
-                    type="button"
-                    onClick={async () => {
-                      closeMenu()
-                      await handleLogout()
-                    }}
-                    disabled={loggingOut}
-                    aria-disabled={loggingOut}
-                  >
-                    {loggingOut ? 'Logging out…' : 'Log out'}
-                  </button>
-                </div>
-              </details>
-            </div>
-          </div>
-
-          <div className="gc-content">
-            <div className="gc-page">
-              <Outlet />
-            </div>
-          </div>
-        </main>
-      </div>
-    </div>
+  const value = useMemo<DB>(
+    () => ({ loading, getRecipes, getRecipe, getIngredients, updateRecipe, createRecipe, getCostHistory }),
+    [loading, getRecipes, getRecipe, getIngredients, updateRecipe, createRecipe, getCostHistory]
   )
+
+  return <DatabaseContext.Provider value={value}>{children}</DatabaseContext.Provider>
+}
+
+export function useDatabase() {
+  const ctx = useContext(DatabaseContext)
+  if (!ctx) throw new Error('useDatabase must be used within DatabaseProvider')
+  return ctx
 }

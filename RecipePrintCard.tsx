@@ -1,25 +1,39 @@
-import { createClient } from '@supabase/supabase-js'
+import { supabase } from './supabase'
 
-/**
- * ✅ FINAL GOD — Supabase client hardening (no business-logic change)
- * - Better HashRouter compatibility (detectSessionInUrl: false)
- * - Stable session persistence + token refresh
- * - Clear error if env vars are missing (prevents silent blank screens)
- */
-
-const supabaseUrl = (import.meta as any).env?.VITE_SUPABASE_URL as string
-const supabaseAnonKey = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY as string
-
-if (!supabaseUrl || !supabaseAnonKey) {
-  // Fail loudly (Vercel logs + ErrorBoundary) instead of a silent crash later
-  throw new Error('Missing Supabase env vars: VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY')
+export type CachedIngredient = {
+  id: string
+  name: string | null
+  pack_unit: string | null
+  net_unit_cost: number | null
+  is_active: boolean | null
 }
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    // ✅ Important with HashRouter + manual redirects (#/login, #/dashboard)
-    detectSessionInUrl: false,
-  },
-})
+type CachePayload = {
+  ts: number
+  data: CachedIngredient[]
+}
+
+let mem: CachePayload | null = null
+
+// Keep small & safe: 60s is enough to prevent duplicate queries while keeping UI fresh.
+const TTL_MS = 60_000
+
+export function invalidateIngredientsCache() {
+  mem = null
+}
+
+export async function getIngredientsCached(): Promise<CachedIngredient[]> {
+  const now = Date.now()
+  if (mem && now - mem.ts < TTL_MS) return mem.data
+
+  const { data, error } = await supabase
+    .from('ingredients')
+    .select('id,name,pack_unit,net_unit_cost,is_active')
+    .order('name', { ascending: true })
+
+  if (error) throw error
+
+  const list = (data || []) as CachedIngredient[]
+  mem = { ts: now, data: list }
+  return list
+}

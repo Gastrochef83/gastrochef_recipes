@@ -1,79 +1,48 @@
-// components/recipe/PrintView.tsx - Professional A4 chef-ready print
-import React, { forwardRef } from 'react';
-import { Recipe, RecipeIngredient } from '../../types';
+import React, { useMemo, useState } from 'react'
+import type { Recipe, RecipeIngredient } from '../../types'
+import Button from '../ui/Button'
 
-interface Props {
-  recipe: Recipe;
-  ingredients: RecipeIngredient[];
-  portions: number;
-}
+export default function CookMode({ recipe, ingredients }: { recipe: Recipe; ingredients: RecipeIngredient[] }) {
+  const [checked, setChecked] = useState<Record<string, boolean>>({})
 
-const PrintView = forwardRef<HTMLDivElement, Props>(({ recipe, ingredients, portions }, ref) => {
-  const totalCost = ingredients.reduce((sum, ing) => 
-    sum + (ing.quantity * ing.cost_per_unit * (ing.yield_percent / 100)), 0
-  );
-  
+  const steps = useMemo(() => {
+    return ingredients.map((i) => ({
+      id: i.id,
+      text: `${i.name} — ${i.quantity} ${i.unit}`
+    }))
+  }, [ingredients])
+
+  const doneCount = Object.values(checked).filter(Boolean).length
+
   return (
-    <div className="print-view" ref={ref}>
-      <div className="print-header">
-        <h1>{recipe.name}</h1>
-        <div className="recipe-meta">
-          <span>Portions: {portions}</span>
-          <span>Date: {new Date().toLocaleDateString()}</span>
+    <div className="gc-panel">
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12 }}>
+        <div>
+          <h3 style={{ margin: 0 }}>Cook Mode</h3>
+          <div className="gc-muted">{recipe.name}</div>
         </div>
+        <div className="gc-muted">{doneCount}/{steps.length} done</div>
       </div>
-      
-      <div className="print-grid">
-        <div className="ingredients-section">
-          <h2>Ingredients</h2>
-          <table className="ingredients-table">
-            <thead>
-              <tr>
-                <th>Ingredient</th>
-                <th>Quantity</th>
-                <th>Unit</th>
-                <th>Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              {ingredients.map(ing => (
-                <tr key={ing.id}>
-                  <td>{ing.name}</td>
-                  <td>{(ing.quantity * (ing.yield_percent / 100)).toFixed(1)}</td>
-                  <td>{ing.unit}</td>
-                  <td>${(ing.quantity * ing.cost_per_unit * (ing.yield_percent / 100)).toFixed(2)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        
-        <div className="method-section">
-          <h2>Method</h2>
-          <p>{String((recipe as any).method ?? '').trim() || 'No method provided.'}</p>
-        </div>
-        
-        <div className="cost-section">
-          <h2>Cost Analysis</h2>
-          <div className="cost-breakdown">
-            <div>Total Cost: ${totalCost.toFixed(2)}</div>
-            <div>Cost per Portion: ${(totalCost / portions).toFixed(2)}</div>
-            {recipe.menu_price && (
-              <div>Menu Price: ${recipe.menu_price.toFixed(2)}</div>
-            )}
-          </div>
-        </div>
-        
-        {recipe.notes && (
-          <div className="notes-section">
-            <h2>Notes</h2>
-            <p>{recipe.notes}</p>
-          </div>
-        )}
-      </div></div>
-  );
-});
 
-PrintView.displayName = 'PrintView';
+      <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+        {steps.map((s) => (
+          <label key={s.id} className="gc-card" style={{ padding: 12, display: 'flex', alignItems: 'center', gap: 10 }}>
+            <input
+              type="checkbox"
+              checked={!!checked[s.id]}
+              onChange={(e) => setChecked((p) => ({ ...p, [s.id]: e.target.checked }))}
+            />
+            <span style={{ textDecoration: checked[s.id] ? 'line-through' : 'none' }}>{s.text}</span>
+          </label>
+        ))}
+        {!steps.length ? <div className="gc-muted">No ingredients yet.</div> : null}
+      </div>
 
-export default PrintView;
+      <div className="gc-row">
+        <Button variant="secondary" onClick={() => setChecked({})}>
+          Reset
+        </Button>
+      </div>
+    </div>
+  )
+}

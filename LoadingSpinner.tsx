@@ -1,8 +1,15 @@
-export default function KPI({ label, value }: { label: string; value: string }) {
+import { ReactNode } from 'react'
+import SideNav from './SideNav'
+import TopBar from './TopBar'
+
+export default function AppShell({ children }: { children: ReactNode }) {
   return (
-    <div className="rounded-2xl border bg-white p-4">
-      <div className="text-xs font-semibold text-neutral-500">{label}</div>
-      <div className="mt-2 text-2xl font-semibold">{value}</div>
+    <div className="min-h-screen bg-neutral-50">
+      <TopBar />
+      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
+        <SideNav />
+        <main className="w-full">{children}</main>
+      </div>
     </div>
   )
 }

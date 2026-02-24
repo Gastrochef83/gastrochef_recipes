@@ -1,55 +1,38 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-import AppLayout from './layouts/AppLayout'
-import AuthGate from './components/AuthGate'
+/* =========================================================
+   GastroChef — Global containment (ZERO overflow guarantee)
+   UI/CSS only.
 
-import Dashboard from './pages/Dashboard'
-import Ingredients from './pages/Ingredients'
-import Recipes from './pages/Recipes'
-import RecipeEditor from './pages/RecipeEditor'
-import RecipeCookMode from './pages/RecipeCookMode'
-import RecipePrintCard from './pages/RecipePrintCard'
-import Settings from './pages/Settings'
+   Goals:
+   - Box sizing containment
+   - ZERO horizontal scroll (body & app)
+   - Safe at zoom 100/110/125/150
+   - Safe on wide + small screens
+   ========================================================= */
 
-import Login from './pages/Login'
-import Register from './pages/Register'
+/* 1) Box sizing containment */
+*, *::before, *::after{ box-sizing: border-box; }
 
-/**
- * ✅ ABSOLUTE FINAL CORE — FIXED (Vercel build)
- * - DOES NOT import HashRouter here (HashRouter stays in main.tsx)
- * - Fixes Cook mode import: RecipeCookMode.tsx
- * - Protects app routes with AuthGate (no bounce-back after logout)
- * - No changes to your business logic
- */
-export default function App() {
-  return (
-    <Routes>
-      {/* Public */}
-      <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
+/* 2) Kill page-level horizontal scroll */
+html, body{ width: 100%; max-width: 100%; overflow-x: hidden; }
+html, body, #root{ height: 100%; }
 
-      {/* Protected App */}
-      <Route
-        path="/"
-        element={
-          <AuthGate redirectTo="/login">
-            <AppLayout />
-          </AuthGate>
-        }
-      >
-        <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<Dashboard />} />
-        <Route path="ingredients" element={<Ingredients />} />
-        <Route path="recipes" element={<Recipes />} />
-        <Route path="recipe" element={<RecipeEditor />} />
-        {/* Cook mode is opened from RecipeEditor via /cook?id=... */}
-        <Route path="cook" element={<RecipeCookMode />} />
-        <Route path="print" element={<RecipePrintCard />} />
-        <Route path="settings" element={<Settings />} />
-      </Route>
-
-      {/* Fallback */}
-      <Route path="*" element={<Navigate to="/login" replace />} />
-    </Routes>
-  )
+/* 3) Keep body stable (no layout jumps) */
+body{
+  margin: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
 }
+
+/* 4) Common overflow traps */
+img, video, canvas, svg{ max-width: 100%; height: auto; }
+table{ max-width: 100%; }
+
+/* 5) Prevent vw-based utilities from causing overflow */
+.w-screen{ width: 100% !important; }
+.min-w-\[100vw\]{ min-width: 100% !important; }
+

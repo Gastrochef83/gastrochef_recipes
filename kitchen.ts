@@ -1,39 +1,22 @@
-// contexts/ThemeContext.tsx - Unified token system
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React from 'react'
 
-type Theme = 'light' | 'dark';
+type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
 
-interface ThemeContextType {
-  theme: Theme;
-  toggleTheme: () => void;
+type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
+  variant?: Variant
+  fullWidth?: boolean
 }
 
-const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext);
-  if (!context) throw new Error('useTheme must be used within ThemeProvider');
-  return context;
-};
-
-export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [theme, setTheme] = useState<Theme>(() => {
-    const saved = localStorage.getItem('theme') as Theme;
-    return saved || 'light';
-  });
-  
-  useEffect(() => {
-    localStorage.setItem('theme', theme);
-    document.documentElement.setAttribute('data-theme', theme);
-  }, [theme]);
-  
-  const toggleTheme = () => {
-    setTheme(prev => prev === 'light' ? 'dark' : 'light');
-  };
-  
+export default function Button({
+  variant = 'primary',
+  fullWidth,
+  className = '',
+  ...props
+}: Props) {
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  );
-};
+    <button
+      {...props}
+      className={`gc-btn gc-btn--${variant} ${fullWidth ? 'gc-btn--full' : ''} ${className}`.trim()}
+    />
+  )
+}

@@ -1,31 +1,54 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import { HashRouter } from 'react-router-dom'
-import App from './App'
+// src/lib/mode.tsx
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-// ✅ Tailwind utilities (your app uses Tailwind classes heavily)
-import './index.css'
+export type AppMode = 'kitchen' | 'mgmt'
 
-// ✅ GastroChef theme
-import './styles.css'
+type ModeCtx = {
+  mode: AppMode
+  setMode: (m: AppMode) => void
+  toggleMode: () => void
+  isKitchen: boolean
+  isMgmt: boolean
+}
 
-import { ModeProvider } from './lib/mode'
-import ErrorBoundary from './components/ErrorBoundary'
+const ModeContext = createContext<ModeCtx | null>(null)
 
-/**
- * ✅ FINAL GOD — render stability
- * Notes:
- * - We intentionally DO NOT wrap with React.StrictMode here
- *   to avoid double-mount/double-fetch issues in dev that can look like freezes.
- * - Production build is unchanged, but this makes local + preview behavior stable.
- */
+const KEY = 'gc-mode'
 
-ReactDOM.createRoot(document.getElementById('root')!).render(
-  <HashRouter>
-    <ModeProvider>
-      <ErrorBoundary>
-        <App />
-      </ErrorBoundary>
-    </ModeProvider>
-  </HashRouter>
-)
+export function ModeProvider({ children }: { children: React.ReactNode }) {
+  const [mode, setModeState] = useState<AppMode>('kitchen')
+
+  useEffect(() => {
+    try {
+      const saved = (localStorage.getItem(KEY) || '').toLowerCase()
+      if (saved === 'kitchen' || saved === 'mgmt') setModeState(saved)
+    } catch {}
+  }, [])
+
+  const setMode = (m: AppMode) => {
+    setModeState(m)
+    try {
+      localStorage.setItem(KEY, m)
+    } catch {}
+  }
+
+  const toggleMode = () => setMode(mode === 'kitchen' ? 'mgmt' : 'kitchen')
+
+  const value = useMemo<ModeCtx>(() => {
+    return {
+      mode,
+      setMode,
+      toggleMode,
+      isKitchen: mode === 'kitchen',
+      isMgmt: mode === 'mgmt',
+    }
+  }, [mode])
+
+  return <ModeContext.Provider value={value}>{children}</ModeContext.Provider>
+}
+
+export function useMode() {
+  const ctx = useContext(ModeContext)
+  if (!ctx) throw new Error('useMode must be used inside <ModeProvider>')
+  return ctx
+}

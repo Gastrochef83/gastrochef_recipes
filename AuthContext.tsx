@@ -1,43 +1,59 @@
-import React from 'react'
-import Input from '../ui/Input'
+import React, { useMemo } from 'react'
+import type { RecipeIngredient } from '../../types'
 
-export default function RecipeHeader({
-  name,
-  portions,
-  onPortionChange,
+export default function CostPanel({
   totalCost,
-  costPerPortion
+  costPerPortion,
+  ingredients,
+  portions
 }: {
-  name: string
-  portions: number
-  onPortionChange: (n: number) => void
   totalCost: number
   costPerPortion: number
+  ingredients: RecipeIngredient[]
+  portions: number
 }) {
+  const rows = useMemo(() => {
+    return ingredients.map((i) => ({
+      name: i.name,
+      cost: (i.quantity * i.cost_per_unit) * ((i.yield_percent || 100) / 100)
+    }))
+  }, [ingredients])
+
   return (
-    <div className="recipe-header">
-      <div className="recipe-header__left">
-        <h1 className="recipe-title">{name}</h1>
-        <div className="recipe-sub">
-          <Input
-            type="number"
-            label="Portions"
-            value={portions}
-            min={1}
-            onChange={(e) => onPortionChange(parseInt(e.target.value || '1', 10))}
-          />
+    <div className="gc-panel">
+      <h3>Cost Analysis</h3>
+      <div className="gc-panel__grid">
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Total Cost</div>
+          <div className="gc-panel__value">${totalCost.toFixed(2)}</div>
+        </div>
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Cost / Portion</div>
+          <div className="gc-panel__value">${costPerPortion.toFixed(2)}</div>
+        </div>
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Portions</div>
+          <div className="gc-panel__value">{portions}</div>
         </div>
       </div>
 
-      <div className="recipe-header__right">
-        <div className="gc-metric">
-          <div className="gc-metric__label">Total Cost</div>
-          <div className="gc-metric__value">${totalCost.toFixed(2)}</div>
-        </div>
-        <div className="gc-metric">
-          <div className="gc-metric__label">Cost / Portion</div>
-          <div className="gc-metric__value">${costPerPortion.toFixed(2)}</div>
-        </div>
+      <div className="gc-table">
+        <table>
+          <thead>
+            <tr>
+              <th>Ingredient</th>
+              <th className="right">Cost</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, idx) => (
+              <tr key={idx}>
+                <td>{r.name}</td>
+                <td className="right">${r.cost.toFixed(2)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   )

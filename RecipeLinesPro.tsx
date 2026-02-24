@@ -1,46 +1,79 @@
-import React from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { useAuth } from '../contexts/AuthContext'
-import { useTheme } from '../contexts/ThemeContext'
+import { useEffect, useMemo, useState } from 'react'
+import { supabase } from '../lib/supabase'
 
-export default function Layout() {
-  const { signOut, user } = useAuth()
-  const { theme, toggleTheme } = useTheme()
-  const nav = useNavigate()
+type Props = {
+  children: React.ReactNode
+  /** where to send unauth users */
+  redirectTo?: string
+}
 
-  const onLogout = async () => {
-    await signOut()
-    nav('/login')
+/**
+ * ✅ AuthGate (HashRouter-safe)
+ * - Prevents accessing app pages without a valid session
+ * - Prevents weird "bounce back" after logout by hard redirect
+ * - No changes to your recipe/ingredient logic — only routing safety
+ */
+export default function AuthGate({ children, redirectTo = '/login' }: Props) {
+  const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
+  const [checking, setChecking] = useState(true)
+  const [ok, setOk] = useState(false)
+
+  useEffect(() => {
+    let alive = true
+
+    async function run() {
+      try {
+        const { data } = await supabase.auth.getSession()
+        if (!alive) return
+        const has = !!data?.session
+        setOk(has)
+
+        if (!has) {
+          // ✅ hard redirect avoids outlet stuck / cached renders
+          window.location.assign(`${base}#${redirectTo}`)
+        }
+      } catch {
+        if (!alive) return
+        setOk(false)
+        window.location.assign(`${base}#${redirectTo}`)
+      } finally {
+        if (alive) setChecking(false)
+      }
+    }
+
+    run()
+
+    // Also listen for auth state changes (logout/login)
+    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
+      const has = !!session
+      setOk(has)
+      if (!has) window.location.assign(`${base}#${redirectTo}`)
+    })
+
+    return () => {
+      alive = false
+      sub?.subscription?.unsubscribe()
+    }
+  }, [base, redirectTo])
+
+  if (checking) {
+    return (
+      <div
+        style={{
+          minHeight: '100vh',
+          display: 'grid',
+          placeItems: 'center',
+          background: '#f6f8fb',
+          color: '#64748b',
+          fontSize: 14,
+        }}
+      >
+        Checking session…
+      </div>
+    )
   }
 
-  return (
-    <div className="gc-app" data-theme={theme}>
-      <aside className="gc-sidebar">
-        <div className="gc-brand">
-          <div className="gc-brand__logo">G</div>
-          <div className="gc-brand__text">
-            <div className="gc-brand__name">GastroChef</div>
-            <div className="gc-brand__sub">Kitchen OS</div>
-          </div>
-        </div>
+  if (!ok) return null
 
-        <nav className="gc-nav">
-          <NavLink to="/dashboard" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Dashboard</NavLink>
-          <NavLink to="/recipes" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Recipes</NavLink>
-          <NavLink to="/cost-history" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Cost History</NavLink>
-          <NavLink to="/settings" className={({ isActive }) => `gc-nav__item ${isActive ? 'is-active' : ''}`}>Settings</NavLink>
-        </nav>
-
-        <div className="gc-sidebar__footer">
-          <button className="gc-nav__item" onClick={toggleTheme} type="button">Toggle Theme</button>
-          <button className="gc-nav__item gc-nav__danger" onClick={onLogout} type="button">Logout</button>
-          <div className="gc-user">{user?.email ?? ''}</div>
-        </div>
-      </aside>
-
-      <main className="gc-main">
-        <Outlet />
-      </main>
-    </div>
-  )
+  return <>{children}</>
 }

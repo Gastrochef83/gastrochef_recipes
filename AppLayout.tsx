@@ -1,22 +1,27 @@
 import React from 'react'
+import type { RecipeIngredient } from '../../types'
 
-type Variant = 'primary' | 'secondary' | 'danger' | 'ghost'
-
-type Props = React.ButtonHTMLAttributes<HTMLButtonElement> & {
-  variant?: Variant
-  fullWidth?: boolean
-}
-
-export default function Button({
-  variant = 'primary',
-  fullWidth,
-  className = '',
-  ...props
-}: Props) {
+export default function NutritionPanel({
+  recipeId,
+  ingredients,
+  portions
+}: {
+  recipeId: string
+  ingredients: RecipeIngredient[]
+  portions: number
+}) {
+  void recipeId
+  void ingredients
   return (
-    <button
-      {...props}
-      className={`gc-btn gc-btn--${variant} ${fullWidth ? 'gc-btn--full' : ''} ${className}`.trim()}
-    />
+    <div className="gc-panel">
+      <h3>Nutrition</h3>
+      <p className="gc-muted">Nutrition calculation is optional. (Hook your DB fields when ready.)</p>
+      <div className="gc-panel__grid">
+        <div className="gc-panel__card">
+          <div className="gc-panel__label">Portions</div>
+          <div className="gc-panel__value">{portions}</div>
+        </div>
+      </div>
+    </div>
   )
 }

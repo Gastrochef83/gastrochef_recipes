@@ -1,51 +1,39 @@
-export type CookSession = {
-  recipeId: string
-  servings: number
-  checkedSteps: Record<number, boolean>
-  timers: Record<number, number> // seconds remaining
-  updatedAt: string
+// contexts/ThemeContext.tsx - Unified token system
+import React, { createContext, useContext, useEffect, useState } from 'react';
+
+type Theme = 'light' | 'dark';
+
+interface ThemeContextType {
+  theme: Theme;
+  toggleTheme: () => void;
 }
 
-const KEY_PREFIX = 'gc_cook_session_v1:'
+const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-function key(recipeId: string) {
-  return `${KEY_PREFIX}${recipeId}`
-}
+export const useTheme = () => {
+  const context = useContext(ThemeContext);
+  if (!context) throw new Error('useTheme must be used within ThemeProvider');
+  return context;
+};
 
-function safeParse<T>(s: string | null, fallback: T): T {
-  try {
-    if (!s) return fallback
-    return JSON.parse(s) as T
-  } catch {
-    return fallback
-  }
-}
-
-export function loadCookSession(recipeId: string): CookSession | null {
-  const raw = localStorage.getItem(key(recipeId))
-  const s = safeParse<CookSession | null>(raw, null)
-  if (!s || s.recipeId !== recipeId) return null
-  return s
-}
-
-export function saveCookSession(recipeId: string, patch: Partial<CookSession>) {
-  const current = loadCookSession(recipeId) || {
-    recipeId,
-    servings: 1,
-    checkedSteps: {},
-    timers: {},
-    updatedAt: new Date().toISOString(),
-  }
-  const next: CookSession = {
-    ...current,
-    ...patch,
-    recipeId,
-    updatedAt: new Date().toISOString(),
-  }
-  localStorage.setItem(key(recipeId), JSON.stringify(next))
-  return next
-}
-
-export function clearCookSession(recipeId: string) {
-  localStorage.removeItem(key(recipeId))
-}
+export const ThemeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem('theme') as Theme;
+    return saved || 'light';
+  });
+  
+  useEffect(() => {
+    localStorage.setItem('theme', theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+  
+  const toggleTheme = () => {
+    setTheme(prev => prev === 'light' ? 'dark' : 'light');
+  };
+  
+  return (
+    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+};

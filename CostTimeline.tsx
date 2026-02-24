@@ -1,15 +1,699 @@
-import { ReactNode } from 'react'
-import SideNav from './SideNav'
-import TopBar from './TopBar'
+/* src/styles.css
+=========================================================
+GastroChef — VISUAL BLACK OPS (KITOPI MATCH + ZERO OVERFLOW)
 
-export default function AppShell({ children }: { children: ReactNode }) {
-  return (
-    <div className="min-h-screen bg-neutral-50">
-      <TopBar />
-      <div className="mx-auto flex max-w-7xl gap-6 px-4 py-6">
-        <SideNav />
-        <main className="w-full">{children}</main>
-      </div>
-    </div>
-  )
+ABSOLUTE RULES:
+- UI/CSS/layout only (NO business logic change)
+- ZERO horizontal scroll anywhere
+- Works at zoom: 100% / 110% / 125% / 150%
+- Works on wide + small screens
+
+This file is the SINGLE SOURCE OF TRUTH for the design system.
+========================================================= */
+
+/* -------------------------
+   TOKENS — Kitopi calm
+-------------------------- */
+:root{
+  /* GastroChef Signature — Teal + Charcoal + Soft Gold */
+  --bg: #F4F7F7;
+  --surface: #FFFFFF;
+  --surface-2: #EEF3F3;
+
+  --text: #182430;
+  --text-strong: #0F1720;
+  --muted: #5C6B76;
+  --soft: #8A95A8;
+
+  --accent: #0E8F84;
+  --accent-hover: #0A756C;
+  --accent-strong: #12A79A;
+  --accent-soft: rgba(14, 143, 132, .12);
+
+  --gold: #C8A24D;
+  --gold-soft: rgba(200, 162, 77, .14);
+
+  --border: rgba(15, 23, 32, .10);
+  --border-strong: rgba(15, 23, 32, .16);
+
+  --shadow-soft: 0 10px 30px rgba(15, 23, 32, .08);
+  --shadow: 0 20px 60px rgba(15, 23, 32, .12);
+
+  --r-xs: 12px;
+  --r-sm: 14px;
+  --r-md: 18px;
+  --r-lg: 22px;
+
+  --h-ctl: 42px;
+  --h-ctl-sm: 36px;
+
+  --ring: rgba(14, 143, 132, .22);
+
+  --font: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
 }
+
+.gc-dark{
+  --bg: #0b1220;
+  --surface: #0f172a;
+  --surface-2: #111b33;
+
+  --text: #e5e7eb;
+  --muted: #a3b1c6;
+  --soft: #7c8aa3;
+
+  --accent: #2dd4bf;
+  --accent-soft: rgba(45, 212, 191, .14);
+
+  --border: rgba(226, 232, 240, .10);
+  --border-strong: rgba(226, 232, 240, .16);
+
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, .28);
+  --shadow: 0 20px 60px rgba(0, 0, 0, .40);
+
+  --ring: rgba(45, 212, 191, .22);
+}
+
+/* -------------------------
+   BASE + ZERO OVERFLOW GUARANTEE
+-------------------------- */
+html, body, #root{ height: 100%; }
+
+body{
+  margin: 0;
+  font-family: var(--font);
+  color: var(--text);
+  background: var(--bg) !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root{ background: var(--bg); }
+
+a{ color: inherit; text-decoration: none; }
+img{ display:block; max-width:100%; height:auto; }
+
+/* Hard kill any accidental horizontal scroll */
+.gc-root,
+.gc-shell,
+.gc-side,
+.gc-main,
+.gc-content{
+  max-width: 100%;
+}
+
+/* Flex/Grid overflow safety (critical for tables/inputs) */
+.gc-shell,
+.gc-main,
+.gc-content,
+.gc-card,
+.gc-card-body,
+.gc-card-head{
+  min-width: 0;
+}
+
+/* Typography scale */
+.gc-h1{ font-size: 28px; line-height: 1.15; font-weight: 950; letter-spacing: -0.02em; }
+.gc-h2{ font-size: 18px; line-height: 1.2; font-weight: 950; letter-spacing: -0.01em; }
+.gc-h3{ font-size: 14px; line-height: 1.2; font-weight: 900; }
+.gc-muted{ color: var(--muted); }
+.gc-soft{ color: var(--soft); }
+.gc-label{ font-size: 12px; font-weight: 950; color: var(--muted); letter-spacing: .04em; text-transform: uppercase; }
+.gc-hint{ font-size: 12px; color: var(--muted); line-height: 1.4; }
+
+/* -------------------------
+   TAILWIND CLASS OVERRIDES (SAFETY)
+-------------------------- */
+.bg-white{ background-color: var(--surface) !important; }
+.bg-neutral-50{ background-color: var(--surface-2) !important; }
+.bg-slate-50{ background-color: var(--surface-2) !important; }
+.bg-gray-50{ background-color: var(--surface-2) !important; }
+
+.text-neutral-600, .text-gray-600, .text-slate-600{ color: var(--muted) !important; }
+.text-neutral-500, .text-gray-500, .text-slate-500{ color: var(--soft) !important; }
+
+.border-neutral-200, .border-gray-200, .border-slate-200{ border-color: var(--border) !important; }
+.border-neutral-300, .border-gray-300, .border-slate-300{ border-color: var(--border-strong) !important; }
+
+.shadow, .shadow-md, .shadow-lg{ box-shadow: var(--shadow-soft) !important; }
+
+/* -------------------------
+   COMPONENT LIBRARY
+-------------------------- */
+.gc-btn{
+  height: var(--h-ctl);
+  padding: 0 14px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: rgba(255,255,255,.88);
+  color: var(--text);
+  font-weight: 950;
+  box-shadow: var(--shadow-soft);
+  transition: transform .12s ease, box-shadow .15s ease, border-color .15s ease, background .15s ease;
+}
+.gc-btn:hover{ transform: translateY(-1px); border-color: var(--border-strong); box-shadow: var(--shadow); }
+.gc-btn:active{ transform: translateY(0); }
+.gc-btn:disabled{ opacity: .60; cursor: not-allowed; transform: none; }
+
+.gc-btn-primary{ border-color: rgba(14,143,132,.32); background: linear-gradient(180deg, var(--accent-strong) 0%, var(--accent) 100%); color: #fff; }
+.gc-btn-secondary{ background: rgba(15,23,42,.03); }
+.gc-btn-ghost{ background: transparent; box-shadow: none; }
+.gc-btn-danger{ border-color: rgba(220,38,38,.25); background: rgba(220,38,38,.10); }
+
+.gc-btn-soft{
+  background: rgba(15,23,42,.04);
+  border: 1px solid rgba(15,23,42,.10);
+  color: var(--text);
+}
+.gc-btn-soft:hover{ background: rgba(15,23,42,.08); }
+
+.gc-input{
+  height: var(--h-ctl);
+  padding: 0 12px;
+  border-radius: var(--r-sm);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  outline: none;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  transition: box-shadow .15s ease, border-color .15s ease;
+}
+.gc-input:focus{ border-color: rgba(14,143,132,.45); box-shadow: 0 0 0 4px var(--ring); }
+.gc-input-compact{ height: var(--h-ctl-sm); border-radius: var(--r-xs); }
+textarea.gc-input{ height:auto; padding: 10px 12px; }
+
+.gc-input-num{ width: clamp(72px, 8vw, 120px); }
+.gc-input-unit{ width: clamp(70px, 7vw, 110px); }
+
+.gc-card{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft);
+}
+.gc-card-soft{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+}
+.gc-card-head{
+  padding: 16px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  border-top-left-radius: var(--r-lg);
+  border-top-right-radius: var(--r-lg);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+}
+.gc-card-body{ padding: 16px; }
+
+.gc-chip{
+  display:inline-flex;
+  align-items:center;
+  gap: 6px;
+  height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: rgba(15,23,42,.03);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 950;
+}
+.gc-chip-warn{ border-color: rgba(245,158,11,.22); background: rgba(245,158,11,.12); }
+.gc-chip-good{ border-color: rgba(22,163,74,.22); background: rgba(22,163,74,.10); }
+.gc-chip-bad{ border-color: rgba(220,38,38,.22); background: rgba(220,38,38,.10); }
+
+.gc-table-wrap{
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface);
+}
+.gc-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 13px;
+  table-layout: fixed;
+}
+.gc-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  padding: 10px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .02em;
+}
+.gc-table tbody td{
+  border-bottom: 1px solid rgba(15,23,42,.06);
+  padding: 10px 12px;
+  vertical-align: middle;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gc-table tbody tr:hover{ background: rgba(14,143,132,.04); }
+.gc-tabnums{ font-variant-numeric: tabular-nums; }
+
+/* -------------------------
+   LAYOUT SHELL (NO CLIPPING / NO VW WIDTHS)
+-------------------------- */
+.gc-root{ min-height: 100dvh; background: var(--bg); overflow-x: hidden; }
+
+.gc-shell{
+  display:grid;
+  grid-template-columns: 310px minmax(0, 1fr);
+  gap: clamp(12px, 2vw, 18px);
+  padding: clamp(12px, 2vw, 18px);
+  width: 100%;
+  max-width: 1440px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  align-items: stretch;
+}
+@media (max-width: 980px){
+  .gc-shell{ grid-template-columns: 1fr; min-height: auto; }
+  .gc-side{ position: static; }
+}
+
+.gc-side{
+  position: sticky;
+  top: clamp(12px, 2vw, 18px);
+  align-self: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-soft);
+  overflow:hidden;
+  min-width: 0;
+}
+.gc-side-card{ padding: 16px; background: var(--surface-2); border-bottom: 1px solid var(--border); }
+
+.gc-brand{ display:flex; align-items:center; gap: 10px; min-width: 0; }
+.gc-brand-mark{
+  /* Logo should read as a logo, not as an "app icon button" */
+  width: 32px;
+  height: 32px;
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  flex: 0 0 auto;
+}
+.gc-brand-mark img{ width: 32px; height: 32px; object-fit: contain; filter: drop-shadow(0 8px 18px rgba(15,23,32,.10)); }
+.gc-brand-name{ font-weight: 950; letter-spacing: -0.02em; }
+.gc-brand-accent{ color: var(--accent); }
+.gc-brand-sub{ margin-top: 2px; font-size: 12px; color: var(--muted); overflow:hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+
+/* =========================================================
+   RECIPE EDITOR — LINES TABLE (KITOPI-LIKE COMFORT)
+   UI ONLY: improves readability + spacing without logic changes
+========================================================= */
+.gc-kitopi-table-wrap{ width: 100%; max-width: 100%; overflow: hidden; border-radius: var(--r-lg); }
+
+.gc-kitopi-table{
+  width: 100%;
+  max-width: 100%;
+  table-layout: fixed;
+  border-collapse: separate;
+  border-spacing: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--surface);
+}
+
+.gc-kitopi-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: 12px 12px;
+  text-align: left;
+  font-size: 12px;
+  font-weight: 950;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+  color: var(--muted);
+  background: linear-gradient(180deg, var(--surface-2) 0%, rgba(255,255,255,.85) 100%);
+  border-bottom: 1px solid var(--border);
+}
+
+.gc-kitopi-table tbody td{
+  padding: 14px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+  overflow: hidden;
+}
+.gc-kitopi-table tbody tr:last-child td{ border-bottom: 0; }
+
+/* Subtle zebra + hover like Kitopi */
+.gc-kitopi-table tbody tr:nth-child(even):not(.gc-kitopi-group){ background: rgba(14,143,132,.03); }
+.gc-kitopi-table tbody tr:hover:not(.gc-kitopi-group){ background: rgba(14,143,132,.07); }
+
+/* Group rows */
+.gc-kitopi-group td{
+  padding: 12px 14px !important;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+}
+.gc-kitopi-group-row{ display:flex; align-items:center; justify-content:space-between; gap: 12px; }
+.gc-kitopi-group-title{ font-weight: 950; letter-spacing: -0.01em; }
+.gc-kitopi-group-actions{ display:flex; gap: 8px; align-items:center; }
+
+/* Ingredient cell: cleaner hierarchy */
+.gc-kitopi-item{ display: grid; gap: 6px; min-width: 0; }
+.gc-kitopi-item-name{ font-weight: 950; color: var(--text-strong); line-height: 1.2; }
+.gc-kitopi-item-sub{
+  font-size: 12px;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gc-kitopi-item-select{ margin-top: 6px; }
+
+.gc-kitopi-warn{
+  margin-top: 4px;
+  font-size: 12px;
+  color: #7a4c00;
+  background: rgba(200,162,77,.18);
+  border: 1px solid rgba(200,162,77,.30);
+  padding: 6px 10px;
+  border-radius: 999px;
+  width: fit-content;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Compact controls inside the table */
+.gc-kitopi-table .gc-input-compact{
+  width: 100%;
+  max-width: 100%;
+  padding: 0 10px;
+  font-weight: 900;
+}
+
+.gc-kitopi-table td:nth-child(2) .gc-input-compact,
+.gc-kitopi-table td:nth-child(4) .gc-input-compact,
+.gc-kitopi-table td:nth-child(5) .gc-input-compact{
+  text-align: right;
+}
+
+/* Yield helper text */
+.gc-kitopi-muted{ margin-top: 6px; font-size: 12px; color: var(--soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gc-kitopi-money{ font-weight: 950; }
+
+/* Row actions: calm and only visible on hover */
+.gc-kitopi-row-actions{ display:flex; gap: 8px; justify-content:flex-end; opacity: .65; transition: opacity .15s ease; }
+.gc-kitopi-table tbody tr:hover .gc-kitopi-row-actions{ opacity: 1; }
+
+/* Prevent icons/actions from forcing overflow */
+.gc-kitopi-table td:last-child{ text-align: right; }
+
+.gc-side-block{ padding: 14px 16px; border-bottom: 1px solid var(--border); }
+.gc-nav{ padding: 8px 10px 14px 10px; }
+.gc-nav-item{ display:flex; align-items:center; gap: 10px; padding: 10px 12px; border-radius: var(--r-sm); color: var(--muted); border: 1px solid transparent; transition: background .12s ease, transform .12s ease, color .12s ease; }
+.gc-nav-item:hover{ background: rgba(15,23,42,.04); color: var(--text); transform: translateY(-1px); }
+.gc-nav-item.is-active{ background: var(--accent-soft); border-color: rgba(14,143,132,.20); color: var(--text); }
+
+.gc-seg{ display:grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 8px; padding: 8px; border: 1px solid var(--border); border-radius: var(--r-md); background: rgba(15,23,42,.03); }
+.gc-seg-btn{ width: 100%; height: var(--h-ctl); border-radius: var(--r-sm); border: 1px solid transparent; background: transparent; color: var(--muted); font-weight: 950; transition: background .12s ease, transform .12s ease, border-color .12s ease, color .12s ease; }
+.gc-seg-btn:hover{ transform: translateY(-1px); }
+.gc-seg-btn.is-active{ background: var(--surface); border-color: rgba(14,143,132,.26); box-shadow: var(--shadow-soft); color: var(--text); }
+
+.gc-main{ min-width: 0; display:flex; flex-direction: column; min-height: 0; }
+
+.gc-topbar{ background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-lg); box-shadow: var(--shadow-soft); padding: 14px 16px; display:flex; align-items:center; justify-content: space-between; gap: 12px; min-width: 0; }
+.gc-topbar-card{ margin-bottom: 14px; }
+.gc-topbar-logo{ width: 26px; height: 26px; object-fit: contain; flex: 0 0 auto; }
+.gc-title{ font-weight: 950; letter-spacing: -0.02em; }
+.gc-subtitle{ font-size: 12px; color: var(--muted); margin-top: 2px; }
+.gc-actions{ display:flex; align-items:center; gap: 10px; min-width: 0; }
+
+.gc-actions-menu{ position: relative; }
+.gc-user-trigger-btn{ display:inline-flex; align-items:center; gap: 10px; border: 1px solid var(--border); background: rgba(255,255,255,.86); padding: 8px 10px; border-radius: 999px; min-width: 0; box-shadow: 0 10px 22px rgba(15,23,32,.06); }
+.gc-avatar{ width: 34px; height: 34px; border-radius: 999px; display:grid; place-items:center; background: var(--accent-soft); color: var(--accent); font-weight: 950; flex: 0 0 auto; }
+.gc-user-label{ min-width: 0; display:flex; flex-direction: column; }
+.gc-user-email{ font-size: 12px; color: var(--muted); max-width: 280px; overflow:hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gc-user-name{ font-size: 12px; font-weight: 950; }
+
+.gc-actions-panel{ position:absolute; right: 0; top: calc(100% + 10px); min-width: 220px; z-index: 50; background: var(--surface); border: 1px solid var(--border); border-radius: var(--r-md); box-shadow: var(--shadow); padding: 8px; }
+.gc-actions-item{ width: 100%; text-align: left; height: var(--h-ctl); padding: 0 12px; border-radius: var(--r-sm); border: 1px solid transparent; background: transparent; font-weight: 950; color: var(--text); }
+.gc-actions-item:hover{ background: rgba(15,23,42,.04); }
+.gc-actions-danger{ color: #dc2626; }
+
+/* MAIN SCROLL CONTAINER (NO PAGE-LEVEL H-SCROLL) */
+.gc-content{
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background: var(--bg);
+  padding: clamp(14px, 2vw, 18px);
+  scrollbar-gutter: stable both-edges;
+}
+.gc-print-route .gc-content{ padding: 0; background: #fff; }
+.gc-content > *{ min-height: 0; min-width: 0; }
+
+/* Clamp page widths (center, calm, no chaos) */
+.gc-page{
+  width: 100%;
+  max-width: 1360px;
+  margin: 0 auto;
+  min-width: 0;
+}
+
+/* -------------------------
+   AUTH PAGE (Kitopi-like, premium, crisp logo)
+-------------------------- */
+.gc-auth{
+  min-height: 100vh;
+  display:grid;
+  place-items:center;
+  padding: 28px 18px;
+  background: var(--bg);
+  overflow-x: hidden;
+}
+.gc-auth-card{
+  width: min(520px, 100%);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 26px;
+  box-shadow: var(--shadow-soft);
+  overflow:hidden;
+}
+.gc-auth-head{
+  padding: 34px 28px 16px 28px;
+  background: var(--surface);
+  border-bottom: 0;
+  position: relative;
+}
+.gc-auth-head::after{
+  content:'';
+  display:block;
+  width: 44px;
+  height: 3px;
+  border-radius: 999px;
+  background: var(--gold);
+  margin: 14px auto 0 auto;
+  opacity: .95;
+}
+.gc-auth-body{ padding: 16px 28px 26px 28px; }
+
+.gc-auth-logo-centered{
+  display:flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  gap: 12px;
+}
+.gc-auth-logo-centered img{
+  height: clamp(54px, 7vw, 68px);
+  width: auto;
+  object-fit: contain;
+  image-rendering: -webkit-optimize-contrast;
+}
+.gc-auth-title{
+  font-weight: 950;
+  letter-spacing: -0.02em;
+  font-size: 20px;
+  color: var(--text-strong);
+}
+.gc-auth-sub{
+  color: var(--muted);
+  font-size: 13px;
+  margin-top: 2px;
+}
+
+/* Auth inputs: Kitopi-like light field */
+.gc-auth .gc-label{ font-size: 11px; letter-spacing: .08em; }
+.gc-auth .gc-input{
+  height: 46px;
+  background: #EAF3FF;
+  border-color: rgba(15,23,32,.12);
+  border-radius: 14px;
+  font-size: 14px;
+}
+.gc-auth .gc-input:focus{
+  border-color: rgba(14,143,132,.45);
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+
+/* -------------------------
+   TABS (Enterprise)
+-------------------------- */
+.gc-tabs{
+  display:flex;
+  gap:10px;
+  flex-wrap:wrap;
+  padding:10px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  background: rgba(255,255,255,.55);
+  backdrop-filter: blur(10px);
+}
+.gc-tab{
+  appearance:none;
+  border:1px solid rgba(15,23,42,.10);
+  background: rgba(255,255,255,.75);
+  color: var(--text);
+  padding:8px 12px;
+  border-radius:999px;
+  font-weight:900;
+  font-size:13px;
+  letter-spacing:.2px;
+  cursor:pointer;
+  max-width: 100%;
+}
+.gc-tab:hover{ background: rgba(15,23,42,.06); }
+.gc-tab-active{
+  background: rgba(14,143,132,.14);
+  border-color: rgba(14,143,132,.28);
+}
+
+/* -------------------------
+   RECIPE LINES — Responsive grid (NO overflow)
+-------------------------- */
+.gc-lines{ display: grid; gap: 10px; }
+
+.gc-line{
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  min-width: 0;
+}
+
+.gc-line-top{
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1.2fr);
+  gap: 12px;
+  align-items: start;
+  min-width: 0;
+}
+
+@media (max-width: 820px){
+  .gc-line-top{ grid-template-columns: 1fr; }
+}
+
+.gc-line-name{ min-width: 0; }
+.gc-line-name-title{
+  font-weight: 950;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gc-line-name-sub{ margin-top: 4px; }
+
+.gc-line-metrics{
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  justify-items: stretch;
+  min-width: 0;
+}
+
+@media (max-width: 980px){
+  .gc-line-metrics{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 520px){
+  .gc-line-metrics{ grid-template-columns: 1fr; }
+}
+
+.gc-metric{
+  padding: 10px;
+  border-radius: 14px;
+  border: 1px solid var(--border);
+  background: rgba(15,23,42,.02);
+  min-width: 0;
+}
+
+.gc-line-actions{
+  display:flex;
+  justify-content: flex-end;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+  min-width: 0;
+}
+
+.gc-line-fields{
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr);
+  gap: 12px;
+  min-width: 0;
+}
+
+@media (max-width: 920px){
+  .gc-line-fields{ grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+}
+@media (max-width: 520px){
+  .gc-line-fields{ grid-template-columns: 1fr; }
+}
+
+.gc-line-notes{
+  grid-column: 1 / -1;
+  min-width: 0;
+}
+
+/* -------------------------
+   PRINT
+-------------------------- */
+@media print{
+  body{ background:#fff !important; }
+  .gc-screen-only{ display:none !important; }
+  .gc-shell{ display:block; padding: 0; min-height:auto; }
+  .gc-side, .gc-topbar{ display:none !important; }
+  .gc-content{ padding: 0 !important; background:#fff !important; overflow: visible !important; }
+  .gc-card{ box-shadow:none !important; }
+}
+
+/* =========================================================
+   STRICT CHANGE 1 — NARROW SIDEBAR + SHRINK SAFETY + ELLIPSIS
+   (Add-only rules; no other CSS modifications)
+   ========================================================= */
+
+/* 1) Sidebar width clamp */
+.gc-side{ width: clamp(240px, 18vw, 280px); }
+
+/* 2) Ensure flex children can shrink (prevents overflow) */
+.gc-main{ min-width: 0; }
+
+/* 3) Ingredient/name single-line utility */
+.gc-ellipsis{ overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
