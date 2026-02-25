@@ -159,6 +159,9 @@ const k = useKitchen()
   const [sp] = useSearchParams()
   const id = sp.get('id')
 
+  // Global autosave status (drives the topbar badge + local save UX)
+  const autosave = useAutosave()
+
   const mounted = useRef(true)
   useEffect(() => {
     mounted.current = true
