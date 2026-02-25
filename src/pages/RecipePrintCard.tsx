@@ -141,7 +141,7 @@ export default function RecipePrintCard() {
 
         const { data: sr, error: sErr } = await supabase
           .from('recipes')
-          .select('id,name')
+          .select('id,name,kitchen_id')
           .eq('kitchen_id', (r as any).kitchen_id)
           .eq('is_subrecipe', true)
         if (sErr) throw sErr

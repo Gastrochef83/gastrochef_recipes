@@ -561,6 +561,7 @@ const k = useKitchen()
       const cur = ((override ?? linesRef.current) || []) as Line[]
       const drafts = cur.filter(isDraftLine)
       const persisted = cur.filter((l) => !isDraftLine(l))
+      const needsReload = drafts.length > 0 || delIds.length > 0
 
       // 3) upsert persisted rows
       if (persisted.length) {
@@ -603,15 +604,20 @@ const k = useKitchen()
         if (insErr) throw insErr
       }
 
-      // 5) reload authoritative lines
-      const { data: l2, error: l2Err } = await supabase
-        .from('recipe_lines')
-        .select('id,kitchen_id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,notes,gross_qty_override,line_type,group_title')
-        .eq('recipe_id', rid)
-        .order('position', { ascending: true })
-      if (l2Err) throw l2Err
-      setLinesSafe((l2 || []) as Line[])
-      clearDraftLines(rid)
+      // 5) reload authoritative lines ONLY when we inserted drafts (need real ids) or deleted rows.
+      if (needsReload) {
+        const { data: l2, error: l2Err } = await supabase
+          .from('recipe_lines')
+          .select('id,kitchen_id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,notes,gross_qty_override,line_type,group_title')
+          .eq('recipe_id', rid)
+          .order('position', { ascending: true })
+        if (l2Err) throw l2Err
+        setLinesSafe((l2 || []) as Line[])
+        clearDraftLines(rid)
+      } else {
+        // No reload = no cursor/typing flicker (especially Notes). We already updated local state.
+        clearDraftLines(rid)
+      }
     } catch (e: any) {
       try {
         // Keep current lines locally so navigation (Cook Mode) won't lose them.
@@ -633,7 +639,32 @@ const k = useKitchen()
     }, 650)
   }, [id, saveLinesNow])
 
-  const deleteLineLocal = useCallback(
+  
+  const duplicateLineLocal = useCallback(
+    (lineId: string) => {
+      if (!lineId) return
+      const cur = (linesRef.current || []) as Line[]
+      const src = cur.find((l) => l.id === lineId)
+      if (!src) return
+
+      const maxPos = cur.reduce((m, l) => Math.max(m, toNum(l.position, 0)), 0)
+      const copy: Line = {
+        ...src,
+        id: uid(),
+        position: maxPos + 1,
+        // keep ingredient/subrecipe ids, qty/unit/yield/notes/gross override, type
+      }
+
+      const next = [...cur, copy].sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0))
+      linesRef.current = next
+      setLinesSafe(next)
+      // Persist immediately so Cook Mode sees it and it won't disappear.
+      saveLinesNow(next).then(() => {}).catch(() => {})
+    },
+    [setLinesSafe, saveLinesNow]
+  )
+
+const deleteLineLocal = useCallback(
     (lineId: string) => {
       if (!lineId) return
       // mark for DB delete if needed
@@ -1603,6 +1634,7 @@ const addLineLocal = useCallback(async () => {
                                 <div className="gc-kitopi-group-row">
                                   <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>
                                   <span className="gc-kitopi-group-actions">
+<button className="gc-icon-btn" type="button" onClick={() => duplicateLineLocal(l.id)} title="Duplicate">⧉</button>
 <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
                                   </span>
                                 </div>
@@ -1617,8 +1649,6 @@ const addLineLocal = useCallback(async () => {
                             : l.line_type === 'subrecipe'
                               ? sub?.name || 'Subrecipe'
                               : 'Line'
-
-                        const status = c?.warnings?.length ? '' : 'Active'
 
                         return (
                           <tr key={l.id}>
@@ -1720,13 +1750,8 @@ const addLineLocal = useCallback(async () => {
                             ) : null}
 
                             <td>
-                              <span className={status === 'Active' ? 'gc-chip gc-chip-active' : 'gc-chip gc-chip-warn'}>
-                                {status}
-                              </span>
-                            </td>
-
-                            <td>
                               <div className="gc-kitopi-row-actions">
+<button className="gc-icon-btn" type="button" onClick={() => duplicateLineLocal(l.id)} title="Duplicate">⧉</button>
 <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
                               </div>
                             </td>
