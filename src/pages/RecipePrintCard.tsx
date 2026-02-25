@@ -133,10 +133,14 @@ export default function RecipePrintCard() {
           .order('position', { ascending: true })
         if (lErr) throw lErr
 
-        const { data: ing, error: iErr } = await supabase
-          .from('ingredients')
-          .select('id,name,pack_unit,net_unit_cost')
-          .eq('kitchen_id', (r as any).kitchen_id)
+        const ingredientIds = Array.from(new Set((l || [])
+          .filter((x: any) => x?.line_type === 'ingredient' && x?.ingredient_id)
+          .map((x: any) => x.ingredient_id)))
+
+        const { data: ing, error: iErr } = ingredientIds.length
+          ? await supabase.from('ingredients').select('id,name,pack_unit,net_unit_cost').in('id', ingredientIds)
+          : { data: [], error: null }
+
         if (iErr) throw iErr
 
         const { data: sr, error: sErr } = await supabase

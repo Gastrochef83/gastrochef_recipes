@@ -160,7 +160,7 @@ const k = useKitchen()
     return () => {
       mounted.current = false
     }
-  }, [])
+  }, [scheduleMetaSave])
 
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
@@ -196,7 +196,7 @@ const k = useKitchen()
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg)
     setToastOpen(true)
-  }, [])
+  }, [scheduleMetaSave])
 
   
 
@@ -740,16 +740,36 @@ const deleteLineLocal = useCallback(
     }, 650)
   }, [id, saveMetaNow])
 
-  // auto schedule save on most meta changes
+  // auto-save recipe meta (name/portions/steps/photos/etc)
+  const metaHydratedRef = useRef(false)
   useEffect(() => {
     if (!recipe) return
-
-    const hasDraft = (linesRef.current || []).some(isDraftLine)
-    if (hasDraft) return
-
-    scheduleLinesSave()
+    // Skip the first run right after loading from DB
+    if (!metaHydratedRef.current) {
+      metaHydratedRef.current = true
+      return
+    }
+    scheduleMetaSave()
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lines])
+  }, [
+    name,
+    category,
+    portions,
+    description,
+    steps,
+    stepPhotos,
+    methodLegacy,
+    calories,
+    protein,
+    carbs,
+    fat,
+    currency,
+    sellingPrice,
+    targetFC,
+    isSubRecipe,
+    yieldQty,
+    yieldUnit,
+  ])
 
 const addLineLocal = useCallback(async () => {
     if (!id) return
@@ -989,6 +1009,7 @@ const addLineLocal = useCallback(async () => {
           next[stepIndex] = url
           return next
         })
+        scheduleMetaSave()
         showToast('Step photo updated.')
       } catch (e: any) {
         setErr(e?.message || 'Failed to upload step photo.')
@@ -996,7 +1017,7 @@ const addLineLocal = useCallback(async () => {
         setStepUploading(false)
       }
     },
-    [id, showToast]
+    [id, showToast, scheduleMetaSave]
   )
 
   // ---------- Steps ----------
@@ -1006,18 +1027,28 @@ const addLineLocal = useCallback(async () => {
     setSteps((prev) => [...prev, s])
     setStepPhotos((prev) => [...prev, ''])
     setNewStep('')
-  }, [newStep])
+    // Persist steps/step photos via meta autosave
+    scheduleMetaSave()
+  }, [newStep, scheduleMetaSave])
 
-  const removeStep = useCallback((idx: number) => {
-    setSteps((prev) => prev.filter((_, i) => i !== idx))
-    setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
-  }, [])
+  const removeStep = useCallback(
+    (idx: number) => {
+      setSteps((prev) => prev.filter((_, i) => i !== idx))
+      setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
+      scheduleMetaSave()
+    },
+    [scheduleMetaSave]
+  )
 
-  const updateStep = useCallback((idx: number, value: string) => {
-    setSteps((prev) => prev.map((s, i) => (i === idx ? value : s)))
-  }, [])
+  const updateStep = useCallback(
+    (idx: number, value: string) => {
+      setSteps((prev) => prev.map((s, i) => (i === idx ? value : s)))
+      scheduleMetaSave()
+    },
+    [scheduleMetaSave]
+  )
 
-  // ---------- Cost point snapshot ----------
+// ---------- Cost point snapshot ----------
   const addSnapshot = useCallback(() => {
     if (!id) return
     const p = Math.max(1, Math.floor(toNum(portions, 1)))
