@@ -1,0 +1,161 @@
+@import './styles/tokens.css';
+@import './styles/globals.css';
+
+
+/* =========================================================
+   RecipeEditor — Grid helpers (fix stacked fields)
+   ========================================================= */
+.gc-field-row{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.gc-col-12{ grid-column: span 12; }
+.gc-col-9{ grid-column: span 9; }
+.gc-col-6{ grid-column: span 6; }
+.gc-col-4{ grid-column: span 4; }
+.gc-col-3{ grid-column: span 3; }
+
+.gc-grid-4{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gc-grid-3{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Responsive: stack cleanly on small screens */
+@media (max-width: 900px){
+  .gc-col-9, .gc-col-6, .gc-col-4, .gc-col-3{ grid-column: span 12; }
+  .gc-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gc-grid-3{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+@media (max-width: 520px){
+  .gc-grid-4{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+
+
+/* =========================================================
+   RecipeEditor — Row actions (Kitopi hover)
+   ========================================================= */
+.gc-kitopi-line-row .gc-kitopi-row-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  opacity:1;
+  pointer-events:auto;
+  transform:none;
+}
+
+
+
+.gc-icon-btn{
+  appearance:none;
+  border:1px solid rgba(2,6,23,.12);
+  background: rgba(255,255,255,.9);
+  border-radius:10px;
+  padding:6px 9px;
+  font-weight:900;
+  font-size:12px;
+  line-height:1;
+  cursor:pointer;
+  box-shadow: 0 10px 24px rgba(2,6,23,.06);
+}
+.gc-icon-btn:hover{ filter: brightness(.98); }
+.gc-icon-btn:active{ transform: translateY(1px); }
+.gc-icon-btn-danger{ border-color: rgba(220,38,38,.22); color: #dc2626; }
+
+/* =============================
+   PRINT — Kitchen Spec Sheet
+   ============================= */
+.gc-no-print { display: block; }
+
+.gc-kprint-wrap{ padding: 14px; }
+.gc-kprint-toolbar{ display:flex; gap:10px; align-items:center; justify-content:flex-end; margin-bottom: 12px; }
+
+.gc-kprint-page{
+  max-width: 900px;
+  margin: 0 auto;
+  background: #fff;
+  border: 1px solid rgba(15,23,42,.10);
+  border-radius: 14px;
+  padding: 18px;
+}
+
+.gc-kprint-header{ display:flex; align-items:flex-start; justify-content:space-between; gap: 16px; }
+.gc-kprint-title{ font-size: 11px; letter-spacing: .16em; font-weight: 900; color: #475569; text-transform: uppercase; }
+.gc-kprint-name{ font-size: 24px; font-weight: 950; color:#0f172a; margin-top: 6px; }
+.gc-kprint-sub{ margin-top: 6px; font-size: 12px; color:#475569; display:flex; gap: 8px; flex-wrap: wrap; }
+.gc-dot{ opacity:.8; }
+.gc-kprint-meta{ display:flex; align-items:flex-start; justify-content:flex-end; }
+.gc-kprint-chip{ font-size: 11px; color:#0f172a; background: rgba(15,23,42,.06); padding: 6px 10px; border-radius: 999px; }
+
+.gc-kprint-section{ margin-top: 14px; }
+.gc-kprint-section-title{ font-size: 12px; font-weight: 900; letter-spacing: .14em; color:#334155; text-transform: uppercase; margin-bottom: 10px; }
+
+.gc-kprint-table{
+  width:100%;
+  border-collapse: collapse;
+  border: 1px solid rgba(15,23,42,.12);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.gc-kprint-table thead th{
+  text-align:left;
+  font-size: 11px;
+  color:#475569;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+  background: rgba(15,23,42,.04);
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(15,23,42,.10);
+}
+
+.gc-kprint-table td{
+  padding: 10px 10px;
+  border-bottom: 1px solid rgba(15,23,42,.08);
+  vertical-align: top;
+  font-size: 12px;
+  color:#0f172a;
+}
+
+.gc-kprint-group td{
+  padding: 10px 10px;
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color:#334155;
+  background: rgba(2,132,199,.06);
+  border-bottom: 1px solid rgba(15,23,42,.10);
+}
+
+.gc-kprint-ingredient{ font-weight: 700; }
+.gc-kprint-num{ font-variant-numeric: tabular-nums; }
+.gc-kprint-unit{ text-transform: lowercase; }
+.gc-kprint-note{ color:#334155; }
+
+.gc-kprint-footer{ margin-top: 14px; display:flex; justify-content:space-between; align-items:center; }
+.gc-kprint-footnote{ font-size: 11px; color:#64748b; }
+
+@media print {
+  .gc-no-print{ display:none !important; }
+  body{ background:#fff !important; }
+  .gc-kprint-wrap{ padding:0 !important; }
+  .gc-kprint-page{
+    max-width: none !important;
+    margin: 0 !important;
+    border: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+  }
+  .gc-kprint-table{ border: 1px solid #cbd5e1 !important; }
+  .gc-kprint-table thead th{ background: #f8fafc !important; }
+}
