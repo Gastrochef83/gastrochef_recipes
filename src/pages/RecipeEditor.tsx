@@ -160,7 +160,7 @@ const k = useKitchen()
     return () => {
       mounted.current = false
     }
-  }, [scheduleMetaSave])
+  }, [])
 
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
@@ -196,7 +196,7 @@ const k = useKitchen()
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg)
     setToastOpen(true)
-  }, [scheduleMetaSave])
+  }, [])
 
   
 
