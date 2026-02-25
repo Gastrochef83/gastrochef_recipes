@@ -70,8 +70,8 @@
   --gc-lh-tight: 1.2;
 
   /* Layout */
-  --gc-side-w: 232px;
-  --gc-side-w-max: 252px;
+  --gc-side-w: 220px;
+  --gc-side-w-max: 240px;
   --gc-topbar-h: 56px;
 
   /* Focus ring */

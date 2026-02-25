@@ -89,7 +89,7 @@ export default function Login() {
 
         <div className="gc-auth-body">
           {checking ? (
-            <div style={{ padding: 18, color: 'var(--muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
+            <div style={{ padding: 18, color: 'var(--gc-muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
           ) : (
             <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
               <div style={{ minWidth: 0 }}>
@@ -140,7 +140,7 @@ export default function Login() {
             </form>
           )}
 
-          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--muted)' }}>
+          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>
             New here?{' '}
             <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
               Create an account

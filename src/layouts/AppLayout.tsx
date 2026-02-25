@@ -140,8 +140,17 @@ export default function AppLayout() {
       <div className="gc-shell">
         <aside className="gc-side">
           <div className="gc-side-card">
-            <div className="gc-brand gc-brand--text">
-<div>
+            <div className="gc-brand">
+              <div className="gc-brand-mark" aria-hidden="true">
+                <img
+                  src={brandLogo}
+                  alt=""
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).src = brandFallback
+                  }}
+                />
+              </div>
+              <div>
                 <div className="gc-brand-name">
                   Gastro<span className="gc-brand-accent">Chef</span>
                 </div>
@@ -186,7 +195,7 @@ export default function AppLayout() {
 
             <div className="gc-side-block" style={{ marginTop: 14 }}>
               <button
-                className="gc-btn gc-btn-danger w-full"
+                className="gc-btn gc-btn-danger gc-btn--full"
                 type="button"
                 onClick={handleLogout}
                 disabled={loggingOut}
@@ -228,8 +237,21 @@ export default function AppLayout() {
               </button>
 
               <div className="gc-autosave" aria-live="polite">
-                <span className={cx('gc-autosave-pill', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}>
-                  {a.status === 'saving' ? 'Saving…' : a.status === 'saved' ? 'Saved ✓' : a.status === 'error' ? (a.message || 'Save issue') : 'All changes saved'}
+                <span
+                  className={cx(
+                    'gc-autosave-pill',
+                    a.status === 'saving' && 'is-saving',
+                    a.status === 'saved' && 'is-saved',
+                    a.status === 'error' && 'is-error'
+                  )}
+                >
+                  {a.status === 'saving'
+                    ? 'Saving…'
+                    : a.status === 'saved'
+                      ? 'Saved ✓'
+                      : a.status === 'error'
+                        ? (a.message || 'Save issue')
+                        : 'All changes saved'}
                 </span>
               </div>
 
@@ -256,12 +278,6 @@ export default function AppLayout() {
                     {dark ? 'Light Mode' : 'Dark Mode'}
                   </button>
 
-              <div className="gc-autosave" aria-live="polite">
-                <span className={cx('gc-autosave-pill', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}>
-                  {a.status === 'saving' ? 'Saving…' : a.status === 'saved' ? 'Saved ✓' : a.status === 'error' ? (a.message || 'Save issue') : 'All changes saved'}
-                </span>
-              </div>
-
                   <button
                     className="gc-actions-item"
                     type="button"
@@ -272,12 +288,6 @@ export default function AppLayout() {
                   >
                     Refresh kitchen
                   </button>
-
-              <div className="gc-autosave" aria-live="polite">
-                <span className={cx('gc-autosave-pill', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}>
-                  {a.status === 'saving' ? 'Saving…' : a.status === 'saved' ? 'Saved ✓' : a.status === 'error' ? (a.message || 'Save issue') : 'All changes saved'}
-                </span>
-              </div>
 
                   <button
                     className="gc-actions-item gc-actions-danger"
