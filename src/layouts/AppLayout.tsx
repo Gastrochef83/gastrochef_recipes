@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
+import { useAutosave } from '../contexts/AutosaveContext'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -38,6 +39,7 @@ function clearAppCaches() {
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
   const k = useKitchen()
+  const a = useAutosave()
 
   const loc = useLocation()
 
@@ -135,7 +137,7 @@ export default function AppLayout() {
 
   return (
     <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
-      <div className="gc-shell" style={{ gridTemplateColumns: 'clamp(220px, 16vw, 260px) minmax(0, 1fr)' }}>
+      <div className="gc-shell">
         <aside className="gc-side">
           <div className="gc-side-card">
             <div className="gc-brand gc-brand--text">
@@ -225,6 +227,12 @@ export default function AppLayout() {
                 {dark ? '☀' : '☾'}
               </button>
 
+              <div className="gc-autosave" aria-live="polite">
+                <span className={cx('gc-autosave-pill', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}>
+                  {a.status === 'saving' ? 'Saving…' : a.status === 'saved' ? 'Saved ✓' : a.status === 'error' ? (a.message || 'Save issue') : 'All changes saved'}
+                </span>
+              </div>
+
               <details ref={menuRef} className="gc-actions-menu">
                 <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
                   <span className="gc-avatar" aria-hidden="true">
@@ -248,6 +256,12 @@ export default function AppLayout() {
                     {dark ? 'Light Mode' : 'Dark Mode'}
                   </button>
 
+              <div className="gc-autosave" aria-live="polite">
+                <span className={cx('gc-autosave-pill', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}>
+                  {a.status === 'saving' ? 'Saving…' : a.status === 'saved' ? 'Saved ✓' : a.status === 'error' ? (a.message || 'Save issue') : 'All changes saved'}
+                </span>
+              </div>
+
                   <button
                     className="gc-actions-item"
                     type="button"
@@ -258,6 +272,12 @@ export default function AppLayout() {
                   >
                     Refresh kitchen
                   </button>
+
+              <div className="gc-autosave" aria-live="polite">
+                <span className={cx('gc-autosave-pill', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}>
+                  {a.status === 'saving' ? 'Saving…' : a.status === 'saved' ? 'Saved ✓' : a.status === 'error' ? (a.message || 'Save issue') : 'All changes saved'}
+                </span>
+              </div>
 
                   <button
                     className="gc-actions-item gc-actions-danger"

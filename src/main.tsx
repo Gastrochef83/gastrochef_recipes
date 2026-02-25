@@ -10,6 +10,7 @@ import './index.css'
 import './styles.css'
 
 import { ModeProvider } from './lib/mode'
+import { AutosaveProvider } from './contexts/AutosaveContext'
 import ErrorBoundary from './components/ErrorBoundary'
 
 /**
@@ -24,7 +25,9 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
   <HashRouter>
     <ModeProvider>
       <ErrorBoundary>
-        <App />
+        <AutosaveProvider>
+          <App />
+        </AutosaveProvider>
       </ErrorBoundary>
     </ModeProvider>
   </HashRouter>

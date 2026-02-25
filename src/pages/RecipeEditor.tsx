@@ -9,6 +9,7 @@ import { getIngredientsCached } from '../lib/ingredientsCache'
 import { CostTimeline } from '../components/CostTimeline'
 import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 import { useKitchen } from '../lib/kitchen'
+import { useAutosave } from '../contexts/AutosaveContext'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -145,6 +146,10 @@ function mergeDbAndDraft(db: Line[], draft: Line[]): Line[] {
 }
 const PHOTO_BUCKET = 'recipe-photos'
 
+function cx(...arr: Array<string | false | null | undefined>) {
+  return arr.filter(Boolean).join(' ')
+}
+
 export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
   const showCost = isMgmt
@@ -277,8 +282,15 @@ const k = useKitchen()
   const [addUnit, setAddUnit] = useState('g')
   const [addYield, setAddYield] = useState('100')
   const [addGross, setAddGross] = useState('') // optional gross override
+  const [flashLineId, setFlashLineId] = useState<string | null>(null)
 
-  // Auto-calc yield for NEW line when both Net and Gross are provided
+    useEffect(() => {
+    if (!flashLineId) return
+    const t = window.setTimeout(() => setFlashLineId(null), 700)
+    return () => window.clearTimeout(t)
+  }, [flashLineId])
+
+// Auto-calc yield for NEW line when both Net and Gross are provided
   useEffect(() => {
     const raw = (addGross || '').trim()
     if (!raw) return
@@ -351,6 +363,11 @@ const k = useKitchen()
         if (!alive) return
 
         setRecipe(recipeRow)
+        try {
+          localStorage.setItem('gc_last_recipe_id', recipeRow.id)
+          localStorage.setItem('gc_last_recipe_name', recipeRow.name || '')
+          localStorage.setItem('gc_last_recipe_ts', String(Date.now()))
+        } catch {}
 
         setName(recipeRow.name || '')
         setCategory(recipeRow.category || '')
@@ -400,6 +417,9 @@ const k = useKitchen()
         if (!alive) return
         setAllRecipes((rs || []) as Recipe[])
       } catch (e: any) {
+      const msg = e?.message || 'Failed to save lines.'
+      autosave.setError(msg)
+
         if (!alive) return
         setErr(e?.message || 'Failed to load recipe.')
       } finally {
@@ -542,6 +562,7 @@ const k = useKitchen()
 
     setErr(null)
     setSavingLines(true)
+    autosave.setSaving()
     try {
       // 1) delete removed DB lines (if any)
       const delIds = deletedLineIdsRef.current.filter((x) => x && !x.startsWith('tmp_'))
@@ -612,18 +633,21 @@ const k = useKitchen()
         // No reload = no cursor/typing flicker (especially Notes). We already updated local state.
         clearDraftLines(rid)
       }
+
+      autosave.setSaved()
+      return true
     } catch (e: any) {
       try {
         // Keep current lines locally so navigation (Cook Mode) won't lose them.
         const cur = ((override ?? linesRef.current) || []) as Line[]
         writeDraftLines(rid, cur)
       } catch {}
-      setErr(e?.message || 'Failed to save lines.')
+      setErr(msg)
       return false
     } finally {
       setSavingLines(false)
     }
-  }, [id, isDraftLine, setLinesSafe, k.kitchenId])
+  }, [id, isDraftLine, setLinesSafe, k.kitchenId, autosave])
 
   const scheduleLinesSave = useCallback(() => {
     if (!id) return
@@ -818,6 +842,7 @@ const addLineLocal = useCallback(async () => {
       const next = [...(linesRef.current || []), newL]
       linesRef.current = next
       setLinesSafe(next)
+      setFlashLineId(newL.id)
       const ok = await saveLinesNow(next)
       if (ok) {
         showToast('Line added & saved.')
@@ -851,6 +876,7 @@ const addLineLocal = useCallback(async () => {
       const next = [...(linesRef.current || []), newL]
       linesRef.current = next
       setLinesSafe(next)
+      setFlashLineId(newL.id)
       const ok = await saveLinesNow(next)
       showToast(ok ? 'Subrecipe line added & saved.' : 'Subrecipe line added — saved locally (syncing...).')
       if (!ok) scheduleLinesSave()
@@ -1684,7 +1710,7 @@ const addLineLocal = useCallback(async () => {
 
                         if (l.line_type === 'group') {
                           return (
-                            <tr key={l.id} className="gc-kitopi-group">
+                            <tr key={l.id} className={cx("gc-kitopi-group", flashLineId === l.id && "gc-flash-row")}>
                               <td colSpan={tableColSpan}>
                                 <div className="gc-kitopi-group-row">
                                   <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>

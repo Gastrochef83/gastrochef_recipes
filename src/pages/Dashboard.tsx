@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import Button from '../components/ui/Button'
 
 type Recipe = {
   id: string
@@ -77,6 +79,14 @@ function money(n: number, currency = 'USD') {
 }
 
 export default function Dashboard() {
+  const nav = useNavigate()
+  const lastId = (() => {
+    try { return localStorage.getItem('gc_last_recipe_id') || '' } catch { return '' }
+  })()
+  const lastName = (() => {
+    try { return localStorage.getItem('gc_last_recipe_name') || '' } catch { return '' }
+  })()
+
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
@@ -320,6 +330,35 @@ export default function Dashboard() {
         <div className="gc-label">DASHBOARD</div>
         <div className="mt-2 text-2xl font-extrabold">Overview</div>
         <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
+      </div>
+
+
+      <div className="gc-card p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <div className="text-sm font-semibold">Continue Cooking</div>
+          <div className="mt-1 text-xs text-neutral-600">
+            {lastId ? <>Jump back to <span className="font-semibold">{lastName || 'your last recipe'}</span>.</> : <>Open Recipes and start cooking.</>}
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="primary"
+            onClick={() => {
+              if (lastId) nav(`/cook?id=${encodeURIComponent(lastId)}`)
+              else nav('/recipes')
+            }}
+          >
+            Continue Cooking 🍳
+          </Button>
+          {lastId ? (
+            <Button
+              variant="ghost"
+              onClick={() => nav(`/recipe?id=${encodeURIComponent(lastId)}`)}
+            >
+              Open Editor
+            </Button>
+          ) : null}
+        </div>
       </div>
 
       {loading && <div className="gc-card p-6">Loading…</div>}

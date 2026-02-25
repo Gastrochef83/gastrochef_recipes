@@ -1039,3 +1039,45 @@ a{
 .gc-dark .gc-kitopi-table tbody tr:hover td{
   background: rgba(14,165,166,.08);
 }
+
+
+/* Autosave (topbar trust signal) */
+.gc-autosave{ display:flex; align-items:center; }
+.gc-autosave-pill{
+  display:inline-flex;
+  align-items:center;
+  gap: 8px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  line-height: 1;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.7);
+  color: var(--gc-text);
+  box-shadow: var(--gc-shadow-soft);
+  white-space: nowrap;
+}
+.gc-dark .gc-autosave-pill{
+  background: rgba(17,24,39,.35);
+  border-color: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.92);
+}
+.gc-autosave-pill.is-saving{
+  border-color: rgba(14,165,166,.35);
+}
+.gc-autosave-pill.is-saved{
+  border-color: rgba(34,197,94,.35);
+}
+.gc-autosave-pill.is-error{
+  border-color: rgba(239,68,68,.45);
+}
+
+/* RecipeEditor dopamine feedback */
+.gc-flash-row{
+  animation: gcFlashRow .7s ease-out;
+}
+@keyframes gcFlashRow{
+  0%{ box-shadow: 0 0 0 0 rgba(20,184,166,.0); background: rgba(20,184,166,.0); }
+  25%{ box-shadow: 0 0 0 4px rgba(20,184,166,.12); background: rgba(20,184,166,.08); }
+  100%{ box-shadow: 0 0 0 0 rgba(20,184,166,.0); background: transparent; }
+}
