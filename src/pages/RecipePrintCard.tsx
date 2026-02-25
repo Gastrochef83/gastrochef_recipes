@@ -225,6 +225,16 @@ export default function RecipePrintCard() {
     return t
   }, [lines, computed])
 
+  // --- Print KPIs (safe defaults) ---
+  const currency = (recipe?.currency || 'USD').toUpperCase()
+  const portions = clamp(toNum(recipe?.portions, 1), 1, 1_000_000)
+  const perPortion = portions > 0 ? totalCost / portions : totalCost
+  const selling = recipe?.selling_price ?? null
+  const targetPct = recipe?.target_food_cost_pct ?? null
+  const foodCostPct =
+    selling != null && selling > 0 ? (perPortion / selling) * 100 : null
+
+
   // Auto print once loaded (only when autoprint=1)
   useEffect(() => {
     if (!autoPrint) return
