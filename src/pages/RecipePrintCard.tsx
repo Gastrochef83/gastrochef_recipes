@@ -57,7 +57,16 @@ function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n))
 }
 function safeUnit(u: string) {
-  return (u ?? '').trim().toLowerCase() || 'g'
+  
+// --- FIX: Build steps array safely ---
+const __gc_steps = Array.isArray((recipe as any)?.method_steps) && (recipe as any).method_steps.length
+  ? (recipe as any).method_steps
+  : String((recipe as any)?.method || (recipe as any)?.method_legacy || "")
+      .split(/\r?\n+/)
+      .map((s:string)=>s.trim())
+      .filter(Boolean);
+
+return (u ?? '').trim().toLowerCase() || 'g'
 }
 function fmtQty(n: number) {
   const v = Number.isFinite(n) ? n : 0
@@ -90,7 +99,16 @@ export default function RecipePrintCard() {
   const mounted = useRef(true)
   useEffect(() => {
     mounted.current = true
-    return () => {
+    
+// --- FIX: Build steps array safely ---
+const __gc_steps = Array.isArray((recipe as any)?.method_steps) && (recipe as any).method_steps.length
+  ? (recipe as any).method_steps
+  : String((recipe as any)?.method || (recipe as any)?.method_legacy || "")
+      .split(/\r?\n+/)
+      .map((s:string)=>s.trim())
+      .filter(Boolean);
+
+return () => {
       mounted.current = false
     }
   }, [])
@@ -242,7 +260,16 @@ export default function RecipePrintCard() {
       })
     })
 
-    return () => {
+    
+// --- FIX: Build steps array safely ---
+const __gc_steps = Array.isArray((recipe as any)?.method_steps) && (recipe as any).method_steps.length
+  ? (recipe as any).method_steps
+  : String((recipe as any)?.method || (recipe as any)?.method_legacy || "")
+      .split(/\r?\n+/)
+      .map((s:string)=>s.trim())
+      .filter(Boolean);
+
+return () => {
       cancelled = true
     }
   }, [autoPrint, loading, err, recipe])
@@ -269,7 +296,16 @@ export default function RecipePrintCard() {
   const stepPhotos = (recipe.method_step_photos || []).filter(Boolean)
   const hasPhotos = Boolean(recipe.photo_url) || stepPhotos.length > 0
 
-  return (
+  
+// --- FIX: Build steps array safely ---
+const __gc_steps = Array.isArray((recipe as any)?.method_steps) && (recipe as any).method_steps.length
+  ? (recipe as any).method_steps
+  : String((recipe as any)?.method || (recipe as any)?.method_legacy || "")
+      .split(/\r?\n+/)
+      .map((s:string)=>s.trim())
+      .filter(Boolean);
+
+return (
     <div className="gc-print-root">
       <div className="gc-a4">
         <div className="gc-a4-card">
@@ -388,7 +424,16 @@ export default function RecipePrintCard() {
               <tbody>
                 {lines.map((l) => {
                   if (l.line_type === 'group') {
-                    return (
+                    
+// --- FIX: Build steps array safely ---
+const __gc_steps = Array.isArray((recipe as any)?.method_steps) && (recipe as any).method_steps.length
+  ? (recipe as any).method_steps
+  : String((recipe as any)?.method || (recipe as any)?.method_legacy || "")
+      .split(/\r?\n+/)
+      .map((s:string)=>s.trim())
+      .filter(Boolean);
+
+return (
                       <tr key={l.id} className="gc-a4-group">
                         <td colSpan={6}>{l.group_title || 'Group'}</td>
                       </tr>
@@ -398,7 +443,16 @@ export default function RecipePrintCard() {
                   if (!c) return null
                   const pct = totalCost > 0 ? (c.lineCost / totalCost) * 100 : 0
 
-                  return (
+                  
+// --- FIX: Build steps array safely ---
+const __gc_steps = Array.isArray((recipe as any)?.method_steps) && (recipe as any).method_steps.length
+  ? (recipe as any).method_steps
+  : String((recipe as any)?.method || (recipe as any)?.method_legacy || "")
+      .split(/\r?\n+/)
+      .map((s:string)=>s.trim())
+      .filter(Boolean);
+
+return (
                     <tr key={l.id}>
                       <td className="gc-a4-item">
                         <div className="gc-a4-item-title">{c.title}</div>
