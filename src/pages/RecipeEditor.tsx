@@ -815,8 +815,10 @@ const addLineLocal = useCallback(async () => {
         group_title: null,
       }
       setErr(null)
-      setLinesSafe([...linesRef.current, newL])
-      const ok = await saveLinesNow()
+      const next = [...(linesRef.current || []), newL]
+      linesRef.current = next
+      setLinesSafe(next)
+      const ok = await saveLinesNow(next)
       if (ok) {
         showToast('Line added & saved.')
       } else {
@@ -877,8 +879,12 @@ const addLineLocal = useCallback(async () => {
       group_title: title,
     }
     setErr(null)
-    setLinesSafe([...linesRef.current, newL])
-    showToast('Group added (not saved yet).')
+    const next = [...(linesRef.current || []), newL]
+    linesRef.current = next
+    setLinesSafe(next)
+    const ok = await saveLinesNow(next)
+    showToast(ok ? 'Group added & saved.' : 'Group added — saved locally (syncing...).')
+    if (!ok) scheduleLinesSave()
   }, [
     id,
     addType,
@@ -890,9 +896,11 @@ const addLineLocal = useCallback(async () => {
     addYield,
     addGross,
     setLinesSafe,
+    saveLinesNow,
+    scheduleLinesSave,
     showToast,
     k.kitchenId,
-  ])
+])
 
   // ---------- Smart syncing handlers ----------
   const onNetChange = useCallback(
@@ -1244,15 +1252,21 @@ const addLineLocal = useCallback(async () => {
                   <div className="gc-label" id="sec-print">PRINT (A4)</div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
                 </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <button className="gc-btn gc-btn-primary" type="button" onClick={printNow}>Print now</button>
-                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)} disabled={!id}>Open Print Page</button>
-                
-                <div className="gc-hint" style={{ marginTop: 10 }}>
-                  {savePulse ? 'Auto-saving…' : 'Auto-save ready.'}
-                </div>
+                  <button
+                    className="gc-btn gc-btn-ghost"
+                    type="button"
+                    onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)}
+                    disabled={!id}
+                  >
+                    Open Print Page
+                  </button>
 
-</div>
+                  <div className="gc-hint" style={{ marginLeft: 6 }}>
+                    {savePulse ? 'Auto-saving…' : 'Auto-save ready.'}
+                  </div>
+                </div>
               </div>
             </div>
           )}
