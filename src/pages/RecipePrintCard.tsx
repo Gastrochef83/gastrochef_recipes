@@ -259,6 +259,22 @@ export default function RecipePrintCard() {
       .filter(Boolean)
   })()
 
+  const yieldLabel = (() => {
+    const qRaw = (recipe as any)?.yield_qty
+    const uRaw = (recipe as any)?.yield_unit
+    const q = Number(qRaw)
+    const u = String(uRaw ?? '').trim()
+    if (Number.isFinite(q) && qRaw != null) {
+      const v = fmtQty(q)
+      return u ? `${v} ${u}` : `${v}`
+    }
+    const pRaw = (recipe as any)?.yield_percent ?? (recipe as any)?.yield_pct
+    const p = Number(pRaw)
+    if (Number.isFinite(p) && pRaw != null) return `${Math.round(p * 1000) / 1000}%`
+    return '—'
+  })()
+
+
 
 
   const showNutrition =
