@@ -203,13 +203,7 @@ const k = useKitchen()
   // =======================================
   // GOD SAFE UPDATE LINE (UI only)
   // =======================================
-  const updateLine = useCallback((id: string, patch: any) => {
-    setLinesSafe((prev: any) => {
-      if (!Array.isArray(prev)) return prev
-      return prev.map((l: any) => (l?.id === id ? { ...l, ...patch } : l))
-    })
-  }, [setLinesSafe])
-
+  
 // Meta fields
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
@@ -636,6 +630,19 @@ const k = useKitchen()
     if (linesSaveTimer.current) window.clearTimeout(linesSaveTimer.current)
     linesSaveTimer.current = window.setTimeout(() => {
       saveLinesNow().then(() => {}).catch(() => {})
+
+const updateLine = useCallback(
+  (lineId: string, patch: Partial<Line>) => {
+    if (!lineId) return
+    const cur = (linesRef.current || []) as Line[]
+    const next = cur.map((l) => (l.id === lineId ? { ...l, ...patch } : l))
+    linesRef.current = next
+    setLinesSafe(next)
+    scheduleLinesSave()
+  },
+  [scheduleLinesSave, setLinesSafe]
+)
+
     }, 650)
   }, [id, saveLinesNow])
 
