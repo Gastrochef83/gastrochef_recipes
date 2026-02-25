@@ -1,0 +1,79 @@
+@import './styles/tokens.css';
+@import './styles/globals.css';
+
+
+/* =========================================================
+   RecipeEditor — Grid helpers (fix stacked fields)
+   ========================================================= */
+.gc-field-row{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.gc-col-12{ grid-column: span 12; }
+.gc-col-9{ grid-column: span 9; }
+.gc-col-6{ grid-column: span 6; }
+.gc-col-4{ grid-column: span 4; }
+.gc-col-3{ grid-column: span 3; }
+
+.gc-grid-4{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gc-grid-3{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Responsive: stack cleanly on small screens */
+@media (max-width: 900px){
+  .gc-col-9, .gc-col-6, .gc-col-4, .gc-col-3{ grid-column: span 12; }
+  .gc-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gc-grid-3{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+@media (max-width: 520px){
+  .gc-grid-4{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+
+
+/* =========================================================
+   RecipeEditor — Row actions (Kitopi hover)
+   ========================================================= */
+.gc-kitopi-line-row .gc-kitopi-row-actions{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  opacity:0;
+  pointer-events:none;
+  transform: translateY(-2px);
+  transition: opacity .15s ease, transform .15s ease;
+}
+
+.gc-kitopi-line-row:hover .gc-kitopi-row-actions,
+.gc-kitopi-line-row:focus-within .gc-kitopi-row-actions{
+  opacity:1;
+  pointer-events:auto;
+  transform: translateY(0);
+}
+
+.gc-icon-btn{
+  appearance:none;
+  border:1px solid rgba(2,6,23,.12);
+  background: rgba(255,255,255,.9);
+  border-radius:10px;
+  padding:6px 9px;
+  font-weight:900;
+  font-size:12px;
+  line-height:1;
+  cursor:pointer;
+  box-shadow: 0 10px 24px rgba(2,6,23,.06);
+}
+.gc-icon-btn:hover{ filter: brightness(.98); }
+.gc-icon-btn:active{ transform: translateY(1px); }
+.gc-icon-btn-danger{ border-color: rgba(220,38,38,.22); color: #dc2626; }
