@@ -250,26 +250,16 @@ export default function RecipePrintCard() {
   if (loading) return <div className="gc-print-loading">Loading…</div>
   if (err || !recipe) return <div className="gc-print-loading">{err || 'Missing recipe.'}</div>
 
-const steps: string[] =
-  Array.isArray((recipe as any).method_steps) && (recipe as any).method_steps.length
-    ? ((recipe as any).method_steps as string[]).map((s) => String(s ?? '').trim()).filter(Boolean)
-    : String((recipe as any).method || (recipe as any).method_legacy || '')
-        .split(/\r?\n+/)
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((s) => s.replace(/^\d+\.\s*/, ''))
+  const steps: string[] = (() => {
+    const arr = Array.isArray((recipe as any)?.method_steps) ? ((recipe as any).method_steps as any[]) : null
+    if (arr && arr.length) return arr.map((s) => String(s ?? '').trim()).filter(Boolean)
+    return String((recipe as any)?.method || (recipe as any)?.method_legacy || '')
+      .split(/\r?\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+  })()
 
-const methodLegacy = ''
 
-  const yieldLabel =
-    recipe.yield_qty != null
-      ? `${fmtQty(toNum(recipe.yield_qty, 0))} ${String(recipe.yield_unit || '').trim() || ''}`.trim()
-      : '—'
-
-  const perPortion = recipe.portions ? totalCost / Math.max(1, recipe.portions) : totalCost
-  const selling = recipe.selling_price != null ? toNum(recipe.selling_price, 0) : null
-  const foodCostPct = selling && selling > 0 ? (totalCost / selling) * 100 : null
-  const targetPct = recipe.target_food_cost_pct != null ? toNum(recipe.target_food_cost_pct, 0) : null
 
   const showNutrition =
     recipe.calories != null || recipe.protein_g != null || recipe.carbs_g != null || recipe.fat_g != null

@@ -631,20 +631,23 @@ const k = useKitchen()
     linesSaveTimer.current = window.setTimeout(() => {
       saveLinesNow().then(() => {}).catch(() => {})
 
-const updateLine = useCallback(
-  (lineId: string, patch: Partial<Line>) => {
-    if (!lineId) return
-    const cur = (linesRef.current || []) as Line[]
-    const next = cur.map((l) => (l.id === lineId ? { ...l, ...patch } : l))
-    linesRef.current = next
-    setLinesSafe(next)
-    scheduleLinesSave()
-  },
-  [scheduleLinesSave, setLinesSafe]
-)
-
     }, 650)
   }, [id, saveLinesNow])
+
+  // Update a single line locally, then schedule save (prevents note flicker / lost typing)
+  const updateLine = useCallback(
+    (lineId: string, patch: Partial<Line>) => {
+      if (!lineId) return
+      const cur = (linesRef.current || []) as Line[]
+      const next = cur.map((l) => (l.id === lineId ? { ...l, ...patch } : l))
+      linesRef.current = next
+      setLinesSafe(next)
+      scheduleLinesSave()
+    },
+    [scheduleLinesSave, setLinesSafe]
+  )
+
+
 
   
   const duplicateLineLocal = useCallback(
