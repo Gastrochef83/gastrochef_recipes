@@ -75,7 +75,7 @@
   --gc-topbar-h: 56px;
 
   /* Focus ring */
-  --gc-ring: 0 0 0 4px rgba(14,165,166,.18);
+  --gc-ring: 0 0 0 4px rgba(14,165,166,.22);
 
   /* Table density */
   --gc-table-pad-y: 10px;
