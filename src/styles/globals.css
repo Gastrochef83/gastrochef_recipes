@@ -334,6 +334,8 @@ a{
 }
 
 .gc-tabs .gc-btn{
+  transition: transform .12s ease, box-shadow .12s ease, background-color .12s ease, border-color .12s ease;
+  will-change: transform;
   height: 34px;
   padding: 0 12px;
   border-radius: 999px;
@@ -365,8 +367,19 @@ a{
 }
 
 .gc-recipe-editor .gc-card{
+  border-radius: var(--gc-radius-xl);
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.78);
+  box-shadow: var(--gc-shadow-soft);
   overflow: clip;
+  transition: transform .14s ease, box-shadow .14s ease, background-color .14s ease;
 }
+.gc-card:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 18px 44px rgba(2,6,23,.12);
+  background: rgba(255,255,255,.92);
+}
+
 
 .gc-cockpit-bar{
   padding: 0;
@@ -942,6 +955,8 @@ a{
 }
 
 .gc-auth-hero{
+  position: relative;
+  overflow: clip;
   border-radius: 28px;
   border: 1px solid var(--gc-border);
   background:
@@ -956,6 +971,31 @@ a{
   overflow: hidden;
   position: relative;
 }
+
+.gc-auth-hero::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)' opacity='.35'/%3E%3C/svg%3E");
+  background-size: 220px 220px;
+  opacity: .06;
+  mix-blend-mode: multiply;
+}
+.gc-auth-hero::after{
+  content:"";
+  position:absolute;
+  inset:-2px;
+  pointer-events:none;
+  border-radius: 30px;
+  background: radial-gradient(520px 220px at 18% 8%, rgba(255,255,255,.55), transparent 60%);
+  opacity: .55;
+}
+.gc-auth-hero > *{
+  position: relative;
+  z-index: 1;
+}
+
 
 .gc-dark .gc-auth-hero{
   background:
@@ -1542,3 +1582,46 @@ a{
 /* Minimal utilities (avoid Tailwind dependency for a few classes) */
 .w-full{ width: 100%; }
 .min-w-0{ min-width: 0; }
+
+
+/* ==============================
+   CEO Micro Feedback — Buttons
+   ============================== */
+.gc-btn:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(2,6,23,.10);
+}
+.gc-btn:active{
+  transform: translateY(0px) scale(.99);
+  box-shadow: 0 6px 14px rgba(2,6,23,.10);
+}
+.gc-btn:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(197,138,61,.22), 0 12px 28px rgba(2,6,23,.10);
+}
+
+
+
+/* ==============================
+   Print — Menu Card Finishing
+   ============================== */
+.gc-a4-head{
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(2,6,23,.10);
+  margin-bottom: 12px;
+}
+.gc-a4-title{
+  letter-spacing: -0.02em;
+}
+.gc-a4-brand-accent{
+  box-shadow: 0 10px 24px rgba(110,127,82,.18);
+}
+.gc-a4-section-title{
+  letter-spacing: .08em;
+}
+@media print{
+  .gc-a4-card{
+    box-shadow: none !important;
+  }
+}
+
