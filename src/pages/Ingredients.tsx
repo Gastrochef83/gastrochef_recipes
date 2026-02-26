@@ -299,13 +299,47 @@ export default function Ingredients() {
   }
 
   const deactivate = async (id: string) => {
-    const ok = confirm('Deactivate ingredient? It will be hidden from pickers.')
+    const ok = confirm('Deactivate ingredient? It will be hidden from pickers (soft delete).')
     if (!ok) return
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient deactivated ✅')
     invalidateIngredientsCache()
     await load()
+  }
+
+  const hardDelete = async (id: string) => {
+    const ok = confirm(
+      'Delete ingredient permanently?\n\nIf this ingredient is used in any recipe lines, the app will safely DEACTIVATE it instead.'
+    )
+    if (!ok) return
+
+    // 1) Try hard delete first
+    const delRes = await supabase.from('ingredients').delete().eq('id', id)
+    if (!delRes.error) {
+      showToast('Ingredient deleted permanently ✅')
+      invalidateIngredientsCache()
+      await load()
+      return
+    }
+
+    // 2) If delete fails (FK/RLS), fall back to safe soft delete when possible.
+    const code = (delRes.error as any)?.code
+    const msg = String(delRes.error?.message || '')
+    const fkLikely = code === '23503' || msg.toLowerCase().includes('foreign key') || msg.toLowerCase().includes('violates')
+
+    // If it's FK-related, we *must* soft delete.
+    if (fkLikely) {
+      const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
+      if (error) return showToast(error.message)
+      showToast('Used in recipes → deactivated (safe) ✅')
+      invalidateIngredientsCache()
+      await load()
+      return
+    }
+
+    // Otherwise surface the real error (e.g., missing delete policy)
+    showToast(delRes.error.message)
   }
 
   const restore = async (id: string) => {
@@ -562,7 +596,7 @@ export default function Ingredients() {
                             </button>
 
                             {active ? (
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => hardDelete(r.id)}>
                                 Delete
                               </button>
                             ) : (
@@ -578,7 +612,7 @@ export default function Ingredients() {
                 </table>
 
                 <div className="mt-3 text-xs text-neutral-500">
-                  * Delete = Deactivate (Soft Delete) to prevent FK issues with recipe_lines.
+                  * Delete tries to remove permanently. If the ingredient is used in recipe lines, it will be safely deactivated instead.
                 </div>
               </div>
             )}
