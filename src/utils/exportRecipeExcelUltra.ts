@@ -1,5 +1,6 @@
 import ExcelJS from 'exceljs'
 import { saveAs } from 'file-saver'
+import QRCode from 'qrcode'
 
 export type ExcelRecipeMeta = {
   id?: string
@@ -60,6 +61,15 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary)
 }
 
+function dataUrlToBase64Png(dataUrl: string) {
+  const m = dataUrl.match(/^data:image\/png;base64,(.+)$/)
+  return m ? m[1] : null
+}
+
+function safeFileName(name: string) {
+  return name.replace(/[\\/:*?"<>|]+/g, '_')
+}
+
 async function tryAddLogo(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
@@ -102,6 +112,38 @@ async function tryAddLogo(
   }
 }
 
+async function tryAddQr(
+  workbook: ExcelJS.Workbook,
+  sheet: ExcelJS.Worksheet,
+  payload: string,
+  opts?: { col?: number; row?: number; size?: number },
+) {
+  try {
+    const dataUrl = await QRCode.toDataURL(payload, { margin: 1, width: 256, errorCorrectionLevel: 'M' })
+    const base64 = dataUrlToBase64Png(dataUrl)
+    if (!base64) return
+    const imgId = workbook.addImage({ base64, extension: 'png' })
+    const col = opts?.col ?? 3.15
+    const row = opts?.row ?? 1.1
+    const size = opts?.size ?? 86
+    sheet.addImage(imgId, { tl: { col, row }, ext: { width: size, height: size } })
+  } catch {
+    // ignore
+  }
+}
+
+function applyWatermark(sheet: ExcelJS.Worksheet, text: string) {
+  try {
+    sheet.mergeCells('A20:D26')
+    const c = sheet.getCell('A20')
+    c.value = text
+    c.font = { name: 'Calibri', size: 44, bold: true, color: { argb: '11CBD5E1' } }
+    c.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 45 }
+  } catch {
+    // ignore
+  }
+}
+
 export async function exportRecipeExcelUltra(args: {
   meta: ExcelRecipeMeta
   totals: { totalCost: number; cpp: number; fcPct: number | null; margin: number; marginPct: number | null }
@@ -121,6 +163,10 @@ export async function exportRecipeExcelUltra(args: {
   workbook.creator = 'GastroChef'
   workbook.created = new Date()
 
+  const now = new Date()
+  const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+  const recipeId = meta.id ? String(meta.id) : ''
+
   // =======================
   // Sheet: Summary
   // =======================
@@ -130,6 +176,11 @@ export async function exportRecipeExcelUltra(args: {
   })
 
   summary.columns = [{ width: 22 }, { width: 34 }, { width: 18 }, { width: 22 }]
+
+  // Print + header/footer (Client Report Edition)
+  summary.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.55, bottom: 0.55, header: 0.25, footer: 0.25 }
+  summary.headerFooter.oddHeader = `&C&"Calibri,Bold"&12GastroChef — Client Report`
+  summary.headerFooter.oddFooter = `&L&8Report: ${reportId}${recipeId ? `  |  Recipe: ${recipeId}` : ''}&R&8CONFIDENTIAL  |  ${now.toLocaleDateString()}`
 
   // Header (Kitopi-style)
   summary.getRow(1).height = 20
@@ -143,6 +194,11 @@ export async function exportRecipeExcelUltra(args: {
   // Centered logo (no overlap)
   await tryAddLogo(workbook, summary, { col: 1.55, row: 1.05, width: 64, height: 64 })
 
+  // QR (links to app route if available)
+  const baseUrl = (typeof window !== 'undefined' && window.location?.origin) ? window.location.origin : ''
+  const qrPayload = recipeId && baseUrl ? `${baseUrl}/#/recipe?id=${encodeURIComponent(recipeId)}` : (recipeId ? `GastroChef Recipe: ${recipeId}` : `GastroChef Recipe: ${name}`)
+  await tryAddQr(workbook, summary, qrPayload, { col: 3.25, row: 1.05, size: 72 })
+
   // Wordmark (center)
   summary.mergeCells('A3:D3')
   summary.getCell('A3').value = 'GastroChef'
@@ -150,15 +206,24 @@ export async function exportRecipeExcelUltra(args: {
   summary.getCell('A3').alignment = { vertical: 'middle', horizontal: 'center' }
 
   // Accent line
-  summary.mergeCells('A4:D4')
+  summary.mergeCells('B4:C4')
   summary.getCell('A4').value = ''
-  summary.getCell('A4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
+  summary.getCell('D4').value = ''
+  summary.getCell('A4').value = ''
+  summary.getCell('B4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
+  summary.getCell('C4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
 
   // Subtitle (center)
   summary.mergeCells('A5:D5')
   summary.getCell('A5').value = 'Kitchen Intelligence — Recipe Export'
   summary.getCell('A5').font = { name: 'Calibri', size: 11, color: { argb: 'FF475569' } }
   summary.getCell('A5').alignment = { vertical: 'middle', horizontal: 'center' }
+
+  // Report meta row
+  summary.mergeCells('A6:D6')
+  summary.getCell('A6').value = `Report ID: ${reportId}${recipeId ? `   |   Recipe ID: ${recipeId}` : ''}`
+  summary.getCell('A6').font = { name: 'Calibri', size: 9, color: { argb: 'FF64748B' } }
+  summary.getCell('A6').alignment = { vertical: 'middle', horizontal: 'center' }
 
   // Recipe title
   summary.mergeCells('A7:D7')
@@ -255,6 +320,26 @@ export async function exportRecipeExcelUltra(args: {
 
   r = kpiTop + 7
 
+
+
+  // Watermark + signature
+  applyWatermark(summary, 'CONFIDENTIAL')
+
+  const sigRow = Math.max(r + 2, 28)
+  summary.getCell(`A${sigRow}`).value = 'Prepared by:'
+  summary.getCell(`A${sigRow}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } }
+  summary.mergeCells(`B${sigRow}:C${sigRow}`)
+  summary.getCell(`B${sigRow}`).value = '__________________________'
+  summary.getCell(`B${sigRow}`).font = { name: 'Calibri', size: 10, color: { argb: 'FF334155' } }
+  summary.getCell(`D${sigRow}`).value = `Date: ${now.toLocaleDateString()}`
+  summary.getCell(`D${sigRow}`).font = { name: 'Calibri', size: 10, color: { argb: 'FF334155' } }
+
+  const sigRow2 = sigRow + 1
+  summary.getCell(`A${sigRow2}`).value = 'Approved:'
+  summary.getCell(`A${sigRow2}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } }
+  summary.mergeCells(`B${sigRow2}:C${sigRow2}`)
+  summary.getCell(`B${sigRow2}`).value = '__________________________'
+  summary.getCell(`B${sigRow2}`).font = { name: 'Calibri', size: 10, color: { argb: 'FF334155' } }
 
   // =======================
   // Sheet: Ingredients
@@ -412,5 +497,5 @@ export async function exportRecipeExcelUltra(args: {
   // Export
   const buf = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  saveAs(blob, `${name.replace(/[\\/:*?"<>|]+/g, '_')}.xlsx`)
+  saveAs(blob, `${safeFileName(name)}.xlsx`)
 }
