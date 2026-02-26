@@ -60,7 +60,11 @@ function arrayBufferToBase64(buffer: ArrayBuffer) {
   return btoa(binary)
 }
 
-async function tryAddLogo(workbook: ExcelJS.Workbook, sheet: ExcelJS.Worksheet) {
+async function tryAddLogo(
+  workbook: ExcelJS.Workbook,
+  sheet: ExcelJS.Worksheet,
+  opts?: { col?: number; row?: number; width?: number; height?: number },
+) {
   try {
     // We try common asset paths (one of them will exist depending on your build)
     const candidates = ['/gastrochef-logo.png', '/logo.png', '/logo.svg']
@@ -83,10 +87,15 @@ async function tryAddLogo(workbook: ExcelJS.Workbook, sheet: ExcelJS.Worksheet) 
     const base64 = arrayBufferToBase64(ab)
     const imgId = workbook.addImage({ base64, extension: mime === 'image/jpeg' ? 'jpeg' : 'png' })
 
-    // Place logo top-left
+    const col = opts?.col ?? 0.1
+    const row = opts?.row ?? 0.1
+    const width = opts?.width ?? 78
+    const height = opts?.height ?? 78
+
+    // Place logo top-left (small, non-overlapping)
     sheet.addImage(imgId, {
-      tl: { col: 0, row: 0 },
-      ext: { width: 120, height: 120 },
+      tl: { col, row },
+      ext: { width, height },
     })
   } catch {
     // ignore (export must still work)
@@ -122,7 +131,14 @@ export async function exportRecipeExcelUltra(args: {
 
   summary.columns = [{ width: 22 }, { width: 34 }, { width: 18 }, { width: 22 }]
 
-  await tryAddLogo(workbook, summary)
+  // Provide vertical breathing room so the logo never overlaps text
+  summary.getRow(1).height = 28
+  summary.getRow(2).height = 18
+  summary.getRow(3).height = 10
+  summary.getRow(4).height = 10
+  summary.getRow(5).height = 28
+
+  await tryAddLogo(workbook, summary, { col: 0.15, row: 0.15, width: 76, height: 76 })
 
   // Title area
   summary.mergeCells('B1:D1')
@@ -135,10 +151,11 @@ export async function exportRecipeExcelUltra(args: {
   summary.getCell('B2').font = { name: 'Calibri', size: 11, color: { argb: 'FF64748B' } }
   summary.getCell('B2').alignment = { vertical: 'middle', horizontal: 'left' }
 
-  summary.mergeCells('A4:D4')
-  summary.getCell('A4').value = name
-  summary.getCell('A4').font = { name: 'Calibri', size: 20, bold: true }
-  summary.getCell('A4').alignment = { vertical: 'middle', horizontal: 'left' }
+  // Recipe title (pushed down to guarantee no overlap)
+  summary.mergeCells('A5:D5')
+  summary.getCell('A5').value = name
+  summary.getCell('A5').font = { name: 'Calibri', size: 20, bold: true }
+  summary.getCell('A5').alignment = { vertical: 'middle', horizontal: 'left' }
 
   // Key-Value block helper
   const kv = (row: number, label: string, value: any) => {
@@ -150,7 +167,7 @@ export async function exportRecipeExcelUltra(args: {
     summary.getCell(`B${row}`).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }
   }
 
-  let r = 6
+  let r = 7
   kv(r++, 'Category', meta.category || '')
   kv(r++, 'Portions', portions)
   kv(r++, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
@@ -167,12 +184,15 @@ export async function exportRecipeExcelUltra(args: {
   kv(r++, 'Margin %', totals.marginPct != null ? totals.marginPct / 100 : null)
 
   // Formats
-  const moneyCells = ['B13', 'B14', 'B16']
-  for (const addr of moneyCells) {
+  // NOTE: These rows are dynamic (because we shifted the header down).
+  // We derive the addresses from the known KPI block start row.
+  const kpiStartRow = 14 // Total Cost row after the shift
+  const moneyAddrs = [`B${kpiStartRow}`, `B${kpiStartRow + 1}`, `B${kpiStartRow + 3}`]
+  for (const addr of moneyAddrs) {
     const c = summary.getCell(addr)
     if (typeof c.value === 'number') c.numFmt = `"${currency}" #,##0.00`
   }
-  ;['B15', 'B17'].forEach((addr) => {
+  ;[`B${kpiStartRow + 2}`, `B${kpiStartRow + 4}`].forEach((addr) => {
     const c = summary.getCell(addr)
     if (typeof c.value === 'number') c.numFmt = '0.0%'
   })
