@@ -10,6 +10,7 @@ import { CostTimeline } from '../components/CostTimeline'
 import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
+import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -1161,6 +1162,89 @@ const addLineLocal = useCallback(async () => {
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [id])
 
+
+  // ---------- Export (Excel) ----------
+  const exportExcel = useCallback(async () => {
+    try {
+      const meta = {
+        id: id || undefined,
+        name: name || 'Recipe',
+        category: category || '',
+        portions: Math.max(1, Math.floor(Number(portions || 1))),
+        yield_qty: yieldQty ? Number(yieldQty) : null,
+        yield_unit: yieldUnit || null,
+        currency: currency || 'USD',
+        selling_price: sellingPrice ? Number(sellingPrice) : null,
+        target_food_cost_pct: targetFC ? Number(targetFC) : null,
+        description: description || '',
+        steps: (steps || []).filter(Boolean),
+        calories: calories ? Number(calories) : null,
+        protein_g: protein ? Number(protein) : null,
+        carbs_g: carbs ? Number(carbs) : null,
+        fat_g: fat ? Number(fat) : null,
+      }
+
+      const rows = lines
+        .filter((l) => l.line_type !== 'group')
+        .map((l) => {
+          const c = lineComputed.get(l.id)
+          const base = {
+            type: l.line_type === 'subrecipe' ? 'subrecipe' : 'ingredient',
+            name:
+              l.line_type === 'ingredient'
+                ? (l.ingredient_id ? ingById.get(l.ingredient_id)?.name : null) || 'Ingredient'
+                : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.name || 'Subrecipe'),
+            net_qty: c?.net ?? 0,
+            unit: l.unit || '',
+            yield_percent: c?.yieldPct ?? 100,
+            gross_qty: c?.gross ?? 0,
+            unit_cost: c?.unitCost ?? 0,
+            line_cost: c?.lineCost ?? 0,
+            notes: l.notes || '',
+            warnings: c?.warnings || [],
+          }
+          return base
+        })
+
+      await exportRecipeExcelUltra({
+        meta,
+        totals: { totalCost: totals.totalCost, cpp: totals.cpp, fcPct: totals.fcPct, margin: totals.margin, marginPct: totals.marginPct },
+        lines: rows as any,
+      })
+
+      showToast('Excel exported.')
+    } catch (e: any) {
+      console.error(e)
+      showToast('Excel export failed.')
+    }
+  }, [
+    id,
+    name,
+    category,
+    portions,
+    yieldQty,
+    yieldUnit,
+    currency,
+    sellingPrice,
+    targetFC,
+    description,
+    steps,
+    calories,
+    protein,
+    carbs,
+    fat,
+    lines,
+    lineComputed,
+    ingById,
+    allRecipes,
+    totals.totalCost,
+    totals.cpp,
+    totals.fcPct,
+    totals.margin,
+    totals.marginPct,
+    showToast,
+  ])
+
   // ---------- Guards ----------
   if (loading) {
     return (
@@ -1314,6 +1398,7 @@ const addLineLocal = useCallback(async () => {
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow}>Print now</button>
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={exportExcel}>Export Excel</button>
                   <button
                     className="gc-btn gc-btn-ghost"
                     type="button"
