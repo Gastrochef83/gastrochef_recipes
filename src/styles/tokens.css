@@ -82,8 +82,16 @@
   --gc-table-pad-x: 10px;
 }
 
-/* Dark mode hook (AppLayout uses .gc-dark on root) */
-.gc-dark{
+/* Dark mode hook
+   - AppLayout sets .gc-dark on .gc-root
+   - Some builds may toggle dark via html/body class or data-theme
+   This selector makes dark tokens apply reliably everywhere.
+*/
+:root.gc-dark,
+html.gc-dark,
+body.gc-dark,
+.gc-dark,
+[data-theme="dark"]{
   --gc-bg: #070B13;
   --gc-card: rgba(14,18,30,.78);
   --gc-card-2: rgba(14,18,30,.55);
