@@ -72,20 +72,21 @@ export default function Login() {
       <div className="gc-auth-card">
         {/* ✅ BRAND LOGO (Centered, crisp, Vercel-safe) */}
         <div className="gc-auth-head">
-          <div className="gc-auth-logo-centered">
+          <div className="gc-auth-hero">
             <img
+              className="gc-auth-hero-logo"
               src={logoSrc}
               alt="GastroChef"
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).src = logoFallback
               }}
             />
-            <div>
-              <div className="gc-auth-title">GastroChef</div>
-              <div className="gc-auth-sub">CONCIERGE LOGIN</div>
+            <div className="gc-auth-hero-text">
+              <h1>GastroChef</h1>
+              <p>Professional Kitchen Intelligence Platform</p>
             </div>
           </div>
-        </div>
+        </div></div>
 
         <div className="gc-auth-body">
           {checking ? (

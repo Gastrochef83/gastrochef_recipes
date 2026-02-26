@@ -8,6 +8,8 @@ export default function Layout() {
   const { theme, toggleTheme } = useTheme()
   const nav = useNavigate()
 
+  const base = (import.meta as any).env?.BASE_URL || '/'
+
   const onLogout = async () => {
     await signOut()
     nav('/login')
@@ -17,10 +19,10 @@ export default function Layout() {
     <div className="gc-app" data-theme={theme}>
       <aside className="gc-sidebar">
         <div className="gc-brand">
-          <div className="gc-brand__logo">G</div>
-          <div className="gc-brand__text">
-            <div className="gc-brand__name">GastroChef</div>
-            <div className="gc-brand__sub">Kitchen OS</div>
+          <img className="gc-brand-logo" src={`${base}gastrochef-logo.png`} alt="GastroChef" />
+          <div className="gc-brand-text">
+            <div className="gc-brand-name">GastroChef</div>
+            <div className="gc-brand-sub">Kitchen Intelligence</div>
           </div>
         </div>
 
