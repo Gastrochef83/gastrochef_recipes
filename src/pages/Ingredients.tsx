@@ -20,15 +20,6 @@ type IngredientRow = {
   kitchen_id?: string
 }
 
-function normName(s: string) {
-  return (s ?? '').trim()
-}
-function normKey(s: string) {
-  return normName(s).toLowerCase()
-}
-function isSyntheticId(id: string) {
-  return (id ?? '').startsWith('recipe:')
-}
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
@@ -153,63 +144,22 @@ export default function Ingredients() {
     return null
   }
 
-  const load = async (forceFresh = false) => {
+  const load = async () => {
     setLoading(true)
     setErr(null)
     try {
       await loadKitchen()
-
-      if (forceFresh) invalidateIngredientsCache()
-
-      // 1) Master list from ingredients table (cached)
       const data = await getIngredientsCached()
-      const base = (data ?? []) as IngredientRow[]
-      const baseKeys = new Set(base.map((r) => normKey(String(r.name ?? ''))).filter(Boolean))
-
-      // 2) Also collect ingredient names that exist in recipes but are not in the master table.
-      //    This fixes the "RecipeEditor shows it, Ingredients page doesn't" mismatch without touching costing logic.
-      const { data: lineData, error: lineErr } = await supabase
-        .from('recipe_lines')
-        .select('ingredient_name,name,line_type')
-        .eq('line_type', 'ingredient')
-        .limit(5000)
-
-      if (lineErr) throw lineErr
-
-      const extraMap = new Map<string, string>()
-      for (const r of (lineData ?? []) as any[]) {
-        const raw = String(r.ingredient_name ?? r.name ?? '').trim()
-        if (!raw) continue
-        const key = normKey(raw)
-        if (!key) continue
-        if (baseKeys.has(key)) continue
-        if (!extraMap.has(key)) extraMap.set(key, raw)
-      }
-
-      const extras: IngredientRow[] = Array.from(extraMap.values()).map((name) => ({
-        id: `recipe:${normKey(name)}`,
-        name,
-        category: null,
-        supplier: null,
-        pack_size: null,
-        pack_price: null,
-        pack_unit: 'g',
-        net_unit_cost: null,
-        is_active: true,
-      }))
-
-      const merged = [...base, ...extras].sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
-      setRows(merged)
+      setRows((data ?? []) as IngredientRow[])
       setLoading(false)
     } catch (e: any) {
       setErr(e?.message ?? 'Unknown error')
       setLoading(false)
     }
   }
-  }
 
   useEffect(() => {
-    load(false)
+    load()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -268,18 +218,6 @@ export default function Ingredients() {
     setFPackUnit('g')
     setFNetUnitCost('0')
     setModalOpen(true)
-  const openCreateFromRecipe = (name: string) => {
-    setEditingId(null)
-    setFName(name ?? '')
-    setFCategory('')
-    setFSupplier('')
-    setFPackSize('1')
-    setFPackPrice('0')
-    setFPackUnit('g')
-    setFNetUnitCost('0')
-    setModalOpen(true)
-  }
-
   }
 
   const openEdit = (r: IngredientRow) => {
@@ -351,7 +289,7 @@ export default function Ingredients() {
       }
 
       setModalOpen(false)
-      await load(true)
+      await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Save failed')
     } finally {
@@ -365,14 +303,14 @@ export default function Ingredients() {
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient deactivated ✅')
-    await load(true)
+    await load()
   }
 
   const restore = async (id: string) => {
     const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient restored ✅')
-    await load(true)
+    await load()
   }
 
   const bulkRecalcNetCosts = async () => {
@@ -389,11 +327,12 @@ export default function Ingredients() {
         const net = calcNetUnitCost(pp, ps)
 
         const { error } = await supabase.from('ingredients').update({ net_unit_cost: net }).eq('id', r.id)
+      invalidateIngredientsCache()
+      invalidateIngredientsCache()
         if (error) throw error
       }
-      invalidateIngredientsCache()
       showToast('Bulk recalculation done ✅')
-      await load(true)
+      await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk recalculation failed')
     } finally {
@@ -414,7 +353,7 @@ export default function Ingredients() {
         if (error) throw error
       }
       showToast('Bulk update done ✅')
-      await load(true)
+      await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk update failed')
     } finally {
@@ -589,10 +528,6 @@ export default function Ingredients() {
                             <div className="font-semibold flex flex-wrap items-center gap-2">
                               <span>{r.name ?? '—'}</span>
 
-                              {isSyntheticId(r.id) && (
-                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-800">Recipe-only</span>
-                              )}
-
                               {!active && (
                                 <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
                               )}
@@ -617,26 +552,18 @@ export default function Ingredients() {
                           <td className="py-3 pr-4 font-semibold">{money(net)}</td>
 
                           <td className="py-3 pr-0 text-right whitespace-nowrap">
-                            {isSyntheticId(r.id) ? (
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openCreateFromRecipe(String(r.name ?? ''))}>
-                                Add to Ingredients
+                            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
+                              Edit
+                            </button>
+
+                            {active ? (
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
+                                Delete
                               </button>
                             ) : (
-                              <>
-                                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
-                                  Edit
-                                </button>
-
-                                {active ? (
-                                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
-                                    Delete
-                                  </button>
-                                ) : (
-                                  <button className="gc-btn gc-btn-ghost" type="button" onClick={() => restore(r.id)}>
-                                    Restore
-                                  </button>
-                                )}
-                              </>
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => restore(r.id)}>
+                                Restore
+                              </button>
                             )}
                           </td>
                         </tr>
