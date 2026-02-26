@@ -246,6 +246,26 @@ const k = useKitchen()
   // UI
   const [density, setDensity] = useState<'comfort' | 'compact'>('comfort')
 
+  // Header tabs active state (scroll-aware)
+  const [activeSection, setActiveSection] = useState<string>('sec-basics')
+  useEffect(() => {
+    const ids = ['sec-basics','sec-method','sec-nutrition','sec-lines','sec-print','sec-cook','sec-cost']
+    const els = ids.map((x) => document.getElementById(x)).filter(Boolean) as HTMLElement[]
+    if (!els.length) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => (b.intersectionRatio - a.intersectionRatio))
+        const top = visible[0]
+        if (top?.target?.id) setActiveSection(top.target.id)
+      },
+      { root: null, rootMargin: '-20% 0px -70% 0px', threshold: [0.05, 0.1, 0.2, 0.35] }
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
   const scrollToSection = useCallback((anchorId: string) => {
     try {
       const el = document.getElementById(anchorId)
@@ -1171,25 +1191,36 @@ const addLineLocal = useCallback(async () => {
       <div>
         <div className="gc-label">RECIPE</div>
         <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
+        <div className="gc-hint" style={{ marginTop: 2, fontWeight: 700 }}>
+          {autosave.status === 'saving'
+            ? 'Saving…'
+            : autosave.status === 'error'
+            ? (autosave.message || 'Save issue. Retrying…')
+            : autosave.lastSavedAt
+            ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
+            : 'Auto-save ready.'}
+        </div>
       </div>
     </div>
   )
 
   const headerRight = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+    <div className="gc-tabs" style={{ justifyContent: 'flex-end' }}>
       <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>{isKitchen ? 'Kitchen' : 'Mgmt'}</span>
 
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
+      <button className="gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
         Density: {density}
       </button>
 
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-basics')}>Basics</button>
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-method')}>Method</button>
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-nutrition')}>Nutrition</button>
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-lines')}>Lines</button>
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-print')}>Print</button>
-      <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-cook')}>Cook Mode</button>
-      {showCost ? <button className="gc-btn gc-btn-soft" type="button" onClick={() => scrollToSection('sec-cost')}>Cost</button> : null}
+      <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>Basics</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>Method</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>Nutrition</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')} type="button" onClick={() => scrollToSection('sec-lines')}>Lines</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')} type="button" onClick={() => scrollToSection('sec-print')}>Print</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cook')}>Cook Mode</button>
+      {showCost ? (
+        <button className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cost')}>Cost</button>
+      ) : null}
     </div>
   )
 
@@ -1275,14 +1306,14 @@ const addLineLocal = useCallback(async () => {
 
           
           {true && (
-            <div style={{ marginTop: 14 }} className="gc-card-soft">
+            <div className="gc-section gc-card-soft">
               <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <div className="gc-label" id="sec-print">PRINT (A4)</div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={printNow}>Print now</button>
+                  <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow}>Print now</button>
                   <button
                     className="gc-btn gc-btn-ghost"
                     type="button"
@@ -1301,13 +1332,13 @@ const addLineLocal = useCallback(async () => {
           )}
 
           {true && (
-            <div style={{ marginTop: 14 }} className="gc-card-soft">
+            <div className="gc-section gc-section-alt gc-card-soft">
               <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
                   <div className="gc-label" id="sec-cook">COOK MODE</div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>Zero distraction cooking workflow.</div>
                 </div>
-                <button className="gc-btn gc-btn-primary" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>Open Cook Mode</button>
+                <button className="gc-btn gc-btn-primary gc-btn-hero" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>Open Cook Mode</button>
               </div>
             </div>
           )}
@@ -1315,44 +1346,37 @@ const addLineLocal = useCallback(async () => {
 
           {/* KPI Row */}
           {showCost && (
-          <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-            <div className="gc-label" id="sec-cost">KPI</div>
-            <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                <div className="gc-label">TOTAL COST</div>
-                <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtMoney(totals.totalCost, cur)}</div>
-              </div>
-
-              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                <div className="gc-label">COST/PORTION</div>
-                <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtMoney(totals.cpp, cur)}</div>
-              </div>
-
-              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                <div className="gc-label">FC%</div>
-                <div style={{ fontWeight: 900, marginTop: 4 }}>{totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}</div>
-              </div>
-
-              <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14 }}>
-                <div className="gc-label">MARGIN</div>
-                <div style={{ fontWeight: 900, marginTop: 4 }}>{fmtMoney(totals.margin, cur)}</div>
+            <div className="gc-section gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+              <div className="gc-label" id="sec-cost">KPI</div>
+              <div className="gc-grid-4" style={{ marginTop: 10 }}>
+                <div className="gc-kpi-card">
+                  <div className="gc-kpi-label">TOTAL COST</div>
+                  <div className="gc-kpi-value">{fmtMoney(totals.totalCost, cur)}</div>
+                </div>
+                <div className="gc-kpi-card">
+                  <div className="gc-kpi-label">COST/PORTION</div>
+                  <div className="gc-kpi-value">{fmtMoney(totals.cpp, cur)}</div>
+                </div>
+                <div className="gc-kpi-card">
+                  <div className="gc-kpi-label">FC%</div>
+                  <div className="gc-kpi-value">{totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}</div>
+                </div>
+                <div className="gc-kpi-card">
+                  <div className="gc-kpi-label">MARGIN</div>
+                  <div className="gc-kpi-value">{fmtMoney(totals.margin, cur)}</div>
+                </div>
               </div>
 
               {totals.warnings?.length ? (
-                <div className="gc-card-soft" style={{ padding: 10, borderRadius: 14, borderColor: 'rgba(245,158,11,.35)' }}>
-                  <div className="gc-label" style={{ color: 'var(--gc-warn)' }}>
-                    WARN
-                  </div>
+                <div className="gc-card-soft" style={{ marginTop: 10, padding: 10, borderRadius: 14, borderColor: 'rgba(245,158,11,.35)' }}>
+                  <div className="gc-label" style={{ color: 'var(--gc-warn)' }}>WARN</div>
                   <div style={{ fontWeight: 900, marginTop: 4, color: 'var(--gc-warn)' }}>{totals.warnings[0]}</div>
                 </div>
               ) : null}
             </div>
-          </div>
           )}
-
-
-          {showCost && (
-            <div style={{ marginTop: 14 }} className="gc-card-soft">
+{showCost && (
+            <div className="gc-section gc-section-alt gc-card-soft">
               <div style={{ padding: 12 }}>
                 <div className="gc-label">PRICING / PORTION</div>
                 <div className="gc-grid-3" style={{ marginTop: 10 }}>
@@ -1367,7 +1391,7 @@ const addLineLocal = useCallback(async () => {
 
 
           {true && (
-            <div style={{ marginTop: 14 }} className="gc-card-soft">
+            <div className="gc-section gc-section-alt gc-card-soft">
               <div style={{ padding: 12 }}>
                 <div className="gc-label" id="sec-nutrition">NUTRITION / PORTION</div>
                 <div className="gc-grid-4" style={{ marginTop: 10 }}>
@@ -1398,7 +1422,7 @@ const addLineLocal = useCallback(async () => {
 
           {/* Meta */}
           {true && (
-          <div id="sec-basics" style={{ marginTop: 14 }} className="gc-card">
+          <div id="sec-basics" className="gc-section gc-card">
             <div className="gc-card-head">
               <div className="gc-label">META</div>
               <div className="gc-hint" style={{ marginTop: 6 }}>
