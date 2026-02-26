@@ -86,7 +86,7 @@ export default function Login() {
               <p>Professional Kitchen Intelligence Platform</p>
             </div>
           </div>
-        </div></div>
+        </div>
 
         <div className="gc-auth-body">
           {checking ? (
