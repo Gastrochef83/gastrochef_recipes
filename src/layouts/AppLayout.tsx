@@ -5,6 +5,7 @@ import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
+import { useRole } from '../features/roles/useRole'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -40,6 +41,7 @@ export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
   const k = useKitchen()
   const a = useAutosave()
+  const r = useRole()
 
   const loc = useLocation()
 
@@ -261,7 +263,7 @@ export default function AppLayout() {
                     {avatarText}
                   </span>
                   <span className="gc-user-label">
-                    <span className="gc-user-name">{k.profile?.role ? `Role: ${k.profile.role}` : 'Account'}</span>
+                    <span className="gc-user-name">{`Role: ${r.role || (k.profile?.role ?? 'chef')}`}</span>
                     <span className="gc-user-email">{userEmail || 'Signed in'}</span>
                   </span>
                 </summary>

@@ -2,6 +2,7 @@ import { Routes, Route, Navigate } from 'react-router-dom'
 
 import AppLayout from './layouts/AppLayout.tsx'
 import AuthGate from './components/AuthGate'
+import RequireRole from './features/roles/RequireRole'
 
 import Dashboard from './pages/Dashboard'
 import Ingredients from './pages/Ingredients'
@@ -45,7 +46,11 @@ export default function App() {
         {/* Cook mode is opened from RecipeEditor via /cook?id=... */}
         <Route path="cook" element={<RecipeCookMode />} />
         <Route path="print" element={<RecipePrintCard />} />
-        <Route path="settings" element={<Settings />} />
+        <Route path="settings" element={
+          <RequireRole anyOf={['manager', 'owner']}>
+            <Settings />
+          </RequireRole>
+        } />
       </Route>
 
       {/* Fallback */}
