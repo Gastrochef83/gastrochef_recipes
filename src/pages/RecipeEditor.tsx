@@ -1291,7 +1291,8 @@ const addLineLocal = useCallback(async () => {
     <>
       {PrintCss}
 
-      <div className="gc-card gc-screen-only">
+      <div className={cx('gc-recipe-editor', density === 'compact' && 'gc-density-compact')}>
+        <div className="gc-card gc-screen-only gc-cockpit-bar">
         <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           {headerLeft}
           {headerRight}
@@ -1996,6 +1997,7 @@ const addLineLocal = useCallback(async () => {
             </div>
           )}
         </div>
+      </div>
       </div>
 
       {/* PRINT ONLY */}

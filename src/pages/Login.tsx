@@ -69,87 +69,106 @@ export default function Login() {
 
   return (
     <div className="gc-auth">
-      <div className="gc-auth-card">
-        {/* ✅ BRAND LOGO (Centered, crisp, Vercel-safe) */}
-        <div className="gc-auth-head">
-          <div className="gc-auth-logo-centered">
-            <img
-              src={logoSrc}
-              alt="GastroChef"
-              onError={(e) => {
-                ;(e.currentTarget as HTMLImageElement).src = logoFallback
-              }}
-            />
-            <div>
-              <div className="gc-auth-title">GastroChef</div>
-              <div className="gc-auth-sub">CONCIERGE LOGIN</div>
+      <div className="gc-auth-grid">
+        <div className="gc-auth-hero" aria-hidden="true">
+          <div className="gc-auth-hero-badge">Chef Intelligence Platform</div>
+          <div className="gc-auth-hero-title">
+            Calm. Precise.{' '}
+            <span className="gc-brand-accent">Audit‑ready</span>.
+          </div>
+          <div className="gc-auth-hero-sub">
+            Build recipes, control yield, track costs, and execute in Cook Mode — with a cockpit UI designed for real kitchens.
+          </div>
+          <div className="gc-auth-hero-kpis">
+            <div className="gc-auth-hero-chip">Yield control</div>
+            <div className="gc-auth-hero-chip">Cost discipline</div>
+            <div className="gc-auth-hero-chip">Cook Mode</div>
+            <div className="gc-auth-hero-chip">Print cards</div>
+          </div>
+        </div>
+
+        <div className="gc-auth-card">
+          {/* ✅ BRAND LOGO (Centered, crisp, Vercel-safe) */}
+          <div className="gc-auth-head">
+            <div className="gc-auth-logo-centered">
+              <img
+                src={logoSrc}
+                alt="GastroChef"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).src = logoFallback
+                }}
+              />
+              <div>
+                <div className="gc-auth-title">GastroChef</div>
+                <div className="gc-auth-sub">CONCIERGE LOGIN</div>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="gc-auth-body">
-          {checking ? (
-            <div style={{ padding: 18, color: 'var(--gc-muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
-          ) : (
-            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
-              <div style={{ minWidth: 0 }}>
-                <div className="gc-label">ENTER EMAIL</div>
-                <input
-                  className="gc-input"
-                  type="email"
-                  placeholder="name@company.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  autoComplete="email"
-                  inputMode="email"
-                  style={{ marginTop: 6 }}
-                />
-              </div>
-
-              <div style={{ minWidth: 0 }}>
-                <div className="gc-label">ENTER PASSWORD</div>
-                <input
-                  className="gc-input"
-                  type="password"
-                  placeholder="••••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  autoComplete="current-password"
-                  style={{ marginTop: 6 }}
-                />
-              </div>
-
-              {err && (
-                <div
-                  style={{
-                    borderRadius: 14,
-                    background: 'rgba(220,38,38,.08)',
-                    border: '1px solid rgba(220,38,38,.18)',
-                    color: '#b91c1c',
-                    padding: 12,
-                    fontSize: 13,
-                  }}
-                >
-                  {err}
+          <div className="gc-auth-body">
+            {checking ? (
+              <div style={{ padding: 18, color: 'var(--gc-muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
+            ) : (
+              <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
+                <div style={{ minWidth: 0 }}>
+                  <div className="gc-label">ENTER EMAIL</div>
+                  <input
+                    className="gc-input"
+                    type="email"
+                    placeholder="name@company.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    autoComplete="email"
+                    inputMode="email"
+                    style={{ marginTop: 6 }}
+                  />
                 </div>
-              )}
 
-              <button type="submit" disabled={busy} className="gc-btn gc-btn-primary" style={{ width: '100%' }}>
-                {busy ? 'Signing in…' : 'Login'}
-              </button>
-            </form>
-          )}
+                <div style={{ minWidth: 0 }}>
+                  <div className="gc-label">ENTER PASSWORD</div>
+                  <input
+                    className="gc-input"
+                    type="password"
+                    placeholder="••••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    autoComplete="current-password"
+                    style={{ marginTop: 6 }}
+                  />
+                </div>
 
-          <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>
-            New here?{' '}
-            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
-              Create an account
-            </Link>
+                {err && (
+                  <div
+                    style={{
+                      borderRadius: 14,
+                      background: 'rgba(220,38,38,.08)',
+                      border: '1px solid rgba(220,38,38,.18)',
+                      color: '#b91c1c',
+                      padding: 12,
+                      fontSize: 13,
+                    }}
+                  >
+                    {err}
+                  </div>
+                )}
+
+                <button type="submit" disabled={busy} className="gc-btn gc-btn-primary gc-btn--full">
+                  {busy ? 'Signing in…' : 'Login'}
+                </button>
+              </form>
+            )}
+
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>
+              New here?{' '}
+              <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
+                Create an account
+              </Link>
+            </div>
           </div>
-        </div>
 
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
-          Tip: If logout “bounces”, this build uses hard redirect for stability.
+          <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
+            Tip: If logout “bounces”, this build uses hard redirect for stability.
+          </div>
         </div>
       </div>
     </div>
