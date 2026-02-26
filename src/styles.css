@@ -153,3 +153,95 @@
   letter-spacing: .10em;
   text-transform: uppercase;
 }
+
+/* =========================================================
+   LOGIN — GOD MODE v2 (motion + micro-interactions)
+   Scope: auth pages only. No logic changes.
+   ========================================================= */
+
+@media (prefers-reduced-motion: no-preference){
+  .gc-auth-card{
+    animation: gc-auth-fade-up 520ms cubic-bezier(.2,.9,.25,1) both;
+  }
+
+  .gc-auth-hero{
+    animation: gc-auth-soft-pop 680ms cubic-bezier(.2,.9,.25,1) both;
+    animation-delay: 40ms;
+  }
+}
+
+@keyframes gc-auth-fade-up{
+  from{ opacity: 0; transform: translateY(10px) scale(.985); filter: blur(2px); }
+  to  { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+
+@keyframes gc-auth-soft-pop{
+  from{ opacity: 0; transform: translateY(8px) scale(.985); }
+  to  { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Background polish (more “concierge”) */
+.gc-auth{
+  background:
+    radial-gradient(980px 620px at 18% -12%, rgba(14,165,166,.22), transparent 62%),
+    radial-gradient(920px 540px at 108% 10%, rgba(255,90,61,.12), transparent 60%),
+    radial-gradient(760px 460px at 50% 112%, rgba(14,165,166,.10), transparent 66%),
+    var(--gc-bg);
+}
+
+/* Inputs: premium focus + subtle lift */
+.gc-auth .gc-input{
+  transition: box-shadow 160ms ease, transform 160ms ease, border-color 160ms ease, background-color 160ms ease;
+}
+
+.gc-auth .gc-input:focus{
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--gc-border));
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent),
+    0 14px 28px rgba(2,6,23,.10);
+  transform: translateY(-1px);
+}
+
+.gc-dark .gc-auth .gc-input:focus{
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent),
+    0 18px 42px rgba(0,0,0,.45);
+}
+
+/* Primary button: hover confidence + shimmer */
+.gc-auth .gc-btn-primary{
+  position: relative;
+  overflow: hidden;
+  transition: transform 160ms ease, box-shadow 160ms ease, filter 160ms ease;
+}
+
+.gc-auth .gc-btn-primary:hover{
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px rgba(2,6,23,.14);
+}
+
+.gc-auth .gc-btn-primary:active{
+  transform: translateY(0);
+  filter: brightness(.98);
+}
+
+.gc-auth .gc-btn-primary::before{
+  content: "";
+  position: absolute;
+  inset: -40% -60%;
+  transform: translateX(-70%) rotate(18deg);
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,.28), transparent);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: no-preference){
+  .gc-auth .gc-btn-primary:hover::before{
+    opacity: 1;
+    animation: gc-auth-shimmer 860ms ease;
+  }
+}
+
+@keyframes gc-auth-shimmer{
+  from{ transform: translateX(-70%) rotate(18deg); }
+  to  { transform: translateX(70%) rotate(18deg); }
+}
