@@ -518,18 +518,18 @@ export default function Ingredients() {
             {filtered.length === 0 ? (
               <div className="mt-3 text-sm text-neutral-600">No ingredients found.</div>
             ) : (
-              <div className="mt-4 gc-table-wrap">
-                <table className="gc-table">
-                  <thead>
+              <div className="mt-4 overflow-auto">
+                <table className="w-full text-sm">
+                  <thead className="text-left text-xs font-semibold text-neutral-500">
                     <tr>
-                      <th>Name</th>
-                      <th>Category</th>
-                      <th>Supplier</th>
-                      <th>Pack</th>
-                      <th>Unit</th>
-                      <th>Pack Price</th>
-                      <th>Net Unit Cost</th>
-                      <th style={{ textAlign: 'right' }}>Actions</th>
+                      <th className="py-2 pr-4">Name</th>
+                      <th className="py-2 pr-4">Category</th>
+                      <th className="py-2 pr-4">Supplier</th>
+                      <th className="py-2 pr-4">Pack</th>
+                      <th className="py-2 pr-4">Unit</th>
+                      <th className="py-2 pr-4">Pack Price</th>
+                      <th className="py-2 pr-4">Net Unit Cost</th>
+                      <th className="py-2 pr-0 text-right">Actions</th>
                     </tr>
                   </thead>
 
@@ -542,7 +542,7 @@ export default function Ingredients() {
 
                       return (
                         <tr key={r.id} className="border-t">
-                          <td className="">
+                          <td className="py-3 pr-4">
                             <div className="font-semibold flex flex-wrap items-center gap-2">
                               <span>{r.name ?? '—'}</span>
 
@@ -562,12 +562,12 @@ export default function Ingredients() {
                             {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
                           </td>
 
-                          <td className="">{r.category ?? '—'}</td>
-                          <td className="">{r.supplier ?? '—'}</td>
-                          <td className="">{Math.max(1, toNum(r.pack_size, 1))}</td>
-                          <td className="">{unit}</td>
-                          <td className="">{money(toNum(r.pack_price, 0))}</td>
-                          <td className="">{money(net)}</td>
+                          <td className="py-3 pr-4">{r.category ?? '—'}</td>
+                          <td className="py-3 pr-4">{r.supplier ?? '—'}</td>
+                          <td className="py-3 pr-4">{Math.max(1, toNum(r.pack_size, 1))}</td>
+                          <td className="py-3 pr-4">{unit}</td>
+                          <td className="py-3 pr-4 font-semibold">{money(toNum(r.pack_price, 0))}</td>
+                          <td className="py-3 pr-4 font-semibold">{money(net)}</td>
 
                           <td className="py-3 pr-0 text-right whitespace-nowrap">
                             <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
