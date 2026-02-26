@@ -82,25 +82,23 @@
   --gc-table-pad-x: 10px;
 }
 
-/* Dark mode hook
-   - AppLayout sets .gc-dark on .gc-root
-   - Some builds may toggle dark via html/body class or data-theme
-   This selector makes dark tokens apply reliably everywhere.
-*/
+/* Dark mode hook (AppLayout uses .gc-dark on root) */
 :root.gc-dark,
 html.gc-dark,
 body.gc-dark,
 .gc-dark,
-[data-theme="dark"]{
-  --gc-bg: #070B13;
-  --gc-card: rgba(14,18,30,.78);
-  --gc-card-2: rgba(14,18,30,.55);
-  --gc-text: #EAF0FF;
-  --gc-muted: rgba(234,240,255,.72);
-  --gc-soft: rgba(234,240,255,.55);
-  --gc-border: rgba(234,240,255,.12);
-  --gc-border-strong: rgba(234,240,255,.18);
-  --gc-shadow-soft: 0 14px 32px rgba(0,0,0,.35);
-  --gc-shadow: 0 22px 60px rgba(0,0,0,.45);
+[data-theme="dark"],
+html[data-theme="dark"],
+body[data-theme="dark"]{
+  --gc-bg: #0B1220;
+  --gc-card: rgba(15,23,42,.78);
+  --gc-card-2: rgba(15,23,42,.58);
+  --gc-text: #F8FAFC;
+  --gc-muted: rgba(248,250,252,.74);
+  --gc-soft: rgba(248,250,252,.56);
+  --gc-border: rgba(148,163,184,.18);
+  --gc-border-strong: rgba(148,163,184,.28);
+  --gc-shadow-soft: 0 14px 34px rgba(0,0,0,.42);
+  --gc-shadow: 0 26px 70px rgba(0,0,0,.55);
   --gc-ring: 0 0 0 4px rgba(20,184,166,.22);
 }

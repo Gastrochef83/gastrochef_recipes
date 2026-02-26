@@ -1302,35 +1302,68 @@ a{
 .w-full{ width: 100%; }
 .min-w-0{ min-width: 0; }
 
+/* =========================================================
+   DARK MODE CALIBRATION (Tailwind utilities + hardcoded text)
+   Goal: prevent "black text" on dark surfaces without touching logic.
+   Works with .gc-dark OR [data-theme="dark"].
+   ========================================================= */
 
-/* =========================
-   WORDMARK ULTRA
-   ========================= */
-
-.gc-wordmark{
-  display:inline-flex;
-  align-items:baseline;
-  gap:2px;
-  font-weight:900;
-  letter-spacing:.2px;
-  line-height:1;
-  color:var(--gc-text);
-  -webkit-font-smoothing: antialiased;
-  text-rendering: geometricPrecision;
+:root.gc-dark, html.gc-dark, body.gc-dark, .gc-dark,
+[data-theme="dark"], html[data-theme="dark"], body[data-theme="dark"]{
+  color-scheme: dark;
 }
 
-.gc-wordmark-main{ color: var(--gc-text); }
-.gc-wordmark-accent{ color: var(--gc-accent); }
-
-.gc-wordmark--sm{ font-size:14px; }
-.gc-wordmark--md{ font-size:20px; }
-.gc-wordmark--lg{ font-size:28px; }
-
-/* Extra clarity on dark surfaces */
-.gc-dark .gc-wordmark{
-  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+/* Ensure default typography inherits token text color */
+:root.gc-dark body, html.gc-dark body, body.gc-dark, .gc-dark{
+  color: var(--gc-text);
+  background: var(--gc-bg);
 }
 
-/* When used inside tight UI like sidebar brand */
-.gc-brand-name .gc-wordmark--sm{ font-size:15px; }
+/* Tailwind class overrides for dark context (common offenders) */
+:where(.gc-dark, [data-theme="dark"]) .text-black,
+:where(.gc-dark, [data-theme="dark"]) .text-neutral-900,
+:where(.gc-dark, [data-theme="dark"]) .text-neutral-800,
+:where(.gc-dark, [data-theme="dark"]) .text-gray-900,
+:where(.gc-dark, [data-theme="dark"]) .text-gray-800,
+:where(.gc-dark, [data-theme="dark"]) .text-slate-900,
+:where(.gc-dark, [data-theme="dark"]) .text-zinc-900,
+:where(.gc-dark, [data-theme="dark"]) .text-zinc-800{
+  color: var(--gc-text) !important;
+}
 
+:where(.gc-dark, [data-theme="dark"]) .text-neutral-700,
+:where(.gc-dark, [data-theme="dark"]) .text-gray-700,
+:where(.gc-dark, [data-theme="dark"]) .text-slate-700,
+:where(.gc-dark, [data-theme="dark"]) .text-zinc-700{
+  color: var(--gc-muted) !important;
+}
+
+/* Background + border utilities that stay "white" in dark */
+:where(.gc-dark, [data-theme="dark"]) .bg-white{
+  background: var(--gc-card) !important;
+}
+
+:where(.gc-dark, [data-theme="dark"]) .border-neutral-200,
+:where(.gc-dark, [data-theme="dark"]) .border-gray-200,
+:where(.gc-dark, [data-theme="dark"]) .border-slate-200{
+  border-color: var(--gc-border) !important;
+}
+
+/* Hover utilities */
+:where(.gc-dark, [data-theme="dark"]) .hover\:bg-neutral-50:hover,
+:where(.gc-dark, [data-theme="dark"]) .hover\:bg-gray-50:hover,
+:where(.gc-dark, [data-theme="dark"]) .hover\:bg-slate-50:hover{
+  background: rgba(255,255,255,.06) !important;
+}
+
+:where(.gc-dark, [data-theme="dark"]) .hover\:bg-neutral-800:hover{
+  background: rgba(255,255,255,.08) !important;
+}
+
+/* Wordmark ULTRA (guaranteed contrast) */
+:where(.gc-dark, [data-theme="dark"]) .gc-wordmark-main{
+  color: var(--gc-text) !important;
+}
+:where(.gc-dark, [data-theme="dark"]) .gc-wordmark-accent{
+  color: var(--gc-accent) !important;
+}

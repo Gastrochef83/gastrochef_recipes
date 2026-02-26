@@ -1,6 +1,5 @@
 import { supabase } from '../lib/supabase'
 import { useEffect, useState } from 'react'
-import Wordmark from './Wordmark'
 
 export default function TopBar() {
   const [email, setEmail] = useState<string>('')

@@ -2,14 +2,11 @@ import React from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
-import Wordmark from './Wordmark'
 
 export default function Layout() {
   const { signOut, user } = useAuth()
   const { theme, toggleTheme } = useTheme()
   const nav = useNavigate()
-
-  const base = (import.meta as any).env?.BASE_URL || '/'
 
   const onLogout = async () => {
     await signOut()
@@ -20,10 +17,10 @@ export default function Layout() {
     <div className="gc-app" data-theme={theme}>
       <aside className="gc-sidebar">
         <div className="gc-brand">
-          <img className="gc-brand-logo" src={`${base}gastrochef-logo.png`} alt="GastroChef" />
-          <div className="gc-brand-text">
-            <div className="gc-brand-name"><Wordmark size="sm" /></div>
-            <div className="gc-brand-sub">Kitchen Intelligence</div>
+          <div className="gc-brand__logo">G</div>
+          <div className="gc-brand__text">
+            <div className="gc-brand__name">GastroChef</div>
+            <div className="gc-brand__sub">Kitchen OS</div>
           </div>
         </div>
 

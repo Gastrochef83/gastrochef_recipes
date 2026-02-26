@@ -5,7 +5,6 @@ import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
-import Wordmark from '../components/Wordmark'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')

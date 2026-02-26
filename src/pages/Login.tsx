@@ -1,7 +1,6 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
-import Wordmark from '../components/Wordmark'
 
 export default function Login() {
   const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
@@ -73,18 +72,17 @@ export default function Login() {
       <div className="gc-auth-card">
         {/* ✅ BRAND LOGO (Centered, crisp, Vercel-safe) */}
         <div className="gc-auth-head">
-          <div className="gc-auth-hero">
+          <div className="gc-auth-logo-centered">
             <img
-              className="gc-auth-hero-logo"
               src={logoSrc}
               alt="GastroChef"
               onError={(e) => {
                 ;(e.currentTarget as HTMLImageElement).src = logoFallback
               }}
             />
-            <div className="gc-auth-hero-text">
-              <h1><Wordmark size="lg" /></h1>
-              <p>Professional Kitchen Intelligence Platform</p>
+            <div>
+              <div className="gc-auth-title">GastroChef</div>
+              <div className="gc-auth-sub">CONCIERGE LOGIN</div>
             </div>
           </div>
         </div>
