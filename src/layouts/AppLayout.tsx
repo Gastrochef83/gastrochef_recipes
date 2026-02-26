@@ -5,6 +5,9 @@ import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
+import OnboardingWizard from '../components/OnboardingWizard'
+import LicenseBadge from '../components/LicenseBadge'
+import DemoBanner from '../components/DemoBanner'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -185,6 +188,9 @@ export default function AppLayout() {
                 <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Recipes
                 </NavLink>
+                <NavLink to="/sales" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                  Sales Machine
+                </NavLink>
                 <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
                   Settings
                 </NavLink>
@@ -209,6 +215,7 @@ export default function AppLayout() {
         </aside>
 
         <main className="gc-main">
+          <DemoBanner />
           <div className="gc-topbar gc-topbar-card">
             <div className="gc-topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
               <img
@@ -226,6 +233,7 @@ export default function AppLayout() {
             </div>
 
             <div className="gc-topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <LicenseBadge />
               <button
                 type="button"
                 className="gc-icon-btn"
@@ -309,6 +317,7 @@ export default function AppLayout() {
 
           <div className="gc-content">
             <div className="gc-page">
+              <OnboardingWizard />
               <Outlet />
             </div>
           </div>

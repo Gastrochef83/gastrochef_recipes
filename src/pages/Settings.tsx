@@ -1,6 +1,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
+import { useKitchen } from '../lib/kitchen'
+import { exportKitchenBackup, importKitchenBackup } from '../lib/backupJson'
+import {
+  getDemoMode,
+  setDemoMode,
+  getPlan,
+  setPlan,
+  getLicenseKey,
+  setLicenseKey,
+  validateLicenseKey,
+  canUse,
+  type GCPlan,
+} from '../lib/license'
+import { NavLink } from 'react-router-dom'
 
 type Ingredient = {
   id: string
@@ -58,6 +72,7 @@ function sanityFlag(net: number, unit: string) {
 }
 
 export default function Settings() {
+  const k = useKitchen()
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
@@ -67,12 +82,59 @@ export default function Settings() {
   // app prefs (local only)
   const [currency, setCurrency] = useState<string>(() => localStorage.getItem('gc_currency') || 'USD')
 
+  // Sales / License (local only)
+  const [demoMode, setDemoModeState] = useState<boolean>(() => getDemoMode())
+  const [plan, setPlanState] = useState<GCPlan>(() => getPlan())
+  const [licenseKey, setLicenseKeyState] = useState<string>(() => getLicenseKey())
+  const [licenseHint, setLicenseHint] = useState<string>('')
+
+
   // Toast
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const showToast = (msg: string) => {
     setToastMsg(msg)
     setToastOpen(true)
+  }
+
+
+  const applySalesPrefs = (next: { demo?: boolean; plan?: GCPlan }) => {
+    if (typeof next.demo === 'boolean') {
+      setDemoMode(next.demo)
+      setDemoModeState(next.demo)
+    }
+    if (next.plan) {
+      setPlan(next.plan)
+      setPlanState(next.plan)
+    }
+    // Let header badges refresh immediately
+    window.dispatchEvent(new Event('gc:license'))
+  }
+
+  const applyLicense = (raw: string) => {
+    const key = (raw || '').trim()
+    setLicenseKeyState(key)
+    setLicenseKey(key)
+
+    if (!key) {
+      setLicenseHint('')
+      window.dispatchEvent(new Event('gc:license'))
+      return
+    }
+
+    const res = validateLicenseKey(key)
+    if (!res.ok) {
+      setLicenseHint(res.reason || 'Invalid key')
+      showToast('License key invalid (format)')
+      window.dispatchEvent(new Event('gc:license'))
+      return
+    }
+
+    if (res.plan) {
+      applySalesPrefs({ plan: res.plan })
+      setLicenseHint(`Activated: ${res.plan}`)
+      showToast(`License activated: ${res.plan}`)
+    }
   }
 
   const load = async () => {
@@ -120,6 +182,43 @@ export default function Settings() {
   const savePrefs = () => {
     localStorage.setItem('gc_currency', currency.toUpperCase() || 'USD')
     showToast('Preferences saved ✅')
+  }
+
+  // Backup / Transfer (JSON)
+  const exportBackup = async () => {
+    if (!k.kitchenId) return showToast('Kitchen not ready yet')
+    try {
+      const obj = await exportKitchenBackup(k.kitchenId, k.kitchenName)
+      const blob = new Blob([JSON.stringify(obj, null, 2)], { type: 'application/json' })
+      const a = document.createElement('a')
+      const ts = new Date().toISOString().slice(0, 10)
+      const nameSafe = (k.kitchenName || 'Kitchen').replace(/[^a-zA-Z0-9_-]+/g, '_')
+      a.href = URL.createObjectURL(blob)
+      a.download = `GastroChef_Backup_${nameSafe}_${ts}.json`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      setTimeout(() => URL.revokeObjectURL(a.href), 2000)
+      showToast('Backup exported ✅')
+    } catch (e: any) {
+      showToast(e?.message ?? 'Export failed')
+    }
+  }
+
+  const importBackup = async (file: File) => {
+    if (!k.kitchenId) return showToast('Kitchen not ready yet')
+    const ok = confirm('Import will ADD recipes/lines into this kitchen. Continue?')
+    if (!ok) return
+
+    try {
+      const raw = await file.text()
+      const parsed = JSON.parse(raw)
+      const r = await importKitchenBackup(k.kitchenId, parsed)
+      showToast(`Import complete ✅ (+${r.createdIngredients} ingredients, +${r.createdRecipes} recipes, +${r.createdLines} lines)`)
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Import failed')
+    }
   }
 
   const bulkRecalcNetCosts = async () => {
@@ -257,6 +356,62 @@ export default function Settings() {
         </div>
       </div>
 
+      {/* Backup & Transfer */}
+      <div className="gc-card p-6">
+        <div className="flex items-start justify-between gap-3 flex-wrap">
+          <div>
+            <div className="gc-label">BACKUP & TRANSFER (JSON)</div>
+            <div className="mt-2 text-sm text-neutral-600">
+              Export your kitchen data or import it into another kitchen. This does not change schema.
+            </div>
+            <div className="mt-2 text-xs text-neutral-500">
+              Import behavior: creates new recipes (unique names) and adds lines. Ingredient matching is by name.
+            </div>
+          </div>
+          <div className="flex gap-2 flex-wrap">
+            <button
+              className="gc-btn gc-btn-primary"
+              type="button"
+              onClick={() => {
+                if (!canUse('BACKUP_EXPORT')) return showToast('Upgrade to Pro to export backups')
+                exportBackup()
+              }}
+              disabled={!k.kitchenId || k.loading || !canUse('BACKUP_EXPORT')}
+              title={!canUse('BACKUP_EXPORT') ? 'Upgrade required' : undefined}
+            >
+              Export Backup
+            </button>
+
+            <label
+              className={canUse('BACKUP_IMPORT') ? 'gc-btn gc-btn-ghost' : 'gc-btn gc-btn-ghost opacity-50'}
+              style={{ cursor: canUse('BACKUP_IMPORT') ? 'pointer' : 'not-allowed' }}
+              title={!canUse('BACKUP_IMPORT') ? 'Upgrade required' : undefined}
+              onClick={(e) => {
+                if (!canUse('BACKUP_IMPORT')) {
+                  e.preventDefault()
+                  showToast('Upgrade to Pro to import backups')
+                }
+              }}
+            >
+              Import Backup
+              <input
+                type="file"
+                accept="application/json"
+                style={{ display: 'none' }}
+                onChange={(e) => {
+                  const f = e.target.files?.[0]
+                  if (f) {
+                    if (!canUse('BACKUP_IMPORT')) return showToast('Upgrade to Pro to import backups')
+                    importBackup(f)
+                  }
+                  e.currentTarget.value = ''
+                }}
+              />
+            </label>
+          </div>
+        </div>
+      </div>
+
       {/* Quick status */}
       <div className="gc-card p-6">
         <div className="gc-label">QUICK STATUS</div>
@@ -272,7 +427,93 @@ export default function Settings() {
         <div className="mt-1 text-xs text-neutral-500">This is only a sanity check—not a financial report.</div>
       </div>
 
-      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
+      
+      {/* Sales Machine */}
+      <div className="gc-card p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <div className="gc-label">SALES MACHINE</div>
+            <div className="mt-2 text-xl font-extrabold">License, Demo & Sharing</div>
+            <div className="mt-2 text-sm text-neutral-600">
+              These switches are local to your browser (safe). They do not touch Supabase or business logic.
+            </div>
+          </div>
+          <NavLink to="/sales" className="gc-btn gc-btn-primary">
+            Open Sales Machine
+          </NavLink>
+        </div>
+
+        <div className="mt-5 grid gap-4 md:grid-cols-2">
+          <div className="gc-card-soft p-4">
+            <div className="gc-label">DEMO MODE</div>
+            <div className="mt-2 text-sm text-neutral-700">
+              Shows a demo banner and makes the app presentation-ready for chefs/investors.
+            </div>
+            <label className="mt-3 flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={demoMode}
+                onChange={(e) => applySalesPrefs({ demo: e.target.checked })}
+              />
+              <span className="text-sm font-semibold">Enable Demo Mode</span>
+            </label>
+          </div>
+
+          <div className="gc-card-soft p-4">
+            <div className="gc-label">PLAN BADGE (UI)</div>
+            <div className="mt-2 text-sm text-neutral-700">Controls the plan badge shown in the header.</div>
+            <div className="mt-3 flex items-center gap-3">
+              <select
+                className="gc-input"
+                value={plan}
+                onChange={(e) => applySalesPrefs({ plan: (e.target.value as GCPlan) })}
+              >
+                <option value="FREE">FREE</option>
+                <option value="PRO">PRO</option>
+                <option value="TEAM">TEAM</option>
+              </select>
+              <div className="text-xs text-neutral-500">UI only — payments can be connected later.</div>
+            </div>
+          </div>
+
+          <div className="gc-card-soft p-4 md:col-span-2">
+            <div className="gc-label">LICENSE KEY (PLACEHOLDER)</div>
+            <div className="mt-2 text-sm text-neutral-700">
+              Optional: enter a license key to auto-set your plan. This is local-only for now.
+            </div>
+            <div className="mt-3 flex items-center gap-3 flex-wrap">
+              <input
+                className="gc-input min-w-[280px]"
+                value={licenseKey}
+                onChange={(e) => setLicenseKeyState(e.target.value)}
+                placeholder="GC-PRO-ABCD-1234"
+              />
+              <button className="gc-btn gc-btn-primary" type="button" onClick={() => applyLicense(licenseKey)}>
+                Apply
+              </button>
+              <button
+                className="gc-btn gc-btn-ghost"
+                type="button"
+                onClick={() => {
+                  setLicenseKeyState('')
+                  setLicenseKey('')
+                  setLicenseHint('')
+                  showToast('License cleared')
+                  window.dispatchEvent(new Event('gc:license'))
+                }}
+              >
+                Clear
+              </button>
+              {licenseHint ? <div className="text-xs font-semibold text-neutral-600">{licenseHint}</div> : null}
+            </div>
+            <div className="mt-2 text-xs text-neutral-500">
+              Example keys: <span className="font-mono">GC-PRO-ABCD-1234</span> or <span className="font-mono">GC-TEAM-ABCD-1234</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+<Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
     </div>
   )
 }

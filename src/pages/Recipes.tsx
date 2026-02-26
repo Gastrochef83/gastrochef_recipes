@@ -1,8 +1,10 @@
 // src/pages/Recipes.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
+import EmptyState from '../components/EmptyState'
+import { seedDemoData } from '../lib/demoSeed'
 import { useMode } from '../lib/mode'
 import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
@@ -103,6 +105,7 @@ type Density = 'comfortable' | 'dense'
 
 export default function Recipes() {
   const nav = useNavigate()
+  const [sp, setSp] = useSearchParams()
   const { isKitchen } = useMode()
   const isMgmt = !isKitchen
   const k = useKitchen()
@@ -195,6 +198,25 @@ export default function Recipes() {
     loadAll().catch(() => {})
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
+
+  // Onboarding shortcut: /recipes?create=1 will create a recipe once
+  useEffect(() => {
+    const create = sp.get('create')
+    if (create !== '1') return
+    // delay slightly so kitchen resolves and lists load
+    const t = setTimeout(() => {
+      createNewRecipe()
+        .catch(() => {})
+        .finally(() => {
+          try {
+            sp.delete('create')
+            setSp(sp, { replace: true })
+          } catch {}
+        })
+    }, 150)
+    return () => clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sp])
 
   async function ensureRecipeLinesLoaded(ids: string[]) {
     const need = ids.filter((id) => !recipeLinesCache[id] && !loadingLinesRef.current.has(id))
@@ -455,11 +477,36 @@ export default function Recipes() {
             Loading…
           </div>
         ) : !filtered.length ? (
-          <div style={{ marginTop: 14 }} className="text-sm">
-            No recipes found.
-          </div>
+          (recipes.length === 0 ? (
+            <EmptyState
+              title="No recipes yet"
+              subtitle="Create your first recipe, or load demo data to explore the full workflow (editor → cost → print)."
+            >
+              <Button onClick={createNewRecipe}>Create Recipe</Button>
+              <Button
+                variant="secondary"
+                onClick={async () => {
+                  try {
+                    if (!kitchenId) return
+                    setToast('Loading demo data…')
+                    const res = await seedDemoData(kitchenId)
+                    setToast(res.skipped ? 'Demo data already loaded.' : `Demo loaded: ${res.createdRecipes} recipes.`)
+                    await loadAll()
+                  } catch (e: any) {
+                    setToast(e?.message || 'Failed to load demo data')
+                  }
+                }}
+              >
+                Load Demo Data
+              </Button>
+            </EmptyState>
+          ) : (
+            <div style={{ marginTop: 14 }} className="text-sm">
+              No recipes found.
+            </div>
+          ))
         ) : (
-          <div style={{ marginTop: 14, display: 'grid', gap: 12 }}>
+          <div style={{ marginTop: 14 }} className="gc-recipe-grid">
             {filtered.map((r) => {
               const c = costCache[r.id]
               const cur = (r.currency || 'USD').toUpperCase()
@@ -467,7 +514,7 @@ export default function Recipes() {
               return (
                 <div
                   key={r.id}
-                  className="gc-card"
+                  className="gc-recipe-card"
                   style={{
                     padding: density === 'dense' ? 12 : 14,
                     display: 'flex',

@@ -11,6 +11,9 @@ import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
+import RecipeTour, { hasSeenRecipeTour } from '../components/RecipeTour'
+import { buildPublicShareToken } from '../lib/publicShare'
+import { canUse } from '../lib/license'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -162,6 +165,8 @@ const k = useKitchen()
 
   // Global autosave status (drives the topbar badge + local save UX)
   const autosave = useAutosave()
+
+  const [tourOpen, setTourOpen] = useState(false)
 
   const mounted = useRef(true)
   useEffect(() => {
@@ -1162,9 +1167,114 @@ const addLineLocal = useCallback(async () => {
     window.open(url, '_blank', 'noopener,noreferrer')
   }, [id])
 
+  const previewPrint = useCallback(() => {
+    if (!id) return
+    const url = `#/print?id=${encodeURIComponent(id)}`
+    window.open(url, '_blank', 'noopener,noreferrer')
+  }, [id])
+
+
+  const copyShareLink = useCallback(async () => {
+    if (!id) return
+    const base = window.location.origin
+    const url = `${base}/#/print?id=${encodeURIComponent(id)}`
+    try {
+      await navigator.clipboard.writeText(url)
+      setToastMsg('Share link copied ✓')
+      setToastOpen(true)
+    } catch {
+      setToastMsg('Could not copy share link')
+      setToastOpen(true)
+    }
+  }, [id])
+
+  const copyPublicShareLink = useCallback(async () => {
+    if (!canUse('PUBLIC_SHARE')) {
+      setToastMsg('Public sharing requires Pro/Team')
+      setToastOpen(true)
+      return
+    }
+    if (!recipe) {
+      setToastMsg('Recipe not ready yet')
+      setToastOpen(true)
+      return
+    }
+
+    // Build a read-only snapshot token (no DB/RLS required on the viewer side)
+    const payload = {
+      v: 1 as const,
+      app: 'GastroChef' as const,
+      created_at: new Date().toISOString(),
+      recipe: {
+        name: name || recipe.name || 'Recipe',
+        category: category || recipe.category || null,
+        portions: toNum(portions, recipe.portions || 1),
+        description: description || recipe.description || null,
+        method: methodLegacy || recipe.method || null,
+        method_steps: steps?.length ? steps : recipe.method_steps || null,
+        yield_qty: yieldQty ? toNum(yieldQty, null as any) : recipe.yield_qty,
+        yield_unit: yieldUnit || recipe.yield_unit || null,
+        currency: currency || recipe.currency || 'USD',
+        calories: calories ? toNum(calories, null as any) : recipe.calories,
+        protein_g: protein ? toNum(protein, null as any) : recipe.protein_g,
+        carbs_g: carbs ? toNum(carbs, null as any) : recipe.carbs_g,
+        fat_g: fat ? toNum(fat, null as any) : recipe.fat_g,
+        selling_price: sellingPrice ? toNum(sellingPrice, null as any) : recipe.selling_price,
+        target_food_cost_pct: targetFC ? toNum(targetFC, null as any) : recipe.target_food_cost_pct,
+        photo_url: recipe.photo_url || null,
+      },
+      lines: (lines || []).map((l) => ({
+        line_type: l.line_type,
+        position: toNum(l.position, 0),
+        qty: toNum(l.qty, 0),
+        unit: l.unit,
+        yield_percent: toNum(l.yield_percent, 100),
+        gross_qty_override: l.gross_qty_override,
+        notes: l.notes,
+        ingredient_id: l.ingredient_id,
+        sub_recipe_id: l.sub_recipe_id,
+        group_title: l.group_title,
+      })),
+      ingredients: (ingredients || []).map((i) => ({
+        id: i.id,
+        name: i.name || null,
+        pack_unit: i.pack_unit || null,
+        net_unit_cost: i.net_unit_cost ?? null,
+      })),
+      subrecipes: (allRecipes || []).filter((r) => (r as any)?.is_subrecipe).map((r) => ({ id: r.id, name: r.name })),
+    }
+
+    const token = buildPublicShareToken(payload as any)
+    const base = window.location.origin
+    const url = `${base}/#/share/${token}`
+
+    try {
+      await navigator.clipboard.writeText(url)
+      setToastMsg('Public share link copied ✓')
+      setToastOpen(true)
+    } catch {
+      setToastMsg('Could not copy public share link')
+      setToastOpen(true)
+    }
+  }, [recipe, name, category, portions, description, methodLegacy, steps, yieldQty, yieldUnit, currency, calories, protein, carbs, fat, sellingPrice, targetFC, lines, ingredients, allRecipes])
+
+
+  // Auto-open tour once (per browser) the first time the editor is used
+  useEffect(() => {
+    if (!id) return
+    if (hasSeenRecipeTour()) return
+    const t = setTimeout(() => setTourOpen(true), 350)
+    return () => clearTimeout(t)
+  }, [id])
+
 
   // ---------- Export (Excel) ----------
   const exportExcel = useCallback(async () => {
+    if (!canUse('EXCEL_EXPORT')) {
+      setToastMsg('Excel export requires Pro/Team')
+      setToastOpen(true)
+      return
+    }
     try {
       const meta = {
         id: id || undefined,
@@ -1296,6 +1406,10 @@ const addLineLocal = useCallback(async () => {
         Density: {density}
       </button>
 
+      <button className="gc-btn-soft" type="button" onClick={() => setTourOpen(true)}>
+        Tour
+      </button>
+
       <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>Basics</button>
       <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>Method</button>
       <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>Nutrition</button>
@@ -1375,6 +1489,8 @@ const addLineLocal = useCallback(async () => {
     <>
       {PrintCss}
 
+      <RecipeTour open={tourOpen} onClose={() => setTourOpen(false)} />
+
       <div className="gc-card gc-screen-only">
         <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           {headerLeft}
@@ -1397,15 +1513,25 @@ const addLineLocal = useCallback(async () => {
                   <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
                 </div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow}>Print now</button>
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={exportExcel}>Export Excel</button>
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={previewPrint} disabled={!id}>
+                    Print preview
+                  </button>
+                  <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow} disabled={!id}>
+                    Print now
+                  </button>
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={exportExcel}>
+                    Export Excel
+                  </button>
+                  <button className="gc-btn gc-btn-ghost" type="button" onClick={copyShareLink} disabled={!id}>
+                    Copy Share Link
+                  </button>
                   <button
-                    className="gc-btn gc-btn-ghost"
+                    className={canUse('PUBLIC_SHARE') ? 'gc-btn gc-btn-ghost' : 'gc-btn gc-btn-ghost opacity-50'}
                     type="button"
-                    onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)}
-                    disabled={!id}
+                    onClick={copyPublicShareLink}
+                    title={!canUse('PUBLIC_SHARE') ? 'Upgrade required' : 'Public share (read-only)'}
                   >
-                    Open Print Page
+                    Public Share Link
                   </button>
 
                   <div className="gc-hint" style={{ marginLeft: 6 }}>
