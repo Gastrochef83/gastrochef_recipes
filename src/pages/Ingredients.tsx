@@ -144,7 +144,8 @@ export default function Ingredients() {
     return null
   }
 
-  const load = async () => {
+  const load = async (force = false) => {
+    if (force) invalidateIngredientsCache()
     setLoading(true)
     setErr(null)
     try {
@@ -327,10 +328,9 @@ export default function Ingredients() {
         const net = calcNetUnitCost(pp, ps)
 
         const { error } = await supabase.from('ingredients').update({ net_unit_cost: net }).eq('id', r.id)
-      invalidateIngredientsCache()
-      invalidateIngredientsCache()
         if (error) throw error
       }
+      invalidateIngredientsCache()
       showToast('Bulk recalculation done ✅')
       await load()
     } catch (e: any) {
@@ -492,7 +492,7 @@ export default function Ingredients() {
                 <div className="gc-label">LIST</div>
                 <div className="mt-1 text-sm text-neutral-600">Click Edit to validate pack + cost.</div>
               </div>
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => load(true)}>
                 Refresh
               </button>
             </div>
