@@ -1713,7 +1713,7 @@ const addLineLocal = useCallback(async () => {
                             <option value="">— Select —</option>
                             {filteredIngredients.map((i) => (
                               <option key={i.id} value={i.id}>
-                                {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                                {i.name || 'Unnamed'}
                               </option>
                             ))}
                           </select>
@@ -1847,12 +1847,6 @@ const addLineLocal = useCallback(async () => {
                           <tr key={l.id}>
                             <td>
                               <div className="gc-kitopi-item">
-                                <div className="gc-kitopi-item-name">{title}</div>
-                                <div className="gc-kitopi-item-sub">
-                                  #{l.position} • {l.line_type} • {safeUnit(l.unit)}
-                                  {ing?.pack_unit ? ` • pack ${safeUnit(ing.pack_unit)}` : ''}
-                                </div>
-
                                 <div className="gc-kitopi-item-select">
                                   {l.line_type === 'ingredient' ? (
                                     <select
@@ -1863,7 +1857,7 @@ const addLineLocal = useCallback(async () => {
                                       <option value="">— Select ingredient —</option>
                                       {ingredients.map((i) => (
                                         <option key={i.id} value={i.id}>
-                                          {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                                          {i.name || 'Unnamed'}
                                         </option>
                                       ))}
                                     </select>
@@ -1881,10 +1875,7 @@ const addLineLocal = useCallback(async () => {
                                       ))}
                                     </select>
                                   )}
-                                </div>
-
-                                {c?.warnings?.[0] ? <div className="gc-kitopi-warn">{c.warnings[0]}</div> : null}
-                              </div>
+                                </div>                              </div>
                             </td>
 
                             <td>
