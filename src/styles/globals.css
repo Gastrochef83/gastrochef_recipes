@@ -1301,3 +1301,36 @@ a{
 /* Minimal utilities (avoid Tailwind dependency for a few classes) */
 .w-full{ width: 100%; }
 .min-w-0{ min-width: 0; }
+
+
+/* =========================
+   WORDMARK ULTRA
+   ========================= */
+
+.gc-wordmark{
+  display:inline-flex;
+  align-items:baseline;
+  gap:2px;
+  font-weight:900;
+  letter-spacing:.2px;
+  line-height:1;
+  color:var(--gc-text);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: geometricPrecision;
+}
+
+.gc-wordmark-main{ color: var(--gc-text); }
+.gc-wordmark-accent{ color: var(--gc-accent); }
+
+.gc-wordmark--sm{ font-size:14px; }
+.gc-wordmark--md{ font-size:20px; }
+.gc-wordmark--lg{ font-size:28px; }
+
+/* Extra clarity on dark surfaces */
+.gc-dark .gc-wordmark{
+  text-shadow: 0 1px 0 rgba(0,0,0,.35);
+}
+
+/* When used inside tight UI like sidebar brand */
+.gc-brand-name .gc-wordmark--sm{ font-size:15px; }
+

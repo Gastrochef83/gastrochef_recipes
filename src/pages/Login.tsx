@@ -1,6 +1,7 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { Link } from 'react-router-dom'
+import Wordmark from '../components/Wordmark'
 
 export default function Login() {
   const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
@@ -82,7 +83,7 @@ export default function Login() {
               }}
             />
             <div className="gc-auth-hero-text">
-              <h1>GastroChef</h1>
+              <h1><Wordmark size="lg" /></h1>
               <p>Professional Kitchen Intelligence Platform</p>
             </div>
           </div>

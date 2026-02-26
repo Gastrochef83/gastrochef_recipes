@@ -2,6 +2,7 @@ import React from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
 import { useAuth } from '../contexts/AuthContext'
 import { useTheme } from '../contexts/ThemeContext'
+import Wordmark from './Wordmark'
 
 export default function Layout() {
   const { signOut, user } = useAuth()
@@ -21,7 +22,7 @@ export default function Layout() {
         <div className="gc-brand">
           <img className="gc-brand-logo" src={`${base}gastrochef-logo.png`} alt="GastroChef" />
           <div className="gc-brand-text">
-            <div className="gc-brand-name">GastroChef</div>
+            <div className="gc-brand-name"><Wordmark size="sm" /></div>
             <div className="gc-brand-sub">Kitchen Intelligence</div>
           </div>
         </div>

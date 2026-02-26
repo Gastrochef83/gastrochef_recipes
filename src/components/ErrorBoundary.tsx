@@ -1,4 +1,5 @@
 import React from 'react'
+import Wordmark from './Wordmark'
 
 type Props = {
   children: React.ReactNode
