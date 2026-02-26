@@ -1744,7 +1744,7 @@ const addLineLocal = useCallback(async () => {
                                   <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>
                                   <span className="gc-kitopi-group-actions">
 <button className="gc-icon-btn" type="button" onClick={() => duplicateLineLocal(l.id)} title="Duplicate">⧉</button>
-<button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+<button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">🗑</button>
                                   </span>
                                 </div>
                               </td>
@@ -1763,8 +1763,11 @@ const addLineLocal = useCallback(async () => {
                           <tr key={l.id}>
                             <td>
                               <div className="gc-kitopi-item">
+                                <div className="gc-kitopi-item-head">
                                 <div className="gc-kitopi-item-name">{title}</div>
-                                <div className="gc-kitopi-item-sub">
+                                <span className={cx("gc-pill", l.line_type === "subrecipe" && "gc-pill-subrecipe")}>{l.line_type === "ingredient" ? "ING" : "SUB"}</span>
+                              </div>
+                              <div className="gc-kitopi-item-sub">
                                   #{l.position} • {l.line_type} • {safeUnit(l.unit)}
                                   {ing?.pack_unit ? ` • pack ${safeUnit(ing.pack_unit)}` : ''}
                                 </div>
@@ -1861,7 +1864,7 @@ const addLineLocal = useCallback(async () => {
                             <td>
                               <div className="gc-kitopi-row-actions">
 <button className="gc-icon-btn" type="button" onClick={() => duplicateLineLocal(l.id)} title="Duplicate">⧉</button>
-<button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+<button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">🗑</button>
                               </div>
                             </td>
                           </tr>

@@ -180,6 +180,10 @@ a{
   border-radius: 14px;
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.75);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
   color: var(--gc-text);
   font-weight: 800;
   font-size: var(--gc-fs-sm);
@@ -723,6 +727,10 @@ a{
   border-radius: 12px;
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.75);
+  display: grid;
+  place-items: center;
+  font-size: 14px;
+  line-height: 1;
   font-weight: 900;
   cursor: pointer;
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
@@ -810,6 +818,66 @@ a{
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+
+
+/* item cell (Kitopi-like two-line + pill) */
+.gc-kitopi-item{ display: grid; gap: 6px; }
+.gc-kitopi-item-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+.gc-kitopi-item-name{
+  font-weight: 950;
+  font-size: var(--gc-fs-sm);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
+}
+.gc-pill{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(110,127,82,.22);
+  background: rgba(110,127,82,.10);
+  color: color-mix(in srgb, var(--gc-accent-strong) 82%, var(--gc-text));
+  font-weight: 950;
+  font-size: 11px;
+  letter-spacing: .10em;
+  flex: 0 0 auto;
+}
+.gc-pill-subrecipe{
+  border-color: rgba(197,138,61,.24);
+  background: rgba(197,138,61,.12);
+  color: color-mix(in srgb, var(--gc-copper) 82%, var(--gc-text));
+}
+
+.gc-kitopi-item-sub{
+  font-size: var(--gc-fs-xs);
+  color: var(--gc-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gc-kitopi-item-select{ margin-top: 2px; }
+.gc-kitopi-warn{
+  margin-top: 4px;
+  font-size: var(--gc-fs-xs);
+  font-weight: 850;
+  color: #92400E;
+  background: rgba(245,158,11,.14);
+  border: 1px solid rgba(245,158,11,.22);
+  padding: 6px 10px;
+  border-radius: 12px;
 }
 
 /* chips */
