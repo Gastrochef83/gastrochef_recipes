@@ -5,14 +5,11 @@
 
 :root{
   /* Brand */
-  /* CEO BRAND EVOLUTION (Olive + Copper)
-     - Olive = authority / calm / kitchen engineering
-     - Copper = warm highlight (use sparingly) */
-  --gc-brand-teal: #6E7F52;          /* Primary Olive (was teal) */
-  --gc-brand-teal-2: #7F915E;        /* Soft Olive */
-  --gc-brand-coral: #C58A3D;         /* Warm Copper highlight (was coral) */
+  --gc-brand-teal: #0EA5A6;          /* GastroTeal (primary) */
+  --gc-brand-teal-2: #14B8A6;        /* soft teal */
+  --gc-brand-coral: #FF5A3D;         /* Paprika-coral (secondary) */
   --gc-brand-ink: #0B1220;           /* deep ink */
-  --gc-brand-ivory: #F7F6F2;         /* warm white background */
+  --gc-brand-ivory: #F7F8FB;         /* calm background */
 
   /* Surfaces */
   --gc-bg: var(--gc-brand-ivory);
@@ -26,8 +23,8 @@
 
   /* Accent + states */
   --gc-accent: var(--gc-brand-teal);
-  --gc-accent-strong: #55663E;       /* darker olive */
-  --gc-accent-ink: #1F2A14;          /* olive ink */
+  --gc-accent-strong: #0C8E8F;
+  --gc-accent-ink: #053536;
 
   --gc-danger: #E11D48;
   --gc-warn: #F59E0B;
@@ -78,11 +75,7 @@
   --gc-topbar-h: 56px;
 
   /* Focus ring */
-  --gc-ring: 0 0 0 4px rgba(110,127,82,.22);
-
-  /* Legacy aliases (some files still use these) */
-  --accent: var(--gc-accent);
-  --soft: var(--gc-soft);
+  --gc-ring: 0 0 0 4px rgba(14,165,166,.22);
 
   /* Table density */
   --gc-table-pad-y: 10px;
@@ -101,9 +94,5 @@
   --gc-border-strong: rgba(234,240,255,.18);
   --gc-shadow-soft: 0 14px 32px rgba(0,0,0,.35);
   --gc-shadow: 0 22px 60px rgba(0,0,0,.45);
-  --gc-ring: 0 0 0 4px rgba(127,145,94,.24);
-
-  /* Legacy aliases */
-  --accent: var(--gc-accent);
-  --soft: var(--gc-soft);
+  --gc-ring: 0 0 0 4px rgba(20,184,166,.22);
 }
