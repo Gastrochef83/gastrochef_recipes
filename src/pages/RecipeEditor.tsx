@@ -196,6 +196,11 @@ const k = useKitchen()
   )
 
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
+const selectableIngredients = useMemo(() => {
+    const used = new Set((lines || []).map((l) => l.ingredient_id).filter(Boolean) as string[])
+    return (ingredients || []).filter((i) => i.is_active !== false || used.has(i.id))
+  }, [ingredients, lines])
+
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
   // Toast
@@ -1628,7 +1633,7 @@ const addLineLocal = useCallback(async () => {
                             <option value="">— Select —</option>
                             {filteredIngredients.map((i) => (
                               <option key={i.id} value={i.id}>
-                                {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                                {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}{i.is_active === false ? ' (inactive)' : ''}
                               </option>
                             ))}
                           </select>
@@ -1776,9 +1781,9 @@ const addLineLocal = useCallback(async () => {
                                       onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
                                     >
                                       <option value="">— Select ingredient —</option>
-                                      {ingredients.map((i) => (
+                                      {selectableIngredients.map((i) => (
                                         <option key={i.id} value={i.id}>
-                                          {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}
+                                          {i.name || 'Unnamed'} {i.pack_unit ? `(${safeUnit(i.pack_unit)})` : ''}{i.is_active === false ? ' (inactive)' : ''}
                                         </option>
                                       ))}
                                     </select>
