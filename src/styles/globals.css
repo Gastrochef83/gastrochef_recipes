@@ -1037,6 +1037,10 @@ a{
   padding: 10px 8px;
   border-bottom: 1px solid rgba(2,6,23,.12);
 }
+
+.gc-a4-table thead th:not(:first-child){
+  text-align:right;
+}
 .gc-a4-table tbody td{
   padding: 10px 8px;
   border-bottom: 1px solid rgba(2,6,23,.08);
