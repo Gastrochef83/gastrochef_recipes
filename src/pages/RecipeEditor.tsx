@@ -724,20 +724,11 @@ const k = useKitchen()
 const deleteLineLocal = useCallback(
     (lineId: string) => {
       if (!lineId) return
-
-      // 1) mark for DB delete (persisted ids only)
+      // mark for DB delete if needed
       if (!lineId.startsWith('tmp_')) deletedLineIdsRef.current.push(lineId)
-
-      // 2) remove locally AND update ref (so autosave/save uses the new list)
-      const cur = (linesRef.current || []) as Line[]
-      const next = cur.filter((x) => x.id !== lineId)
-      linesRef.current = next
-      setLinesSafe(next)
-
-      // 3) persist immediately (so refresh doesn't resurrect it)
-      saveLinesNow(next).then(() => {}).catch(() => {})
+      setLinesSafe((prev: Line[]) => prev.filter((x) => x.id !== lineId))
     },
-    [setLinesSafe, saveLinesNow]
+    [setLinesSafe]
   )
 
 

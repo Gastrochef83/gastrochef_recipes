@@ -96,6 +96,22 @@ function Modal({
 }
 
 export default function Ingredients() {
+  const isDebug =
+    import.meta.env.DEV ||
+    (() => {
+      try {
+        if (new URLSearchParams(window.location.search).has('debug')) return true
+        const hash = window.location.hash || ''
+        const qIdx = hash.indexOf('?')
+        if (qIdx >= 0) {
+          const hashParams = new URLSearchParams(hash.slice(qIdx + 1))
+          if (hashParams.has('debug')) return true
+        }
+      } catch {
+        // ignore
+      }
+      return false
+    })()
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
@@ -289,7 +305,6 @@ export default function Ingredients() {
       }
 
       setModalOpen(false)
-      invalidateIngredientsCache()
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Save failed')
@@ -299,54 +314,18 @@ export default function Ingredients() {
   }
 
   const deactivate = async (id: string) => {
-    const ok = confirm('Deactivate ingredient? It will be hidden from pickers (soft delete).')
+    const ok = confirm('Deactivate ingredient? It will be hidden from pickers.')
     if (!ok) return
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient deactivated ✅')
-    invalidateIngredientsCache()
     await load()
-  }
-
-  const hardDelete = async (id: string) => {
-    const ok = confirm(
-      'Delete ingredient permanently?\n\nIf this ingredient is used in any recipe lines, the app will safely DEACTIVATE it instead.'
-    )
-    if (!ok) return
-
-    // 1) Try hard delete first
-    const delRes = await supabase.from('ingredients').delete().eq('id', id)
-    if (!delRes.error) {
-      showToast('Ingredient deleted permanently ✅')
-      invalidateIngredientsCache()
-      await load()
-      return
-    }
-
-    // 2) If delete fails (FK/RLS), fall back to safe soft delete when possible.
-    const code = (delRes.error as any)?.code
-    const msg = String(delRes.error?.message || '')
-    const fkLikely = code === '23503' || msg.toLowerCase().includes('foreign key') || msg.toLowerCase().includes('violates')
-
-    // If it's FK-related, we *must* soft delete.
-    if (fkLikely) {
-      const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
-      if (error) return showToast(error.message)
-      showToast('Used in recipes → deactivated (safe) ✅')
-      invalidateIngredientsCache()
-      await load()
-      return
-    }
-
-    // Otherwise surface the real error (e.g., missing delete policy)
-    showToast(delRes.error.message)
   }
 
   const restore = async (id: string) => {
     const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient restored ✅')
-    invalidateIngredientsCache()
     await load()
   }
 
@@ -369,7 +348,6 @@ export default function Ingredients() {
         if (error) throw error
       }
       showToast('Bulk recalculation done ✅')
-      invalidateIngredientsCache()
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk recalculation failed')
@@ -391,7 +369,6 @@ export default function Ingredients() {
         if (error) throw error
       }
       showToast('Bulk update done ✅')
-      invalidateIngredientsCache()
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk update failed')
@@ -409,7 +386,9 @@ export default function Ingredients() {
             <div className="gc-label">INGREDIENTS — PRO</div>
             <div className="mt-2 text-2xl font-extrabold">Database</div>
             <div className="mt-2 text-sm text-neutral-600">Search, filter, sort, validate costs, and manage ingredients.</div>
-            <div className="mt-3 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
+            {isDebug && (
+              <div className="mt-3 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
+            )}
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
@@ -579,7 +558,7 @@ export default function Ingredients() {
                                 <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
                               )}
                             </div>
-                            <div className="text-xs text-neutral-500">ID: {r.id}</div>
+                            {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
                             {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
                           </td>
 
@@ -596,7 +575,7 @@ export default function Ingredients() {
                             </button>
 
                             {active ? (
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => hardDelete(r.id)}>
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
                                 Delete
                               </button>
                             ) : (
@@ -612,7 +591,7 @@ export default function Ingredients() {
                 </table>
 
                 <div className="mt-3 text-xs text-neutral-500">
-                  * Delete tries to remove permanently. If the ingredient is used in recipe lines, it will be safely deactivated instead.
+                  * Delete = Deactivate (Soft Delete) to prevent FK issues with recipe_lines.
                 </div>
               </div>
             )}
