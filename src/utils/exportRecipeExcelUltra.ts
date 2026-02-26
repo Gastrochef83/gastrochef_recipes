@@ -131,33 +131,43 @@ export async function exportRecipeExcelUltra(args: {
 
   summary.columns = [{ width: 22 }, { width: 34 }, { width: 18 }, { width: 22 }]
 
-  // Provide vertical breathing room so the logo never overlaps text
-  summary.getRow(1).height = 28
-  summary.getRow(2).height = 18
-  summary.getRow(3).height = 10
-  summary.getRow(4).height = 10
-  summary.getRow(5).height = 28
+  // Header (Kitopi-style)
+  summary.getRow(1).height = 20
+  summary.getRow(2).height = 56
+  summary.getRow(3).height = 24
+  summary.getRow(4).height = 6
+  summary.getRow(5).height = 16
+  summary.getRow(6).height = 10
+  summary.getRow(7).height = 30
 
-  await tryAddLogo(workbook, summary, { col: 0.15, row: 0.15, width: 76, height: 76 })
+  // Centered logo (no overlap)
+  await tryAddLogo(workbook, summary, { col: 1.55, row: 1.05, width: 64, height: 64 })
 
-  // Title area
-  summary.mergeCells('B1:D1')
-  summary.getCell('B1').value = 'GastroChef'
-  summary.getCell('B1').font = { name: 'Calibri', size: 18, bold: true }
-  summary.getCell('B1').alignment = { vertical: 'middle', horizontal: 'left' }
+  // Wordmark (center)
+  summary.mergeCells('A3:D3')
+  summary.getCell('A3').value = 'GastroChef'
+  summary.getCell('A3').font = { name: 'Calibri', size: 20, bold: true, color: { argb: 'FF0F172A' } }
+  summary.getCell('A3').alignment = { vertical: 'middle', horizontal: 'center' }
 
-  summary.mergeCells('B2:D2')
-  summary.getCell('B2').value = 'Kitchen Intelligence — Recipe Export'
-  summary.getCell('B2').font = { name: 'Calibri', size: 11, color: { argb: 'FF64748B' } }
-  summary.getCell('B2').alignment = { vertical: 'middle', horizontal: 'left' }
+  // Accent line
+  summary.mergeCells('A4:D4')
+  summary.getCell('A4').value = ''
+  summary.getCell('A4').fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF0F766E' } }
 
-  // Recipe title (pushed down to guarantee no overlap)
+  // Subtitle (center)
   summary.mergeCells('A5:D5')
-  summary.getCell('A5').value = name
-  summary.getCell('A5').font = { name: 'Calibri', size: 20, bold: true }
-  summary.getCell('A5').alignment = { vertical: 'middle', horizontal: 'left' }
+  summary.getCell('A5').value = 'Kitchen Intelligence — Recipe Export'
+  summary.getCell('A5').font = { name: 'Calibri', size: 11, color: { argb: 'FF475569' } }
+  summary.getCell('A5').alignment = { vertical: 'middle', horizontal: 'center' }
 
-  // Key-Value block helper
+  // Recipe title
+  summary.mergeCells('A7:D7')
+  summary.getCell('A7').value = name
+  summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true, color: { argb: 'FF0F172A' } }
+  summary.getCell('A7').alignment = { vertical: 'middle', horizontal: 'left' }
+
+
+    // Key-Value block helper
   const kv = (row: number, label: string, value: any) => {
     summary.getCell(`A${row}`).value = label
     summary.getCell(`A${row}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF334155' } }
@@ -167,7 +177,7 @@ export async function exportRecipeExcelUltra(args: {
     summary.getCell(`B${row}`).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }
   }
 
-  let r = 7
+  let r = 9
   kv(r++, 'Category', meta.category || '')
   kv(r++, 'Portions', portions)
   kv(r++, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
@@ -177,42 +187,74 @@ export async function exportRecipeExcelUltra(args: {
 
   r++ // spacer
 
-  kv(r++, 'Total Cost', totals.totalCost)
-  kv(r++, 'Cost / Portion', totals.cpp)
-  kv(r++, 'FC%', totals.fcPct != null ? totals.fcPct / 100 : null)
-  kv(r++, 'Margin', totals.margin)
-  kv(r++, 'Margin %', totals.marginPct != null ? totals.marginPct / 100 : null)
 
-  // Formats
-  // NOTE: These rows are dynamic (because we shifted the header down).
-  // We derive the addresses from the known KPI block start row.
-  const kpiStartRow = 14 // Total Cost row after the shift
-  const moneyAddrs = [`B${kpiStartRow}`, `B${kpiStartRow + 1}`, `B${kpiStartRow + 3}`]
-  for (const addr of moneyAddrs) {
-    const c = summary.getCell(addr)
-    if (typeof c.value === 'number') c.numFmt = `"${currency}" #,##0.00`
-  }
-  ;[`B${kpiStartRow + 2}`, `B${kpiStartRow + 4}`].forEach((addr) => {
-    const c = summary.getCell(addr)
-    if (typeof c.value === 'number') c.numFmt = '0.0%'
-  })
+  // KPI cards (Kitopi-style)
+  const kpiTop = r
 
-  // Description block
-  const desc = (meta.description || '').trim()
-  if (desc) {
-    summary.getCell('A19').value = 'Description'
-    summary.getCell('A19').font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF334155' } }
-    summary.mergeCells('A20:D24')
-    summary.getCell('A20').value = desc
-    summary.getCell('A20').alignment = { vertical: 'top', horizontal: 'left', wrapText: true }
-    summary.getCell('A20').font = { name: 'Calibri', size: 11 }
-    summary.getCell('A20').border = {
+  const card = (
+    topRow: number,
+    left: 'A' | 'C',
+    title: string,
+    value: number | null,
+    opts?: { isPercent?: boolean; accent?: boolean; note?: string },
+  ) => {
+    const col1 = left
+    const col2 = left === 'A' ? 'B' : 'D'
+    const r1 = topRow
+    const r2 = topRow + 2
+
+    summary.mergeCells(`${col1}${r1}:${col2}${r2}`)
+    const base = summary.getCell(`${col1}${r1}`)
+    base.alignment = { vertical: 'top', horizontal: 'left', wrapText: true }
+    base.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: opts?.accent ? 'FF0F766E' : 'FFF8FAFC' },
+    }
+    base.border = {
       top: { style: 'thin', color: { argb: 'FFE2E8F0' } },
       left: { style: 'thin', color: { argb: 'FFE2E8F0' } },
       bottom: { style: 'thin', color: { argb: 'FFE2E8F0' } },
       right: { style: 'thin', color: { argb: 'FFE2E8F0' } },
     }
+
+    // Title
+    const t = summary.getCell(`${col1}${r1}`)
+    t.value = title
+    t.font = { name: 'Calibri', size: 11, bold: true, color: { argb: opts?.accent ? 'FFFFFFFF' : 'FF0F172A' } }
+
+    // Value
+    const vRow = r1 + 1
+    summary.getCell(`${col1}${vRow}`).value = value == null ? '' : value
+    summary.getCell(`${col1}${vRow}`).font = { name: 'Calibri', size: 16, bold: true, color: { argb: opts?.accent ? 'FFFFFFFF' : 'FF0F172A' } }
+    summary.getCell(`${col1}${vRow}`).alignment = { vertical: 'middle', horizontal: 'left' }
+    if (opts?.isPercent) summary.getCell(`${col1}${vRow}`).numFmt = '0.0%'
+    else summary.getCell(`${col1}${vRow}`).numFmt = '#,##0.00'
+
+    // Note
+    if (opts?.note) {
+      const nRow = r1 + 2
+      summary.getCell(`${col1}${nRow}`).value = opts.note
+      summary.getCell(`${col1}${nRow}`).font = { name: 'Calibri', size: 9, color: { argb: opts?.accent ? 'FFE2E8F0' : 'FF64748B' } }
+      summary.getCell(`${col1}${nRow}`).alignment = { vertical: 'middle', horizontal: 'left' }
+    }
   }
+
+  // layout rows height
+  summary.getRow(kpiTop).height = 18
+  summary.getRow(kpiTop + 1).height = 20
+  summary.getRow(kpiTop + 2).height = 16
+  summary.getRow(kpiTop + 3).height = 18
+  summary.getRow(kpiTop + 4).height = 20
+  summary.getRow(kpiTop + 5).height = 16
+
+  card(kpiTop, 'A', `Total Cost (${currency})`, totals.totalCost, { accent: true, note: 'Recipe total' })
+  card(kpiTop, 'C', `Cost / Portion (${currency})`, totals.cpp, { note: 'Per serving' })
+  card(kpiTop + 3, 'A', 'FC%', totals.fcPct != null ? totals.fcPct / 100 : null, { isPercent: true, note: targetFc != null ? `Target: ${fmtPercent(targetFc)}` : '' })
+  card(kpiTop + 3, 'C', `Margin (${currency})`, totals.margin, { note: totals.marginPct != null ? `Margin: ${totals.marginPct.toFixed(1)}%` : '' })
+
+  r = kpiTop + 7
+
 
   // =======================
   // Sheet: Ingredients
