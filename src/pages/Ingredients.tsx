@@ -289,6 +289,7 @@ export default function Ingredients() {
       }
 
       setModalOpen(false)
+      invalidateIngredientsCache()
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Save failed')
@@ -303,6 +304,7 @@ export default function Ingredients() {
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient deactivated ✅')
+    invalidateIngredientsCache()
     await load()
   }
 
@@ -310,6 +312,7 @@ export default function Ingredients() {
     const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient restored ✅')
+    invalidateIngredientsCache()
     await load()
   }
 
@@ -332,6 +335,7 @@ export default function Ingredients() {
         if (error) throw error
       }
       showToast('Bulk recalculation done ✅')
+      invalidateIngredientsCache()
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk recalculation failed')
@@ -353,6 +357,7 @@ export default function Ingredients() {
         if (error) throw error
       }
       showToast('Bulk update done ✅')
+      invalidateIngredientsCache()
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk update failed')
