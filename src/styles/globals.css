@@ -1077,6 +1077,7 @@ a{
   border-radius: var(--gc-radius);
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.62);
+  padding-right: 12px; /* prevent Actions clipping */
 }
 
 .gc-dark .gc-data-table-wrap{ background: rgba(14,18,30,.38); }
@@ -1134,12 +1135,12 @@ a{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 10px;
+  gap: 8px;
   flex-wrap: nowrap;
   white-space: nowrap;
 }
 
-.gc-cell-actions .gc-btn{ min-width: 72px; }
+.gc-cell-actions .gc-btn{ min-width: 64px; }
 
 /* Table column sizing (Kitopi-grade):
    - percentage widths ensure the table fills available space
@@ -1147,32 +1148,32 @@ a{
    - keeps ALL columns visible (no feature loss)
 */
 .gc-col-code{ width: 10%; }
-.gc-col-name{ width: 24%; }
+.gc-col-name{ width: 23%; }
 .gc-col-category{ width: 13%; }
 .gc-col-supplier{ width: 13%; }
 .gc-col-pack{ width: 6%; }
 .gc-col-unit{ width: 6%; }
 .gc-col-packprice{ width: 8%; }
-.gc-col-netunit{ width: 10%; }
-.gc-col-actions{ width: 10%; }
+.gc-col-netunit{ width: 9%; }
+.gc-col-actions{ width: 12%; }
 
 @media (max-width: 1200px){
   .gc-data-table thead th{ padding: 9px 10px; }
   .gc-data-table tbody td{ padding: 10px 10px; }
-  .gc-col-actions{ width: 10%; }
-  .gc-col-name{ width: 24%; }
+  .gc-col-actions{ width: 12%; }
+  .gc-col-name{ width: 23%; }
 }
 
 @media (max-width: 980px){
-  .gc-col-code{ width: 11%; }
+  .gc-col-code{ width: 10%; }
   .gc-col-name{ width: 23%; }
-  .gc-col-category{ width: 14%; }
-  .gc-col-supplier{ width: 14%; }
+  .gc-col-category{ width: 13%; }
+  .gc-col-supplier{ width: 13%; }
   .gc-col-pack{ width: 6%; }
   .gc-col-unit{ width: 6%; }
-  .gc-col-packprice{ width: 9%; }
+  .gc-col-packprice{ width: 8%; }
   .gc-col-netunit{ width: 9%; }
-  .gc-col-actions{ width: 10%; }
+  .gc-col-actions{ width: 12%; }
 }
 
 .gc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
@@ -1380,16 +1381,16 @@ a{
 
 /* GOD RecipeEditor table discipline */
 .gc-kitopi-table-fixed{ table-layout: fixed; width: 100%; }
-.gc-kitopi-table-fixed col.gc-col-code{ width: 14%; }
+.gc-kitopi-table-fixed col.gc-col-code{ width: 10%; }
 .gc-kitopi-table-fixed col.gc-col-item{ width: 22%; }
 .gc-kitopi-table-fixed col.gc-col-net{ width: 10%; }
-.gc-kitopi-table-fixed col.gc-col-unit{ width: 8%; }
+.gc-kitopi-table-fixed col.gc-col-unit{ width: 6%; }
 .gc-kitopi-table-fixed col.gc-col-gross{ width: 10%; }
 .gc-kitopi-table-fixed col.gc-col-yield{ width: 10%; }
 .gc-kitopi-table-fixed col.gc-col-note{ width: 12%; }
 .gc-kitopi-table-fixed col.gc-col-cost{ width: 8%; }
 .gc-kitopi-table-fixed col.gc-col-status{ width: 8%; }
-.gc-kitopi-table-fixed col.gc-col-actions{ width: 6%; }
+.gc-kitopi-table-fixed col.gc-col-actions{ width: 12%; }
 .gc-kitopi-table td, .gc-kitopi-table th{ vertical-align: middle; }
 .gc-kitopi-table .gc-ingredient-meta{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
@@ -2144,3 +2145,9 @@ a{
   font-size: 12px;
   font-weight: 800;
 }
+
+/* Prevent Actions column clipping */
+
+
+/* Prevent Actions column clipping */
+.gc-data-table tbody td:last-child{ padding-right: 14px; }
