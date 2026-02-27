@@ -129,19 +129,24 @@ export default function Recipes() {
   const selectedIds = useMemo(() => Object.keys(selected).filter((k) => selected[k]), [selected])
 
   const [density, setDensity] = useState<Density>(() => {
+  try {
     const v = localStorage.getItem('gc_v5_density')
-
+    return v === 'dense' ? 'dense' : 'comfortable'
+  } catch {
+    return 'comfortable'
+  }
+})
 
 useEffect(() => {
   try {
-    // Map Recipes page density to global density tokens
+    // Map legacy Recipes density to global density tokens
     const d = density === 'dense' ? 'compact' : 'comfort'
     document.documentElement.setAttribute('data-density', d)
     localStorage.setItem('gc_density', d)
     localStorage.setItem('gc_v5_density', density)
   } catch {}
-}, [density])    return v === 'dense' ? 'dense' : 'comfortable'
-  })
+}, [density])
+
 
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
   const loadingLinesRef = useRef<Set<string>>(new Set())
