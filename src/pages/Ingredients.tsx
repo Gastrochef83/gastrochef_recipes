@@ -126,9 +126,8 @@ const IngredientTableRow = memo(function IngredientTableRow({
             <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
           )}
 
-          {flag.level === 'missing' && (
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Missing cost</span>
-          )}
+          {/* Intentionally hide "Missing cost" badge to reduce visual clutter (user request).
+              Cost issues are still visible via the Net Unit Cost column and diagnostics. */}
 
           {flag.level === 'warn' && (
             <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
