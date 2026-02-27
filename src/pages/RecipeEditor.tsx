@@ -1236,6 +1236,10 @@ const addLineLocal = useCallback(async () => {
           const c = lineComputed.get(l.id)
           const base = {
             type: l.line_type === 'subrecipe' ? 'subrecipe' : 'ingredient',
+            code:
+              l.line_type === 'ingredient'
+                ? (l.ingredient_id ? (ingById.get(l.ingredient_id) as any)?.code : null) || ''
+                : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.code || ''),
             name:
               l.line_type === 'ingredient'
                 ? (l.ingredient_id ? ingById.get(l.ingredient_id)?.name : null) || 'Ingredient'

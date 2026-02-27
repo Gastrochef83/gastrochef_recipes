@@ -109,7 +109,7 @@ export default function RecipePrintCard() {
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
-  const [subRecipes, setSubRecipes] = useState<{ id: string; name: string | null }[]>([])
+  const [subRecipes, setSubRecipes] = useState<{ id: string; code?: string | null; name: string | null }[]>([])
 
   useEffect(() => {
     if (!id) {
@@ -146,14 +146,14 @@ export default function RecipePrintCard() {
           .map((x: any) => x.ingredient_id)))
 
         const { data: ing, error: iErr } = ingredientIds.length
-          ? await supabase.from('ingredients').select('id,name,pack_unit,net_unit_cost').in('id', ingredientIds)
+          ? await supabase.from('ingredients').select('id,code,name,pack_unit,net_unit_cost').in('id', ingredientIds)
           : { data: [], error: null }
 
         if (iErr) throw iErr
 
         const { data: sr, error: sErr } = await supabase
           .from('recipes')
-          .select('id,name,kitchen_id')
+          .select('id,code,name,kitchen_id')
           .eq('kitchen_id', (r as any).kitchen_id)
           .eq('is_subrecipe', true)
         if (sErr) throw sErr
@@ -181,7 +181,7 @@ export default function RecipePrintCard() {
   }, [ingredients])
 
   const subById = useMemo(() => {
-    const m = new Map<string, { id: string; name: string | null }>()
+    const m = new Map<string, { id: string; code?: string | null; name: string | null }>()
     for (const r of subRecipes) m.set(r.id, r)
     return m
   }, [subRecipes])
@@ -445,10 +445,7 @@ export default function RecipePrintCard() {
                       <td className="gc-a4-num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{c.code || '—'}</td>
                       <td className="gc-a4-item">
                         <div className="gc-a4-item-title">{c.title}</div>
-                        <div className="gc-a4-item-sub">
-                          {c.kind} • {pct.toFixed(1)}% of cost
-                        </div>
-                      </td>
+</td>
                       <td className="gc-a4-num">
                         {fmtQty(c.net)} {safeUnit(l.unit)}
                       </td>

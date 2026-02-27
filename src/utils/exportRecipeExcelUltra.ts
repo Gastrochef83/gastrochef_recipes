@@ -22,6 +22,7 @@ export type ExcelRecipeMeta = {
 
 export type ExcelLineRow = {
   type: 'ingredient' | 'subrecipe'
+  code?: string | null
   name: string
   net_qty: number
   unit: string
@@ -351,6 +352,7 @@ export async function exportRecipeExcelUltra(args: {
 
   ingSheet.columns = [
     { header: 'Type', key: 'type', width: 12 },
+    { header: 'Code', key: 'code', width: 16 },
     { header: 'Name', key: 'name', width: 34 },
     { header: 'Net Qty', key: 'net', width: 12 },
     { header: 'Unit', key: 'unit', width: 10 },
@@ -381,6 +383,7 @@ export async function exportRecipeExcelUltra(args: {
     const warnings = (row.warnings || []).join(', ')
     const r = ingSheet.addRow({
       type: row.type,
+      code: row.code || '',
       name: row.name,
       net: row.net_qty,
       unit: row.unit,
