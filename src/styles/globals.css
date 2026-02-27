@@ -217,6 +217,106 @@ a{
   box-shadow: 0 12px 28px rgba(0,0,0,.35);
 }
 
+
+
+/* ========= ULTRA MODE SWITCH (BILLION SEGMENTED) ========= */
+.gc-mode-switch{
+  margin-top: 10px;
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+
+  padding: 4px;
+  border-radius: 999px;
+
+  background: rgba(17,24,39,0.06);
+  border: 1px solid rgba(17,24,39,0.08);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), 0 10px 30px rgba(0,0,0,.05);
+
+  user-select: none;
+  overflow: hidden;
+}
+
+/* Sliding highlight (pure CSS) */
+.gc-mode-switch::before{
+  content: "";
+  position: absolute;
+  inset: 4px;
+  width: calc(50% - 2px);
+  border-radius: 999px;
+
+  background: var(--gc-accent-soft);
+  border: 1px solid rgba(17,24,39,0.10);
+
+  box-shadow: 0 2px 10px rgba(0,0,0,0.10), 0 0 0 1px rgba(255,255,255,0.18) inset;
+
+  transform: translateX(0%);
+  transition: transform 180ms cubic-bezier(.4,0,.2,1);
+  pointer-events: none;
+}
+
+.gc-mode-switch.is-mgmt::before{ transform: translateX(100%); }
+
+.gc-dark .gc-mode-switch{
+  background: rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.10);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.08), 0 12px 28px rgba(0,0,0,.22);
+}
+
+.gc-dark .gc-mode-switch::before{
+  background: rgba(140,154,91,0.18);
+  border-color: rgba(255,255,255,0.12);
+  box-shadow: 0 2px 14px rgba(0,0,0,0.42), 0 0 0 1px rgba(255,255,255,0.08) inset;
+}
+
+.gc-mode-seg{
+  position: relative;
+  z-index: 1;
+
+  height: 34px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  background: transparent;
+
+  font-size: var(--gc-fs-sm);
+  font-weight: 800;
+  letter-spacing: -0.2px;
+  color: rgba(17,24,39,0.70);
+
+  cursor: pointer;
+
+  transition:
+    color 180ms cubic-bezier(.4,0,.2,1),
+    transform 180ms cubic-bezier(.4,0,.2,1);
+}
+
+.gc-dark .gc-mode-seg{ color: rgba(255,255,255,0.70); }
+
+.gc-mode-seg:hover{
+  color: rgba(17,24,39,0.92);
+  transform: translateY(-0.5px);
+}
+.gc-dark .gc-mode-seg:hover{
+  color: rgba(255,255,255,0.92);
+}
+
+/* Active text emphasis (highlight already via ::before) */
+.gc-mode-seg.is-active{
+  color: rgba(17,24,39,0.92);
+  font-weight: 900;
+}
+.gc-dark .gc-mode-seg.is-active{
+  color: rgba(255,255,255,0.92);
+}
+
+.gc-mode-seg:focus-visible{
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(140,154,91,0.25);
+}
+
+/* ========= END ULTRA MODE SWITCH ========= */
+
 /* Navigation */
 .gc-nav{
   margin-top: 10px;

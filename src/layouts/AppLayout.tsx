@@ -207,11 +207,23 @@ export default function AppLayout() {
 
             <div className="gc-side-block" style={{ marginTop: 14 }}>
               <div className="gc-label">MODE</div>
-              <div className="gc-seg">
-                <button className={cx('gc-seg-btn', isKitchen && 'is-active')} type="button" onClick={() => setMode('kitchen')}>
+              <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')} role="tablist" aria-label="Mode">
+                <button
+                  className={cx('gc-mode-seg', isKitchen && 'is-active')}
+                  type="button"
+                  role="tab"
+                  aria-selected={isKitchen}
+                  onClick={() => setMode('kitchen')}
+                >
                   Kitchen
                 </button>
-                <button className={cx('gc-seg-btn', isMgmt && 'is-active')} type="button" onClick={() => setMode('mgmt')}>
+                <button
+                  className={cx('gc-mode-seg', isMgmt && 'is-active')}
+                  type="button"
+                  role="tab"
+                  aria-selected={isMgmt}
+                  onClick={() => setMode('mgmt')}
+                >
                   Mgmt
                 </button>
               </div>
