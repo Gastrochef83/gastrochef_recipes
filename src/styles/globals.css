@@ -1069,7 +1069,9 @@ a{
 
 .gc-data-table-wrap{
   width: 100%;
-  overflow: auto;
+  /* Fit to container at 100% zoom (no horizontal scrollbar). */
+  overflow-x: hidden;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   scrollbar-gutter: stable both-edges;
   border-radius: var(--gc-radius);
@@ -1132,41 +1134,42 @@ a{
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
+  flex-wrap: wrap;
 }
 
-/* Table column sizing (responsive, avoids horizontal scroll at 100% on common laptops)
-   NOTE: widths are intentionally conservative; Name flexes via clamp.
+/* Table column sizing (Kitopi-grade):
+   - percentage widths ensure the table fills available space
+   - prevents 100% zoom horizontal scroll on common laptop widths
+   - keeps ALL columns visible (no feature loss)
 */
-.gc-col-code{ width: 112px; }
-.gc-col-name{ width: clamp(220px, 28vw, 360px); }
-.gc-col-category{ width: clamp(120px, 16vw, 180px); }
-.gc-col-supplier{ width: clamp(120px, 16vw, 200px); }
-.gc-col-pack{ width: 74px; }
-.gc-col-unit{ width: 74px; }
-.gc-col-packprice{ width: 120px; }
-.gc-col-netunit{ width: 130px; }
-.gc-col-actions{ width: 132px; }
+.gc-col-code{ width: 10%; }
+.gc-col-name{ width: 26%; }
+.gc-col-category{ width: 14%; }
+.gc-col-supplier{ width: 14%; }
+.gc-col-pack{ width: 6%; }
+.gc-col-unit{ width: 6%; }
+.gc-col-packprice{ width: 8%; }
+.gc-col-netunit{ width: 10%; }
+.gc-col-actions{ width: 6%; }
 
 @media (max-width: 1200px){
   .gc-data-table thead th{ padding: 9px 10px; }
   .gc-data-table tbody td{ padding: 10px 10px; }
-  .gc-col-name{ width: clamp(180px, 30vw, 300px); }
-  .gc-col-category{ width: clamp(110px, 15vw, 160px); }
-  .gc-col-supplier{ width: clamp(110px, 15vw, 170px); }
-  .gc-col-packprice{ width: 112px; }
-  .gc-col-netunit{ width: 120px; }
-  .gc-col-actions{ width: 120px; }
+  .gc-col-actions{ width: 8%; }
+  .gc-col-name{ width: 24%; }
 }
 
 @media (max-width: 980px){
-  /* keep features; tighten further to reduce overflow */
-  .gc-col-code{ width: 104px; }
-  .gc-col-pack{ width: 68px; }
-  .gc-col-unit{ width: 68px; }
-  .gc-col-packprice{ width: 104px; }
-  .gc-col-netunit{ width: 112px; }
-  .gc-col-actions{ width: 112px; }
+  .gc-col-code{ width: 11%; }
+  .gc-col-name{ width: 23%; }
+  .gc-col-category{ width: 14%; }
+  .gc-col-supplier{ width: 14%; }
+  .gc-col-pack{ width: 6%; }
+  .gc-col-unit{ width: 6%; }
+  .gc-col-packprice{ width: 9%; }
+  .gc-col-netunit{ width: 9%; }
+  .gc-col-actions{ width: 8%; }
 }
 
 .gc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
