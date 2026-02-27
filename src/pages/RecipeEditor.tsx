@@ -725,11 +725,22 @@ const k = useKitchen()
 const deleteLineLocal = useCallback(
     (lineId: string) => {
       if (!lineId) return
-      // mark for DB delete if needed
-      if (!lineId.startsWith('tmp_')) deletedLineIdsRef.current.push(lineId)
-      setLinesSafe((prev: Line[]) => prev.filter((x) => x.id !== lineId))
+
+      const cur = (linesRef.current || []) as Line[]
+      const next = cur.filter((x) => x.id !== lineId)
+
+      // mark for DB delete if needed (avoid duplicates)
+      if (!lineId.startsWith('tmp_') && !deletedLineIdsRef.current.includes(lineId)) {
+        deletedLineIdsRef.current.push(lineId)
+      }
+
+      linesRef.current = next
+      setLinesSafe(next)
+
+      // Persist immediately so refresh won't bring the line back.
+      saveLinesNow(next).then(() => {}).catch(() => {})
     },
-    [setLinesSafe]
+    [setLinesSafe, saveLinesNow]
   )
 
 
