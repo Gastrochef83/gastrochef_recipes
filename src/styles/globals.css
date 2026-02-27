@@ -169,17 +169,27 @@ a{
 
 /* Segmented control */
 .gc-seg{
-  margin-top: 8px;
+  margin-top: 10px;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  gap: 4px;
+  padding: 4px;
+  border-radius: 18px;
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.65);
+  box-shadow: 0 10px 30px rgba(0,0,0,.05);
+}
+
+.gc-dark .gc-seg{
+  background: rgba(14,18,30,.38);
+  border-color: rgba(148,163,184,.16);
 }
 
 .gc-seg-btn{
-  height: 38px;
+  height: 36px;
   border-radius: 14px;
-  border: 1px solid var(--gc-border);
-  background: rgba(255,255,255,.75);
+  border: 1px solid transparent;
+  background: transparent;
   color: var(--gc-text);
   font-weight: 800;
   font-size: var(--gc-fs-sm);
@@ -187,7 +197,7 @@ a{
   transition: transform .12s ease, box-shadow .12s ease, background .12s ease, border-color .12s ease;
 }
 
-.gc-dark .gc-seg-btn{ background: rgba(14,18,30,.55); }
+.gc-dark .gc-seg-btn{ color: rgba(248,250,252,.92); }
 
 .gc-seg-btn:hover{
   transform: translateY(-1px);
@@ -196,9 +206,15 @@ a{
 }
 
 .gc-seg-btn.is-active{
-  background: linear-gradient(180deg, rgba(14,165,166,.18), rgba(14,165,166,.10));
-  border-color: rgba(14,165,166,.35);
-  box-shadow: 0 10px 24px rgba(14,165,166,.14);
+  background: rgba(255,255,255,.92);
+  border-color: rgba(15,23,42,.08);
+  box-shadow: 0 12px 28px rgba(0,0,0,.10);
+}
+
+.gc-dark .gc-seg-btn.is-active{
+  background: rgba(15,23,42,.70);
+  border-color: rgba(148,163,184,.22);
+  box-shadow: 0 12px 28px rgba(0,0,0,.35);
 }
 
 /* Navigation */

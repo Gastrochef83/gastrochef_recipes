@@ -343,7 +343,7 @@ export default function AppLayout() {
                           <div className="gc-user-sub">{(k.profile?.role || 'Owner')} • {k.error ? 'Kitchen error' : kitchenLabel}</div>
                         </div>
                       </div>
-                      {userEmail ? <div className="gc-user-email">{userEmail}</div> : null}
+                      {/* Billion UI: keep email out of the always-visible menu header (reduces clutter) */}
                     </div>
 
 
