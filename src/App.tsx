@@ -10,7 +10,6 @@ import RecipeEditor from './pages/RecipeEditor'
 import RecipeCookMode from './pages/RecipeCookMode'
 import RecipePrintCard from './pages/RecipePrintCard'
 import Settings from './pages/Settings'
-import SalesMachine from './pages/SalesMachine'
 
 import Login from './pages/Login'
 import Register from './pages/Register'
@@ -47,7 +46,6 @@ export default function App() {
         <Route path="cook" element={<RecipeCookMode />} />
         <Route path="print" element={<RecipePrintCard />} />
         <Route path="settings" element={<Settings />} />
-        <Route path="sales" element={<SalesMachine />} />
       </Route>
 
       {/* Fallback */}

@@ -67,12 +67,7 @@ function dataUrlToBase64Png(dataUrl: string) {
 }
 
 function safeFileName(name: string) {
-  const base = (name || 'recipe').trim().replace(/\s+/g, ' ')
-  return base
-    .replace(/[\\/:*?"<>|]+/g, '')
-    .replace(/\.+$/g, '')
-    .slice(0, 80)
-    .trim() || 'recipe'
+  return name.replace(/[\\/:*?"<>|]+/g, '_')
 }
 
 async function tryAddLogo(
@@ -502,8 +497,5 @@ export async function exportRecipeExcelUltra(args: {
   // Export
   const buf = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  const cur = (meta.currency || 'USD').toUpperCase()
-  const stamp = new Date().toISOString().slice(0, 10)
-  const fileName = `${safeFileName(name)} — GastroChef (${cur}) — ${stamp}.xlsx`
-  saveAs(blob, fileName)
+  saveAs(blob, `${safeFileName(name)}.xlsx`)
 }

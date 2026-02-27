@@ -83,29 +83,6 @@ export default function Login() {
             <div>
               <div className="gc-auth-title">GastroChef</div>
               <div className="gc-auth-sub">CONCIERGE LOGIN</div>
-              <div className="gc-auth-feats">
-                <div className="gc-auth-feat">
-                  <div className="gc-pill-dot" />
-                  <div>
-                    <strong>Costing, Yield & Menu Control</strong>
-                    <span>Audit-ready recipe lines with calm, fast editing.</span>
-                  </div>
-                </div>
-                <div className="gc-auth-feat">
-                  <div className="gc-pill-dot" />
-                  <div>
-                    <strong>Kitchen-First Workflow</strong>
-                    <span>Built for real chefs — clean spacing, zero clutter.</span>
-                  </div>
-                </div>
-                <div className="gc-auth-feat">
-                  <div className="gc-pill-dot" />
-                  <div>
-                    <strong>Excel Export (Pro)</strong>
-                    <span>Export print-ready cards and sheets in one click.</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
@@ -114,8 +91,7 @@ export default function Login() {
           {checking ? (
             <div style={{ padding: 18, color: 'var(--gc-muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
           ) : (
-            <>
-              <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
+            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
               <div style={{ minWidth: 0 }}>
                 <div className="gc-label">ENTER EMAIL</div>
                 <input
@@ -162,13 +138,6 @@ export default function Login() {
                 {busy ? 'Signing in…' : 'Login'}
               </button>
             </form>
-              <div className="gc-auth-foot">
-                <div>© {new Date().getFullYear()} GastroChef</div>
-                <div>
-                  <a href="mailto:support@gastrochef.app" style={{ textDecoration: "underline" }}>Need help?</a>
-                </div>
-              </div>
-            </>
           )}
 
           <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>

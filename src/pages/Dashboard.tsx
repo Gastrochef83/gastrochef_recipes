@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { useKitchen } from '../lib/kitchen'
-import { seedDemoData } from '../lib/demoSeed'
-import EmptyState from '../components/EmptyState'
-import { Toast } from '../components/Toast'
 import Button from '../components/ui/Button'
 
 type Recipe = {
@@ -84,8 +80,6 @@ function money(n: number, currency = 'USD') {
 
 export default function Dashboard() {
   const nav = useNavigate()
-  const kitchen = useKitchen()
-  const [toast, setToast] = useState<string | null>(null)
   const lastId = (() => {
     try { return localStorage.getItem('gc_last_recipe_id') || '' } catch { return '' }
   })()
@@ -131,7 +125,7 @@ export default function Dashboard() {
 
   useEffect(() => {
     load()
-  }, [kitchen.loading, kitchen.kitchenId])
+  }, [])
 
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
@@ -338,31 +332,6 @@ export default function Dashboard() {
         <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
       </div>
 
-      {(!loading && (recipes?.length ?? 0) === 0) ? (
-        <EmptyState
-          title="No recipes yet"
-          subtitle="Create your first recipe, or load demo data to explore the full workflow (editor → cost → print)."
-        >
-          <Button onClick={() => nav('/recipes')}>Create Recipe</Button>
-          <Button
-            variant="secondary"
-            onClick={async () => {
-              try {
-                if (!kitchen.kitchenId) return
-                setToast('Loading demo data…')
-                const res = await seedDemoData(kitchen.kitchenId)
-                setToast(res.skipped ? 'Demo data already loaded.' : `Demo loaded: ${res.createdRecipes} recipes.`)
-                // refresh by nudging lastId
-                try { localStorage.removeItem('gc_last_recipe_id') } catch {}
-              } catch (e: any) {
-                setToast(e?.message || 'Failed to load demo data')
-              }
-            }}
-          >
-            Load Demo Data
-          </Button>
-        </EmptyState>
-      ) : null}
 
       <div className="gc-card p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
