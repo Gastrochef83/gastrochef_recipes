@@ -42,6 +42,8 @@ type Recipe = {
 
 type Ingredient = {
   id: string
+  code?: string | null
+  code_category?: string | null
   name?: string | null
   pack_unit?: string | null
   net_unit_cost?: number | null
@@ -1914,7 +1916,7 @@ const addLineLocal = useCallback(async () => {
                                       <option value="">— Select ingredient —</option>
                                       {ingredients.map((i) => (
                                         <option key={i.id} value={i.id}>
-                                          {i.name || 'Unnamed'}
+                                          {(i.code ? `${i.code} — ` : '') + (i.name || 'Unnamed')}
                                         </option>
                                       ))}
                                     </select>
@@ -1933,6 +1935,11 @@ const addLineLocal = useCallback(async () => {
                                     </select>
                                   )}
                                 </div>                              </div>
+                                {l.line_type === 'ingredient' && ing?.code ? (
+                                  <div className="gc-kitopi-muted" style={{ marginTop: 6 }}>
+                                    Code: <span className="font-mono">{ing.code}</span>
+                                  </div>
+                                ) : null}
                             </td>
 
                             <td>

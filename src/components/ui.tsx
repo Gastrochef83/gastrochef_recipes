@@ -80,14 +80,20 @@ export function Modal({
   if (!open) return null
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-      <div className="w-full max-w-xl rounded-2xl border bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b px-5 py-3">
+      {/*
+        Keep the modal usable at 100% zoom:
+        - Cap height to viewport
+        - Header stays visible
+        - Body scrolls
+      */}
+      <div className="w-full max-w-2xl max-h-[90vh] rounded-2xl border bg-white shadow-xl flex flex-col overflow-hidden">
+        <div className="flex items-center justify-between border-b px-5 py-3 flex-none">
           <div className="text-sm font-semibold">{title}</div>
           <button className="rounded-lg px-2 py-1 text-sm hover:bg-neutral-100" onClick={onClose}>
             ✕
           </button>
         </div>
-        <div className="px-5 py-4">{children}</div>
+        <div className="px-5 py-4 overflow-y-auto flex-1">{children}</div>
       </div>
     </div>
   )

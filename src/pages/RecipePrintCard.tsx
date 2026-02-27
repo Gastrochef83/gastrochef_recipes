@@ -5,6 +5,8 @@ import { supabase } from '../lib/supabase'
 
 type Recipe = {
   id: string
+  code?: string | null
+  code_category?: string | null
   kitchen_id: string
   name: string
   category: string | null
@@ -389,22 +391,19 @@ export default function RecipePrintCard() {
             </section>
           ) : null}
 
-          {hasPhotos ? (
+          {/*
+            Photos section (print page): keep it clean.
+            - Show ONLY the main recipe photo here.
+            - Step photos are shown inline inside the Method section.
+          */}
+          {recipe.photo_url ? (
             <section className="gc-a4-section">
               <div className="gc-a4-section-title">Photos</div>
               <div className="gc-a4-photos">
-                {recipe.photo_url ? (
-                  <div className="gc-a4-photo">
-                    <img src={recipe.photo_url} alt="Recipe" />
-                    <div className="gc-a4-photo-cap">Recipe photo</div>
-                  </div>
-                ) : null}
-                {stepPhotos.map((u, i) => (
-                  <div className="gc-a4-photo" key={u || i}>
-                    <img src={u} alt={`Step ${i + 1}`} />
-                    <div className="gc-a4-photo-cap">Step {i + 1}</div>
-                  </div>
-                ))}
+                <div className="gc-a4-photo">
+                  <img src={recipe.photo_url} alt="Recipe" />
+                  <div className="gc-a4-photo-cap">Recipe photo</div>
+                </div>
               </div>
             </section>
           ) : null}
