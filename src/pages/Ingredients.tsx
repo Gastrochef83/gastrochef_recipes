@@ -81,8 +81,8 @@ function Modal({
     <div className="fixed inset-0 z-50">
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2">
-        <div className="gc-card p-6 shadow-2xl">
-          <div className="flex items-start justify-between gap-4 pb-4 border-b border-black/10">
+        <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col">
+          <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-black/10">
             <div>
               <div className="gc-label">INGREDIENT</div>
               <div className="mt-1 text-xl font-extrabold">{title}</div>
@@ -91,7 +91,7 @@ function Modal({
               Close
             </button>
           </div>
-          <div className="pt-5">{children}</div>
+          <div className="p-6 pt-5 overflow-auto">{children}</div>
         </div>
       </div>
     </div>
@@ -679,15 +679,15 @@ export default function Ingredients() {
                 <table className="gc-data-table text-sm">
                   <thead>
                     <tr>
-                      <th style={{ width: 120 }}>Code</th>
-                      <th style={{ width: 320 }}>Name</th>
-                      <th style={{ width: 180 }}>Category</th>
-                      <th style={{ width: 200 }}>Supplier</th>
-                      <th className="gc-th-right" style={{ width: 90 }}>Pack</th>
-                      <th className="gc-th-center" style={{ width: 90 }}>Unit</th>
-                      <th className="gc-th-right" style={{ width: 140 }}>Pack Price</th>
-                      <th className="gc-th-right" style={{ width: 150 }}>Net Unit Cost</th>
-                      <th className="gc-th-center" style={{ width: 160 }}>Actions</th>
+                      <th className="gc-col-code">Code</th>
+                      <th className="gc-col-name">Name</th>
+                      <th className="gc-col-category">Category</th>
+                      <th className="gc-col-supplier">Supplier</th>
+                      <th className={cls('gc-th-right', 'gc-col-pack')}>Pack</th>
+                      <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
+                      <th className={cls('gc-th-right', 'gc-col-packprice')}>Pack Price</th>
+                      <th className={cls('gc-th-right', 'gc-col-netunit')}>Net Unit Cost</th>
+                      <th className={cls('gc-th-center', 'gc-col-actions')}>Actions</th>
                     </tr>
                   </thead>
 

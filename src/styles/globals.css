@@ -1135,6 +1135,40 @@ a{
   gap: 8px;
 }
 
+/* Table column sizing (responsive, avoids horizontal scroll at 100% on common laptops)
+   NOTE: widths are intentionally conservative; Name flexes via clamp.
+*/
+.gc-col-code{ width: 112px; }
+.gc-col-name{ width: clamp(220px, 28vw, 360px); }
+.gc-col-category{ width: clamp(120px, 16vw, 180px); }
+.gc-col-supplier{ width: clamp(120px, 16vw, 200px); }
+.gc-col-pack{ width: 74px; }
+.gc-col-unit{ width: 74px; }
+.gc-col-packprice{ width: 120px; }
+.gc-col-netunit{ width: 130px; }
+.gc-col-actions{ width: 132px; }
+
+@media (max-width: 1200px){
+  .gc-data-table thead th{ padding: 9px 10px; }
+  .gc-data-table tbody td{ padding: 10px 10px; }
+  .gc-col-name{ width: clamp(180px, 30vw, 300px); }
+  .gc-col-category{ width: clamp(110px, 15vw, 160px); }
+  .gc-col-supplier{ width: clamp(110px, 15vw, 170px); }
+  .gc-col-packprice{ width: 112px; }
+  .gc-col-netunit{ width: 120px; }
+  .gc-col-actions{ width: 120px; }
+}
+
+@media (max-width: 980px){
+  /* keep features; tighten further to reduce overflow */
+  .gc-col-code{ width: 104px; }
+  .gc-col-pack{ width: 68px; }
+  .gc-col-unit{ width: 68px; }
+  .gc-col-packprice{ width: 104px; }
+  .gc-col-netunit{ width: 112px; }
+  .gc-col-actions{ width: 112px; }
+}
+
 .gc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
 
 /* =========================================================
