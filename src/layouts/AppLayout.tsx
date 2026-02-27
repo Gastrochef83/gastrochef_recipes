@@ -1,10 +1,11 @@
 // src/layouts/AppLayout.tsx
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
+import CommandPalette, { type CommandItem } from '../components/CommandPalette'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -41,6 +42,8 @@ export default function AppLayout() {
   const k = useKitchen()
   const a = useAutosave()
 
+  const navigate = useNavigate()
+
   const loc = useLocation()
 
   // HashRouter-safe print detection
@@ -56,6 +59,14 @@ export default function AppLayout() {
   const [userEmail, setUserEmail] = useState<string>('')
 
   const menuRef = useRef<HTMLDetailsElement | null>(null)
+  const [paletteOpen, setPaletteOpen] = useState(false)
+
+  // Command palette can be opened from anywhere via Ctrl/⌘+K (see CommandPalette)
+  useEffect(() => {
+    const fn = () => setPaletteOpen(true)
+    window.addEventListener('gc:open-command-palette', fn as any)
+    return () => window.removeEventListener('gc:open-command-palette', fn as any)
+  }, [])
 
   const base = (import.meta as any).env?.BASE_URL || '/'
   // ✅ BRAND LOCK: use the SAME logo asset everywhere (login/sidebar/topbar)
@@ -98,6 +109,42 @@ export default function AppLayout() {
     if (p.includes('settings')) return 'Settings'
     return 'Dashboard'
   }, [loc.pathname, loc.hash])
+
+  const commands: CommandItem[] = useMemo(
+    () => [
+      { id: 'go-dashboard', label: 'Go to Dashboard', kbd: 'G D', run: () => navigate('/dashboard') },
+      { id: 'go-recipes', label: 'Go to Recipes', kbd: 'G R', run: () => navigate('/recipes') },
+      { id: 'go-ingredients', label: 'Go to Ingredients', kbd: 'G I', run: () => navigate('/ingredients') },
+      { id: 'go-recipe', label: 'Open Recipe Editor', kbd: 'G E', run: () => navigate('/recipe') },
+      { id: 'go-cook', label: 'Open Cook Mode', kbd: 'G C', run: () => navigate('/cook') },
+      { id: 'go-print', label: 'Open Print', kbd: 'G P', run: () => navigate('/print') },
+      { id: 'go-settings', label: 'Go to Settings', kbd: 'G S', run: () => navigate('/settings') },
+      {
+        id: 'toggle-theme',
+        label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+        kbd: 'T',
+        run: () => setDark((v) => !v),
+      },
+      {
+        id: 'refresh-kitchen',
+        label: 'Refresh kitchen',
+        kbd: 'R',
+        run: async () => {
+          await k.refresh().catch(() => {})
+        },
+      },
+      {
+        id: 'logout',
+        label: 'Log out',
+        kbd: 'L',
+        danger: true,
+        run: async () => {
+          await handleLogout()
+        },
+      },
+    ],
+    [navigate, dark, k, handleLogout]
+  )
 
   async function handleLogout() {
     if (loggingOut) return
@@ -209,103 +256,148 @@ export default function AppLayout() {
         </aside>
 
         <main className="gc-main">
-          <div className="gc-topbar gc-topbar-card">
-            <div className="gc-topbar-brand" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <img
-                className="gc-topbar-logo"
-                src={brandLogo}
-                alt="GastroChef"
-                onError={(e) => {
-                  ;(e.currentTarget as HTMLImageElement).src = brandFallback
-                }}
-              />
-              <div>
-                <div className="gc-title">{title}</div>
-                <div className="gc-subtitle">{k.error ? `Kitchen error: ${k.error}` : kitchenLabel}</div>
-              </div>
-            </div>
-
-            <div className="gc-topbar-actions" style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-              <button
-                type="button"
-                className="gc-icon-btn"
-                aria-label={dark ? 'Switch to light mode' : 'Switch to dark mode'}
-                title={dark ? 'Light Mode' : 'Dark Mode'}
-                onClick={() => setDark((v) => !v)}
-              >
-                {dark ? '☀' : '☾'}
-              </button>
-
-              <div className="gc-autosave" aria-live="polite">
+          <div className="gc-topbar" aria-label="Top bar">
+            <div className="gc-topbar-pill" role="banner">
+              <div className="gc-topbar-left">
+                <img
+                  className="gc-topbar-logo gc-topbar-logo--mark"
+                  src={brandLogo}
+                  alt="GastroChef"
+                  onError={(e) => {
+                    ;(e.currentTarget as HTMLImageElement).src = brandFallback
+                  }}
+                />
+                <div className="gc-topbar-kitchen" title={k.error ? `Kitchen error: ${k.error}` : kitchenLabel}>
+                  {k.error ? 'Kitchen error' : kitchenLabel}
+                </div>
                 <span
+                  className={cx('gc-live-dot', a.status === 'error' && 'is-error', a.status === 'saving' && 'is-saving')}
+                  aria-hidden="true"
+                />
+                <span className="gc-sr-only">{title}</span>
+              </div>
+
+              <div className="gc-topbar-spacer" aria-hidden="true" />
+
+              <div className="gc-topbar-right">
+                <div
                   className={cx(
-                    'gc-autosave-pill',
+                    'gc-autosave',
                     a.status === 'saving' && 'is-saving',
                     a.status === 'saved' && 'is-saved',
                     a.status === 'error' && 'is-error'
                   )}
+                  aria-live="polite"
+                  title={
+                    a.status === 'saving'
+                      ? 'Saving…'
+                      : a.status === 'saved'
+                        ? 'Saved'
+                        : a.status === 'error'
+                          ? (a.message || 'Save issue')
+                          : 'All changes saved'
+                  }
                 >
-                  {a.status === 'saving'
-                    ? 'Saving…'
-                    : a.status === 'saved'
-                      ? 'Saved ✓'
-                      : a.status === 'error'
-                        ? (a.message || 'Save issue')
-                        : 'All changes saved'}
-                </span>
-              </div>
-
-              <details ref={menuRef} className="gc-actions-menu">
-                <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
-                  <span className="gc-avatar" aria-hidden="true">
-                    {avatarText}
+                  <span className="gc-autosave-icon" aria-hidden="true">
+                    {a.status === 'saving' ? '•' : a.status === 'error' ? '!' : '✓'}
                   </span>
-                  <span className="gc-user-label">
-                    <span className="gc-user-name">{k.profile?.role ? `Role: ${k.profile.role}` : 'Account'}</span>
-                    <span className="gc-user-email">{userEmail || 'Signed in'}</span>
+                  <span className="gc-sr-only">
+                    {a.status === 'saving'
+                      ? 'Saving'
+                      : a.status === 'saved'
+                        ? 'Saved'
+                        : a.status === 'error'
+                          ? (a.message || 'Save issue')
+                          : 'All changes saved'}
                   </span>
-                </summary>
-
-                <div className="gc-actions-panel gc-user-panel" role="menu">
-                  <button
-                    className="gc-actions-item"
-                    type="button"
-                    onClick={() => {
-                      setDark((v) => !v)
-                      closeMenu()
-                    }}
-                  >
-                    {dark ? 'Light Mode' : 'Dark Mode'}
-                  </button>
-
-                  <button
-                    className="gc-actions-item"
-                    type="button"
-                    onClick={async () => {
-                      closeMenu()
-                      await k.refresh().catch(() => {})
-                    }}
-                  >
-                    Refresh kitchen
-                  </button>
-
-                  <button
-                    className="gc-actions-item gc-actions-danger"
-                    type="button"
-                    onClick={async () => {
-                      closeMenu()
-                      await handleLogout()
-                    }}
-                    disabled={loggingOut}
-                    aria-disabled={loggingOut}
-                  >
-                    {loggingOut ? 'Logging out…' : 'Log out'}
-                  </button>
                 </div>
-              </details>
-            </div>
 
+                <button
+                  type="button"
+                  className="gc-kbd-btn"
+                  aria-label="Command palette"
+                  title="Quick actions (Ctrl/⌘ + K)"
+                  onClick={() => setPaletteOpen(true)}
+                >
+                  <span aria-hidden="true">⌘K</span>
+                </button>
+
+                <details ref={menuRef} className="gc-actions-menu gc-user-menu">
+                  <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
+                    <span className="gc-avatar" aria-hidden="true">
+                      {avatarText}
+                    </span>
+                    <span className="gc-user-mini" aria-hidden="true">
+                      ▾
+                    </span>
+                  </summary>
+
+                  <div className="gc-actions-panel gc-user-panel" role="menu">
+                    <div className="gc-user-header">
+                      <div className="gc-user-header-row">
+                        <span className="gc-avatar gc-avatar--lg" aria-hidden="true">
+                          {avatarText}
+                        </span>
+                        <div className="gc-user-meta">
+                          <div className="gc-user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
+                          <div className="gc-user-sub">{(k.profile?.role || 'Owner')} • {k.error ? 'Kitchen error' : kitchenLabel}</div>
+                        </div>
+                      </div>
+                      {userEmail ? <div className="gc-user-email">{userEmail}</div> : null}
+                    </div>
+
+                    <button
+                      className="gc-actions-item"
+                      type="button"
+                      onClick={() => {
+                        setDark((v) => !v)
+                        closeMenu()
+                      }}
+                    >
+                      {dark ? 'Light Mode' : 'Dark Mode'}
+                    </button>
+
+                    <button
+                      className="gc-actions-item"
+                      type="button"
+                      onClick={() => {
+                        closeMenu()
+                        setPaletteOpen(true)
+                      }}
+                    >
+                      Quick actions (⌘K)
+                    </button>
+
+                    <button
+                      className="gc-actions-item"
+                      type="button"
+                      onClick={async () => {
+                        closeMenu()
+                        await k.refresh().catch(() => {})
+                      }}
+                    >
+                      Refresh kitchen
+                    </button>
+
+                    <button
+                      className="gc-actions-item gc-actions-danger"
+                      type="button"
+                      onClick={async () => {
+                        closeMenu()
+                        await handleLogout()
+                      }}
+                      disabled={loggingOut}
+                      aria-disabled={loggingOut}
+                    >
+                      {loggingOut ? 'Logging out…' : 'Log out'}
+                    </button>
+                  </div>
+                </details>
+              </div>
+            </div>
           </div>
+
+          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commands} />
 
           <div className="gc-content">
             <div className="gc-page">
