@@ -158,7 +158,7 @@ function cx(...arr: Array<string | false | null | undefined>) {
 export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
   const showCost = isMgmt
-  const tableColSpan = 8 + (showCost ? 1 : 0)
+  const tableColSpan = 9 + (showCost ? 1 : 0)
 const k = useKitchen()
   const canEditCodes = k.isOwner
   const navigate = useNavigate()
@@ -1851,6 +1851,7 @@ const addLineLocal = useCallback(async () => {
                 <div className="gc-kitopi-table-wrap">
                   <table className="gc-kitopi-table gc-kitopi-table-fixed">
                     <colgroup>
+                      <col className="gc-col-code" />
                       <col className="gc-col-item" />
                       <col className="gc-col-net" />
                       <col className="gc-col-unit" />
@@ -1862,7 +1863,8 @@ const addLineLocal = useCallback(async () => {
                     </colgroup>
                     <thead>
                       <tr>
-                        <th style={{ width: '34%' }}>Ingredient</th>
+                        <th style={{ width: '14%' }}>Code</th>
+                        <th style={{ width: '20%' }}>Ingredient</th>
                         <th style={{ width: '11%' }}>Net</th>
                         <th style={{ width: '9%' }}>Unit</th>
                         <th style={{ width: '11%' }}>Gross</th>
@@ -1905,42 +1907,44 @@ const addLineLocal = useCallback(async () => {
                         return (
                           <tr key={l.id}>
                             <td>
+                              {l.line_type === 'ingredient' ? (
+                                <select
+                                  className="gc-select gc-select-compact font-mono"
+                                  value={l.ingredient_id || ''}
+                                  onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                  aria-label="Ingredient code"
+                                >
+                                  <option value="">—</option>
+                                  {ingredients.map((i) => (
+                                    <option key={i.id} value={i.id}>
+                                      {i.code || '—'}
+                                    </option>
+                                  ))}
+                                </select>
+                              ) : l.line_type === 'subrecipe' ? (
+                                <span className="font-mono">{sub?.code || '—'}</span>
+                              ) : (
+                                <span className="gc-kitopi-muted">—</span>
+                              )}
+                            </td>
+
+                            <td>
                               <div className="gc-kitopi-item">
                                 <div className="gc-kitopi-item-select">
                                   {l.line_type === 'ingredient' ? (
-                                    <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr', gap: 8, alignItems: 'start' }}>
-                                      <div>
-                                        <select
-                                          className="gc-select gc-select-compact"
-                                          value={l.ingredient_id || ''}
-                                          onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
-                                          aria-label="Ingredient code"
-                                        >
-                                          <option value="">— Code —</option>
-                                          {ingredients.map((i) => (
-                                            <option key={i.id} value={i.id}>
-                                              {i.code || '—'}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-
-                                      <div>
-                                        <select
-                                          className="gc-select gc-select-compact"
-                                          value={l.ingredient_id || ''}
-                                          onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
-                                          aria-label="Ingredient name"
-                                        >
-                                          <option value="">— Name —</option>
-                                          {ingredients.map((i) => (
-                                            <option key={i.id} value={i.id}>
-                                              {i.name || 'Unnamed'}
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                    </div>
+                                    <select
+                                      className="gc-select gc-select-compact"
+                                      value={l.ingredient_id || ''}
+                                      onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                      aria-label="Ingredient name"
+                                    >
+                                      <option value="">— Select ingredient —</option>
+                                      {ingredients.map((i) => (
+                                        <option key={i.id} value={i.id}>
+                                          {i.name || 'Unnamed'}
+                                        </option>
+                                      ))}
+                                    </select>
                                   ) : (
                                     <select
                                       className="gc-select gc-select-compact"
@@ -1955,12 +1959,8 @@ const addLineLocal = useCallback(async () => {
                                       ))}
                                     </select>
                                   )}
-                                </div>                              </div>
-                                {l.line_type === 'ingredient' && ing?.code ? (
-                                  <div className="gc-kitopi-muted" style={{ marginTop: 6 }}>
-                                    Code: <span className="font-mono">{ing.code}</span>
-                                  </div>
-                                ) : null}
+                                </div>
+                              </div>
                             </td>
 
                             <td>
@@ -1998,8 +1998,7 @@ const addLineLocal = useCallback(async () => {
                                 inputMode="decimal"
                               />
                               {!showCost ? (
-                                <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
-                              ) : null}
+) : null}
                             </td>
 
                             <td>
@@ -2014,8 +2013,7 @@ const addLineLocal = useCallback(async () => {
                             {showCost ? (
                               <td>
                                 <div className="gc-kitopi-money">{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
-                                <div className="gc-kitopi-muted">{c ? `${fmtQty(c.net)} → ${fmtQty(c.gross)} ${safeUnit(l.unit)}` : ''}</div>
-                              </td>
+</td>
                             ) : null}
 
                             <td>

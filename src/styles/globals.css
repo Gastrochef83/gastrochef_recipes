@@ -1127,15 +1127,16 @@ a{
 
 /* GOD RecipeEditor table discipline */
 .gc-kitopi-table-fixed{ table-layout: fixed; width: 100%; }
-.gc-kitopi-table-fixed col.gc-col-item{ width: 32%; }
+.gc-kitopi-table-fixed col.gc-col-code{ width: 14%; }
+.gc-kitopi-table-fixed col.gc-col-item{ width: 22%; }
 .gc-kitopi-table-fixed col.gc-col-net{ width: 10%; }
 .gc-kitopi-table-fixed col.gc-col-unit{ width: 8%; }
 .gc-kitopi-table-fixed col.gc-col-gross{ width: 10%; }
 .gc-kitopi-table-fixed col.gc-col-yield{ width: 10%; }
-.gc-kitopi-table-fixed col.gc-col-note{ width: 14%; }
+.gc-kitopi-table-fixed col.gc-col-note{ width: 12%; }
 .gc-kitopi-table-fixed col.gc-col-cost{ width: 8%; }
 .gc-kitopi-table-fixed col.gc-col-status{ width: 8%; }
-.gc-kitopi-table-fixed col.gc-col-actions{ width: 8%; }
+.gc-kitopi-table-fixed col.gc-col-actions{ width: 6%; }
 .gc-kitopi-table td, .gc-kitopi-table th{ vertical-align: middle; }
 .gc-kitopi-table .gc-ingredient-meta{ display:block; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:100%; }
 
