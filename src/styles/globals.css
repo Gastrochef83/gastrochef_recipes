@@ -110,7 +110,7 @@ a{
 .gc-brand-mark{
   width: 46px;
   height: 46px;
-  border-radius: 14px;
+  border-radius: var(--gc-control-radius);
   display: grid;
   place-items: center;
   overflow: hidden;
@@ -331,8 +331,8 @@ a{
 }
 
 .gc-nav-item{
-  border-radius: 14px;
-  padding: 10px 12px;
+  border-radius: var(--gc-control-radius);
+  padding: var(--gc-nav-pad-y) var(--gc-nav-pad-x);
   font-size: var(--gc-fs-sm);
   font-weight: 800;
   color: rgba(11,18,32,.78);
@@ -569,7 +569,7 @@ a{
 
 .gc-tabs .gc-btn{
   height: 34px;
-  padding: 0 12px;
+  padding: 0 var(--gc-control-pad-x);
   border-radius: 999px;
   font-weight: 900;
   font-size: var(--gc-fs-xs);
@@ -700,11 +700,11 @@ a{
 }
 
 .gc-card-head{
-  padding: 14px 16px 0 16px;
+  padding: var(--gc-card-pad-y) var(--gc-card-pad-x) 0 var(--gc-card-pad-x);
 }
 
 .gc-card-body{
-  padding: 14px 16px 16px 16px;
+  padding: var(--gc-card-pad-y) var(--gc-card-pad-x) var(--gc-card-pad-x) var(--gc-card-pad-x);
   min-width: 0;
 }
 
@@ -715,7 +715,7 @@ a{
 .gc-input, .gc-select, .gc-textarea{
   width: 100%;
   min-width: 0;
-  height: 42px;
+  height: var(--gc-control-h);
   border-radius: 14px;
   border: 1px solid var(--gc-border);
   background: rgba(255,255,255,.78);
@@ -748,10 +748,10 @@ a{
    ========================================================= */
 
 .gc-btn{
-  height: 42px;
-  border-radius: 14px;
+  height: var(--gc-control-h);
+  border-radius: var(--gc-control-radius);
   border: 1px solid transparent;
-  padding: 0 14px;
+  padding: 0 calc(var(--gc-control-pad-x) + 2px);
   font-weight: 900;
   font-size: var(--gc-fs-sm);
   letter-spacing: .01em;

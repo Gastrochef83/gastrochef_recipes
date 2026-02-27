@@ -130,7 +130,17 @@ export default function Recipes() {
 
   const [density, setDensity] = useState<Density>(() => {
     const v = localStorage.getItem('gc_v5_density')
-    return v === 'dense' ? 'dense' : 'comfortable'
+
+
+useEffect(() => {
+  try {
+    // Map Recipes page density to global density tokens
+    const d = density === 'dense' ? 'compact' : 'comfort'
+    document.documentElement.setAttribute('data-density', d)
+    localStorage.setItem('gc_density', d)
+    localStorage.setItem('gc_v5_density', density)
+  } catch {}
+}, [density])    return v === 'dense' ? 'dense' : 'comfortable'
   })
 
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})

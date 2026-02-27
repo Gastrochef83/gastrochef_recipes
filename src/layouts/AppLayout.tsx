@@ -37,6 +37,34 @@ function clearAppCaches() {
   } catch {}
 }
 
+
+function applyGlobalDensity(density: 'comfort' | 'cozy' | 'compact') {
+  try {
+    document.documentElement.setAttribute('data-density', density)
+  } catch {}
+}
+
+function loadGlobalDensity(): 'comfort' | 'cozy' | 'compact' {
+  try {
+    // New unified key
+    const v = localStorage.getItem('gc_density')
+    if (v === 'compact' || v === 'cozy' || v === 'comfort') return v
+    // Legacy keys
+    const v2 = localStorage.getItem('gc_v5_density')
+    if (v2 === 'dense') return 'compact'
+    if (v2 === 'comfortable') return 'comfort'
+  } catch {}
+  return 'comfort'
+}
+
+function saveGlobalDensity(density: 'comfort' | 'cozy' | 'compact') {
+  try {
+    localStorage.setItem('gc_density', density)
+    // Keep legacy compatibility
+    localStorage.setItem('gc_v5_density', density === 'compact' ? 'dense' : 'comfortable')
+  } catch {}
+}
+
 export default function AppLayout() {
   const { isKitchen, isMgmt, setMode } = useMode()
   const k = useKitchen()
@@ -58,6 +86,12 @@ export default function AppLayout() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [userEmail, setUserEmail] = useState<string>('')
 
+
+// Global density (UI-only). Keeps spacing consistent across pages.
+useEffect(() => {
+  const d = loadGlobalDensity()
+  applyGlobalDensity(d)
+}, [])
   const menuRef = useRef<HTMLDetailsElement | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
 

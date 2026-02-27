@@ -85,6 +85,49 @@
   /* Table density */
   --gc-table-pad-y: 10px;
   --gc-table-pad-x: 10px;
+
+
+/* Density (Comfort / Cozy / Compact)
+   Controlled by: html[data-density="..."]
+   Safe UI-only sizing tokens. */
+--gc-density: comfort;
+--gc-control-h: 42px;
+--gc-control-radius: 14px;
+--gc-control-pad-x: 12px;
+--gc-card-pad-x: 16px;
+--gc-card-pad-y: 14px;
+--gc-nav-pad-y: 10px;
+--gc-nav-pad-x: 12px;
+--gc-row-h: 46px;
+}
+
+/* Density overrides */
+html[data-density="cozy"]{
+  --gc-density: cozy;
+  --gc-control-h: 38px;
+  --gc-control-radius: 13px;
+  --gc-control-pad-x: 11px;
+  --gc-card-pad-x: 15px;
+  --gc-card-pad-y: 13px;
+  --gc-nav-pad-y: 9px;
+  --gc-nav-pad-x: 11px;
+  --gc-row-h: 40px;
+  --gc-table-pad-y: 8px;
+  --gc-table-pad-x: 9px;
+}
+
+html[data-density="compact"]{
+  --gc-density: compact;
+  --gc-control-h: 34px;
+  --gc-control-radius: 12px;
+  --gc-control-pad-x: 10px;
+  --gc-card-pad-x: 14px;
+  --gc-card-pad-y: 12px;
+  --gc-nav-pad-y: 8px;
+  --gc-nav-pad-x: 10px;
+  --gc-row-h: 34px;
+  --gc-table-pad-y: 6px;
+  --gc-table-pad-x: 8px;
 }
 
 /* Dark mode hook (AppLayout uses .gc-dark on root) */

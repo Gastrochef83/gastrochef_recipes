@@ -245,8 +245,28 @@ const k = useKitchen()
   const [uploading, setUploading] = useState(false)
   const [stepUploading, setStepUploading] = useState(false)
   // UI
-  const [density, setDensity] = useState<'comfort' | 'compact'>('comfort')
+  const [density, setDensity] = useState<'comfort' | 'compact'>(() => {
+    try {
+      const v = localStorage.getItem('gc_density')
+      if (v === 'compact' || v === 'comfort') return v
+      // legacy
+      const v2 = localStorage.getItem('gc_v5_density')
+      return v2 === 'dense' ? 'compact' : 'comfort'
+    } catch {
+      return 'comfort'
+    }
+  })
 
+
+useEffect(() => {
+  try {
+    const d = density === 'compact' ? 'compact' : 'comfort'
+    document.documentElement.setAttribute('data-density', d)
+    localStorage.setItem('gc_density', d)
+    // legacy
+    localStorage.setItem('gc_v5_density', d === 'compact' ? 'dense' : 'comfortable')
+  } catch {}
+}, [density])
   // Header tabs active state (scroll-aware)
   const [activeSection, setActiveSection] = useState<string>('sec-basics')
   useEffect(() => {
