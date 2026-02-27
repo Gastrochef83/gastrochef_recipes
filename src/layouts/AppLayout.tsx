@@ -346,6 +346,7 @@ export default function AppLayout() {
                       {userEmail ? <div className="gc-user-email">{userEmail}</div> : null}
                     </div>
 
+
                     <button
                       className="gc-actions-item"
                       type="button"
@@ -357,17 +358,7 @@ export default function AppLayout() {
                       {dark ? 'Light Mode' : 'Dark Mode'}
                     </button>
 
-                    <button
-                      className="gc-actions-item"
-                      type="button"
-                      onClick={() => {
-                        closeMenu()
-                        setPaletteOpen(true)
-                      }}
-                    >
-                      Quick actions (⌘K)
-                    </button>
-
+                    <div className="gc-menu-divider" role="separator" aria-hidden="true" />
                     <button
                       className="gc-actions-item"
                       type="button"
@@ -378,6 +369,8 @@ export default function AppLayout() {
                     >
                       Refresh kitchen
                     </button>
+
+                    <div className=\"gc-menu-divider\" role=\"separator\" aria-hidden=\"true\" />
 
                     <button
                       className="gc-actions-item gc-actions-danger"
