@@ -4,6 +4,8 @@ import QRCode from 'qrcode'
 
 export type ExcelRecipeMeta = {
   id?: string
+  code?: string | null
+  kitchen_id?: string | null
   name: string
   category?: string | null
   portions?: number | null
@@ -167,6 +169,14 @@ export async function exportRecipeExcelUltra(args: {
   const now = new Date()
   const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
   const recipeId = meta.id ? String(meta.id) : ''
+  const recipeCode = meta.code ? String(meta.code) : ''
+  const kitchenRef = meta.kitchen_id ? String(meta.kitchen_id) : ''
+  const auditStamp = (() => {
+    const id6 = recipeId.replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase() || 'XXXXXX'
+    const ymd = reportId.slice(0, 8)
+    const hm = reportId.slice(-4)
+    return `GC-${ymd}-${hm}-${id6}`
+  })()
 
   // =======================
   // Sheet: Summary
@@ -181,7 +191,7 @@ export async function exportRecipeExcelUltra(args: {
   // Print + header/footer (Client Report Edition)
   summary.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.55, bottom: 0.55, header: 0.25, footer: 0.25 }
   summary.headerFooter.oddHeader = `&C&"Calibri,Bold"&12GastroChef — Client Report`
-  summary.headerFooter.oddFooter = `&L&8Report: ${reportId}${recipeId ? `  |  Recipe: ${recipeId}` : ''}&R&8CONFIDENTIAL  |  ${now.toLocaleDateString()}`
+  summary.headerFooter.oddFooter = `&L&8Report: ${reportId}${recipeCode ? `  |  Code: ${recipeCode}` : ''}${recipeId ? `  |  Recipe: ${recipeId}` : ''}  |  Audit: ${auditStamp}&R&8CONFIDENTIAL  |  ${now.toLocaleDateString()}`
 
   // Header (Kitopi-style)
   summary.getRow(1).height = 20
@@ -244,6 +254,9 @@ export async function exportRecipeExcelUltra(args: {
   }
 
   let r = 9
+  kv(r++, 'Code', recipeCode)
+  kv(r++, 'Kitchen Ref', kitchenRef)
+  kv(r++, 'Audit Stamp', auditStamp)
   kv(r++, 'Category', meta.category || '')
   kv(r++, 'Portions', portions)
   kv(r++, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')

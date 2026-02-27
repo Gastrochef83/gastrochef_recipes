@@ -1214,6 +1214,8 @@ const addLineLocal = useCallback(async () => {
     try {
       const meta = {
         id: id || undefined,
+        code: code || null,
+        kitchen_id: (recipeRef.current as any)?.kitchen_id ?? null,
         name: name || 'Recipe',
         category: category || '',
         portions: Math.max(1, Math.floor(Number(portions || 1))),
