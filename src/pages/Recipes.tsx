@@ -6,7 +6,6 @@ import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
 import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
-import { displayCode, recipeKind } from '../lib/codes'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -33,6 +32,7 @@ type Ingredient = {
 
 type RecipeRow = {
   id: string
+  code?: string | null
   kitchen_id: string
   name: string
   category: string | null
@@ -181,7 +181,7 @@ useEffect(() => {
     try {
       // RLS handles tenancy; do not filter by kitchen_id on client
       const selectRecipes =
-        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+        'id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
 
       const { data: r, error: rErr } = await supabase
         .from('recipes')
@@ -494,7 +494,6 @@ useEffect(() => {
                   }}
                 >
                   <div style={{ minWidth: 260 }}>
-                    <div className="gc-hint" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', fontWeight: 900, letterSpacing: 0.6 }}>{displayCode(recipeKind(r.is_subrecipe), r.id)}</div>
                     <div style={{ fontWeight: 900, fontSize: 14 }}>{r.name}</div>
                     <div className="gc-hint" style={{ marginTop: 6 }}>
                       {r.category || 'Uncategorized'} • Portions: {toNum(r.portions, 1)}
