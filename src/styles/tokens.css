@@ -90,7 +90,7 @@
   --gc-topbar-pill-h: 48px;
   --gc-topbar-pill-bg: rgba(255,255,255,.75);
   --gc-topbar-pill-border: rgba(11,18,32,.06);
-  --gc-topbar-pill-shadow: 0 4px 20px rgba(2, 6, 23, .06);
+  --gc-topbar-pill-shadow: 0 14px 40px rgba(2, 6, 23, .10);
 
   /* Focus ring */
   --gc-ring: 0 0 0 4px rgba(107,127,59,.22);

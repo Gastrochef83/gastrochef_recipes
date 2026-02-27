@@ -333,7 +333,7 @@ export default function Dashboard() {
       </div>
 
 
-      <div className="gc-card p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div className="gc-card is-interactive p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold">Continue Cooking</div>
           <div className="mt-1 text-xs text-neutral-600">
@@ -361,10 +361,10 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {loading && <div className="gc-card p-6">Loading…</div>}
+      {loading && <div className="gc-card is-interactive p-6">Loading…</div>}
 
       {err && (
-        <div className="gc-card p-6">
+        <div className="gc-card is-interactive p-6">
           <div className="gc-label">ERROR</div>
           <div className="mt-2 text-sm text-red-600">{err}</div>
         </div>
@@ -373,7 +373,7 @@ export default function Dashboard() {
       {!loading && !err && (
         <>
           {activeRecipes.length === 0 && activeIngredientsCount === 0 && (
-            <div className="gc-card p-6">
+            <div className="gc-card is-interactive p-6">
               <div className="gc-empty">
                 <div className="gc-empty-ico">✨</div>
                 <div>
@@ -401,7 +401,7 @@ export default function Dashboard() {
           )}
 
           {hasOutliers && (
-            <div className="gc-card p-6">
+            <div className="gc-card is-interactive p-6">
               <div className="gc-label">WARNING</div>
               <div className="mt-2 text-sm text-amber-700">
                 Some recipe costs are extremely high. This is usually caused by an incorrect <span className="font-semibold">pack_unit</span> or{' '}
@@ -411,7 +411,7 @@ export default function Dashboard() {
           )}
 
           <div className="grid gap-4 md:grid-cols-4">
-            <div className="gc-card p-5">
+            <div className="gc-card is-interactive p-5">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   🍳
@@ -422,7 +422,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">Active</div>
             </div>
 
-            <div className="gc-card p-5">
+            <div className="gc-card is-interactive p-5">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   🧩
@@ -433,7 +433,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">Active</div>
             </div>
 
-            <div className="gc-card p-5">
+            <div className="gc-card is-interactive p-5">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   🧂
@@ -444,7 +444,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">Active</div>
             </div>
 
-            <div className="gc-card p-5">
+            <div className="gc-card is-interactive p-5">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   💵
@@ -455,7 +455,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">Across active recipes</div>
             </div>
 
-            <div className="gc-card p-5 md:col-span-2">
+            <div className="gc-card is-interactive p-5 md:col-span-2">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   ∑
@@ -466,7 +466,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">Sum of all active recipe totals</div>
             </div>
 
-            <div className="gc-card p-5">
+            <div className="gc-card is-interactive p-5">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   🟢
@@ -477,7 +477,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">{money(cheapestRecipe?.total ?? 0)}</div>
             </div>
 
-            <div className="gc-card p-5">
+            <div className="gc-card is-interactive p-5">
               <div className="gc-kpi-head">
                 <span className="gc-kpi-ico" aria-hidden>
                   🔴
@@ -488,7 +488,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
             </div>
 
-            <div className="gc-card p-5 md:col-span-4">
+            <div className="gc-card is-interactive p-5 md:col-span-4">
               <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
               <div className="mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
                 <div className="grid grid-cols-[1.2fr_.6fr_.6fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
@@ -508,7 +508,7 @@ export default function Dashboard() {
               </div>
             </div>
 
-            <div className="gc-card p-5 md:col-span-4">
+            <div className="gc-card is-interactive p-5 md:col-span-4">
               <div className="gc-label">DIAGNOSTICS</div>
               <div className="mt-2 grid gap-3 md:grid-cols-3">
                 <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
