@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { getIngredientsCached, invalidateIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
+import { useKitchen } from '../lib/kitchen'
 
 type IngredientRow = {
   id: string
@@ -81,7 +82,7 @@ function Modal({
       <div className="absolute inset-0 bg-black/40" onClick={onClose} />
       <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2">
         <div className="gc-card p-6 shadow-2xl">
-          <div className="flex items-start justify-between gap-4">
+          <div className="flex items-start justify-between gap-4 pb-4 border-b border-black/10">
             <div>
               <div className="gc-label">INGREDIENT</div>
               <div className="mt-1 text-xl font-extrabold">{title}</div>
@@ -90,7 +91,7 @@ function Modal({
               Close
             </button>
           </div>
-          <div className="mt-4">{children}</div>
+          <div className="pt-5">{children}</div>
         </div>
       </div>
     </div>
@@ -98,6 +99,8 @@ function Modal({
 }
 
 export default function Ingredients() {
+  const k = useKitchen()
+  const canEditCodes = k.isOwner
   const isDebug =
     import.meta.env.DEV ||
     (() => {
@@ -563,6 +566,9 @@ export default function Ingredients() {
 
                       return (
                         <tr key={r.id} className="border-t">
+                          <td className="py-3 pr-4 text-xs text-neutral-600">
+                            <span className="font-mono">{r.code ?? '—'}</span>
+                          </td>
                           <td className="py-3 pr-4">
                             <div className="font-semibold flex flex-wrap items-center gap-2">
                               <span>{r.name ?? '—'}</span>
@@ -622,25 +628,28 @@ export default function Ingredients() {
 
       {/* Modal */}
       <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
-        <div className="grid gap-4 md:grid-cols-2">
+        <div className="grid gap-5 md:grid-cols-2">
           <div className="md:col-span-2">
             <div className="gc-label">CODE</div>
             <input
-              className="gc-input mt-2 w-full"
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
               value={fCode}
               onChange={(e) => setFCode(e.target.value)}
               placeholder="ING-000123 (optional)"
+              disabled={!canEditCodes}
             />
             <div className="mt-1 text-[11px] text-neutral-500">Leave empty to auto-generate. If provided, must start with ING-</div>
+            {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
           </div>
 
           <div>
             <div className="gc-label">CODE CATEGORY</div>
             <input
-              className="gc-input mt-2 w-full"
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
               value={fCodeCategory}
               onChange={(e) => setFCodeCategory(e.target.value)}
               placeholder="SPIC / VEG / MEAT (optional)"
+              disabled={!canEditCodes}
             />
             <div className="mt-1 text-[11px] text-neutral-500">Optional. Up to 6 chars (A-Z/0-9). If empty, system uses Category.</div>
           </div>

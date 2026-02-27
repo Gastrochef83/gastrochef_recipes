@@ -158,6 +158,7 @@ export default function RecipeEditor() {
   const showCost = isMgmt
   const tableColSpan = 8 + (showCost ? 1 : 0)
 const k = useKitchen()
+  const canEditCodes = k.isOwner
   const navigate = useNavigate()
   const [sp] = useSearchParams()
   const id = sp.get('id')
@@ -1563,11 +1564,12 @@ const addLineLocal = useCallback(async () => {
                 <div className="gc-col-6">
                   <div className="gc-field">
                     <div className="gc-label">CODE</div>
-                    <input className="gc-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" />
+                    <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" disabled={!canEditCodes} />
                     <div className="mt-2">
                       <div className="gc-label">CODE CATEGORY</div>
-                      <input className="gc-input" value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" />
+                      <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" disabled={!canEditCodes} />
                       <div className="mt-1 text-[11px] text-neutral-500">Optional (max 6). If empty, DB uses Category.</div>
+                      {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
                     </div>
                   </div>
                 </div>
