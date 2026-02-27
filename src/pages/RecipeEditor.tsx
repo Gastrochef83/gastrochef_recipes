@@ -16,6 +16,8 @@ type LineType = 'ingredient' | 'subrecipe' | 'group'
 
 type Recipe = {
   id: string
+  code?: string | null
+  code_category?: string | null
   kitchen_id: string
   name: string
   category: string | null
@@ -215,6 +217,7 @@ const k = useKitchen()
   
 // Meta fields
   const [code, setCode] = useState('')
+  const [codeCategory, setCodeCategory] = useState('')
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [portions, setPortions] = useState('1')
@@ -398,7 +401,7 @@ useEffect(() => {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+            'id,code,code_category,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
           )
           .eq('id', id)
           .single()
@@ -415,6 +418,7 @@ useEffect(() => {
         } catch {}
 
         setCode((recipeRow.code || '').toUpperCase())
+        setCodeCategory((recipeRow.code_category || '').toUpperCase())
         setName(recipeRow.name || '')
         setCategory(recipeRow.category || '')
         setPortions(String(recipeRow.portions ?? 1))
@@ -457,7 +461,7 @@ useEffect(() => {
         // list recipes for subrecipe picker
         const { data: rs, error: rsErr } = await supabase
           .from('recipes')
-          .select('id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,currency')
+          .select('id,code,code_category,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,currency')
           .order('name', { ascending: true })
         if (rsErr) throw rsErr
         if (!alive) return
@@ -768,6 +772,8 @@ const deleteLineLocal = useCallback(
 
   const buildMetaPatch = useCallback(() => {
     const patch: any = {
+      code: (code || '').trim().toUpperCase() || null,
+      code_category: (codeCategory || '').trim().toUpperCase() || null,
       name: (name || '').trim() || 'Untitled',
       category: (category || '').trim() || null,
       portions: Math.max(1, Math.floor(toNum(portions, 1))),
@@ -788,6 +794,8 @@ const deleteLineLocal = useCallback(
     }
     return patch
   }, [
+    code,
+    codeCategory,
     name,
     category,
     portions,
@@ -843,6 +851,8 @@ const deleteLineLocal = useCallback(
     scheduleMetaSave()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
+    code,
+    codeCategory,
     name,
     category,
     portions,
@@ -1553,7 +1563,12 @@ const addLineLocal = useCallback(async () => {
                 <div className="gc-col-6">
                   <div className="gc-field">
                     <div className="gc-label">CODE</div>
-                    <input className="gc-input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="PREP-000123 or MENU-000123" />
+                    <input className="gc-input" value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" />
+                    <div className="mt-2">
+                      <div className="gc-label">CODE CATEGORY</div>
+                      <input className="gc-input" value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" />
+                      <div className="mt-1 text-[11px] text-neutral-500">Optional (max 6). If empty, DB uses Category.</div>
+                    </div>
                   </div>
                 </div>
 

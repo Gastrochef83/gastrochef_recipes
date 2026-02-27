@@ -6,6 +6,7 @@ import { Toast } from '../components/Toast'
 type IngredientRow = {
   id: string
   code?: string | null
+  code_category?: string | null
   name?: string
   category?: string | null
   supplier?: string | null
@@ -137,6 +138,7 @@ export default function Ingredients() {
   const [editingId, setEditingId] = useState<string | null>(null)
 
   const [fCode, setFCode] = useState('')
+  const [fCodeCategory, setFCodeCategory] = useState('')
   const [fName, setFName] = useState('')
   const [fCategory, setFCategory] = useState('')
   const [fSupplier, setFSupplier] = useState('')
@@ -228,6 +230,8 @@ export default function Ingredients() {
 
   const openCreate = () => {
     setEditingId(null)
+    setFCode('')
+    setFCodeCategory('')
     setFName('')
     setFCategory('')
     setFSupplier('')
@@ -241,6 +245,7 @@ export default function Ingredients() {
   const openEdit = (r: IngredientRow) => {
     setEditingId(r.id)
     setFCode((r.code ?? '').toUpperCase())
+    setFCodeCategory((r.code_category ?? '').toUpperCase())
     setFName(r.name ?? '')
     setFCategory(r.category ?? '')
     setFSupplier(r.supplier ?? '')
@@ -266,6 +271,13 @@ export default function Ingredients() {
     const codeInput = (fCode || '').trim().toUpperCase()
     if (codeInput && !codeInput.startsWith('ING-')) return showToast('Ingredient code must start with ING-')
 
+    const codeCatInput = (fCodeCategory || '').trim().toUpperCase()
+    if (codeCatInput) {
+      const norm = codeCatInput.replace(/[^A-Z0-9]/g, '')
+      if (!norm) return showToast('Code category must be A-Z/0-9')
+      if (norm.length > 6) return showToast('Code category max 6 chars')
+    }
+
     const packSize = Math.max(1, toNum(fPackSize, 1))
     const packPrice = Math.max(0, toNum(fPackPrice, 0))
 
@@ -279,6 +291,7 @@ export default function Ingredients() {
     try {
       const payload: any = {
         code: (fCode || '').trim().toUpperCase() || null,
+        code_category: (fCodeCategory || '').trim().toUpperCase() || null,
         name,
         category: fCategory.trim() || null,
         supplier: fSupplier.trim() || null,
@@ -619,6 +632,17 @@ export default function Ingredients() {
               placeholder="ING-000123 (optional)"
             />
             <div className="mt-1 text-[11px] text-neutral-500">Leave empty to auto-generate. If provided, must start with ING-</div>
+          </div>
+
+          <div>
+            <div className="gc-label">CODE CATEGORY</div>
+            <input
+              className="gc-input mt-2 w-full"
+              value={fCodeCategory}
+              onChange={(e) => setFCodeCategory(e.target.value)}
+              placeholder="SPIC / VEG / MEAT (optional)"
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">Optional. Up to 6 chars (A-Z/0-9). If empty, system uses Category.</div>
           </div>
 
           <div className="md:col-span-2">

@@ -3,6 +3,7 @@ import { supabase } from './supabase'
 export type CachedIngredient = {
   id: string
   code: string | null
+  code_category: string | null
   name: string | null
   category: string | null
   supplier: string | null
@@ -33,7 +34,7 @@ export async function getIngredientsCached(): Promise<CachedIngredient[]> {
 
   const { data, error } = await supabase
     .from('ingredients')
-    .select('id,code,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active')
+    .select('id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active')
     .order('name', { ascending: true })
 
   if (error) throw error
