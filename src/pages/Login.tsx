@@ -114,7 +114,8 @@ export default function Login() {
           {checking ? (
             <div style={{ padding: 18, color: 'var(--gc-muted)', fontSize: 14, textAlign: 'center' }}>Checking session…</div>
           ) : (
-            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
+            <>
+              <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
               <div style={{ minWidth: 0 }}>
                 <div className="gc-label">ENTER EMAIL</div>
                 <input
@@ -167,6 +168,7 @@ export default function Login() {
                   <a href="mailto:support@gastrochef.app" style={{ textDecoration: "underline" }}>Need help?</a>
                 </div>
               </div>
+            </>
           )}
 
           <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>
