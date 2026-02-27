@@ -490,21 +490,25 @@ export default function Dashboard() {
 
             <div className="gc-card is-interactive p-5 md:col-span-4">
               <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
-              <div className="mt-3 overflow-hidden rounded-2xl border border-neutral-200 bg-white">
-                <div className="grid grid-cols-[1.2fr_.6fr_.6fr] gap-0 border-b border-neutral-200 bg-neutral-50 px-4 py-3 text-xs font-semibold text-neutral-600">
-                  <div>Recipe</div>
-                  <div className="text-right">Total</div>
-                  <div className="text-right">Cost/Portion</div>
-                </div>
-                <div className="divide-y divide-neutral-200">
-                  {top5.map((x) => (
-                    <div key={x.id} className="grid grid-cols-[1.2fr_.6fr_.6fr] items-center px-4 py-3 text-sm">
-                      <div className="font-semibold">{x.name}</div>
-                      <div className="text-right">{money(x.total)}</div>
-                      <div className="text-right">{money(x.cpp)}</div>
-                    </div>
-                  ))}
-                </div>
+              <div className="mt-3 gc-data-table-wrap">
+                <table className="gc-data-table text-sm">
+                  <thead>
+                    <tr>
+                      <th>Recipe</th>
+                      <th className="gc-th-right" style={{ width: 160 }}>Total</th>
+                      <th className="gc-th-right" style={{ width: 160 }}>Cost/Portion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {top5.map((x) => (
+                      <tr key={x.id}>
+                        <td className="font-semibold">{x.name}</td>
+                        <td className="gc-td-right">{money(x.total)}</td>
+                        <td className="gc-td-right">{money(x.cpp)}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
               </div>
             </div>
 

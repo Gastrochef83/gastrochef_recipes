@@ -1063,6 +1063,101 @@ a{
 }
 
 /* =========================================================
+   Data Tables (Ingredients / Dashboard lists)
+   Goal: Kitopi-grade spacing + grid alignment
+   ========================================================= */
+
+.gc-data-table-wrap{
+  width: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-gutter: stable both-edges;
+  border-radius: var(--gc-radius);
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.62);
+}
+
+.gc-dark .gc-data-table-wrap{ background: rgba(14,18,30,.38); }
+
+.gc-data-table{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed; /* zoom safety */
+}
+
+.gc-data-table thead th{
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: linear-gradient(180deg, rgba(255,255,255,.92), rgba(255,255,255,.82));
+  border-bottom: 1px solid rgba(11,18,32,.08);
+  padding: 10px 12px;
+  text-align: left;
+  font-size: var(--gc-fs-xs);
+  letter-spacing: .10em;
+  color: var(--gc-soft);
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.gc-dark .gc-data-table thead th{
+  background: linear-gradient(180deg, rgba(14,18,30,.72), rgba(14,18,30,.62));
+  border-bottom-color: rgba(234,240,255,.10);
+}
+
+.gc-data-table tbody td{
+  padding: 12px 12px;
+  border-bottom: 1px solid rgba(11,18,32,.06);
+  vertical-align: middle;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.gc-dark .gc-data-table tbody td{ border-bottom-color: rgba(234,240,255,.08); }
+
+.gc-data-table tbody tr:hover td{
+  background: rgba(31,122,120,.05);
+}
+
+.gc-th-center{ text-align: center !important; }
+.gc-td-center{ text-align: center !important; }
+
+.gc-th-right{ text-align: right !important; }
+.gc-td-right{ text-align: right !important; font-variant-numeric: tabular-nums; }
+
+.gc-cell-actions{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.gc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+
+/* =========================================================
+   Forms (consistent label + grid)
+   ========================================================= */
+
+.gc-form-grid{
+  display: grid;
+  gap: 16px;
+}
+
+@media (min-width: 768px){
+  .gc-form-grid.cols-2{ grid-template-columns: 1fr 1fr; }
+  .gc-form-grid.cols-3{ grid-template-columns: 1fr 1fr 1fr; }
+  .gc-form-grid .span-2{ grid-column: span 2; }
+  .gc-form-grid .span-3{ grid-column: span 3; }
+}
+
+.gc-field{ min-width: 0; }
+
+.gc-field .gc-label{ margin-bottom: 8px; display: block; }
+
+/* =========================================================
    Auth (Login/Register)
    ========================================================= */
 

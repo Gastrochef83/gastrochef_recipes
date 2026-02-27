@@ -566,20 +566,19 @@ export default function Ingredients() {
             {filtered.length === 0 ? (
               <div className="mt-3 text-sm text-neutral-600">No ingredients found.</div>
             ) : (
-              <div className="mt-4 overflow-auto">
-                <table className="w-full text-sm">
-                  <thead className="text-left text-xs font-semibold text-neutral-500">
+              <div className="mt-4 gc-data-table-wrap">
+                <table className="gc-data-table text-sm">
+                  <thead>
                     <tr>
-                      <th className="py-2 pr-4">Code</th>
-                      <th className="py-2 pr-4">Name</th>
-                      <th className="py-2 pr-4">Category</th>
-                      {/* Slightly wider spacing for dense numeric columns */}
-                      <th className="py-2 pr-6">Supplier</th>
-                      <th className="py-2 pr-6">Pack</th>
-                      <th className="py-2 pr-6">Unit</th>
-                      <th className="py-2 pr-6">Pack Price</th>
-                      <th className="py-2 pr-6">Net Unit Cost</th>
-                      <th className="py-2 pr-0 text-center">Actions</th>
+                      <th style={{ width: 120 }}>Code</th>
+                      <th style={{ width: 320 }}>Name</th>
+                      <th style={{ width: 180 }}>Category</th>
+                      <th style={{ width: 200 }}>Supplier</th>
+                      <th className="gc-th-right" style={{ width: 90 }}>Pack</th>
+                      <th className="gc-th-center" style={{ width: 90 }}>Unit</th>
+                      <th className="gc-th-right" style={{ width: 140 }}>Pack Price</th>
+                      <th className="gc-th-right" style={{ width: 150 }}>Net Unit Cost</th>
+                      <th className="gc-th-center" style={{ width: 160 }}>Actions</th>
                     </tr>
                   </thead>
 
@@ -591,11 +590,11 @@ export default function Ingredients() {
                       const flag = sanityFlag(net, unit)
 
                       return (
-                        <tr key={r.id} className="border-t">
-                          <td className="py-3 pr-4 text-xs text-neutral-600">
-                            <span className="font-mono">{r.code ?? '—'}</span>
+                        <tr key={r.id}>
+                          <td className="text-xs text-neutral-600">
+                            <span className="gc-mono">{r.code ?? '—'}</span>
                           </td>
-                          <td className="py-3 pr-4">
+                          <td>
                             <div className="font-semibold flex flex-wrap items-center gap-2">
                               <span>{r.name ?? '—'}</span>
 
@@ -615,15 +614,15 @@ export default function Ingredients() {
                             {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
                           </td>
 
-                          <td className="py-3 pr-4">{r.category ?? '—'}</td>
-                          <td className="py-3 pr-6">{r.supplier ?? '—'}</td>
-                          <td className="py-3 pr-6">{Math.max(1, toNum(r.pack_size, 1))}</td>
-                          <td className="py-3 pr-6">{unit}</td>
-                          <td className="py-3 pr-6 font-semibold">{money(toNum(r.pack_price, 0))}</td>
-                          <td className="py-3 pr-6 font-semibold">{money(net)}</td>
+                          <td>{r.category ?? '—'}</td>
+                          <td>{r.supplier ?? '—'}</td>
+                          <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
+                          <td className="gc-td-center">{unit}</td>
+                          <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
+                          <td className="gc-td-right font-semibold">{money(net)}</td>
 
-                          <td className="py-3 pr-0 text-center whitespace-nowrap">
-                            <div className="inline-flex items-center justify-center gap-2">
+                          <td className="gc-td-center whitespace-nowrap">
+                            <div className="gc-cell-actions">
                               <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
                                 Edit
                               </button>
@@ -638,7 +637,6 @@ export default function Ingredients() {
                     })}
                   </tbody>
                 </table>
-
               </div>
             )}
           </div>
@@ -647,8 +645,8 @@ export default function Ingredients() {
 
       {/* Modal */}
       <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
-        <div className="grid gap-5 md:grid-cols-2">
-          <div className="md:col-span-2">
+        <div className="gc-form-grid cols-2">
+          <div className="span-2">
             <div className="gc-label">CODE</div>
             <input
               className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
@@ -675,7 +673,7 @@ export default function Ingredients() {
             </div>
           </div>
 
-          <div className="md:col-span-2">
+          <div className="span-2">
             <div className="gc-label">NAME</div>
             <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
           </div>
