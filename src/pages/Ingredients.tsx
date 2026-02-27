@@ -336,6 +336,12 @@ export default function Ingredients() {
     }
   }
 
+  const suggestedCodeCategory = useMemo(() => {
+    const raw = (fCategory || 'GEN').toUpperCase()
+    const norm = raw.replace(/[^A-Z0-9]/g, '')
+    return (norm || 'GEN').slice(0, 6)
+  }, [fCategory])
+
   const deactivate = async (id: string) => {
     const ok = confirm('Deactivate ingredient? It will be hidden from pickers.')
     if (!ok) return
@@ -548,12 +554,13 @@ export default function Ingredients() {
                       <th className="py-2 pr-4">Code</th>
                       <th className="py-2 pr-4">Name</th>
                       <th className="py-2 pr-4">Category</th>
-                      <th className="py-2 pr-4">Supplier</th>
-                      <th className="py-2 pr-4">Pack</th>
-                      <th className="py-2 pr-4">Unit</th>
-                      <th className="py-2 pr-4">Pack Price</th>
-                      <th className="py-2 pr-4">Net Unit Cost</th>
-                      <th className="py-2 pr-0 text-right">Actions</th>
+                      {/* Slightly wider spacing for dense numeric columns */}
+                      <th className="py-2 pr-6">Supplier</th>
+                      <th className="py-2 pr-6">Pack</th>
+                      <th className="py-2 pr-6">Unit</th>
+                      <th className="py-2 pr-6">Pack Price</th>
+                      <th className="py-2 pr-6">Net Unit Cost</th>
+                      <th className="py-2 pr-0 text-center">Actions</th>
                     </tr>
                   </thead>
 
@@ -590,26 +597,28 @@ export default function Ingredients() {
                           </td>
 
                           <td className="py-3 pr-4">{r.category ?? '—'}</td>
-                          <td className="py-3 pr-4">{r.supplier ?? '—'}</td>
-                          <td className="py-3 pr-4">{Math.max(1, toNum(r.pack_size, 1))}</td>
-                          <td className="py-3 pr-4">{unit}</td>
-                          <td className="py-3 pr-4 font-semibold">{money(toNum(r.pack_price, 0))}</td>
-                          <td className="py-3 pr-4 font-semibold">{money(net)}</td>
+                          <td className="py-3 pr-6">{r.supplier ?? '—'}</td>
+                          <td className="py-3 pr-6">{Math.max(1, toNum(r.pack_size, 1))}</td>
+                          <td className="py-3 pr-6">{unit}</td>
+                          <td className="py-3 pr-6 font-semibold">{money(toNum(r.pack_price, 0))}</td>
+                          <td className="py-3 pr-6 font-semibold">{money(net)}</td>
 
-                          <td className="py-3 pr-0 text-right whitespace-nowrap">
-                            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
-                              Edit
-                            </button>
+                          <td className="py-3 pr-0 text-center whitespace-nowrap">
+                            <div className="inline-flex items-center justify-center gap-2">
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
+                                Edit
+                              </button>
 
-                            {active ? (
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
-                                Delete
-                              </button>
-                            ) : (
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => restore(r.id)}>
-                                Restore
-                              </button>
-                            )}
+                              {active ? (
+                                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
+                                  Delete
+                                </button>
+                              ) : (
+                                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => restore(r.id)}>
+                                  Restore
+                                </button>
+                              )}
+                            </div>
                           </td>
                         </tr>
                       )
@@ -648,10 +657,12 @@ export default function Ingredients() {
               className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
               value={fCodeCategory}
               onChange={(e) => setFCodeCategory(e.target.value)}
-              placeholder="SPIC / VEG / MEAT (optional)"
+              placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
               disabled={!canEditCodes}
             />
-            <div className="mt-1 text-[11px] text-neutral-500">Optional. Up to 6 chars (A-Z/0-9). If empty, system uses Category.</div>
+            <div className="mt-1 text-[11px] text-neutral-500">
+              Optional (up to 6 chars A–Z/0–9). If empty, DB uses Category (suggested: <span className="font-mono">{suggestedCodeCategory}</span>).
+            </div>
           </div>
 
           <div className="md:col-span-2">

@@ -124,7 +124,7 @@ export default function RecipePrintCard() {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,kitchen_id,name,category,portions,description,method,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct'
+            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct'
           )
           .eq('id', id)
           .single()
@@ -319,6 +319,15 @@ export default function RecipePrintCard() {
                 <span className="gc-a4-v">{recipe.created_at ? String(recipe.created_at).slice(0, 10) : '—'}</span>
               </div>
               <div className="gc-a4-meta-row">
+                <span className="gc-a4-k">Code</span>
+                <span
+                  className="gc-a4-v"
+                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
+                >
+                  {recipe.code || '—'}
+                </span>
+              </div>
+              <div className="gc-a4-meta-row">
                 <span className="gc-a4-k">Category</span>
                 <span className="gc-a4-v">{recipe.category || '—'}</span>
               </div>
@@ -456,9 +465,22 @@ export default function RecipePrintCard() {
               <div className="gc-a4-section-title">Method</div>
               {steps.length ? (
                 <ol className="gc-a4-steps">
-                  {steps.map((s, i) => (
-                    <li key={i}>{s}</li>
-                  ))}
+                  {steps.map((s, i) => {
+                    const img = stepPhotos?.[i]
+                    return (
+                      <li key={i} style={{ display: 'grid', gridTemplateColumns: img ? '140px 1fr' : '1fr', gap: 10, alignItems: 'start' }}>
+                        {img ? (
+                          <div style={{ width: 140, height: 90, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
+                            <img src={img} alt={`Step ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                          </div>
+                        ) : null}
+                        <div>
+                          <div style={{ fontWeight: 700, marginBottom: 4 }}>Step {i + 1}</div>
+                          <div>{s}</div>
+                        </div>
+                      </li>
+                    )
+                  })}
                 </ol>
               ) : (
                 <div className="gc-a4-text">{methodLegacy}</div>
