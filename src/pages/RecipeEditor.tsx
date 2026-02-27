@@ -214,7 +214,6 @@ const k = useKitchen()
   // =======================================
   
 // Meta fields
-  const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [category, setCategory] = useState('')
   const [portions, setPortions] = useState('1')
@@ -398,7 +397,7 @@ useEffect(() => {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+            'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
           )
           .eq('id', id)
           .single()
@@ -414,7 +413,6 @@ useEffect(() => {
           localStorage.setItem('gc_last_recipe_ts', String(Date.now()))
         } catch {}
 
-        setCode((recipeRow.code || '').toUpperCase())
         setName(recipeRow.name || '')
         setCategory(recipeRow.category || '')
         setPortions(String(recipeRow.portions ?? 1))
@@ -457,7 +455,7 @@ useEffect(() => {
         // list recipes for subrecipe picker
         const { data: rs, error: rsErr } = await supabase
           .from('recipes')
-          .select('id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,currency')
+          .select('id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,currency')
           .order('name', { ascending: true })
         if (rsErr) throw rsErr
         if (!alive) return
@@ -1551,13 +1549,6 @@ const addLineLocal = useCallback(async () => {
             <div className="gc-card-body">
               <div className="gc-field-row">
                 <div className="gc-col-6">
-                  <div className="gc-field">
-                    <div className="gc-label">CODE</div>
-                    <input className="gc-input" value={code} onChange={(e) => setCode(e.target.value)} placeholder="PREP-000123 or MENU-000123" />
-                  </div>
-                </div>
-
-                <div className="gc-col-3">
                   <div className="gc-field">
                     <div className="gc-label">NAME</div>
                     <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
