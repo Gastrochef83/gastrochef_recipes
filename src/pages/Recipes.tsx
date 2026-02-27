@@ -6,6 +6,7 @@ import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
 import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
+import { displayCode, recipeKind } from '../lib/codes'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -493,6 +494,7 @@ useEffect(() => {
                   }}
                 >
                   <div style={{ minWidth: 260 }}>
+                    <div className="gc-hint" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace', fontWeight: 900, letterSpacing: 0.6 }}>{displayCode(recipeKind(r.is_subrecipe), r.id)}</div>
                     <div style={{ fontWeight: 900, fontSize: 14 }}>{r.name}</div>
                     <div className="gc-hint" style={{ marginTop: 6 }}>
                       {r.category || 'Uncategorized'} • Portions: {toNum(r.portions, 1)}

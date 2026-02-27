@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
 import { getIngredientsCached, invalidateIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
+import { displayCode } from '../lib/codes'
 
 type IngredientRow = {
   id: string
@@ -522,6 +523,7 @@ export default function Ingredients() {
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs font-semibold text-neutral-500">
                     <tr>
+                      <th className="py-2 pr-4">Code</th>
                       <th className="py-2 pr-4">Name</th>
                       <th className="py-2 pr-4">Category</th>
                       <th className="py-2 pr-4">Supplier</th>
@@ -542,6 +544,7 @@ export default function Ingredients() {
 
                       return (
                         <tr key={r.id} className="border-t">
+                          <td className="py-3 pr-4"><span className="font-mono text-xs text-neutral-600">{displayCode('ING', r.id)}</span></td>
                           <td className="py-3 pr-4">
                             <div className="font-semibold flex flex-wrap items-center gap-2">
                               <span>{r.name ?? '—'}</span>
