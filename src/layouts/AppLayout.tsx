@@ -370,7 +370,7 @@ export default function AppLayout() {
                       Refresh kitchen
                     </button>
 
-                    <div className=\"gc-menu-divider\" role=\"separator\" aria-hidden=\"true\" />
+                    <div className="gc-menu-divider" role="separator" aria-hidden="true" />
 
                     <button
                       className="gc-actions-item gc-actions-danger"
