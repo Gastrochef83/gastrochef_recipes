@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState } from 'react'
+import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { supabase } from '../lib/supabase'
-import { getIngredientsCached, invalidateIngredientsCache } from '../lib/ingredientsCache'
+import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
 import { useKitchen } from '../lib/kitchen'
 
@@ -73,7 +73,7 @@ function Modal({
 }: {
   open: boolean
   title: string
-  children: React.ReactNode
+  children: ReactNode
   onClose: () => void
 }) {
   if (!open) return null
@@ -97,6 +97,69 @@ function Modal({
     </div>
   )
 }
+const IngredientTableRow = memo(function IngredientTableRow({
+  r,
+  isDebug,
+  onEdit,
+  onHardDelete,
+}: {
+  r: IngredientRow
+  isDebug: boolean
+  onEdit: (r: IngredientRow) => void
+  onHardDelete: (id: string) => void
+}) {
+  const active = r.is_active !== false
+  const net = toNum(r.net_unit_cost, 0)
+  const unit = r.pack_unit ?? 'g'
+  const flag = sanityFlag(net, unit)
+
+  return (
+    <tr>
+      <td className="text-xs text-neutral-600">
+        <span className="gc-mono">{r.code ?? '—'}</span>
+      </td>
+      <td>
+        <div className="font-semibold flex flex-wrap items-center gap-2">
+          <span>{r.name ?? '—'}</span>
+
+          {!active && (
+            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
+          )}
+
+          {flag.level === 'missing' && (
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Missing cost</span>
+          )}
+
+          {flag.level === 'warn' && (
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
+          )}
+        </div>
+        {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
+        {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
+      </td>
+
+      <td>{r.category ?? '—'}</td>
+      <td>{r.supplier ?? '—'}</td>
+      <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="gc-td-center">{unit}</td>
+      <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
+      <td className="gc-td-right font-semibold">{money(net)}</td>
+
+      <td className="gc-td-center whitespace-nowrap">
+        <div className="gc-cell-actions">
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
+            Edit
+          </button>
+
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  )
+})
+
 
 export default function Ingredients() {
   const k = useKitchen()
@@ -122,6 +185,7 @@ export default function Ingredients() {
 
   const [rows, setRows] = useState<IngredientRow[]>([])
   const [search, setSearch] = useState('')
+  const deferredSearch = useDeferredValue(search)
   const [category, setCategory] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [sortBy, setSortBy] = useState<'name' | 'cost' | 'pack_price'>('name')
@@ -156,6 +220,8 @@ export default function Ingredients() {
   const [saving, setSaving] = useState(false)
   const [bulkWorking, setBulkWorking] = useState(false)
 
+  const progressiveRunRef = useRef<number>(0)
+
   const loadKitchen = async () => {
     const { data, error } = await supabase.rpc('current_kitchen_id')
     if (!error) {
@@ -167,19 +233,62 @@ export default function Ingredients() {
     return null
   }
 
-  const load = async () => {
+  const FIELDS =
+    'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active'
+
+  const PAGE_SIZE = 200
+
+  const load = useCallback(async () => {
     setLoading(true)
     setErr(null)
+
+    // cancel any in-flight progressive load
+    const runId = Date.now()
+    progressiveRunRef.current = runId
+
     try {
       await loadKitchen()
-      const data = await getIngredientsCached()
-      setRows((data ?? []) as IngredientRow[])
+
+      let offset = 0
+      let acc: IngredientRow[] = []
+
+      while (true) {
+        // If a newer load started, stop this one
+        if (progressiveRunRef.current !== runId) return
+
+        const { data, error } = await supabase
+          .from('ingredients')
+          .select(FIELDS)
+          .order('name', { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1)
+
+        if (error) throw error
+
+        const chunk = ((data ?? []) as IngredientRow[]) || []
+        acc = acc.concat(chunk)
+
+        // Update UI progressively (fast first paint)
+        setRows(acc)
+
+        // Prime cache so other pages benefit without refetching within TTL
+        primeIngredientsCache(acc as any)
+
+        if (offset === 0) setLoading(false)
+
+        if (!chunk.length || chunk.length < PAGE_SIZE) break
+
+        offset += PAGE_SIZE
+
+        // Yield to the browser so scrolling/typing stays responsive
+        await new Promise((r) => setTimeout(r, 0))
+      }
+
       setLoading(false)
     } catch (e: any) {
       setErr(e?.message ?? 'Unknown error')
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
     load()
@@ -200,7 +309,7 @@ export default function Ingredients() {
   }, [normalized])
 
   const filtered = useMemo(() => {
-    const s = search.trim().toLowerCase()
+    const s = deferredSearch.trim().toLowerCase()
     let list = normalized.filter((r) => {
       const name = (r.name ?? '').toLowerCase()
       const sup = (r.supplier ?? '').toLowerCase()
@@ -218,7 +327,7 @@ export default function Ingredients() {
     }
 
     return list
-  }, [normalized, search, category, sortBy])
+  }, [normalized, deferredSearch, category, sortBy])
 
   const stats = useMemo(() => {
     const items = filtered.length
@@ -583,58 +692,9 @@ export default function Ingredients() {
                   </thead>
 
                   <tbody className="align-top">
-                    {filtered.map((r) => {
-                      const active = r.is_active !== false
-                      const net = toNum(r.net_unit_cost, 0)
-                      const unit = r.pack_unit ?? 'g'
-                      const flag = sanityFlag(net, unit)
-
-                      return (
-                        <tr key={r.id}>
-                          <td className="text-xs text-neutral-600">
-                            <span className="gc-mono">{r.code ?? '—'}</span>
-                          </td>
-                          <td>
-                            <div className="font-semibold flex flex-wrap items-center gap-2">
-                              <span>{r.name ?? '—'}</span>
-
-                              {!active && (
-                                <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
-                              )}
-
-                              {flag.level === 'missing' && (
-                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Missing cost</span>
-                              )}
-
-                              {flag.level === 'warn' && (
-                                <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
-                              )}
-                            </div>
-                            {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
-                            {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
-                          </td>
-
-                          <td>{r.category ?? '—'}</td>
-                          <td>{r.supplier ?? '—'}</td>
-                          <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
-                          <td className="gc-td-center">{unit}</td>
-                          <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
-                          <td className="gc-td-right font-semibold">{money(net)}</td>
-
-                          <td className="gc-td-center whitespace-nowrap">
-                            <div className="gc-cell-actions">
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => openEdit(r)}>
-                                Edit
-                              </button>
-
-                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => hardDelete(r.id)}>
-                                Delete
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      )
-                    })}
+                    {filtered.map((r) => (
+                      <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
+                    ))}
                   </tbody>
                 </table>
               </div>

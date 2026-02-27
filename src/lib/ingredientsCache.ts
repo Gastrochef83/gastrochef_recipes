@@ -28,6 +28,10 @@ export function invalidateIngredientsCache() {
   mem = null
 }
 
+export function primeIngredientsCache(data: CachedIngredient[]) {
+  mem = { ts: Date.now(), data }
+}
+
 export async function getIngredientsCached(): Promise<CachedIngredient[]> {
   const now = Date.now()
   if (mem && now - mem.ts < TTL_MS) return mem.data
