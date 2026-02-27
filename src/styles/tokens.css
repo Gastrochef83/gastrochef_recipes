@@ -86,8 +86,8 @@
   /* Layout */
   --gc-side-w: 220px;
   --gc-side-w-max: 240px;
-  --gc-topbar-h: 56px;
-  --gc-topbar-pill-h: 48px;
+  --gc-topbar-h: 60px;
+  --gc-topbar-pill-h: 52px;
   --gc-topbar-pill-bg: rgba(255,255,255,.75);
   --gc-topbar-pill-border: rgba(11,18,32,.06);
   --gc-topbar-pill-shadow: 0 14px 40px rgba(2, 6, 23, .10);
