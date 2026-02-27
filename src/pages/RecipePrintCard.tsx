@@ -175,6 +175,20 @@ export default function RecipePrintCard() {
 
   const currency = recipe?.currency || 'USD'
 
+  // Stable print timestamp (must not use hooks after conditional returns)
+  const printedAtRef = useRef<Date | null>(null)
+  if (!printedAtRef.current) printedAtRef.current = new Date()
+  const printedAt = printedAtRef.current
+  const printedAtISO = printedAt.toISOString()
+  const printedAtHuman = printedAt.toLocaleString()
+
+  const auditStamp = useMemo(() => {
+    const id6 = (recipe?.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase() || 'XXXXXX'
+    const ymd = printedAtISO.slice(0, 10).replace(/-/g, '')
+    const hm = printedAtISO.slice(11, 16).replace(/:/g, '')
+    return `GC-${ymd}-${hm}-${id6}`
+  }, [recipe?.id, printedAtISO])
+
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
     for (const i of ingredients) m.set(i.id, i)
@@ -280,18 +294,6 @@ export default function RecipePrintCard() {
       .map((s) => s.trim())
       .filter(Boolean)
   })()
-
-  
-  const printedAt = useMemo(() => new Date(), [])
-  const printedAtISO = printedAt.toISOString()
-  const printedAtHuman = printedAt.toLocaleString()
-  const auditStamp = useMemo(() => {
-    const id6 = (recipe?.id || '').replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase() || 'XXXXXX'
-    const ymd = printedAtISO.slice(0, 10).replaceAll('-', '')
-    const hm = printedAtISO.slice(11, 16).replaceAll(':', '')
-    return `GC-${ymd}-${hm}-${id6}`
-  }, [recipe?.id, printedAtISO])
-
 const yieldLabel = (() => {
     const qRaw = (recipe as any)?.yield_qty
     const uRaw = (recipe as any)?.yield_unit
