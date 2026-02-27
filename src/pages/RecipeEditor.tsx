@@ -1997,8 +1997,6 @@ const addLineLocal = useCallback(async () => {
                                 onChange={(e) => onYieldChange(l.id, e.target.value)}
                                 inputMode="decimal"
                               />
-                              {!showCost ? (
-) : null}
                             </td>
 
                             <td>
