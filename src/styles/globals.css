@@ -1148,32 +1148,30 @@ a{
    - keeps ALL columns visible (no feature loss)
 */
 .gc-col-code{ width: 10%; }
-.gc-col-name{ width: 23%; }
-.gc-col-category{ width: 13%; }
-.gc-col-supplier{ width: 13%; }
+.gc-col-name{ width: 28%; }
+.gc-col-category{ width: 15%; }
 .gc-col-pack{ width: 6%; }
 .gc-col-unit{ width: 6%; }
-.gc-col-packprice{ width: 8%; }
-.gc-col-netunit{ width: 9%; }
-.gc-col-actions{ width: 12%; }
+.gc-col-packprice{ width: 10%; }
+.gc-col-netunit{ width: 10%; }
+.gc-col-actions{ width: 15%; }
 
 @media (max-width: 1200px){
   .gc-data-table thead th{ padding: 9px 10px; }
   .gc-data-table tbody td{ padding: 10px 10px; }
-  .gc-col-actions{ width: 12%; }
-  .gc-col-name{ width: 23%; }
+  .gc-col-actions{ width: 15%; }
+  .gc-col-name{ width: 28%; }
 }
 
 @media (max-width: 980px){
   .gc-col-code{ width: 10%; }
-  .gc-col-name{ width: 23%; }
-  .gc-col-category{ width: 13%; }
-  .gc-col-supplier{ width: 13%; }
+  .gc-col-name{ width: 28%; }
+  .gc-col-category{ width: 15%; }
   .gc-col-pack{ width: 6%; }
   .gc-col-unit{ width: 6%; }
-  .gc-col-packprice{ width: 8%; }
-  .gc-col-netunit{ width: 9%; }
-  .gc-col-actions{ width: 12%; }
+  .gc-col-packprice{ width: 10%; }
+  .gc-col-netunit{ width: 10%; }
+  .gc-col-actions{ width: 15%; }
 }
 
 .gc-mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }

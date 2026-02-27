@@ -138,7 +138,6 @@ const IngredientTableRow = memo(function IngredientTableRow({
       </td>
 
       <td>{r.category ?? '—'}</td>
-      <td>{r.supplier ?? '—'}</td>
       <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
       <td className="gc-td-center">{unit}</td>
       <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
@@ -681,7 +680,6 @@ export default function Ingredients() {
                       <th className="gc-col-code">Code</th>
                       <th className="gc-col-name">Name</th>
                       <th className="gc-col-category">Category</th>
-                      <th className="gc-col-supplier">Supplier</th>
                       <th className={cls('gc-th-right', 'gc-col-pack')}>Pack</th>
                       <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
                       <th className={cls('gc-th-right', 'gc-col-packprice')}>Pack Price</th>
