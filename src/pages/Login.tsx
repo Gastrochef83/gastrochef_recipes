@@ -69,7 +69,30 @@ export default function Login() {
 
   return (
     <div className="gc-auth">
-      <div className="gc-auth-card">
+      <div className="gc-auth-grid">
+        <div className="gc-auth-hero" aria-hidden="true">
+          <h1>
+            Control your kitchen
+            <br />
+            with confidence.
+          </h1>
+          <p>
+            GastroChef is your calm executive cockpit for costing, production-ready recipes, and audit-friendly exports.
+          </p>
+          <div className="gc-auth-bullets">
+            <div className="gc-auth-bullet">
+              <span className="gc-auth-dot" /> Global codes (ING / PREP / MENU) — zero confusion.
+            </div>
+            <div className="gc-auth-bullet">
+              <span className="gc-auth-dot" /> Print + Excel exports built for operations & management.
+            </div>
+            <div className="gc-auth-bullet">
+              <span className="gc-auth-dot" /> Chef-first UI with enterprise stability.
+            </div>
+          </div>
+        </div>
+
+        <div className="gc-auth-card">
         {/* ✅ BRAND LOGO (Centered, crisp, Vercel-safe) */}
         <div className="gc-auth-head">
           <div className="gc-auth-logo-centered">
@@ -142,14 +165,15 @@ export default function Login() {
 
           <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>
             New here?{' '}
-            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--accent)' }}>
+            <Link to="/register" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--gc-accent)' }}>
               Create an account
             </Link>
           </div>
         </div>
 
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--soft)' }}>
+        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--gc-soft)' }}>
           Tip: If logout “bounces”, this build uses hard redirect for stability.
+        </div>
         </div>
       </div>
     </div>

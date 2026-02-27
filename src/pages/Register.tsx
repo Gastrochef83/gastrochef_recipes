@@ -61,156 +61,137 @@ export default function Register() {
     }
   }
 
+  const logoSrc = `${base}gastrochef-logo.png`
+  const logoFallback = `${base}gastrochef-icon-512.png`
+
   return (
     <div className="gc-auth">
-      <div className="gc-auth-card">
-        <div className="gc-auth-head">
-          <div
-            style={{
-              fontSize: 44,
-              fontWeight: 900,
-              letterSpacing: '-0.03em',
-              lineHeight: 1,
-              color: '#0f172a',
-              display: 'inline-block',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            Gastro
-            <span style={{ color: 'var(--accent)' }}>Chef</span>
-          </div>
-
-          <div style={{ marginTop: 10, fontSize: 13, color: '#64748b' }}>Create your account</div>
-
-          <div
-            style={{
-              width: 72,
-              height: 4,
-              borderRadius: 999,
-              background: 'var(--accent)',
-              margin: '14px auto 0',
-            }}
-          />
-        </div>
-
-        <div className="gc-auth-body">
-          <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Email</div>
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                autoComplete="email"
-                inputMode="email"
-                style={{
-                  marginTop: 6,
-                  width: '100%',
-                  padding: '11px 12px',
-                  borderRadius: 12,
-                  border: '1px solid rgba(15,23,42,.14)',
-                  outline: 'none',
-                  background: '#eff6ff',
-                }}
-              />
+      <div className="gc-auth-grid">
+        <div className="gc-auth-hero" aria-hidden="true">
+          <h1>
+            Build once.
+            <br />
+            Run every service.
+          </h1>
+          <p>Create your GastroChef account to manage ingredients, prep recipes, and menu items with global codes.</p>
+          <div className="gc-auth-bullets">
+            <div className="gc-auth-bullet">
+              <span className="gc-auth-dot" /> Chef-first workflow · Executive clarity.
             </div>
-
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Password</div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                autoComplete="new-password"
-                style={{
-                  marginTop: 6,
-                  width: '100%',
-                  padding: '11px 12px',
-                  borderRadius: 12,
-                  border: '1px solid rgba(15,23,42,.14)',
-                  outline: 'none',
-                  background: '#eff6ff',
-                }}
-              />
+            <div className="gc-auth-bullet">
+              <span className="gc-auth-dot" /> Print + Excel exports for real operations.
             </div>
-
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: '#475569' }}>Confirm Password</div>
-              <input
-                type="password"
-                value={password2}
-                onChange={(e) => setPassword2(e.target.value)}
-                autoComplete="new-password"
-                style={{
-                  marginTop: 6,
-                  width: '100%',
-                  padding: '11px 12px',
-                  borderRadius: 12,
-                  border: '1px solid rgba(15,23,42,.14)',
-                  outline: 'none',
-                  background: '#eff6ff',
-                }}
-              />
+            <div className="gc-auth-bullet">
+              <span className="gc-auth-dot" /> Calm UI — no clutter, no surprises.
             </div>
-
-            {err && (
-              <div
-                style={{
-                  borderRadius: 14,
-                  background: '#fef2f2',
-                  border: '1px solid rgba(239,68,68,.20)',
-                  color: '#b91c1c',
-                  padding: 12,
-                  fontSize: 13,
-                }}
-              >
-                {err}
-              </div>
-            )}
-
-            {okMsg && (
-              <div
-                style={{
-                  borderRadius: 14,
-                  background: '#ecfdf5',
-                  border: '1px solid rgba(16,185,129,.20)',
-                  color: '#065f46',
-                  padding: 12,
-                  fontSize: 13,
-                }}
-              >
-                {okMsg}
-              </div>
-            )}
-
-            <button
-              type="submit"
-              disabled={busy}
-              style={{
-                width: '100%',
-                border: 'none',
-                borderRadius: 12,
-                padding: '12px 14px',
-                background: '#111827',
-                color: '#fff',
-                fontWeight: 700,
-                cursor: busy ? 'not-allowed' : 'pointer',
-                opacity: busy ? 0.65 : 1,
-              }}
-            >
-              {busy ? 'Creating…' : 'Create Account'}
-            </button>
-          </form>
-
-          <div style={{ marginTop: 12, fontSize: 13, color: '#64748b' }}>
-            Already have an account?{' '}
-            <Link to="/login" style={{ fontWeight: 800, textDecoration: 'underline', color: '#0f172a' }}>
-              Login
-            </Link>
           </div>
         </div>
 
-        <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: '#94a3b8' }}>
-          Secure auth powered by Supabase.
+        <div className="gc-auth-card">
+          <div className="gc-auth-head">
+            <div className="gc-auth-logo-centered">
+              <img
+                src={logoSrc}
+                alt="GastroChef"
+                onError={(e) => {
+                  ;(e.currentTarget as HTMLImageElement).src = logoFallback
+                }}
+              />
+              <div>
+                <div className="gc-auth-title">GastroChef</div>
+                <div className="gc-auth-sub">CREATE ACCOUNT</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="gc-auth-body">
+            <form onSubmit={onSubmit} style={{ display: 'grid', gap: 12, minWidth: 0 }}>
+              <div style={{ minWidth: 0 }}>
+                <div className="gc-label">ENTER EMAIL</div>
+                <input
+                  className="gc-input"
+                  type="email"
+                  placeholder="name@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  autoComplete="email"
+                  inputMode="email"
+                  style={{ marginTop: 6 }}
+                />
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div className="gc-label">ENTER PASSWORD</div>
+                <input
+                  className="gc-input"
+                  type="password"
+                  placeholder="••••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  autoComplete="new-password"
+                  style={{ marginTop: 6 }}
+                />
+              </div>
+
+              <div style={{ minWidth: 0 }}>
+                <div className="gc-label">CONFIRM PASSWORD</div>
+                <input
+                  className="gc-input"
+                  type="password"
+                  placeholder="••••••••••"
+                  value={password2}
+                  onChange={(e) => setPassword2(e.target.value)}
+                  autoComplete="new-password"
+                  style={{ marginTop: 6 }}
+                />
+              </div>
+
+              {err && (
+                <div
+                  style={{
+                    borderRadius: 14,
+                    background: 'rgba(220,38,38,.08)',
+                    border: '1px solid rgba(220,38,38,.18)',
+                    color: '#b91c1c',
+                    padding: 12,
+                    fontSize: 13,
+                  }}
+                >
+                  {err}
+                </div>
+              )}
+
+              {okMsg && (
+                <div
+                  style={{
+                    borderRadius: 14,
+                    background: 'rgba(47,158,68,.10)',
+                    border: '1px solid rgba(47,158,68,.22)',
+                    color: '#166534',
+                    padding: 12,
+                    fontSize: 13,
+                  }}
+                >
+                  {okMsg}
+                </div>
+              )}
+
+              <button type="submit" disabled={busy} className="gc-btn gc-btn-primary" style={{ width: '100%' }}>
+                {busy ? 'Creating…' : 'Create Account'}
+              </button>
+            </form>
+
+            <div style={{ marginTop: 12, fontSize: 13, color: 'var(--gc-muted)' }}>
+              Already have an account?{' '}
+              <Link to="/login" style={{ fontWeight: 900, textDecoration: 'underline', color: 'var(--gc-accent)' }}>
+                Login
+              </Link>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14, textAlign: 'center', fontSize: 12.5, color: 'var(--gc-soft)' }}>
+            Secure auth powered by Supabase.
+          </div>
         </div>
       </div>
     </div>

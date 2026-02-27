@@ -4,32 +4,45 @@
    ========================================================= */
 
 :root{
-  /* Brand */
-  --gc-brand-teal: #0EA5A6;          /* GastroTeal (primary) */
-  --gc-brand-teal-2: #14B8A6;        /* soft teal */
-  --gc-brand-coral: #FF5A3D;         /* Paprika-coral (secondary) */
-  --gc-brand-ink: #0B1220;           /* deep ink */
-  --gc-brand-ivory: #F7F8FB;         /* calm background */
+  /* =======================================================
+     Brand — OPTION C (Executive + Chef Soul)
+     Primary: Olive Authority
+     Secondary: Deep Teal Operations
+     ======================================================= */
+
+  --gc-brand-olive: #6B7F3B;          /* Primary */
+  --gc-brand-olive-2: #5C6E32;        /* Hover/strong */
+  --gc-brand-olive-100: #E9EFE0;      /* Soft */
+
+  --gc-brand-teal: #1F7A78;           /* Secondary */
+  --gc-brand-teal-2: #186462;         /* Hover/strong */
+
+  --gc-brand-ink: #1F2326;            /* Charcoal */
+  --gc-brand-ivory: #F6F7F5;          /* Warm background */
 
   /* Surfaces */
   --gc-bg: var(--gc-brand-ivory);
   --gc-card: #FFFFFF;
   --gc-card-2: rgba(255,255,255,.72);
   --gc-text: var(--gc-brand-ink);
-  --gc-muted: #5B6B7C;
-  --gc-soft: #7A8796;
+  --gc-muted: #5F6B66;
+  --gc-soft: #7A857F;
   --gc-border: rgba(11,18,32,.10);
   --gc-border-strong: rgba(11,18,32,.16);
 
   /* Accent + states */
-  --gc-accent: var(--gc-brand-teal);
-  --gc-accent-strong: #0C8E8F;
-  --gc-accent-ink: #053536;
+  /* Default accent is Olive (primary). Teal is available as secondary. */
+  --gc-accent: var(--gc-brand-olive);
+  --gc-accent-strong: var(--gc-brand-olive-2);
+  --gc-accent-ink: #22310F;
+
+  --gc-secondary: var(--gc-brand-teal);
+  --gc-secondary-strong: var(--gc-brand-teal-2);
 
   --gc-danger: #E11D48;
-  --gc-warn: #F59E0B;
-  --gc-good: #10B981;
-  --gc-olive: #8C9A5B;
+  --gc-warn: #F59F00;
+  --gc-good: #2F9E44;
+  --gc-olive: var(--gc-brand-olive);
 
   /* Shadows */
   --gc-shadow-soft: 0 10px 26px rgba(2, 6, 23, .08);
@@ -80,7 +93,7 @@
   --gc-topbar-pill-shadow: 0 4px 20px rgba(2, 6, 23, .06);
 
   /* Focus ring */
-  --gc-ring: 0 0 0 4px rgba(14,165,166,.22);
+  --gc-ring: 0 0 0 4px rgba(107,127,59,.22);
 
   /* Table density */
   --gc-table-pad-y: 10px;
@@ -148,7 +161,7 @@ body[data-theme="dark"]{
   --gc-border-strong: rgba(148,163,184,.28);
   --gc-shadow-soft: 0 14px 34px rgba(0,0,0,.42);
   --gc-shadow: 0 26px 70px rgba(0,0,0,.55);
-  --gc-ring: 0 0 0 4px rgba(20,184,166,.22);
+  --gc-ring: 0 0 0 4px rgba(107,127,59,.22);
   --gc-topbar-pill-bg: rgba(15,23,42,.72);
   --gc-topbar-pill-border: rgba(148,163,184,.16);
   --gc-topbar-pill-shadow: 0 18px 44px rgba(0,0,0,.40);
