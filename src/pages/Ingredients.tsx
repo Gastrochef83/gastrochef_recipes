@@ -358,6 +358,25 @@ export default function Ingredients() {
     await load()
   }
 
+  const hardDelete = async (id: string) => {
+    const ok = confirm('Delete ingredient permanently? This cannot be undone.')
+    if (!ok) return
+
+    const { error } = await supabase.from('ingredients').delete().eq('id', id)
+    if (error) {
+      const msg = String((error as any).message || '')
+      const code = String((error as any).code || '')
+      if (code === '23503' || msg.toLowerCase().includes('foreign key')) {
+        return showToast('Cannot delete: this ingredient is used in recipes. Remove it from recipe lines first.')
+      }
+      return showToast(msg || 'Delete failed')
+    }
+
+    showToast('Ingredient deleted ✅')
+    await load()
+  }
+
+
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
     const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
@@ -609,15 +628,9 @@ export default function Ingredients() {
                                 Edit
                               </button>
 
-                              {active ? (
-                                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => deactivate(r.id)}>
-                                  Delete
-                                </button>
-                              ) : (
-                                <button className="gc-btn gc-btn-ghost" type="button" onClick={() => restore(r.id)}>
-                                  Restore
-                                </button>
-                              )}
+                              <button className="gc-btn gc-btn-ghost" type="button" onClick={() => hardDelete(r.id)}>
+                                Delete
+                              </button>
                             </div>
                           </td>
                         </tr>
@@ -626,9 +639,6 @@ export default function Ingredients() {
                   </tbody>
                 </table>
 
-                <div className="mt-3 text-xs text-neutral-500">
-                  * Delete = Deactivate (Soft Delete) to prevent FK issues with recipe_lines.
-                </div>
               </div>
             )}
           </div>

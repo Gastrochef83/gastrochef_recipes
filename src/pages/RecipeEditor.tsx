@@ -1908,18 +1908,39 @@ const addLineLocal = useCallback(async () => {
                               <div className="gc-kitopi-item">
                                 <div className="gc-kitopi-item-select">
                                   {l.line_type === 'ingredient' ? (
-                                    <select
-                                      className="gc-select gc-select-compact"
-                                      value={l.ingredient_id || ''}
-                                      onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
-                                    >
-                                      <option value="">— Select ingredient —</option>
-                                      {ingredients.map((i) => (
-                                        <option key={i.id} value={i.id}>
-                                          {(i.code ? `${i.code} — ` : '') + (i.name || 'Unnamed')}
-                                        </option>
-                                      ))}
-                                    </select>
+                                    <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr', gap: 8, alignItems: 'start' }}>
+                                      <div>
+                                        <select
+                                          className="gc-select gc-select-compact"
+                                          value={l.ingredient_id || ''}
+                                          onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                          aria-label="Ingredient code"
+                                        >
+                                          <option value="">— Code —</option>
+                                          {ingredients.map((i) => (
+                                            <option key={i.id} value={i.id}>
+                                              {i.code || '—'}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+
+                                      <div>
+                                        <select
+                                          className="gc-select gc-select-compact"
+                                          value={l.ingredient_id || ''}
+                                          onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                          aria-label="Ingredient name"
+                                        >
+                                          <option value="">— Name —</option>
+                                          {ingredients.map((i) => (
+                                            <option key={i.id} value={i.id}>
+                                              {i.name || 'Unnamed'}
+                                            </option>
+                                          ))}
+                                        </select>
+                                      </div>
+                                    </div>
                                   ) : (
                                     <select
                                       className="gc-select gc-select-compact"

@@ -189,7 +189,7 @@ export default function RecipePrintCard() {
   const computed = useMemo(() => {
     const map = new Map<
       string,
-      { title: string; net: number; gross: number; yieldPct: number; unitCost: number; lineCost: number; kind: string }
+      { code?: string; title: string; net: number; gross: number; yieldPct: number; unitCost: number; lineCost: number; kind: string }
     >()
 
     for (const l of lines) {
@@ -203,21 +203,25 @@ export default function RecipePrintCard() {
       let unitCost = 0
       let title = 'Line'
       let kind = 'Ingredient'
+      let code: string | undefined
+
       if (l.line_type === 'ingredient' && l.ingredient_id) {
-        const ing = ingById.get(l.ingredient_id)
+        const ing: any = ingById.get(l.ingredient_id)
         title = ing?.name || 'Ingredient'
+        code = ing?.code || undefined
         unitCost = toNum(ing?.net_unit_cost, 0)
         kind = 'Ingredient'
       }
       if (l.line_type === 'subrecipe' && l.sub_recipe_id) {
-        const sr = subById.get(l.sub_recipe_id)
+        const sr: any = subById.get(l.sub_recipe_id)
         title = sr?.name || 'Subrecipe'
+        code = sr?.code || undefined
         unitCost = 0
         kind = 'Subrecipe'
       }
 
       const lineCost = net * unitCost
-      map.set(l.id, { title, net, gross, yieldPct: y, unitCost, lineCost, kind })
+      map.set(l.id, { code, title, net, gross, yieldPct: y, unitCost, lineCost, kind })
     }
 
     return map
@@ -414,7 +418,8 @@ export default function RecipePrintCard() {
             <table className="gc-a4-table">
               <thead>
                 <tr>
-                  <th style={{ width: '44%' }}>Item</th>
+                  <th style={{ width: '12%' }}>Code</th>
+                  <th style={{ width: '32%' }}>Item</th>
                   <th style={{ width: '14%' }}>Net</th>
                   <th style={{ width: '14%' }}>Gross</th>
                   <th style={{ width: '10%' }}>Yield</th>
@@ -427,7 +432,7 @@ export default function RecipePrintCard() {
                   if (l.line_type === 'group') {
                     return (
                       <tr key={l.id} className="gc-a4-group">
-                        <td colSpan={6}>{l.group_title || 'Group'}</td>
+                        <td colSpan={7}>{l.group_title || 'Group'}</td>
                       </tr>
                     )
                   }
@@ -437,6 +442,7 @@ export default function RecipePrintCard() {
 
                   return (
                     <tr key={l.id}>
+                      <td className="gc-a4-num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{c.code || '—'}</td>
                       <td className="gc-a4-item">
                         <div className="gc-a4-item-title">{c.title}</div>
                         <div className="gc-a4-item-sub">
