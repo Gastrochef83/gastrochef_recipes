@@ -32,6 +32,7 @@ type Ingredient = {
 
 type RecipeRow = {
   id: string
+  code?: string | null
   kitchen_id: string
   name: string
   category: string | null
@@ -180,7 +181,7 @@ useEffect(() => {
     try {
       // RLS handles tenancy; do not filter by kitchen_id on client
       const selectRecipes =
-        'id,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+        'id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
 
       const { data: r, error: rErr } = await supabase
         .from('recipes')

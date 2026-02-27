@@ -5,6 +5,7 @@ import { Toast } from '../components/Toast'
 
 type IngredientRow = {
   id: string
+  code?: string | null
   name?: string
   category?: string | null
   supplier?: string | null
@@ -135,6 +136,7 @@ export default function Ingredients() {
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
+  const [fCode, setFCode] = useState('')
   const [fName, setFName] = useState('')
   const [fCategory, setFCategory] = useState('')
   const [fSupplier, setFSupplier] = useState('')
@@ -238,6 +240,7 @@ export default function Ingredients() {
 
   const openEdit = (r: IngredientRow) => {
     setEditingId(r.id)
+    setFCode((r.code ?? '').toUpperCase())
     setFName(r.name ?? '')
     setFCategory(r.category ?? '')
     setFSupplier(r.supplier ?? '')
@@ -260,6 +263,9 @@ export default function Ingredients() {
     const name = fName.trim()
     if (!name) return showToast('Name is required')
 
+    const codeInput = (fCode || '').trim().toUpperCase()
+    if (codeInput && !codeInput.startsWith('ING-')) return showToast('Ingredient code must start with ING-')
+
     const packSize = Math.max(1, toNum(fPackSize, 1))
     const packPrice = Math.max(0, toNum(fPackPrice, 0))
 
@@ -272,6 +278,7 @@ export default function Ingredients() {
     setSaving(true)
     try {
       const payload: any = {
+        code: (fCode || '').trim().toUpperCase() || null,
         name,
         category: fCategory.trim() || null,
         supplier: fSupplier.trim() || null,
@@ -522,6 +529,7 @@ export default function Ingredients() {
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs font-semibold text-neutral-500">
                     <tr>
+                      <th className="py-2 pr-4">Code</th>
                       <th className="py-2 pr-4">Name</th>
                       <th className="py-2 pr-4">Category</th>
                       <th className="py-2 pr-4">Supplier</th>
@@ -602,6 +610,17 @@ export default function Ingredients() {
       {/* Modal */}
       <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
         <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <div className="gc-label">CODE</div>
+            <input
+              className="gc-input mt-2 w-full"
+              value={fCode}
+              onChange={(e) => setFCode(e.target.value)}
+              placeholder="ING-000123 (optional)"
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">Leave empty to auto-generate. If provided, must start with ING-</div>
+          </div>
+
           <div className="md:col-span-2">
             <div className="gc-label">NAME</div>
             <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
