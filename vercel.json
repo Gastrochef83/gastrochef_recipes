@@ -1,5 +1,5 @@
 {
-  "installCommand": "rm -rf node_modules && NPM_CONFIG_CACHE=/tmp/.npm npm ci --no-audit --no-fund --prefer-online",
-  "buildCommand": "npm run build",
+  "installCommand": "corepack enable && yarn install --non-interactive --network-timeout 600000",
+  "buildCommand": "yarn build",
   "outputDirectory": "dist"
 }
