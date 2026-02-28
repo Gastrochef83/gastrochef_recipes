@@ -1,5 +1,5 @@
 {
-  "installCommand": "npm i -g npm@10.9.2 --no-audit --no-fund && npm ci --no-audit --no-fund",
+  "installCommand": "rm -rf node_modules && NPM_CONFIG_CACHE=/tmp/.npm npm ci --no-audit --no-fund --prefer-online",
   "buildCommand": "npm run build",
   "outputDirectory": "dist"
 }
