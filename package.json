@@ -34,7 +34,7 @@
     "@types/qrcode": "^1.5.5"
   },
   "engines": {
-    "node": "18.x"
+    "node": "24.x"
   },
   "packageManager": "npm@10"
 }
