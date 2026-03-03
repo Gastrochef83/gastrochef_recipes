@@ -1,5 +1,5 @@
 // src/pages/RecipeEditor.tsx
-import { useEffect, useMemo, useRef, useState, useCallback, memo, CSSProperties } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -10,26 +10,7 @@ import { CostTimeline } from '../components/CostTimeline'
 import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
-import { exportRecipeExcelUltra } from '../utils/ex
-const RECIPE_EDITOR_HEADER_HEAD_STYLE: CSSProperties = {
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  gap: 12,
-  flexWrap: 'wrap'
-}
-
-const RECIPE_EDITOR_ERROR_CARD_STYLE: CSSProperties = {
-  padding: 12,
-  borderRadius: 16,
-  marginBottom: 12
-}
-
-const RECIPE_EDITOR_ERROR_TITLE_STYLE: CSSProperties = {
-  fontWeight: 900,
-  color: 'var(--gc-danger)'
-}
-portRecipeExcelUltra'
+import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -402,7 +383,18 @@ useEffect(() => {
     if (!id) return
     const cur = (lines || []) as Line[]
     const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
-    if (hasDraft) writeDraftLines(id, cur)
+    if (!hasDraft) return
+
+    let cancelled = false
+    const t = window.setTimeout(() => {
+      if (cancelled) return
+      writeDraftLines(id, cur)
+    }, 250)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
   }, [id, lines, isDraftLine])
 
   // ---------- Load ----------
@@ -1447,15 +1439,15 @@ const addLineLocal = useCallback(async () => {
       {PrintCss}
 
       <div className="gc-card gc-screen-only">
-        <div className="gc-card-head" style={RECIPE_EDITOR_HEADER_HEAD_STYLE}>
+        <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           {headerLeft}
           {headerRight}
         </div>
 
         <div className="gc-card-body">
           {err && (
-            <div className="gc-card-soft" style={RECIPE_EDITOR_ERROR_CARD_STYLE}>
-              <div style={RECIPE_EDITOR_ERROR_TITLE_STYLE}>{err}</div>
+            <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12 }}>
+              <div style={{ fontWeight: 900, color: 'var(--gc-danger)' }}>{err}</div>
             </div>
           )}
 
@@ -1940,9 +1932,9 @@ const addLineLocal = useCallback(async () => {
                                   aria-label="Ingredient code"
                                 >
                                   <option value="">—</option>
-                                  {ingredients.map((i) => (
-                                    <option key={i.id} value={i.id}>
-                                      {i.code || '—'}
+                                  {ingredientCodeOptions.map((o) => (
+                                    <option key={o.id} value={o.id}>
+                                      {o.label}
                                     </option>
                                   ))}
                                 </select>
@@ -1964,9 +1956,9 @@ const addLineLocal = useCallback(async () => {
                                       aria-label="Ingredient name"
                                     >
                                       <option value="">— Select ingredient —</option>
-                                      {ingredients.map((i) => (
-                                        <option key={i.id} value={i.id}>
-                                          {i.name || 'Unnamed'}
+                                      {ingredientNameOptions.map((o) => (
+                                        <option key={o.id} value={o.id}>
+                                          {o.label}
                                         </option>
                                       ))}
                                     </select>
