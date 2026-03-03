@@ -1,5 +1,5 @@
 // src/pages/RecipeEditor.tsx
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback, memo } from 'react'
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -11,6 +11,126 @@ import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
+
+type RecipeEditorHeaderProps = {
+  name: string
+  autosave: { status: string; message?: string; lastSavedAt?: number | null }
+  isKitchen: boolean
+  density: 'compact' | 'comfort'
+  activeSection: string
+  showCost: boolean
+  onToggleDensity: () => void
+  onScrollToSection: (id: string) => void
+}
+
+const RecipeEditorHeader = memo(function RecipeEditorHeader({
+  name,
+  autosave,
+  isKitchen,
+  density,
+  activeSection,
+  showCost,
+  onToggleDensity,
+  onScrollToSection,
+}: RecipeEditorHeaderProps) {
+  const savedLabel = (() => {
+    if (autosave.status === 'saving') return 'Saving…'
+    if (autosave.status === 'error') return autosave.message || 'Save issue. Retrying…'
+    if (autosave.lastSavedAt) {
+      const seconds = Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))
+      return `Saved ${seconds}s ago ✓`
+    }
+    return 'Auto-save ready.'
+  })()
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 12,
+        flexWrap: 'wrap',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
+          ← Back
+        </NavLink>
+
+        <div>
+          <div className="gc-label">RECIPE</div>
+          <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
+          <div className="gc-hint" style={{ marginTop: 2, fontWeight: 700 }}>
+            {savedLabel}
+          </div>
+        </div>
+      </div>
+
+      <div className="gc-tabs" style={{ justifyContent: 'flex-end' }}>
+        <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>
+          {isKitchen ? 'Kitchen' : 'Mgmt'}
+        </span>
+
+        <button className="gc-btn-soft" type="button" onClick={onToggleDensity}>
+          Density: {density}
+        </button>
+
+        <button
+          className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')}
+          type="button"
+          onClick={() => onScrollToSection('sec-basics')}
+        >
+          Basics
+        </button>
+        <button
+          className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')}
+          type="button"
+          onClick={() => onScrollToSection('sec-method')}
+        >
+          Method
+        </button>
+        <button
+          className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')}
+          type="button"
+          onClick={() => onScrollToSection('sec-nutrition')}
+        >
+          Nutrition
+        </button>
+        <button
+          className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')}
+          type="button"
+          onClick={() => onScrollToSection('sec-lines')}
+        >
+          Lines
+        </button>
+        <button
+          className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')}
+          type="button"
+          onClick={() => onScrollToSection('sec-print')}
+        >
+          Print
+        </button>
+        <button
+          className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')}
+          type="button"
+          onClick={() => onScrollToSection('sec-cook')}
+        >
+          Cook Mode
+        </button>
+        {showCost ? (
+          <button
+            className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')}
+            type="button"
+            onClick={() => onScrollToSection('sec-cost')}
+          >
+            Cost
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+})
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -383,18 +503,7 @@ useEffect(() => {
     if (!id) return
     const cur = (lines || []) as Line[]
     const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
-    if (!hasDraft) return
-
-    let cancelled = false
-    const t = window.setTimeout(() => {
-      if (cancelled) return
-      writeDraftLines(id, cur)
-    }, 250)
-
-    return () => {
-      cancelled = true
-      window.clearTimeout(t)
-    }
+    if (hasDraft) writeDraftLines(id, cur)
   }, [id, lines, isDraftLine])
 
   // ---------- Load ----------
@@ -1330,47 +1439,6 @@ const addLineLocal = useCallback(async () => {
       </div>
     )
   }
-  const headerLeft = (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-      <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
-        ← Back
-      </NavLink>
-      <div>
-        <div className="gc-label">RECIPE</div>
-        <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
-        <div className="gc-hint" style={{ marginTop: 2, fontWeight: 700 }}>
-          {autosave.status === 'saving'
-            ? 'Saving…'
-            : autosave.status === 'error'
-            ? (autosave.message || 'Save issue. Retrying…')
-            : autosave.lastSavedAt
-            ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
-            : 'Auto-save ready.'}
-        </div>
-      </div>
-    </div>
-  )
-
-  const headerRight = (
-    <div className="gc-tabs" style={{ justifyContent: 'flex-end' }}>
-      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>{isKitchen ? 'Kitchen' : 'Mgmt'}</span>
-
-      <button className="gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
-        Density: {density}
-      </button>
-
-      <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>Basics</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>Method</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>Nutrition</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')} type="button" onClick={() => scrollToSection('sec-lines')}>Lines</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')} type="button" onClick={() => scrollToSection('sec-print')}>Print</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cook')}>Cook Mode</button>
-      {showCost ? (
-        <button className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cost')}>Cost</button>
-      ) : null}
-    </div>
-  )
-
   // Print-only CSS injected here (so print works even if global CSS changes)
   const PrintCss = (
     <style>{`
@@ -1440,8 +1508,16 @@ const addLineLocal = useCallback(async () => {
 
       <div className="gc-card gc-screen-only">
         <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          {headerLeft}
-          {headerRight}
+          <RecipeEditorHeader
+            name={name}
+            autosave={autosave}
+            isKitchen={isKitchen}
+            density={density}
+            activeSection={activeSection}
+            showCost={showCost}
+            onToggleDensity={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}
+            onScrollToSection={scrollToSection}
+          />
         </div>
 
         <div className="gc-card-body">
@@ -1932,9 +2008,9 @@ const addLineLocal = useCallback(async () => {
                                   aria-label="Ingredient code"
                                 >
                                   <option value="">—</option>
-                                  {ingredientCodeOptions.map((o) => (
-                                    <option key={o.id} value={o.id}>
-                                      {o.label}
+                                  {ingredients.map((i) => (
+                                    <option key={i.id} value={i.id}>
+                                      {i.code || '—'}
                                     </option>
                                   ))}
                                 </select>
@@ -1956,9 +2032,9 @@ const addLineLocal = useCallback(async () => {
                                       aria-label="Ingredient name"
                                     >
                                       <option value="">— Select ingredient —</option>
-                                      {ingredientNameOptions.map((o) => (
-                                        <option key={o.id} value={o.id}>
-                                          {o.label}
+                                      {ingredients.map((i) => (
+                                        <option key={i.id} value={i.id}>
+                                          {i.name || 'Unnamed'}
                                         </option>
                                       ))}
                                     </select>
