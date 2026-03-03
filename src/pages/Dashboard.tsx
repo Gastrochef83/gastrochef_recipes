@@ -112,7 +112,7 @@ export default function Dashboard() {
         .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
       if (re) throw re
 
-      // ✅ الجدول الصحيح في مشروعك
+      // Use the correct table name for this project
       const { data: l, error: le } = await supabase
         .from('recipe_lines')
         .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
@@ -368,7 +368,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ✅ Skeleton Loading (بدل Loading… العادي) */}
+      {/* Skeleton loading */}
       {loading && (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
