@@ -4,22 +4,22 @@
    ========================================================= */
 
 :root {
-  --gc-bg: #f6f7f5;
-  --gc-surface: #ffffff;
-  --gc-border: #e5e7eb;
-  --gc-text: #1f2937;
-  --gc-muted: #6b7280;
+  /* =========================================================
+     Visual System Audit (B) — Quiet Shell / Consistent Surfaces
+     Single source of truth:
+     - Brand + core tokens: src/styles/tokens.css
+     - Practical layout sizing overrides live here
+     ========================================================= */
 
-  --gc-olive: #6b7c3f;
-  --gc-olive-soft: rgba(107,124,63,0.12);
+  /* Map surfaces to tokens (keep naming used across existing CSS) */
+  --gc-surface: var(--gc-card);
+  --gc-surface-2: var(--gc-card-2);
 
-  --gc-danger: #dc2626;
-
-  --gc-radius: 14px;
-  --gc-shadow: 0 6px 18px rgba(0,0,0,0.06);
-
-  --gc-topbar-height: 58px;
+  /* Topbar sizing (quiet + compact) */
+  --gc-topbar-height: 52px;
 }
+
+
 
 /* =========================================================
    Base
@@ -55,19 +55,20 @@ body {
    ========================================================= */
 
 .gc-topbar {
-  margin-bottom: 24px;
+  margin-bottom: 16px;
 }
 
 .gc-topbar-pill {
   height: var(--gc-topbar-height);
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
   align-items: center;
-  padding: 0 18px;
+  padding: 0 14px;
   background: var(--gc-surface);
-  border: 1px solid var(--gc-border);
+  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
   border-radius: 999px;
-  box-shadow: var(--gc-shadow);
+  box-shadow: color-mix(in oklab, var(--gc-shadow) 70%, transparent);
+  overflow: hidden;
 }
 
 /* Left Section */
@@ -85,9 +86,12 @@ body {
 }
 
 .gc-topbar-kitchen {
-  font-weight: 600;
-  font-size: 14px;
+  font-weight: 650;
+  font-size: 13px;
   white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 44vw;
 }
 
 /* Spacer */
@@ -104,9 +108,9 @@ body {
 
 .gc-topbar-actions {
   display: flex;
-  flex-direction: row;        /* prevents vertical stacking */
+  flex-direction: row;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   white-space: nowrap;
 }
 
@@ -118,13 +122,14 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 12px;
+  height: 30px;
+  padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--gc-border);
-  background: var(--gc-surface);
+  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
+  background: var(--gc-surface-2);
   font-size: 12px;
-  font-weight: 600;
+  font-weight: 650;
+  letter-spacing: 0.1px;
   color: var(--gc-muted);
 }
 
@@ -147,21 +152,21 @@ body {
    ========================================================= */
 
 .gc-kbd-btn {
-  height: 32px;
-  min-width: 48px;
-  padding: 0 12px;
+  height: 30px;
+  min-width: 44px;
+  padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid var(--gc-border);
+  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
   background: var(--gc-olive-soft);
   color: var(--gc-text);
-  font-weight: 700;
+  font-weight: 750;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: box-shadow 0.15s ease, background 0.15s ease;
 }
 
 .gc-kbd-btn:hover {
-  transform: translateY(-1px);
   box-shadow: var(--gc-shadow);
+  background: color-mix(in oklab, var(--gc-olive-soft) 70%, white);
 }
 
 /* =========================================================
@@ -172,25 +177,26 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 10px;
+  height: 30px;
+  padding: 0 9px;
   border-radius: 999px;
-  border: 1px solid var(--gc-border);
+  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
   background: var(--gc-surface);
   cursor: pointer;
 }
 
 .gc-avatar {
-  width: 26px;
-  height: 26px;
-  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  border-radius: 999px;
   background: var(--gc-olive);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 800;
+  letter-spacing: 0.3px;
 }
 
 .gc-user-mini {
