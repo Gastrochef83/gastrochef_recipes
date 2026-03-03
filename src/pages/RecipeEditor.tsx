@@ -378,13 +378,23 @@ useEffect(() => {
   }, [])
 
   // Persist drafts locally whenever there are tmp_ lines or pending deletions,
-  // so navigating to Cook Mode won't drop unsaved additions.
-  useEffect(() => {
-    if (!id) return
-    const cur = (lines || []) as Line[]
-    const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
-    if (hasDraft) writeDraftLines(id, cur)
-  }, [id, lines, isDraftLine])
+// so navigating to Cook Mode won't drop unsaved additions.
+const draftPersistTimer = useRef<number | null>(null)
+useEffect(() => {
+  if (!id) return
+  const cur = (lines || []) as Line[]
+  const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
+  if (!hasDraft) return
+
+  if (draftPersistTimer.current) window.clearTimeout(draftPersistTimer.current)
+  draftPersistTimer.current = window.setTimeout(() => {
+    writeDraftLines(id, cur)
+  }, 250)
+
+  return () => {
+    if (draftPersistTimer.current) window.clearTimeout(draftPersistTimer.current)
+  }
+}, [id, lines, isDraftLine])
 
   // ---------- Load ----------
   useEffect(() => {
