@@ -1,5 +1,5 @@
 // src/pages/RecipeEditor.tsx
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback, memo, CSSProperties } from 'react'
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -10,7 +10,26 @@ import { CostTimeline } from '../components/CostTimeline'
 import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
-import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
+import { exportRecipeExcelUltra } from '../utils/ex
+const RECIPE_EDITOR_HEADER_HEAD_STYLE: CSSProperties = {
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 12,
+  flexWrap: 'wrap'
+}
+
+const RECIPE_EDITOR_ERROR_CARD_STYLE: CSSProperties = {
+  padding: 12,
+  borderRadius: 16,
+  marginBottom: 12
+}
+
+const RECIPE_EDITOR_ERROR_TITLE_STYLE: CSSProperties = {
+  fontWeight: 900,
+  color: 'var(--gc-danger)'
+}
+portRecipeExcelUltra'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -326,36 +345,6 @@ useEffect(() => {
     return list.slice(0, 200)
   }, [allRecipes])
 
-const ingredientCodeOptions = useMemo(
-  () =>
-    ingredients.map((i) => (
-      <option key={i.id} value={i.id}>
-        {i.code || '—'}
-      </option>
-    )),
-  [ingredients]
-)
-
-const ingredientNameOptions = useMemo(
-  () =>
-    ingredients.map((i) => (
-      <option key={i.id} value={i.id}>
-        {i.name || 'Unnamed'}
-      </option>
-    )),
-  [ingredients]
-)
-
-const subRecipeSelectOptions = useMemo(
-  () =>
-    subRecipeOptions.map((r) => (
-      <option key={r.id} value={r.id}>
-        {r.name || 'Untitled'}
-      </option>
-    )),
-  [subRecipeOptions]
-)
-
   const [addIngredientId, setAddIngredientId] = useState('')
   const [addSubRecipeId, setAddSubRecipeId] = useState('')
   const [addGroupTitle, setAddGroupTitle] = useState('')
@@ -409,34 +398,11 @@ const subRecipeSelectOptions = useMemo(
 
   // Persist drafts locally whenever there are tmp_ lines or pending deletions,
   // so navigating to Cook Mode won't drop unsaved additions.
-  
-const draftWriteTimerRef = useRef<number | null>(null)
-
-const scheduleDraftWriteLines = useCallback((rid: string, cur: Line[]) => {
-  try {
-    if (draftWriteTimerRef.current != null) {
-      window.clearTimeout(draftWriteTimerRef.current)
-    }
-    draftWriteTimerRef.current = window.setTimeout(() => {
-      writeDraftLines(rid, cur)
-    }, 250)
-  } catch {
-    // ignore
-  }
-}, [])
-
-useEffect(() => {
-  return () => {
-    if (draftWriteTimerRef.current != null) {
-      window.clearTimeout(draftWriteTimerRef.current)
-    }
-  }
-}, [])
-useEffect(() => {
+  useEffect(() => {
     if (!id) return
     const cur = (lines || []) as Line[]
     const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
-    if (hasDraft) scheduleDraftWriteLines(id, cur)
+    if (hasDraft) writeDraftLines(id, cur)
   }, [id, lines, isDraftLine])
 
   // ---------- Load ----------
@@ -1481,15 +1447,15 @@ const addLineLocal = useCallback(async () => {
       {PrintCss}
 
       <div className="gc-card gc-screen-only">
-        <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+        <div className="gc-card-head" style={RECIPE_EDITOR_HEADER_HEAD_STYLE}>
           {headerLeft}
           {headerRight}
         </div>
 
         <div className="gc-card-body">
           {err && (
-            <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12 }}>
-              <div style={{ fontWeight: 900, color: 'var(--gc-danger)' }}>{err}</div>
+            <div className="gc-card-soft" style={RECIPE_EDITOR_ERROR_CARD_STYLE}>
+              <div style={RECIPE_EDITOR_ERROR_TITLE_STYLE}>{err}</div>
             </div>
           )}
 
@@ -1974,7 +1940,11 @@ const addLineLocal = useCallback(async () => {
                                   aria-label="Ingredient code"
                                 >
                                   <option value="">—</option>
-                                  {ingredientCodeOptions}
+                                  {ingredients.map((i) => (
+                                    <option key={i.id} value={i.id}>
+                                      {i.code || '—'}
+                                    </option>
+                                  ))}
                                 </select>
                               ) : l.line_type === 'subrecipe' ? (
                                 <span className="font-mono">{sub?.code || '—'}</span>
@@ -1994,7 +1964,11 @@ const addLineLocal = useCallback(async () => {
                                       aria-label="Ingredient name"
                                     >
                                       <option value="">— Select ingredient —</option>
-                                      {ingredientNameOptions}
+                                      {ingredients.map((i) => (
+                                        <option key={i.id} value={i.id}>
+                                          {i.name || 'Unnamed'}
+                                        </option>
+                                      ))}
                                     </select>
                                   ) : (
                                     <select
@@ -2003,7 +1977,11 @@ const addLineLocal = useCallback(async () => {
                                       onChange={(e) => updateLine(l.id, { sub_recipe_id: e.target.value || null })}
                                     >
                                       <option value="">— Select subrecipe —</option>
-                                      {subRecipeSelectOptions}
+                                      {subRecipeOptions.map((r) => (
+                                        <option key={r.id} value={r.id}>
+                                          {r.name || 'Untitled'}
+                                        </option>
+                                      ))}
                                     </select>
                                   )}
                                 </div>
