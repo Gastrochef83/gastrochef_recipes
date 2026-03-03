@@ -326,6 +326,36 @@ useEffect(() => {
     return list.slice(0, 200)
   }, [allRecipes])
 
+const ingredientCodeOptions = useMemo(
+  () =>
+    ingredients.map((i) => (
+      <option key={i.id} value={i.id}>
+        {i.code || '—'}
+      </option>
+    )),
+  [ingredients]
+)
+
+const ingredientNameOptions = useMemo(
+  () =>
+    ingredients.map((i) => (
+      <option key={i.id} value={i.id}>
+        {i.name || 'Unnamed'}
+      </option>
+    )),
+  [ingredients]
+)
+
+const subRecipeSelectOptions = useMemo(
+  () =>
+    subRecipeOptions.map((r) => (
+      <option key={r.id} value={r.id}>
+        {r.name || 'Untitled'}
+      </option>
+    )),
+  [subRecipeOptions]
+)
+
   const [addIngredientId, setAddIngredientId] = useState('')
   const [addSubRecipeId, setAddSubRecipeId] = useState('')
   const [addGroupTitle, setAddGroupTitle] = useState('')
@@ -378,23 +408,36 @@ useEffect(() => {
   }, [])
 
   // Persist drafts locally whenever there are tmp_ lines or pending deletions,
-// so navigating to Cook Mode won't drop unsaved additions.
-const draftPersistTimer = useRef<number | null>(null)
-useEffect(() => {
-  if (!id) return
-  const cur = (lines || []) as Line[]
-  const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
-  if (!hasDraft) return
+  // so navigating to Cook Mode won't drop unsaved additions.
+  
+const draftWriteTimerRef = useRef<number | null>(null)
 
-  if (draftPersistTimer.current) window.clearTimeout(draftPersistTimer.current)
-  draftPersistTimer.current = window.setTimeout(() => {
-    writeDraftLines(id, cur)
-  }, 250)
-
-  return () => {
-    if (draftPersistTimer.current) window.clearTimeout(draftPersistTimer.current)
+const scheduleDraftWriteLines = useCallback((rid: string, cur: Line[]) => {
+  try {
+    if (draftWriteTimerRef.current != null) {
+      window.clearTimeout(draftWriteTimerRef.current)
+    }
+    draftWriteTimerRef.current = window.setTimeout(() => {
+      writeDraftLines(rid, cur)
+    }, 250)
+  } catch {
+    // ignore
   }
-}, [id, lines, isDraftLine])
+}, [])
+
+useEffect(() => {
+  return () => {
+    if (draftWriteTimerRef.current != null) {
+      window.clearTimeout(draftWriteTimerRef.current)
+    }
+  }
+}, [])
+useEffect(() => {
+    if (!id) return
+    const cur = (lines || []) as Line[]
+    const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
+    if (hasDraft) scheduleDraftWriteLines(id, cur)
+  }, [id, lines, isDraftLine])
 
   // ---------- Load ----------
   useEffect(() => {
@@ -1931,11 +1974,7 @@ const addLineLocal = useCallback(async () => {
                                   aria-label="Ingredient code"
                                 >
                                   <option value="">—</option>
-                                  {ingredients.map((i) => (
-                                    <option key={i.id} value={i.id}>
-                                      {i.code || '—'}
-                                    </option>
-                                  ))}
+                                  {ingredientCodeOptions}
                                 </select>
                               ) : l.line_type === 'subrecipe' ? (
                                 <span className="font-mono">{sub?.code || '—'}</span>
@@ -1955,11 +1994,7 @@ const addLineLocal = useCallback(async () => {
                                       aria-label="Ingredient name"
                                     >
                                       <option value="">— Select ingredient —</option>
-                                      {ingredients.map((i) => (
-                                        <option key={i.id} value={i.id}>
-                                          {i.name || 'Unnamed'}
-                                        </option>
-                                      ))}
+                                      {ingredientNameOptions}
                                     </select>
                                   ) : (
                                     <select
@@ -1968,11 +2003,7 @@ const addLineLocal = useCallback(async () => {
                                       onChange={(e) => updateLine(l.id, { sub_recipe_id: e.target.value || null })}
                                     >
                                       <option value="">— Select subrecipe —</option>
-                                      {subRecipeOptions.map((r) => (
-                                        <option key={r.id} value={r.id}>
-                                          {r.name || 'Untitled'}
-                                        </option>
-                                      ))}
+                                      {subRecipeSelectOptions}
                                     </select>
                                   )}
                                 </div>
