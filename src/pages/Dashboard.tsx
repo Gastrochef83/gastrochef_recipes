@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Button from '../components/ui/Button'
+import { Skeleton } from '../components/Skeleton'
 
 type Recipe = {
   id: string
@@ -15,23 +16,16 @@ type Recipe = {
 
 type Line = {
   recipe_id: string
-  ingredient_id: string | null
-  sub_recipe_id: string | null
-  qty: number
-  unit: string
+  ingredient_id: string
+  net_qty: number | null
+  net_unit: string | null
 }
 
 type Ingredient = {
   id: string
-  name?: string | null
-  pack_unit?: string | null
-  net_unit_cost?: number | null
-  is_active?: boolean
-}
-
-function toNum(x: any, fallback = 0) {
-  const n = Number(x)
-  return Number.isFinite(n) ? n : fallback
+  name: string
+  net_unit_cost: number | null
+  pack_unit: string | null
 }
 
 function safeUnit(u: string) {
@@ -81,10 +75,18 @@ function money(n: number, currency = 'USD') {
 export default function Dashboard() {
   const nav = useNavigate()
   const lastId = (() => {
-    try { return localStorage.getItem('gc_last_recipe_id') || '' } catch { return '' }
+    try {
+      return localStorage.getItem('gc_last_recipe_id') || ''
+    } catch {
+      return ''
+    }
   })()
   const lastName = (() => {
-    try { return localStorage.getItem('gc_last_recipe_name') || '' } catch { return '' }
+    try {
+      return localStorage.getItem('gc_last_recipe_name') || ''
+    } catch {
+      return ''
+    }
   })()
 
   const [loading, setLoading] = useState(true)
@@ -94,235 +96,164 @@ export default function Dashboard() {
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
 
-  const load = async () => {
-    setLoading(true)
-    setErr(null)
-    try {
-      const { data: r, error: re } = await supabase
-        .from('recipes')
-        .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
-      if (re) throw re
-
-      const { data: l, error: le } = await supabase
-        .from('recipe_lines')
-        .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
-      if (le) throw le
-
-      const { data: i, error: ie } = await supabase
-        .from('ingredients')
-        .select('id,name,pack_unit,net_unit_cost,is_active')
-      if (ie) throw ie
-
-      setRecipes((r ?? []) as Recipe[])
-      setLines((l ?? []) as Line[])
-      setIngredients((i ?? []) as Ingredient[])
-      setLoading(false)
-    } catch (e: any) {
-      setErr(e?.message ?? 'Unknown error')
-      setLoading(false)
-    }
-  }
-
   useEffect(() => {
+    let alive = true
+    async function load() {
+      setLoading(true)
+      setErr(null)
+      try {
+        const { data: r, error: re } = await supabase
+          .from('recipes')
+          .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
+        if (re) throw re
+
+        const { data: l, error: le } = await supabase
+          .from('recipe_ingredients')
+          .select('recipe_id,ingredient_id,net_qty,net_unit')
+        if (le) throw le
+
+        const { data: i, error: ie } = await supabase
+          .from('ingredients')
+          .select('id,name,net_unit_cost,pack_unit')
+        if (ie) throw ie
+
+        if (!alive) return
+        setRecipes((r as any) ?? [])
+        setLines((l as any) ?? [])
+        setIngredients((i as any) ?? [])
+      } catch (e: any) {
+        if (!alive) return
+        setErr(e?.message ?? 'Failed to load dashboard')
+      } finally {
+        if (!alive) return
+        setLoading(false)
+      }
+    }
     load()
+    return () => {
+      alive = false
+    }
   }, [])
 
-  const ingById = useMemo(() => {
-    const m = new Map<string, Ingredient>()
-    for (const i of ingredients) m.set(i.id, i)
-    return m
-  }, [ingredients])
+  const activeRecipes = useMemo(() => recipes.filter((x) => !x.is_archived), [recipes])
+  const subRecipeCount = useMemo(() => activeRecipes.filter((x) => x.is_subrecipe).length, [activeRecipes])
 
-  const recipeById = useMemo(() => {
-    const m = new Map<string, Recipe>()
-    for (const r of recipes) m.set(r.id, r)
-    return m
-  }, [recipes])
+  const activeIngredientsCount = useMemo(() => ingredients.length, [ingredients])
 
-  const activeRecipes = useMemo(() => recipes.filter((r) => !r.is_archived), [recipes])
-  const activeIngredientsCount = useMemo(() => ingredients.filter((i) => i.is_active !== false).length, [ingredients])
-  const subRecipeCount = useMemo(() => recipes.filter((r) => r.is_subrecipe && !r.is_archived).length, [recipes])
+  const recipeTotals = useMemo(() => {
+    const ingMap = new Map<string, Ingredient>()
+    for (const ing of ingredients) ingMap.set(ing.id, ing)
 
-  // === cost engine with diagnostics ===
-  const costEngine = useMemo(() => {
     const totals = new Map<string, number>()
-    const diag = {
-      unitMismatchCount: 0,
-      missingYieldSubrecipeCount: 0,
-      missingIngredientCostCount: 0,
+    const perPortion = new Map<string, number>()
+    const unitMismatch = new Set<string>()
+
+    for (const r of activeRecipes) {
+      totals.set(r.id, 0)
+      perPortion.set(r.id, 0)
     }
 
-    for (const r of recipes) totals.set(r.id, 0)
-
-    const linesByRecipe = new Map<string, Line[]>()
-    for (const l of lines) {
-      if (!linesByRecipe.has(l.recipe_id)) linesByRecipe.set(l.recipe_id, [])
-      linesByRecipe.get(l.recipe_id)!.push(l)
+    const byRecipe = new Map<string, Line[]>()
+    for (const ln of lines) {
+      if (!byRecipe.has(ln.recipe_id)) byRecipe.set(ln.recipe_id, [])
+      byRecipe.get(ln.recipe_id)!.push(ln)
     }
 
-    const maxPass = 12
-    for (let pass = 0; pass < maxPass; pass++) {
-      let changed = false
+    for (const r of activeRecipes) {
+      const rows = byRecipe.get(r.id) ?? []
+      let total = 0
+      for (const ln of rows) {
+        const ing = ingMap.get(ln.ingredient_id)
+        if (!ing) continue
+        const netCost = Number(ing.net_unit_cost ?? 0)
+        const qty = Number(ln.net_qty ?? 0)
+        const fromUnit = safeUnit(ln.net_unit ?? ing.pack_unit ?? 'g')
+        const toUnit = safeUnit(ing.pack_unit ?? 'g')
 
-      for (const r of recipes) {
-        const rLines = linesByRecipe.get(r.id) ?? []
-        let sum = 0
+        const conv = convertQty(qty, fromUnit, toUnit)
+        if (!conv.ok) unitMismatch.add(ing.id)
 
-        for (const l of rLines) {
-          const qty = Math.max(0, toNum(l.qty, 0))
-          const u = safeUnit(l.unit)
-
-          // Ingredient line
-          if (l.ingredient_id) {
-            const ing = ingById.get(l.ingredient_id)
-            if (!ing || ing.is_active === false) continue
-
-            const net = toNum(ing.net_unit_cost, 0)
-            const packUnit = safeUnit(ing.pack_unit ?? 'g')
-
-            if (!Number.isFinite(net) || net <= 0) {
-              diag.missingIngredientCostCount += 1
-              continue
-            }
-
-            const conv = convertQty(qty, u, packUnit)
-            if (!conv.ok) diag.unitMismatchCount += 1
-
-            sum += conv.value * net
-            continue
-          }
-
-          // Sub-recipe line
-          if (l.sub_recipe_id) {
-            const sub = recipeById.get(l.sub_recipe_id)
-            const subTotal = totals.get(l.sub_recipe_id) ?? 0
-
-            if (!sub) continue
-            const subPortions = Math.max(1, toNum(sub.portions, 1))
-            const subCpp = subTotal / subPortions
-
-            // If line uses "portion"
-            if (u === 'portion') {
-              sum += qty * subCpp
-              continue
-            }
-
-            // If subrecipe has yield => use yield-based costing
-            const yq = toNum(sub.yield_qty, 0)
-            const yu = safeUnit(sub.yield_unit ?? '')
-
-            if (yq > 0 && yu && (unitFamily(u) === unitFamily(yu))) {
-              const costPerYieldUnit = subTotal / yq
-              const conv = convertQty(qty, u, yu)
-              if (!conv.ok) diag.unitMismatchCount += 1
-              sum += conv.value * costPerYieldUnit
-              continue
-            }
-
-            // Missing yield (but line is not portion)
-            if (sub.is_subrecipe) diag.missingYieldSubrecipeCount += 1
-
-            // Fallback to cpp
-            sum += qty * subCpp
-            continue
-          }
-        }
-
-        const prev = totals.get(r.id) ?? 0
-        if (Math.abs(prev - sum) > 1e-7) {
-          totals.set(r.id, sum)
-          changed = true
-        }
+        total += Math.max(0, conv.value) * Math.max(0, netCost)
       }
+      totals.set(r.id, total)
 
-      if (!changed) break
+      const portions = Math.max(1, Number(r.portions ?? 1))
+      perPortion.set(r.id, total / portions)
     }
 
-    return { totals, diag }
-  }, [recipes, lines, ingById, recipeById])
-
-  const recipeTotalCost = costEngine.totals
-  const diag = costEngine.diag
-
-  // ✅ FIX (Metric): DISTINCT ingredients USED IN non-archived recipes missing a valid cost.
-  // Definition:
-  // - DISTINCT ingredient_id referenced by recipe_lines where parent recipe is NOT archived.
-  // - Missing cost = ingredient net_unit_cost is null/undefined/NaN OR <= 0.
-  const ingredientsUsedMissingCost = useMemo(() => {
-    const activeRecipeIds = new Set(activeRecipes.map((r) => r.id))
-    const used = new Set<string>()
-    for (const l of lines) {
-      if (!activeRecipeIds.has(l.recipe_id)) continue
-      if (!l.ingredient_id) continue
-      used.add(l.ingredient_id)
-    }
-
-    const byId = new Map<string, Ingredient>()
-    for (const ing of ingredients) byId.set(ing.id, ing)
-
-    let c = 0
-    for (const id of used) {
-      const v = Number(byId.get(id)?.net_unit_cost)
-      if (!Number.isFinite(v) || v <= 0) c += 1
-    }
-    return c
+    return { totals, perPortion, unitMismatchCount: unitMismatch.size }
   }, [activeRecipes, lines, ingredients])
+
+  const totalActiveCost = useMemo(() => {
+    let s = 0
+    for (const r of activeRecipes) s += recipeTotals.totals.get(r.id) ?? 0
+    return s
+  }, [activeRecipes, recipeTotals])
 
   const avgCostPerPortion = useMemo(() => {
     if (activeRecipes.length === 0) return 0
-    const cps = activeRecipes.map((r) => {
-      const total = recipeTotalCost.get(r.id) ?? 0
-      const portions = Math.max(1, toNum(r.portions, 1))
-      return total / portions
-    })
-    return cps.reduce((a, b) => a + b, 0) / cps.length
-  }, [activeRecipes, recipeTotalCost])
-
-  const mostExpensiveRecipe = useMemo(() => {
-    let best: { id: string; name: string; total: number } | null = null
-    for (const r of activeRecipes) {
-      const total = recipeTotalCost.get(r.id) ?? 0
-      if (!best || total > best.total) best = { id: r.id, name: r.name, total }
-    }
-    return best
-  }, [activeRecipes, recipeTotalCost])
+    let s = 0
+    for (const r of activeRecipes) s += recipeTotals.perPortion.get(r.id) ?? 0
+    return s / activeRecipes.length
+  }, [activeRecipes, recipeTotals])
 
   const cheapestRecipe = useMemo(() => {
-    let best: { id: string; name: string; total: number } | null = null
+    let best: any = null
     for (const r of activeRecipes) {
-      const total = recipeTotalCost.get(r.id) ?? 0
+      const total = recipeTotals.totals.get(r.id) ?? 0
       if (!best || total < best.total) best = { id: r.id, name: r.name, total }
     }
     return best
-  }, [activeRecipes, recipeTotalCost])
+  }, [activeRecipes, recipeTotals])
 
-  const totalActiveCost = useMemo(() => {
-    return activeRecipes.reduce((sum, r) => sum + (recipeTotalCost.get(r.id) ?? 0), 0)
-  }, [activeRecipes, recipeTotalCost])
+  const mostExpensiveRecipe = useMemo(() => {
+    let best: any = null
+    for (const r of activeRecipes) {
+      const total = recipeTotals.totals.get(r.id) ?? 0
+      if (!best || total > best.total) best = { id: r.id, name: r.name, total }
+    }
+    return best
+  }, [activeRecipes, recipeTotals])
 
   const top5 = useMemo(() => {
-    return [...activeRecipes]
+    const arr = activeRecipes
       .map((r) => ({
         id: r.id,
         name: r.name,
-        total: recipeTotalCost.get(r.id) ?? 0,
-        cpp: (recipeTotalCost.get(r.id) ?? 0) / Math.max(1, toNum(r.portions, 1)),
+        total: recipeTotals.totals.get(r.id) ?? 0,
+        cpp: recipeTotals.perPortion.get(r.id) ?? 0,
       }))
       .sort((a, b) => b.total - a.total)
       .slice(0, 5)
-  }, [activeRecipes, recipeTotalCost])
+    return arr
+  }, [activeRecipes, recipeTotals])
+
+  const diag = useMemo(() => {
+    return { unitMismatchCount: recipeTotals.unitMismatchCount }
+  }, [recipeTotals])
+
+  const ingredientsUsedMissingCost = useMemo(() => {
+    const ingMap = new Map<string, Ingredient>()
+    for (const ing of ingredients) ingMap.set(ing.id, ing)
+
+    const used = new Set<string>()
+    for (const ln of lines) {
+      const ing = ingMap.get(ln.ingredient_id)
+      if (!ing) continue
+      const net = Number(ing.net_unit_cost ?? 0)
+      if (!Number.isFinite(net) || net <= 0) used.add(ing.id)
+    }
+    return used.size
+  }, [ingredients, lines])
 
   const subRecipesMissingYield = useMemo(() => {
-    return recipes
-      .filter((r) => r.is_subrecipe && !r.is_archived)
-      .filter((r) => toNum(r.yield_qty, 0) <= 0 || !safeUnit(r.yield_unit ?? ''))
-  }, [recipes])
+    return activeRecipes.filter((r) => r.is_subrecipe && (!r.yield_qty || r.yield_qty <= 0))
+  }, [activeRecipes])
 
-  // Detect insane costs (to help you debug pack_unit/net_unit_cost)
   const hasOutliers = useMemo(() => {
-    const big = top5.find((x) => x.total > 10000) // threshold
-    return !!big
-  }, [top5])
+    // "extremely high" heuristic
+    return avgCostPerPortion > 200 || totalActiveCost > 5000
+  }, [avgCostPerPortion, totalActiveCost])
 
   return (
     <div className="gc-dashboard space-y-6">
@@ -332,12 +263,17 @@ export default function Dashboard() {
         <div className="mt-2 text-sm text-neutral-600">Your kitchen snapshot: recipes, ingredients, and cost diagnostics.</div>
       </div>
 
-
       <div className="gc-card is-interactive p-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <div className="text-sm font-semibold">Continue Cooking</div>
           <div className="mt-1 text-xs text-neutral-600">
-            {lastId ? <>Jump back to <span className="font-semibold">{lastName || 'your last recipe'}</span>.</> : <>Open Recipes and start cooking.</>}
+            {lastId ? (
+              <>
+                Jump back to <span className="font-semibold">{lastName || 'your last recipe'}</span>.
+              </>
+            ) : (
+              <>Open Recipes and start cooking.</>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -351,17 +287,102 @@ export default function Dashboard() {
             Continue Cooking 🍳
           </Button>
           {lastId ? (
-            <Button
-              variant="ghost"
-              onClick={() => nav(`/recipe?id=${encodeURIComponent(lastId)}`)}
-            >
+            <Button variant="ghost" onClick={() => nav(`/recipe?id=${encodeURIComponent(lastId)}`)}>
               Open Editor
             </Button>
           ) : null}
         </div>
       </div>
 
-      {loading && <div className="gc-card is-interactive p-6">Loading…</div>}
+      {/* ✅ Skeleton Loading */}
+      {loading && (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-4">
+            {/* 4 small KPI cards */}
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="gc-card is-interactive p-5">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-2xl" />
+                  <Skeleton className="h-4 w-28 rounded-md" />
+                </div>
+                <div className="mt-3">
+                  <Skeleton className="h-8 w-28 rounded-lg" />
+                  <div className="mt-2">
+                    <Skeleton className="h-3 w-24 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* One medium KPI (md:col-span-2) */}
+            <div className="gc-card is-interactive p-5 md:col-span-2">
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-2xl" />
+                <Skeleton className="h-4 w-44 rounded-md" />
+              </div>
+              <div className="mt-3">
+                <Skeleton className="h-8 w-44 rounded-lg" />
+                <div className="mt-2">
+                  <Skeleton className="h-3 w-64 rounded-md" />
+                </div>
+              </div>
+            </div>
+
+            {/* 2 small KPI cards */}
+            {Array.from({ length: 2 }).map((_, i) => (
+              <div key={`kpi2-${i}`} className="gc-card is-interactive p-5">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="h-10 w-10 rounded-2xl" />
+                  <Skeleton className="h-4 w-32 rounded-md" />
+                </div>
+                <div className="mt-3">
+                  <Skeleton className="h-6 w-40 rounded-lg" />
+                  <div className="mt-2">
+                    <Skeleton className="h-3 w-24 rounded-md" />
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Top 5 table card (md:col-span-4) */}
+            <div className="gc-card is-interactive p-5 md:col-span-4">
+              <Skeleton className="h-4 w-56 rounded-md" />
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-4 w-44 rounded-md" />
+                  <Skeleton className="h-4 w-28 rounded-md" />
+                  <Skeleton className="h-4 w-28 rounded-md" />
+                </div>
+                {Array.from({ length: 5 }).map((_, r) => (
+                  <div key={r} className="flex items-center justify-between gap-3">
+                    <Skeleton className="h-4 w-1/2 rounded-md" />
+                    <Skeleton className="h-4 w-28 rounded-md" />
+                    <Skeleton className="h-4 w-28 rounded-md" />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Diagnostics card (md:col-span-4) */}
+            <div className="gc-card is-interactive p-5 md:col-span-4">
+              <Skeleton className="h-4 w-32 rounded-md" />
+              <div className="mt-4 grid gap-3 md:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <Skeleton className="h-3 w-40 rounded-md" />
+                    <div className="mt-2">
+                      <Skeleton className="h-8 w-20 rounded-lg" />
+                    </div>
+                    <div className="mt-3">
+                      <Skeleton className="h-3 w-full rounded-md" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {err && (
         <div className="gc-card is-interactive p-6">
@@ -404,8 +425,9 @@ export default function Dashboard() {
             <div className="gc-card is-interactive p-6">
               <div className="gc-label">WARNING</div>
               <div className="mt-2 text-sm text-amber-700">
-                Some recipe costs are extremely high. This is usually caused by an incorrect <span className="font-semibold">pack_unit</span> or{' '}
-                <span className="font-semibold">net_unit_cost</span> (e.g., cost per kg but pack_unit set to g).
+                Some recipe costs are extremely high. This is usually caused by an incorrect{' '}
+                <span className="font-semibold">pack_unit</span> or <span className="font-semibold">net_unit_cost</span>{' '}
+                (e.g., cost per kg but pack_unit set to g).
               </div>
             </div>
           )}
@@ -495,8 +517,12 @@ export default function Dashboard() {
                   <thead>
                     <tr>
                       <th>Recipe</th>
-                      <th className="gc-th-right" style={{ width: 160 }}>Total</th>
-                      <th className="gc-th-right" style={{ width: 160 }}>Cost/Portion</th>
+                      <th className="gc-th-right" style={{ width: 160 }}>
+                        Total
+                      </th>
+                      <th className="gc-th-right" style={{ width: 160 }}>
+                        Cost/Portion
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
