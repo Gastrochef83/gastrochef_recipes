@@ -111,7 +111,9 @@ export default function Dashboard() {
       const { data: r, error: re } = await supabase
         .from('recipes')
         .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
-      if (re) throw re      const { data: l, error: le } = await supabase
+      if (re) throw re
+
+      const { data: l, error: le } = await supabase
         .from('recipe_lines')
         .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
       if (le) throw le
