@@ -4,22 +4,22 @@
    ========================================================= */
 
 :root {
-  /* =========================================================
-     Visual System Audit (B) — Quiet Shell / Consistent Surfaces
-     Single source of truth:
-     - Brand + core tokens: src/styles/tokens.css
-     - Practical layout sizing overrides live here
-     ========================================================= */
+  --gc-bg: #f6f7f5;
+  --gc-surface: #ffffff;
+  --gc-border: #e5e7eb;
+  --gc-text: #1f2937;
+  --gc-muted: #6b7280;
 
-  /* Map surfaces to tokens (keep naming used across existing CSS) */
-  --gc-surface: var(--gc-card);
-  --gc-surface-2: var(--gc-card-2);
+  --gc-olive: #6b7c3f;
+  --gc-olive-soft: rgba(107,124,63,0.12);
 
-  /* Topbar sizing (quiet + compact) */
-  --gc-topbar-height: 52px;
+  --gc-danger: #dc2626;
+
+  --gc-radius: 14px;
+  --gc-shadow: 0 6px 18px rgba(0,0,0,0.06);
+
+  --gc-topbar-height: 58px;
 }
-
-
 
 /* =========================================================
    Base
@@ -51,24 +51,25 @@ body {
 }
 
 /* =========================================================
-   Topbar
+   Topbar (B — Quiet Professional Pass)
+   Goal: keep your original look, just calmer + tighter, no dominance.
    ========================================================= */
 
 .gc-topbar {
-  margin-bottom: 16px;
+  margin-bottom: 24px;
 }
 
+/* The outer "pill" container */
 .gc-topbar-pill {
-  height: var(--gc-topbar-height);
+  height: 56px;                 /* slightly calmer than 58px */
   display: grid;
-  grid-template-columns: minmax(0, auto) 1fr minmax(0, auto);
+  grid-template-columns: auto 1fr auto;
   align-items: center;
-  padding: 0 14px;
+  padding: 0 16px;              /* tighter */
   background: var(--gc-surface);
-  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
+  border: 1px solid rgba(0,0,0,0.08);  /* softer border */
   border-radius: 999px;
-  box-shadow: color-mix(in oklab, var(--gc-shadow) 70%, transparent);
-  overflow: hidden;
+  box-shadow: 0 5px 16px rgba(0,0,0,0.05); /* softer shadow */
 }
 
 /* Left Section */
@@ -85,13 +86,14 @@ body {
   object-fit: contain;
 }
 
+/* Kitchen label — now truncates safely */
 .gc-topbar-kitchen {
-  font-weight: 650;
-  font-size: 13px;
+  font-weight: 600;
+  font-size: 14px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 44vw;
+  max-width: 320px;
 }
 
 /* Spacer */
@@ -99,7 +101,7 @@ body {
   min-width: 0;
 }
 
-/* Right Section — FIXED */
+/* Right Section */
 .gc-topbar-right {
   display: flex;
   align-items: center;
@@ -107,15 +109,13 @@ body {
 }
 
 .gc-topbar-actions {
-  display: flex;
-  flex-direction: row;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 8px;                     /* calmer */
   white-space: nowrap;
 }
-
 /* =========================================================
-   Autosave Pill
+   Autosave Pill (quieter)
    ========================================================= */
 
 .gc-autosave {
@@ -125,50 +125,57 @@ body {
   height: 30px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
-  background: var(--gc-surface-2);
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(0,0,0,0.02);          /* calmer than pure surface */
   font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.1px;
+  font-weight: 600;
   color: var(--gc-muted);
 }
 
 .gc-autosave.is-saving {
-  border-color: var(--gc-olive);
+  border-color: rgba(0,0,0,0.10);
   color: var(--gc-olive);
+  background: rgba(0,0,0,0.02);
+}
+
+.gc-autosave.is-saved {
+  border-color: rgba(0,0,0,0.08);
 }
 
 .gc-autosave.is-error {
-  border-color: var(--gc-danger);
+  border-color: rgba(0,0,0,0.10);
   color: var(--gc-danger);
+  background: rgba(0,0,0,0.02);
 }
 
 .gc-autosave-icon {
   font-weight: 800;
 }
 
+.gc-autosave-text {
+  font-weight: 700;
+}
 /* =========================================================
-   Command Button
+   Command Button (quieter)
    ========================================================= */
 
 .gc-kbd-btn {
   height: 30px;
-  min-width: 44px;
+  min-width: 46px;
   padding: 0 10px;
   border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
-  background: var(--gc-olive-soft);
+  border: 1px solid rgba(0,0,0,0.08);
+  background: var(--gc-surface);         /* calmer */
   color: var(--gc-text);
-  font-weight: 750;
+  font-weight: 700;
   cursor: pointer;
-  transition: box-shadow 0.15s ease, background 0.15s ease;
+  transition: background 0.15s ease, border-color 0.15s ease;
 }
 
 .gc-kbd-btn:hover {
-  box-shadow: var(--gc-shadow);
-  background: color-mix(in oklab, var(--gc-olive-soft) 70%, white);
+  background: var(--gc-olive-soft);      /* subtle accent */
+  border-color: rgba(0,0,0,0.10);
 }
-
 /* =========================================================
    User Menu Trigger
    ========================================================= */
@@ -180,7 +187,7 @@ body {
   height: 30px;
   padding: 0 9px;
   border-radius: 999px;
-  border: 1px solid color-mix(in oklab, var(--gc-border) 85%, transparent);
+  border: 1px solid rgba(0,0,0,0.08);
   background: var(--gc-surface);
   cursor: pointer;
 }
@@ -188,15 +195,14 @@ body {
 .gc-avatar {
   width: 24px;
   height: 24px;
-  border-radius: 999px;
+  border-radius: 50%;
   background: var(--gc-olive);
   color: white;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 11px;
   font-weight: 800;
-  letter-spacing: 0.3px;
+  font-size: 12px;
 }
 
 .gc-user-mini {
