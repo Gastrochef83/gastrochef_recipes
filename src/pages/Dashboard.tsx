@@ -108,20 +108,24 @@ export default function Dashboard() {
     setLoading(true)
     setErr(null)
     try {
-      const { data: r, error: re } = await supabase
-        .from('recipes')
-        .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
+      const [
+        { data: r, error: re },
+        { data: i, error: ie }
+      ] = await Promise.all([
+        supabase
+          .from('recipes')
+          .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe'),
+        supabase
+          .from('ingredients')
+          .select('id,name,pack_unit,net_unit_cost,is_active')
+      ])
       if (re) throw re
+      if (ie) throw ie
 
       const { data: l, error: le } = await supabase
         .from('recipe_lines')
         .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
       if (le) throw le
-
-      const { data: i, error: ie } = await supabase
-        .from('ingredients')
-        .select('id,name,pack_unit,net_unit_cost,is_active')
-      if (ie) throw ie
 
       setRecipes((r ?? []) as Recipe[])
       setLines((l ?? []) as Line[])
