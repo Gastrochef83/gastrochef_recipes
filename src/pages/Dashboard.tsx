@@ -555,7 +555,7 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">{money(cheapestRecipe?.total ?? 0)}</div>
             </div>
 
-                        {loadingLines ? (
+            {loadingLines ? (
               <>
                 <div className="gc-card is-interactive p-5">
                   <div className="gc-kpi-head">
@@ -618,65 +618,62 @@ export default function Dashboard() {
               </div>
             ) : (
               <>
-<div className="gc-card is-interactive p-5">
-              <div className="gc-kpi-head">
-                <span className="gc-kpi-ico" aria-hidden>
-                  🔴
-                </span>
-                <div className="gc-label">MOST EXPENSIVE</div>
-              </div>
-              <div className="mt-2 text-lg font-extrabold">{mostExpensiveRecipe?.name ?? '—'}</div>
-              <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
-            </div>
-
-            <div className="gc-card is-interactive p-5 md:col-span-4">
-              <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
-              <div className="mt-3 gc-data-table-wrap">
-                <table className="gc-data-table text-sm">
-                  <thead>
-                    <tr>
-                      <th>Recipe</th>
-                      <th className="gc-th-right" style={{ width: 160 }}>
-                        Total
-                      </th>
-                      <th className="gc-th-right" style={{ width: 160 }}>
-                        Cost/Portion
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {top5.map((x) => (
-                      <tr key={x.id}>
-                        <td className="font-semibold">{x.name}</td>
-                        <td className="gc-td-right">{money(x.total)}</td>
-                        <td className="gc-td-right">{money(x.cpp)}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-
-            <div className="gc-card is-interactive p-5 md:col-span-4">
-              <div className="gc-label">DIAGNOSTICS</div>
-              <div className="mt-2 grid gap-3 md:grid-cols-3">
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Unit mismatches</div>
-                  <div className="mt-1 text-2xl font-extrabold">{diag.unitMismatchCount}</div>
-                </div>
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">Missing yield (sub-recipes)</div>
-                  <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
-                </div>
-                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                  <div className="text-xs font-semibold text-neutral-600">
-                    Ingredients used in recipes missing cost
+                <div className="gc-card is-interactive p-5">
+                  <div className="gc-kpi-head">
+                    <span className="gc-kpi-ico" aria-hidden>
+                      🔴
+                    </span>
+                    <div className="gc-label">MOST EXPENSIVE</div>
                   </div>
-                  <div className="mt-1 text-2xl font-extrabold">{ingredientsUsedMissingCost}</div>
+                  <div className="mt-2 text-lg font-extrabold">{mostExpensiveRecipe?.name ?? '—'}</div>
+                  <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
                 </div>
-              </div>
-            </div>
-          </div>
+
+                <div className="gc-card is-interactive p-5 md:col-span-4">
+                  <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
+                  <div className="mt-3 gc-data-table-wrap">
+                    <table className="gc-data-table text-sm">
+                      <thead>
+                        <tr>
+                          <th>Recipe</th>
+                          <th className="gc-th-right" style={{ width: 160 }}>
+                            Total
+                          </th>
+                          <th className="gc-th-right" style={{ width: 160 }}>
+                            Cost/Portion
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {top5.map((x) => (
+                          <tr key={x.id}>
+                            <td className="font-semibold">{x.name}</td>
+                            <td className="gc-td-right">{money(x.total)}</td>
+                            <td className="gc-td-right">{money(x.cpp)}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="gc-card is-interactive p-5 md:col-span-4">
+                  <div className="gc-label">DIAGNOSTICS</div>
+                  <div className="mt-2 grid gap-3 md:grid-cols-3">
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                      <div className="text-xs font-semibold text-neutral-600">Unit mismatches</div>
+                      <div className="mt-1 text-2xl font-extrabold">{diag.unitMismatchCount}</div>
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                      <div className="text-xs font-semibold text-neutral-600">Missing yield (sub-recipes)</div>
+                      <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
+                    </div>
+                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                      <div className="text-xs font-semibold text-neutral-600">Ingredients used in recipes missing cost</div>
+                      <div className="mt-1 text-2xl font-extrabold">{ingredientsUsedMissingCost}</div>
+                    </div>
+                  </div>
+                </div>
               </>
             )}
 
