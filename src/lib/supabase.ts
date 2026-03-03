@@ -1,7 +1,7 @@
 import { createClient } from '@supabase/supabase-js'
 
 /**
- * ✅ FINAL GOD — Supabase client hardening (no business-logic change)
+ * Supabase client configuration (no business-logic change)
  * - Better HashRouter compatibility (detectSessionInUrl: false)
  * - Stable session persistence + token refresh
  * - Clear error if env vars are missing (prevents silent blank screens)
@@ -19,7 +19,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
-    // ✅ Important with HashRouter + manual redirects (#/login, #/dashboard)
+    // Important for HashRouter + manual redirects (#/login, #/dashboard)
     detectSessionInUrl: false,
   },
 })
