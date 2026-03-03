@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Button from '../components/ui/Button'
 import { Skeleton } from '../components/Skeleton'
+import EmptyState from '../components/EmptyState'
 import ErrorState from '../components/ErrorState'
 
 type Recipe = {
@@ -96,70 +97,39 @@ export default function Dashboard() {
     }
   })()
 
-  const [loadingBase, setLoadingBase] = useState(true)
-  const [loadingLines, setLoadingLines] = useState(true)
-  const [baseErr, setBaseErr] = useState<string | null>(null)
-  const [linesErr, setLinesErr] = useState<string | null>(null)
-  const loadSeq = useRef(0)
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
 
   const [recipes, setRecipes] = useState<Recipe[]>([])
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
 
   const load = async () => {
-  const seq = ++loadSeq.current
-  setLoadingBase(true)
-  setLoadingLines(true)
-  setBaseErr(null)
-  setLinesErr(null)
+    setLoading(true)
+    setErr(null)
+    try {
+      const { data: r, error: re } = await supabase
+        .from('recipes')
+        .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
+      if (re) throw re      const { data: l, error: le } = await supabase
+        .from('recipe_lines')
+        .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
+      if (le) throw le
 
-  try {
-    const recipesReq = supabase
-      .from('recipes')
-      .select('id,name,portions,yield_qty,yield_unit,is_archived,is_subrecipe')
+      const { data: i, error: ie } = await supabase
+        .from('ingredients')
+        .select('id,name,pack_unit,net_unit_cost,is_active')
+      if (ie) throw ie
 
-    const ingredientsReq = supabase
-      .from('ingredients')
-      .select('id,name,pack_unit,net_unit_cost,is_active')
-
-    const linesReq = supabase
-      .from('recipe_lines')
-      .select('recipe_id,ingredient_id,sub_recipe_id,qty,unit')
-
-    const [{ data: r, error: re }, { data: i, error: ie }] = await Promise.all([
-      recipesReq,
-      ingredientsReq,
-    ])
-
-    if (seq !== loadSeq.current) return
-    if (re) throw re
-    if (ie) throw ie
-
-    setRecipes((r ?? []) as Recipe[])
-    setIngredients((i ?? []) as Ingredient[])
-    setLoadingBase(false)
-
-    const { data: l, error: le } = await linesReq
-    if (seq !== loadSeq.current) return
-
-    if (le) {
-      setLines([])
-      setLinesErr(le?.message ?? 'Unable to load recipe lines')
-    } else {
+      setRecipes((r ?? []) as Recipe[])
       setLines((l ?? []) as Line[])
+      setIngredients((i ?? []) as Ingredient[])
+      setLoading(false)
+    } catch (e: any) {
+      setErr(e?.message ?? 'Unknown error')
+      setLoading(false)
     }
-
-    setLoadingLines(false)
-  } catch (e: any) {
-    if (seq !== loadSeq.current) return
-    setRecipes([])
-    setIngredients([])
-    setLines([])
-    setBaseErr(e?.message ?? 'Unknown error')
-    setLoadingBase(false)
-    setLoadingLines(false)
   }
-}
 
   useEffect(() => {
     load()
@@ -396,8 +366,8 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Skeleton loading */}
-      {loadingBase && (
+      {/* ✅ Skeleton Loading (بدل Loading… العادي) */}
+      {loading && (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
@@ -436,45 +406,32 @@ export default function Dashboard() {
         </div>
       )}
 
-      {(baseErr || linesErr) && (
+      {err && (
         <ErrorState
-          title={baseErr ? "We couldn't load your dashboard" : "Some insights couldn't be loaded"}
-          message={baseErr ? "Please check your connection and try again." : "You can keep working. Try again to load diagnostics and top costs."}
-          details={baseErr || linesErr || undefined}
+          title="We couldn't load your dashboard"
+          message="Please check your connection and try again."
+          details={err}
           onRetry={load}
           variant="banner"
         />
       )}
 
-      {!loadingBase && !baseErr && (
+      {!loading && !err && (
         <>
           {activeRecipes.length === 0 && activeIngredientsCount === 0 && (
-            <div className="gc-card is-interactive p-6">
-              <div className="gc-empty">
-                <div className="gc-empty-ico">✨</div>
-                <div>
-                  <div className="text-lg font-extrabold">You’re one minute away from WOW.</div>
-                  <div className="mt-1 text-sm text-neutral-600">
-                    Add a few ingredients, then create your first recipe. This dashboard will instantly show cost
-                    insights.
-                  </div>
-                  <div className="mt-4 grid gap-2 text-sm">
-                    <div className="gc-empty-step">
-                      <span className="gc-empty-dot">1</span>
-                      <span>Add 5–10 ingredients (with pack unit + net cost)</span>
-                    </div>
-                    <div className="gc-empty-step">
-                      <span className="gc-empty-dot">2</span>
-                      <span>Create 1 recipe and add ingredients</span>
-                    </div>
-                    <div className="gc-empty-step">
-                      <span className="gc-empty-dot">3</span>
-                      <span>Return here to see Top Costs + Diagnostics</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <EmptyState
+              title="Your kitchen is ready"
+              description="Add a few ingredients, then create your first recipe. This dashboard will instantly show cost insights."
+              primaryAction={{
+                label: 'Add Ingredient',
+                onClick: () => nav('/ingredients')
+              }}
+              secondaryAction={{
+                label: 'Create Recipe',
+                onClick: () => nav('/recipes')
+              }}
+              icon="✨"
+            />
           )}
 
           {hasOutliers && (
@@ -555,128 +512,65 @@ export default function Dashboard() {
               <div className="mt-1 text-xs text-neutral-500">{money(cheapestRecipe?.total ?? 0)}</div>
             </div>
 
-            {loadingLines ? (
-              <>
-                <div className="gc-card is-interactive p-5">
-                  <div className="gc-kpi-head">
-                    <span className="gc-kpi-ico" aria-hidden>
-                      🔴
-                    </span>
-                    <div className="gc-label">MOST EXPENSIVE</div>
-                  </div>
-                  <div className="mt-3">
-                    <Skeleton className="h-5 w-48 rounded-md" />
-                    <div className="mt-2">
-                      <Skeleton className="h-3 w-24 rounded-md" />
-                    </div>
-                  </div>
-                </div>
+            <div className="gc-card is-interactive p-5">
+              <div className="gc-kpi-head">
+                <span className="gc-kpi-ico" aria-hidden>
+                  🔴
+                </span>
+                <div className="gc-label">MOST EXPENSIVE</div>
+              </div>
+              <div className="mt-2 text-lg font-extrabold">{mostExpensiveRecipe?.name ?? '—'}</div>
+              <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
+            </div>
 
-                <div className="gc-card is-interactive p-5 md:col-span-4">
-                  <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
-                  <div className="mt-4 space-y-3">
-                    <div className="flex items-center justify-between gap-3">
-                      <Skeleton className="h-4 w-44 rounded-md" />
-                      <Skeleton className="h-4 w-28 rounded-md" />
-                      <Skeleton className="h-4 w-28 rounded-md" />
-                    </div>
-                    {Array.from({ length: 5 }).map((_, r) => (
-                      <div key={r} className="flex items-center justify-between gap-3">
-                        <Skeleton className="h-4 w-1/2 rounded-md" />
-                        <Skeleton className="h-4 w-28 rounded-md" />
-                        <Skeleton className="h-4 w-28 rounded-md" />
-                      </div>
+            <div className="gc-card is-interactive p-5 md:col-span-4">
+              <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
+              <div className="mt-3 gc-data-table-wrap">
+                <table className="gc-data-table text-sm">
+                  <thead>
+                    <tr>
+                      <th>Recipe</th>
+                      <th className="gc-th-right" style={{ width: 160 }}>
+                        Total
+                      </th>
+                      <th className="gc-th-right" style={{ width: 160 }}>
+                        Cost/Portion
+                      </th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {top5.map((x) => (
+                      <tr key={x.id}>
+                        <td className="font-semibold">{x.name}</td>
+                        <td className="gc-td-right">{money(x.total)}</td>
+                        <td className="gc-td-right">{money(x.cpp)}</td>
+                      </tr>
                     ))}
-                  </div>
-                </div>
+                  </tbody>
+                </table>
+              </div>
+            </div>
 
-                <div className="gc-card is-interactive p-5 md:col-span-4">
-                  <div className="gc-label">DIAGNOSTICS</div>
-                  <div className="mt-4 grid gap-3 md:grid-cols-3">
-                    {Array.from({ length: 3 }).map((_, i) => (
-                      <div key={i} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                        <Skeleton className="h-3 w-32 rounded-md" />
-                        <div className="mt-2">
-                          <Skeleton className="h-7 w-16 rounded-md" />
-                        </div>
-                      </div>
-                    ))}
+            <div className="gc-card is-interactive p-5 md:col-span-4">
+              <div className="gc-label">DIAGNOSTICS</div>
+              <div className="mt-2 grid gap-3 md:grid-cols-3">
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold text-neutral-600">Unit mismatches</div>
+                  <div className="mt-1 text-2xl font-extrabold">{diag.unitMismatchCount}</div>
+                </div>
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold text-neutral-600">Missing yield (sub-recipes)</div>
+                  <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
+                </div>
+                <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                  <div className="text-xs font-semibold text-neutral-600">
+                    Ingredients used in recipes missing cost
                   </div>
-                </div>
-              </>
-            ) : linesErr ? (
-              <div className="gc-card is-interactive p-6 md:col-span-4">
-                <div className="gc-label">INSIGHTS UNAVAILABLE</div>
-                <div className="mt-2 text-sm text-neutral-600">
-                  We loaded recipes and ingredients, but couldn&apos;t load diagnostics and top costs.
-                </div>
-                <div className="mt-4">
-                  <Button variant="secondary" onClick={load}>
-                    Retry
-                  </Button>
+                  <div className="mt-1 text-2xl font-extrabold">{ingredientsUsedMissingCost}</div>
                 </div>
               </div>
-            ) : (
-              <>
-                <div className="gc-card is-interactive p-5">
-                  <div className="gc-kpi-head">
-                    <span className="gc-kpi-ico" aria-hidden>
-                      🔴
-                    </span>
-                    <div className="gc-label">MOST EXPENSIVE</div>
-                  </div>
-                  <div className="mt-2 text-lg font-extrabold">{mostExpensiveRecipe?.name ?? '—'}</div>
-                  <div className="mt-1 text-xs text-neutral-500">{money(mostExpensiveRecipe?.total ?? 0)}</div>
-                </div>
-
-                <div className="gc-card is-interactive p-5 md:col-span-4">
-                  <div className="gc-label">TOP 5 RECIPES BY TOTAL COST</div>
-                  <div className="mt-3 gc-data-table-wrap">
-                    <table className="gc-data-table text-sm">
-                      <thead>
-                        <tr>
-                          <th>Recipe</th>
-                          <th className="gc-th-right" style={{ width: 160 }}>
-                            Total
-                          </th>
-                          <th className="gc-th-right" style={{ width: 160 }}>
-                            Cost/Portion
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {top5.map((x) => (
-                          <tr key={x.id}>
-                            <td className="font-semibold">{x.name}</td>
-                            <td className="gc-td-right">{money(x.total)}</td>
-                            <td className="gc-td-right">{money(x.cpp)}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </div>
-
-                <div className="gc-card is-interactive p-5 md:col-span-4">
-                  <div className="gc-label">DIAGNOSTICS</div>
-                  <div className="mt-2 grid gap-3 md:grid-cols-3">
-                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                      <div className="text-xs font-semibold text-neutral-600">Unit mismatches</div>
-                      <div className="mt-1 text-2xl font-extrabold">{diag.unitMismatchCount}</div>
-                    </div>
-                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                      <div className="text-xs font-semibold text-neutral-600">Missing yield (sub-recipes)</div>
-                      <div className="mt-1 text-2xl font-extrabold">{subRecipesMissingYield.length}</div>
-                    </div>
-                    <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-                      <div className="text-xs font-semibold text-neutral-600">Ingredients used in recipes missing cost</div>
-                      <div className="mt-1 text-2xl font-extrabold">{ingredientsUsedMissingCost}</div>
-                    </div>
-                  </div>
-                </div>
-              </>
-            )}
-
+            </div>
+          </div>
         </>
       )}
     </div>
