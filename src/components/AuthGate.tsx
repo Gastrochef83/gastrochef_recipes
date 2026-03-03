@@ -1,18 +1,12 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../lib/supabase'
+import SplashScreen from './SplashScreen'
 
 type Props = {
   children: React.ReactNode
-  /** where to send unauth users */
   redirectTo?: string
 }
 
-/**
- * ✅ AuthGate (HashRouter-safe)
- * - Prevents accessing app pages without a valid session
- * - Prevents weird "bounce back" after logout by hard redirect
- * - No changes to your recipe/ingredient logic — only routing safety
- */
 export default function AuthGate({ children, redirectTo = '/login' }: Props) {
   const base = useMemo(() => (import.meta as any).env?.BASE_URL || '/', [])
   const [checking, setChecking] = useState(true)
@@ -29,7 +23,6 @@ export default function AuthGate({ children, redirectTo = '/login' }: Props) {
         setOk(has)
 
         if (!has) {
-          // ✅ hard redirect avoids outlet stuck / cached renders
           window.location.assign(`${base}#${redirectTo}`)
         }
       } catch {
@@ -43,7 +36,6 @@ export default function AuthGate({ children, redirectTo = '/login' }: Props) {
 
     run()
 
-    // Also listen for auth state changes (logout/login)
     const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
       const has = !!session
       setOk(has)
@@ -58,22 +50,14 @@ export default function AuthGate({ children, redirectTo = '/login' }: Props) {
 
   if (checking) {
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'grid',
-          placeItems: 'center',
-          background: '#f6f8fb',
-          color: '#64748b',
-          fontSize: 14,
-        }}
-      >
-        Checking session…
-      </div>
+      <SplashScreen
+        title="GastroChef"
+        subtitle="Signing you in…"
+        hint="Verifying session & loading workspace"
+      />
     )
   }
 
   if (!ok) return null
-
   return <>{children}</>
 }
