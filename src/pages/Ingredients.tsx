@@ -372,7 +372,7 @@ export default function Ingredients() {
     const pp = Math.max(0, toNum(fPackPrice, 0))
     const net = calcNetUnitCost(pp, ps)
     setFNetUnitCost(String(Math.round(net * 1000000) / 1000000))
-    showToast('Net Unit Cost recalculated from Pack ✅')
+    showToast('Net Unit Cost recalculated from Pack')
   }
 
   const save = async () => {
@@ -424,7 +424,7 @@ export default function Ingredients() {
           ;({ error } = await supabase.from('ingredients').update(payload).eq('id', editingId))
         }
         if (error) throw error
-        showToast('Ingredient updated ✅')
+        showToast('Ingredient updated')
       } else {
         let { error } = await supabase.from('ingredients').insert(payload)
         if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
@@ -432,7 +432,7 @@ export default function Ingredients() {
           ;({ error } = await supabase.from('ingredients').insert(payload))
         }
         if (error) throw error
-        showToast('Ingredient created ✅')
+        showToast('Ingredient created')
       }
 
       setModalOpen(false)
@@ -455,14 +455,14 @@ export default function Ingredients() {
     if (!ok) return
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
-    showToast('Ingredient deactivated ✅')
+    showToast('Ingredient deactivated')
     await load()
   }
 
   const restore = async (id: string) => {
     const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
     if (error) return showToast(error.message)
-    showToast('Ingredient restored ✅')
+    showToast('Ingredient restored')
     await load()
   }
 
@@ -480,7 +480,7 @@ export default function Ingredients() {
       return showToast(msg || 'Delete failed')
     }
 
-    showToast('Ingredient deleted ✅')
+    showToast('Ingredient deleted')
     await load()
   }
 
@@ -503,7 +503,7 @@ export default function Ingredients() {
       invalidateIngredientsCache()
         if (error) throw error
       }
-      showToast('Bulk recalculation done ✅')
+      showToast('Bulk recalculation done')
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk recalculation failed')
@@ -524,7 +524,7 @@ export default function Ingredients() {
       invalidateIngredientsCache()
         if (error) throw error
       }
-      showToast('Bulk update done ✅')
+      showToast('Bulk update done')
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Bulk update failed')
