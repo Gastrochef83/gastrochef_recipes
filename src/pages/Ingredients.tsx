@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase'
 import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
-import ErrorState from '../components/ErrorState'
 import { useKitchen } from '../lib/kitchen'
 
 type IngredientRow = {
@@ -653,13 +652,10 @@ export default function Ingredients() {
       )}
 
       {err && (
-        <ErrorState
-          title="We couldn't load ingredients"
-          message="Please check your connection and try again."
-          details={err}
-          onRetry={load}
-          variant="banner"
-        />
+        <div className="gc-card p-6">
+          <div className="gc-label">ERROR</div>
+          <div className="mt-2 text-sm text-red-600">{err}</div>
+        </div>
       )}
 
       {/* Body */}
@@ -719,7 +715,76 @@ export default function Ingredients() {
             </div>
 
             {filtered.length === 0 ? (
-              <div className="mt-3 text-sm text-neutral-600">No ingredients found.</div>
+              <div className="mt-4">
+                <div className="rounded-2xl border border-black/5 bg-white p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/5 text-xl" aria-hidden>
+                        🧂
+                      </div>
+                      <div>
+                        <div className="text-base font-semibold text-neutral-900">
+                          {rows.length === 0
+                            ? 'No ingredients yet'
+                            : normalized.length === 0
+                              ? 'No active ingredients'
+                              : 'No results found'}
+                        </div>
+                        <div className="mt-1 text-sm text-neutral-600">
+                          {rows.length === 0
+                            ? 'Start your kitchen database by adding your first ingredient. This powers costing, yields, and recipe accuracy.'
+                            : normalized.length === 0
+                              ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them, or add a new one.'
+                              : 'Try adjusting your search, category, or inactive filter to find what you need.'}
+                        </div>
+
+                        {rows.length > 0 && normalized.length > 0 ? (
+                          <div className="mt-3 text-xs text-neutral-500">
+                            Tip: clear filters to return to the full list.
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {rows.length === 0 ? (
+                        <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
+                          + Add ingredient
+                        </button>
+                      ) : normalized.length === 0 ? (
+                        <>
+                          <button className="gc-btn gc-btn-primary" type="button" onClick={() => setShowInactive(true)}>
+                            Show inactive
+                          </button>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
+                            + Add ingredient
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="gc-btn gc-btn-primary"
+                            type="button"
+                            onClick={() => {
+                              setSearch('')
+                              setCategory('')
+                            }}
+                          >
+                            Clear filters
+                          </button>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
+                            + Add ingredient
+                          </button>
+                        </>
+                      )}
+
+                      <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
+                        Refresh
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
             ) : (
               <div className="mt-4 gc-data-table-wrap">
                 <table className="gc-data-table text-sm">
