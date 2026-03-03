@@ -3,7 +3,6 @@ import { supabase } from '../lib/supabase'
 import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
-import ErrorState from '../components/ErrorState'
 import { useKitchen } from '../lib/kitchen'
 
 type IngredientRow = {
@@ -113,16 +112,13 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const active = r.is_active !== false
   const net = toNum(r.net_unit_cost, 0)
   const unit = r.pack_unit ?? 'g'
-  const packSize = Math.max(1, toNum(r.pack_size, 1))
-  const packPrice = toNum(r.pack_price, 0)
   const flag = sanityFlag(net, unit)
 
   return (
     <tr>
-      <td className="hidden md:table-cell text-xs text-neutral-600">
+      <td className="text-xs text-neutral-600">
         <span className="gc-mono">{r.code ?? '—'}</span>
       </td>
-
       <td>
         <div className="font-semibold flex flex-wrap items-center gap-2">
           <span>{r.name ?? '—'}</span>
@@ -131,32 +127,21 @@ const IngredientTableRow = memo(function IngredientTableRow({
             <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
           )}
 
+          {/* Intentionally hide "Missing cost" badge to reduce visual clutter (user request).
+              Cost issues are still visible via the Net Unit Cost column and diagnostics. */}
+
           {flag.level === 'warn' && (
             <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
           )}
         </div>
-
-        {/* Compact meta line for small screens (reduces table density) */}
-        <div className="mt-1 text-xs text-neutral-500 md:hidden">
-          <span className="gc-mono">{r.code ?? '—'}</span>
-          <span className="mx-2">•</span>
-          <span>{r.category ?? 'Uncategorized'}</span>
-          <span className="mx-2">•</span>
-          <span>
-            Pack {packSize} {unit}
-          </span>
-          <span className="mx-2">•</span>
-          <span>{money(packPrice)}</span>
-        </div>
-
         {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
         {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
       </td>
 
-      <td className="hidden lg:table-cell">{r.category ?? '—'}</td>
-      <td className="hidden sm:table-cell gc-td-right">{packSize}</td>
-      <td className="hidden sm:table-cell gc-td-center">{unit}</td>
-      <td className="hidden md:table-cell gc-td-right font-semibold">{money(packPrice)}</td>
+      <td>{r.category ?? '—'}</td>
+      <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="gc-td-center">{unit}</td>
+      <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
       <td className="gc-td-right font-semibold">{money(net)}</td>
 
       <td className="gc-td-center whitespace-nowrap">
@@ -172,8 +157,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
       </td>
     </tr>
   )
-}
-
+})
 
 
 export default function Ingredients() {
@@ -668,13 +652,10 @@ export default function Ingredients() {
       )}
 
       {err && (
-        <ErrorState
-          title="We couldn't load ingredients"
-          message="Please check your connection and try again."
-          details={err}
-          onRetry={load}
-          variant="banner"
-        />
+        <div className="gc-card p-6">
+          <div className="gc-label">ERROR</div>
+          <div className="mt-2 text-sm text-red-600">{err}</div>
+        </div>
       )}
 
       {/* Body */}
@@ -809,12 +790,12 @@ export default function Ingredients() {
                 <table className="gc-data-table text-sm">
                   <thead>
                     <tr>
-                      <th className="hidden md:table-cell gc-col-code">Code</th>
+                      <th className="gc-col-code">Code</th>
                       <th className="gc-col-name">Name</th>
-                      <th className="hidden lg:table-cell gc-col-category">Category</th>
-                      <th className={cls('hidden sm:table-cell gc-th-right', 'gc-col-pack')}>Pack</th>
-                      <th className={cls('hidden sm:table-cell gc-th-center', 'gc-col-unit')}>Unit</th>
-                      <th className={cls('hidden md:table-cell gc-th-right', 'gc-col-packprice')}>Pack Price</th>
+                      <th className="gc-col-category">Category</th>
+                      <th className={cls('gc-th-right', 'gc-col-pack')}>Pack</th>
+                      <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
+                      <th className={cls('gc-th-right', 'gc-col-packprice')}>Pack Price</th>
                       <th className={cls('gc-th-right', 'gc-col-netunit')}>Net Unit Cost</th>
                       <th className={cls('gc-th-center', 'gc-col-actions')}>Actions</th>
                     </tr>
