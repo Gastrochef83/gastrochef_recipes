@@ -236,6 +236,7 @@ export default function Ingredients() {
     'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active'
 
   const PAGE_SIZE = 200
+const UI_BATCH_PAGES = 3
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -250,6 +251,7 @@ export default function Ingredients() {
 
       let offset = 0
       let acc: IngredientRow[] = []
+      let pagesSinceUIUpdate = 0
 
       while (true) {
         // If a newer load started, stop this one
@@ -266,13 +268,16 @@ export default function Ingredients() {
         const chunk = ((data ?? []) as IngredientRow[]) || []
         acc = acc.concat(chunk)
 
-        // Update UI progressively (fast first paint)
-        setRows(acc)
+        pagesSinceUIUpdate += 1
+        const shouldUpdateUI = offset === 0 || pagesSinceUIUpdate >= UI_BATCH_PAGES || chunk.length < PAGE_SIZE
 
-        // Prime cache so other pages benefit without refetching within TTL
-        primeIngredientsCache(acc as any)
-
-        if (offset === 0) setLoading(false)
+        if (shouldUpdateUI) {
+          // Progressive UI updates: fast first paint, then batched to reduce render churn
+          setRows(acc)
+          primeIngredientsCache(acc as any)
+          pagesSinceUIUpdate = 0
+          if (offset === 0) setLoading(false)
+        }
 
         if (!chunk.length || chunk.length < PAGE_SIZE) break
 
