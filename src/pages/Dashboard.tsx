@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import Button from '../components/ui/Button'
@@ -163,7 +163,19 @@ export default function Dashboard() {
     [recipes]
   )
 
-  const costEngine = useMemo(() => {
+  type CostEngineResult = {
+    totals: Map<string, number>
+    diag: {
+      unitMismatchCount: number
+      missingYieldSubrecipeCount: number
+      missingIngredientCostCount: number
+    }
+  }
+
+  const [costEngine, setCostEngine] = useState<CostEngineResult | null>(null)
+  const [costEngineLoading, setCostEngineLoading] = useState(false)
+
+  const computeCostEngine = useCallback((): CostEngineResult => {
     const totals = new Map<string, number>()
     const diag = {
       unitMismatchCount: 0,
@@ -253,8 +265,37 @@ export default function Dashboard() {
     return { totals, diag }
   }, [recipes, lines, ingById, recipeById])
 
-  const recipeTotalCost = costEngine.totals
-  const diag = costEngine.diag
+  useEffect(() => {
+    if (loading || err) return
+
+    let cancelled = false
+    setCostEngineLoading(true)
+
+    const t = window.setTimeout(() => {
+      if (cancelled) return
+      try {
+        const res = computeCostEngine()
+        setCostEngine(res)
+      } finally {
+        if (!cancelled) setCostEngineLoading(false)
+      }
+    }, 0)
+
+    return () => {
+      cancelled = true
+      window.clearTimeout(t)
+    }
+  }, [loading, err, computeCostEngine])
+
+
+  const recipeTotalCost = costEngine?.totals ?? new Map<string, number>()
+  const diag =
+    costEngine?.diag ??
+    {
+      unitMismatchCount: 0,
+      missingYieldSubrecipeCount: 0,
+      missingIngredientCostCount: 0,
+    }
 
   const ingredientsUsedMissingCost = useMemo(() => {
     const activeRecipeIds = new Set(activeRecipes.map((r) => r.id))
