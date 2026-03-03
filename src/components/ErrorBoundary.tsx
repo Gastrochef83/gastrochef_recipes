@@ -1,4 +1,5 @@
 import React from 'react'
+import ErrorState from './ErrorState'
 
 type Props = {
   children: React.ReactNode
@@ -8,19 +9,13 @@ type State = {
   hasError: boolean
   error?: Error
   info?: React.ErrorInfo
+  copyStatus?: 'idle' | 'success' | 'failed'
 }
 
-/**
- * ✅ FINAL GOD — ErrorBoundary PRO
- * - Prevents blank screen by catching render-time crashes
- * - Shows useful diagnostics (message + component stack)
- * - Offers "Reload" + "Copy error"
- * - No business-logic changes
- */
 export default class ErrorBoundary extends React.Component<Props, State> {
   constructor(props: Props) {
     super(props)
-    this.state = { hasError: false }
+    this.state = { hasError: false, copyStatus: 'idle' }
   }
 
   static getDerivedStateFromError(error: Error) {
@@ -28,42 +23,21 @@ export default class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo) {
-    // Always log for Vercel + browser console
-    console.error('🔥 GastroChef Render Error:', error)
+    console.error('GastroChef render error:', error)
     console.error(info)
     this.setState({ info })
   }
 
-  reload() {
+  private reload = () => {
     window.location.reload()
   }
 
-  async copy() {
-    const msg = this.buildCopyText()
-    try {
-      await navigator.clipboard.writeText(msg)
-      alert('Copied error details ✅')
-    } catch {
-      // fallback
-      try {
-        const ta = document.createElement('textarea')
-        ta.value = msg
-        document.body.appendChild(ta)
-        ta.select()
-        document.execCommand('copy')
-        document.body.removeChild(ta)
-        alert('Copied error details ✅')
-      } catch {
-        alert('Copy failed. Please copy manually from the box.')
-      }
-    }
-  }
-
-  buildCopyText() {
+  private buildCopyText = () => {
     const e = this.state.error
     const info = this.state.info
+
     const parts = [
-      'GastroChef ErrorBoundary Report',
+      'GastroChef Error Report',
       `Time: ${new Date().toISOString()}`,
       `URL: ${window.location.href}`,
       '',
@@ -76,7 +50,38 @@ export default class ErrorBoundary extends React.Component<Props, State> {
       'COMPONENT STACK:',
       info?.componentStack || '(no component stack)',
     ]
+
     return parts.join('\n')
+  }
+
+  private copy = async () => {
+    const msg = this.buildCopyText()
+
+    try {
+      await navigator.clipboard.writeText(msg)
+      this.setState({ copyStatus: 'success' })
+      window.setTimeout(() => this.setState({ copyStatus: 'idle' }), 2200)
+      return
+    } catch {
+      // Fallback for older browsers / restricted clipboard contexts
+      try {
+        const ta = document.createElement('textarea')
+        ta.value = msg
+        ta.setAttribute('readonly', 'true')
+        ta.style.position = 'fixed'
+        ta.style.left = '-9999px'
+        document.body.appendChild(ta)
+        ta.select()
+        document.execCommand('copy')
+        document.body.removeChild(ta)
+
+        this.setState({ copyStatus: 'success' })
+        window.setTimeout(() => this.setState({ copyStatus: 'idle' }), 2200)
+      } catch {
+        this.setState({ copyStatus: 'failed' })
+        window.setTimeout(() => this.setState({ copyStatus: 'idle' }), 3000)
+      }
+    }
   }
 
   render() {
@@ -84,128 +89,53 @@ export default class ErrorBoundary extends React.Component<Props, State> {
 
     const e = this.state.error
     const comp = this.state.info?.componentStack
+    const copyStatus = this.state.copyStatus ?? 'idle'
 
     return (
-      <div
-        style={{
-          minHeight: '100vh',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          padding: 18,
-          background: 'linear-gradient(180deg, #f6f8fb 0%, #eef3f6 100%)',
-          fontFamily: '-apple-system,BlinkMacSystemFont,Segoe UI,Roboto',
-        }}
-      >
-        <div
-          style={{
-            background: '#fff',
-            border: '1px solid rgba(15, 23, 42, .10)',
-            padding: 22,
-            borderRadius: 22,
-            boxShadow: '0 18px 50px rgba(2,6,23,.12)',
-            width: 'min(860px, 94vw)',
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#64748b', letterSpacing: '.08em' }}>GASTROCHEF</div>
-              <h2 style={{ margin: '6px 0 0', fontSize: 22 }}>Something went wrong</h2>
-              <div style={{ marginTop: 6, color: '#64748b', fontSize: 13 }}>
-                The app crashed during rendering. Use the buttons below to reload or copy error details.
+      <div className="gc-page min-h-screen p-5">
+        <div className="mx-auto w-full max-w-3xl space-y-4">
+          <ErrorState
+            title="Something went wrong"
+            message="The app encountered an unexpected rendering error. You can reload the app or copy the error details for support."
+            details={e ? `${e.name}: ${e.message}` : 'Unknown error'}
+            primaryAction={{ label: 'Reload', onClick: this.reload }}
+            secondaryAction={{ label: 'Copy error details', onClick: this.copy }}
+            variant="page"
+          />
+
+          {copyStatus !== 'idle' ? (
+            <div className="gc-card p-4">
+              <div className="gc-label">STATUS</div>
+              <div className="mt-1 text-sm text-neutral-700">
+                {copyStatus === 'success'
+                  ? 'Copied error details to clipboard.'
+                  : 'Copy failed. Please copy manually from the boxes below.'}
+              </div>
+            </div>
+          ) : null}
+
+          <div className="gc-card p-6">
+            <div className="gc-label">DIAGNOSTICS</div>
+
+            <div className="mt-4 grid gap-4">
+              <div>
+                <div className="text-sm font-semibold">Stack</div>
+                <pre className="mt-2 overflow-x-auto rounded-xl border border-[var(--gc-border)] bg-[rgba(2,6,23,.92)] p-3 text-xs text-[rgba(255,255,255,.88)]">
+                  {e?.stack || '(no stack)'}
+                </pre>
+              </div>
+
+              <div>
+                <div className="text-sm font-semibold">Component stack</div>
+                <pre className="mt-2 overflow-x-auto rounded-xl border border-[var(--gc-border)] bg-[rgba(2,6,23,.92)] p-3 text-xs text-[rgba(255,255,255,.88)]">
+                  {comp || '(no component stack)'}
+                </pre>
               </div>
             </div>
 
-            <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
-              <button
-                onClick={() => this.reload()}
-                style={{
-                  background: '#111827',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '10px 14px',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                  fontWeight: 800,
-                }}
-              >
-                Reload
-              </button>
-
-              <button
-                onClick={() => this.copy()}
-                style={{
-                  background: 'var(--accent)',
-                  color: '#fff',
-                  border: 'none',
-                  padding: '10px 14px',
-                  borderRadius: 12,
-                  cursor: 'pointer',
-                  fontWeight: 800,
-                }}
-              >
-                Copy error
-              </button>
+            <div className="mt-4 text-xs text-neutral-500">
+              If this keeps happening, copy the error details and send them to support so we can pinpoint the root cause.
             </div>
-          </div>
-
-          <div style={{ marginTop: 16 }}>
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Message</div>
-            <div
-              style={{
-                marginTop: 6,
-                borderRadius: 14,
-                background: '#fef2f2',
-                border: '1px solid rgba(239,68,68,.20)',
-                color: '#991b1b',
-                padding: 12,
-                fontSize: 13,
-              }}
-            >
-              {e ? `${e.name}: ${e.message}` : 'Unknown error'}
-            </div>
-          </div>
-
-          <div style={{ marginTop: 14, display: 'grid', gap: 12 }}>
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Stack</div>
-              <pre
-                style={{
-                  marginTop: 6,
-                  borderRadius: 14,
-                  background: '#0b1220',
-                  color: '#e5e7eb',
-                  padding: 12,
-                  fontSize: 12,
-                  overflowX: 'auto',
-                  whiteSpace: 'pre',
-                }}
-              >
-                {e?.stack || '(no stack)'}
-              </pre>
-            </div>
-
-            <div>
-              <div style={{ fontSize: 12, fontWeight: 800, color: '#475569' }}>Component stack</div>
-              <pre
-                style={{
-                  marginTop: 6,
-                  borderRadius: 14,
-                  background: '#0b1220',
-                  color: '#e5e7eb',
-                  padding: 12,
-                  fontSize: 12,
-                  overflowX: 'auto',
-                  whiteSpace: 'pre',
-                }}
-              >
-                {comp || '(no component stack)'}
-              </pre>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 12, fontSize: 12.5, color: '#94a3b8' }}>
-            If this keeps happening, copy the error and send it to support (or me) and we’ll pinpoint the exact file.
           </div>
         </div>
       </div>
