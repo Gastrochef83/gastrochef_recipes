@@ -141,10 +141,10 @@ const IngredientTableRow = memo(function IngredientTableRow({
       </td>
 
       <td>{r.category ?? '—'}</td>
-      <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="gc-td-center">{Math.max(1, toNum(r.pack_size, 1))}</td>
       <td className="gc-td-center">{unit}</td>
-      <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
-      <td className="gc-td-right font-semibold">{money(net)}</td>
+      <td className="gc-td-center font-semibold">{money(toNum(r.pack_price, 0))}</td>
+      <td className="gc-td-center font-semibold">{money(net)}</td>
 
       <td className="gc-td-center whitespace-nowrap">
         <div className="gc-cell-actions">
@@ -705,21 +705,7 @@ export default function Ingredients() {
             </div>
           </div>
 
-          {/* Category chips */}
-          <div className="gc-card p-4">
-            <div className="flex flex-wrap items-center gap-2">
-              <button className={cls('gc-btn', 'gc-btn-ghost', !category && 'ring-2 ring-black/10')} type="button" onClick={() => setCategory('')}>
-                All
-              </button>
-              {categories.slice(0, 14).map((c) => (
-                <button key={c} className={cls('gc-btn', 'gc-btn-ghost', category === c && 'ring-2 ring-black/10')} type="button" onClick={() => setCategory(c)}>
-                  {c}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* List */}
+{/* List */}
           <div className="gc-card p-6">
             <style>{`
 
@@ -848,8 +834,8 @@ export default function Ingredients() {
               }
 
               /* numeric alignment (still centered per your preference) */
-              .gc-data-table-wrap .gc-ing-pro-table .gc-td-right,
-              .gc-data-table-wrap .gc-ing-pro-table .gc-th-right{
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
                 text-align:center;
                 font-variant-numeric:tabular-nums;
               }
@@ -1022,10 +1008,10 @@ export default function Ingredients() {
                       <th className="gc-col-code">Code</th>
                       <th className="gc-col-name">Name</th>
                       <th className="gc-col-category">Category</th>
-                      <th className={cls('gc-th-right', 'gc-col-pack')}>Pack</th>
+                      <th className={cls('gc-th-center', 'gc-col-pack')}>Pack</th>
                       <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
-                      <th className={cls('gc-th-right', 'gc-col-packprice')}>Pack Price</th>
-                      <th className={cls('gc-th-right', 'gc-col-netunit')}>Net Unit Cost</th>
+                      <th className={cls('gc-th-center', 'gc-col-packprice')}>Pack Price</th>
+                      <th className={cls('gc-th-center', 'gc-col-netunit')}>Net Unit Cost</th>
                       <th className={cls('gc-th-center', 'gc-col-actions')}>Actions</th>
                     </tr>
                   </thead>
