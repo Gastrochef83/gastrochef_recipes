@@ -211,10 +211,6 @@ useEffect(() => {
         label: `Ingredient: ${ing.name}${ing.code ? ` (${ing.code})` : ''}`,
         kbd: '⏎',
         run: () => {
-          try {
-            // Hint the Ingredients page to prefill search (safe even if page ignores it)
-            sessionStorage.setItem('gc:prefill:ingredients', ing.name)
-          } catch {}
           navigate('/ingredients')
         },
       })),
@@ -223,9 +219,6 @@ useEffect(() => {
         label: `Recipe: ${r.name}`,
         kbd: '⏎',
         run: () => {
-          try {
-            sessionStorage.setItem('gc:prefill:recipes', r.name)
-          } catch {}
           navigate('/recipes')
         },
       })),
