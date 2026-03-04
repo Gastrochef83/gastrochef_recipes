@@ -1,5 +1,5 @@
 // src/pages/RecipeEditor.tsx
-import { useEffect, useMemo, useRef, useState, useCallback, memo } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -11,126 +11,6 @@ import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
-
-type RecipeEditorHeaderProps = {
-  name: string
-  autosave: { status: string; message?: string; lastSavedAt?: number | null }
-  isKitchen: boolean
-  density: 'compact' | 'comfort'
-  activeSection: string
-  showCost: boolean
-  onToggleDensity: () => void
-  onScrollToSection: (id: string) => void
-}
-
-const RecipeEditorHeader = memo(function RecipeEditorHeader({
-  name,
-  autosave,
-  isKitchen,
-  density,
-  activeSection,
-  showCost,
-  onToggleDensity,
-  onScrollToSection,
-}: RecipeEditorHeaderProps) {
-  const savedLabel = (() => {
-    if (autosave.status === 'saving') return 'Saving…'
-    if (autosave.status === 'error') return autosave.message || 'Save issue. Retrying…'
-    if (autosave.lastSavedAt) {
-      const seconds = Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))
-      return `Saved ${seconds}s ago ✓`
-    }
-    return 'Auto-save ready.'
-  })()
-
-  return (
-    <div
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        gap: 12,
-        flexWrap: 'wrap',
-      }}
-    >
-      <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-        <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
-          ← Back
-        </NavLink>
-
-        <div>
-          <div className="gc-label">RECIPE</div>
-          <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
-          <div className="gc-hint" style={{ marginTop: 2, fontWeight: 700 }}>
-            {savedLabel}
-          </div>
-        </div>
-      </div>
-
-      <div className="gc-tabs" style={{ justifyContent: 'flex-end' }}>
-        <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>
-          {isKitchen ? 'Kitchen' : 'Mgmt'}
-        </span>
-
-        <button className="gc-btn-soft" type="button" onClick={onToggleDensity}>
-          Density: {density}
-        </button>
-
-        <button
-          className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')}
-          type="button"
-          onClick={() => onScrollToSection('sec-basics')}
-        >
-          Basics
-        </button>
-        <button
-          className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')}
-          type="button"
-          onClick={() => onScrollToSection('sec-method')}
-        >
-          Method
-        </button>
-        <button
-          className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')}
-          type="button"
-          onClick={() => onScrollToSection('sec-nutrition')}
-        >
-          Nutrition
-        </button>
-        <button
-          className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')}
-          type="button"
-          onClick={() => onScrollToSection('sec-lines')}
-        >
-          Lines
-        </button>
-        <button
-          className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')}
-          type="button"
-          onClick={() => onScrollToSection('sec-print')}
-        >
-          Print
-        </button>
-        <button
-          className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')}
-          type="button"
-          onClick={() => onScrollToSection('sec-cook')}
-        >
-          Cook Mode
-        </button>
-        {showCost ? (
-          <button
-            className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')}
-            type="button"
-            onClick={() => onScrollToSection('sec-cost')}
-          >
-            Cost
-          </button>
-        ) : null}
-      </div>
-    </div>
-  )
-})
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -1439,6 +1319,222 @@ const addLineLocal = useCallback(async () => {
       </div>
     )
   }
+  const headerLeft = (
+    <div className="gc-recipe-pro-head-left">
+      <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
+        ← Back
+      </NavLink>
+      <div>
+        <div className="gc-label">RECIPE</div>
+        <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
+        <div className="gc-hint" style={{ marginTop: 2, fontWeight: 700 }}>
+          {autosave.status === 'saving'
+            ? 'Saving…'
+            : autosave.status === 'error'
+            ? (autosave.message || 'Save issue. Retrying…')
+            : autosave.lastSavedAt
+            ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
+            : 'Auto-save ready.'}
+        </div>
+      </div>
+    </div>
+  )
+
+  const headerRight = (
+    <div className="gc-tabs gc-recipe-pro-head-right">
+      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>{isKitchen ? 'Kitchen' : 'Mgmt'}</span>
+
+      <button className="gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
+        Density: {density}
+      </button>
+
+      <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>Basics</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>Method</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>Nutrition</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')} type="button" onClick={() => scrollToSection('sec-lines')}>Lines</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')} type="button" onClick={() => scrollToSection('sec-print')}>Print</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cook')}>Cook Mode</button>
+      {showCost ? (
+        <button className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cost')}>Cost</button>
+      ) : null}
+    </div>
+  )
+  // Screen-only scoped CSS (safe: does not touch globals.css)
+  const ScreenCss = (
+    <style>{`
+      .gc-recipe-pro .gc-card-head{
+        align-items: center;
+      }
+      .gc-recipe-pro-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        flex-wrap:wrap;
+      }
+      .gc-recipe-pro-head-left{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        min-width: 260px;
+      }
+      .gc-recipe-pro-head-right{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        justify-content:flex-end;
+        flex:1 1 auto;
+        min-width: 280px;
+        overflow-x:auto;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: thin;
+        padding-bottom: 2px;
+        white-space: nowrap;
+      }
+      .gc-recipe-pro-head-right > *{
+        flex: 0 0 auto;
+      }
+      .gc-recipe-pro .gc-btn-soft.is-active{
+        box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .35);
+      }
+      .gc-recipe-pro .gc-kitopi-table-wrap{
+        overflow:auto;
+        border-radius: 16px;
+        border: 1px solid rgba(15, 23, 42, .08);
+        background: rgba(255,255,255,.65);
+      }
+      .gc-recipe-pro .gc-kitopi-table{
+        width:100%;
+        border-collapse: separate;
+        border-spacing: 0;
+      }
+      .gc-recipe-pro .gc-kitopi-table thead th{
+        background: rgba(248, 250, 252, .92);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid rgba(15, 23, 42, .08);
+        font-size: 12px;
+        letter-spacing: .08em;
+        text-transform: uppercase;
+      }
+      .gc-recipe-pro .gc-kitopi-table tbody td{
+        border-bottom: 1px solid rgba(15, 23, 42, .06);
+      }
+      .gc-recipe-pro .gc-kitopi-table tbody tr:hover{
+        background: rgba(16, 185, 129, .06);
+      }
+      .gc-recipe-pro .gc-kitopi-group{
+        background: rgba(15, 23, 42, .04) !important;
+        font-weight: 800;
+      }
+      .gc-recipe-pro .gc-col-net,
+      .gc-recipe-pro .gc-col-gross,
+      .gc-recipe-pro .gc-col-yield,
+      .gc-recipe-pro .gc-col-cost{
+        text-align: right;
+      }
+
+
+      /* ===== Recipe Editor SURGERY — Chef Production Grid (UI-only, scoped) ===== */
+      .gc-recipe-lines-pro{
+        border-radius: 16px;
+      }
+      .gc-recipe-lines-pro .gc-kitopi-table{
+        border-collapse: separate;
+        border-spacing: 0;
+        width: 100%;
+        min-width: 980px; /* prevents cramped columns; wrap provides horizontal scroll */
+      }
+      .gc-recipe-lines-pro{
+        overflow-x: auto;
+      }
+      .gc-recipe-lines-pro .gc-kitopi-table thead th{
+        position: static; /* explicitly not sticky */
+        background: rgba(245,247,246,0.92);
+        backdrop-filter: blur(6px);
+        border-bottom: 1px solid var(--gc-border);
+      }
+      .gc-recipe-lines-pro .gc-kitopi-table td,
+      .gc-recipe-lines-pro .gc-kitopi-table th{
+        padding: 10px 12px;
+        border-right: 1px solid rgba(0,0,0,0.04);
+      }
+      .gc-recipe-lines-pro .gc-kitopi-table td:last-child,
+      .gc-recipe-lines-pro .gc-kitopi-table th:last-child{
+        border-right: none;
+      }
+      .gc-recipe-lines-pro .gc-kitopi-table tbody tr{
+        background: transparent;
+      }
+      .gc-recipe-lines-pro .gc-kitopi-table tbody tr:hover{
+        background: rgba(61,124,103,0.06);
+      }
+      .gc-recipe-lines-pro .gc-col-code,
+      .gc-recipe-lines-pro td:nth-child(1),
+      .gc-recipe-lines-pro th:nth-child(1){
+        text-align: center;
+      }
+      .gc-recipe-lines-pro .gc-col-item,
+      .gc-recipe-lines-pro td:nth-child(2),
+      .gc-recipe-lines-pro th:nth-child(2){
+        text-align: left;
+      }
+      .gc-recipe-lines-pro .gc-col-unit,
+      .gc-recipe-lines-pro td:nth-child(4),
+      .gc-recipe-lines-pro th:nth-child(4),
+      .gc-recipe-lines-pro .gc-col-yield,
+      .gc-recipe-lines-pro td:nth-child(6),
+      .gc-recipe-lines-pro th:nth-child(6){
+        text-align: center;
+      }
+      .gc-recipe-lines-pro .gc-col-net,
+      .gc-recipe-lines-pro .gc-col-gross,
+      .gc-recipe-lines-pro .gc-col-cost,
+      .gc-recipe-lines-pro td:nth-child(3),
+      .gc-recipe-lines-pro td:nth-child(5),
+      .gc-recipe-lines-pro td:nth-child(8),
+      .gc-recipe-lines-pro th:nth-child(3),
+      .gc-recipe-lines-pro th:nth-child(5),
+      .gc-recipe-lines-pro th:nth-child(8){
+        text-align: right;
+      }
+      .gc-recipe-lines-pro .gc-kitopi-money{
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
+        text-align: right;
+      }
+
+      .gc-recipe-lines-summary{
+        display: grid;
+        grid-template-columns: repeat(4, minmax(160px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+        padding-top: 10px;
+        border-top: 1px solid var(--gc-border);
+      }
+      .gc-recipe-sum-item{
+        padding: 10px 12px;
+        border: 1px solid rgba(0,0,0,0.06);
+        border-radius: 14px;
+        background: rgba(255,255,255,0.6);
+      }
+      .gc-recipe-sum-val{
+        margin-top: 4px;
+        font-weight: 700;
+        font-size: 14px;
+        color: var(--gc-text);
+        font-variant-numeric: tabular-nums;
+        font-feature-settings: "tnum";
+      }
+      @media (max-width: 1100px){
+        .gc-recipe-lines-summary{
+          grid-template-columns: repeat(2, minmax(160px, 1fr));
+        }
+      }
+
+    `}</style>
+  )
+
+
   // Print-only CSS injected here (so print works even if global CSS changes)
   const PrintCss = (
     <style>{`
@@ -1505,19 +1601,12 @@ const addLineLocal = useCallback(async () => {
   return (
     <>
       {PrintCss}
+      {ScreenCss}
 
-      <div className="gc-card gc-screen-only">
-        <div className="gc-card-head" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-          <RecipeEditorHeader
-            name={name}
-            autosave={autosave}
-            isKitchen={isKitchen}
-            density={density}
-            activeSection={activeSection}
-            showCost={showCost}
-            onToggleDensity={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}
-            onScrollToSection={scrollToSection}
-          />
+      <div className="gc-card gc-screen-only gc-recipe-pro">
+        <div className="gc-card-head gc-recipe-pro-head">
+          {headerLeft}
+          {headerRight}
         </div>
 
         <div className="gc-card-body">
@@ -1941,7 +2030,7 @@ const addLineLocal = useCallback(async () => {
               {!visibleLines.length ? (
                 <div className="gc-hint">No lines yet.</div>
               ) : (
-                <div className="gc-kitopi-table-wrap">
+                <div className="gc-kitopi-table-wrap gc-recipe-lines-pro">
                   <table className="gc-kitopi-table gc-kitopi-table-fixed">
                     <colgroup>
                       <col className="gc-col-code" />
@@ -2117,7 +2206,27 @@ const addLineLocal = useCallback(async () => {
                         )
                       })}
                     </tbody>
+                  
                   </table>
+                  <div className="gc-recipe-lines-summary" aria-label="Recipe cost summary">
+                    <div className="gc-recipe-sum-item">
+                      <div className="gc-label">TOTAL COST</div>
+                      <div className="gc-recipe-sum-val">{fmtMoney(totals.totalCost, cur)}</div>
+                    </div>
+                    <div className="gc-recipe-sum-item">
+                      <div className="gc-label">COST / PORTION</div>
+                      <div className="gc-recipe-sum-val">{fmtMoney(totals.cpp, cur)}</div>
+                    </div>
+                    <div className="gc-recipe-sum-item">
+                      <div className="gc-label">FC%</div>
+                      <div className="gc-recipe-sum-val">{totals.fcPct == null ? '—' : `${totals.fcPct.toFixed(1)}%`}</div>
+                    </div>
+                    <div className="gc-recipe-sum-item">
+                      <div className="gc-label">MARGIN</div>
+                      <div className="gc-recipe-sum-val">{fmtMoney(totals.margin, cur)}{totals.marginPct == null ? '' : ` (${totals.marginPct.toFixed(1)}%)`}</div>
+                    </div>
+                  </div>
+
                 </div>
               )}
             </div>
