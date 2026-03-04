@@ -573,16 +573,30 @@ export default function Ingredients() {
           </div>
         </div>
 
+        
         {/* Filters */}
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <div className="min-w-[260px] flex-1">
-            <div className="gc-label">SEARCH</div>
-            <input className="gc-input mt-2 w-full" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search by name or supplier…" />
+        <div className="mt-4 gc-ing-toolbar">
+          <div className="gc-ing-search">
+            <div className="gc-ing-toolbar-label">Search</div>
+            <div className="gc-ing-search-control">
+              <span className="gc-ing-search-icon" aria-hidden="true">🔍</span>
+              <input
+                className="gc-input gc-ing-search-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ingredients (name, code, supplier)…"
+              />
+              {search && (
+                <button type="button" className="gc-ing-clear" onClick={() => setSearch('')} aria-label="Clear search">
+                  ×
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="min-w-[240px]">
-            <div className="gc-label">CATEGORY</div>
-            <select className="gc-input mt-2 w-full" value={category} onChange={(e) => setCategory(e.target.value)}>
+          <div className="gc-ing-filter">
+            <div className="gc-ing-toolbar-label">Category</div>
+            <select className="gc-input gc-ing-select" value={category} onChange={(e) => setCategory(e.target.value)}>
               <option value="">All categories</option>
               {categories.map((c) => (
                 <option key={c} value={c}>
@@ -592,16 +606,16 @@ export default function Ingredients() {
             </select>
           </div>
 
-          <div className="min-w-[220px]">
-            <div className="gc-label">SORT</div>
-            <select className="gc-input mt-2 w-full" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+          <div className="gc-ing-filter">
+            <div className="gc-ing-toolbar-label">Sort</div>
+            <select className="gc-input gc-ing-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
               <option value="name">Name (A→Z)</option>
               <option value="cost">Net Unit Cost (High→Low)</option>
               <option value="pack_price">Pack Price (High→Low)</option>
             </select>
           </div>
         </div>
-      </div>
+
 
       {/* Loading/Error */}
       {loading && (
@@ -707,6 +721,71 @@ export default function Ingredients() {
           {/* List */}
           <div className="gc-card p-6">
             <style>{`
+
+              /* ===== GastroChef: Ingredients Search UX (SaaS) — scoped + safe ===== */
+              .gc-ing-toolbar{
+                display:flex;
+                flex-wrap:wrap;
+                gap:12px;
+                align-items:flex-end;
+              }
+              .gc-ing-toolbar-label{
+                font-size:11px;
+                letter-spacing:.08em;
+                text-transform:uppercase;
+                color:rgba(107,122,114,.95);
+                font-weight:600;
+                margin-bottom:6px;
+              }
+              .gc-ing-search{
+                flex:1 1 340px;
+                min-width:280px;
+              }
+              .gc-ing-filter{
+                flex:0 1 240px;
+                min-width:200px;
+              }
+              .gc-ing-search-control{
+                position:relative;
+              }
+              .gc-ing-search-icon{
+                position:absolute;
+                left:12px;
+                top:50%;
+                transform:translateY(-50%);
+                opacity:.75;
+                font-size:14px;
+                pointer-events:none;
+              }
+              .gc-ing-search-input{
+                padding-left:36px !important;
+                padding-right:36px !important;
+              }
+              .gc-ing-select{
+                width:100%;
+              }
+              .gc-ing-clear{
+                position:absolute;
+                right:10px;
+                top:50%;
+                transform:translateY(-50%);
+                width:26px;
+                height:26px;
+                border-radius:999px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:18px;
+                line-height:1;
+                opacity:.7;
+              }
+              .gc-ing-clear:hover{ opacity:1; }
+              .gc-ing-clear:focus{ outline:none; }
+              @media (max-width: 768px){
+                .gc-ing-filter{ flex:1 1 220px; }
+              }
+
+
               /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
               .gc-data-table-wrap{
                 max-width:100%;
