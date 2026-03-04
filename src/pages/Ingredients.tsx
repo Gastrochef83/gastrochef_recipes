@@ -116,7 +116,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
 
   return (
     <tr>
-      <td className="text-xs text-neutral-600">
+      <td className="text-xs text-neutral-600 gc-col-code">
         <span className="gc-code-pill"><span className="gc-mono">{r.code ?? '—'}</span></span>
       </td>
       <td>
@@ -146,11 +146,11 @@ const IngredientTableRow = memo(function IngredientTableRow({
 
       <td className="gc-td-center whitespace-nowrap">
         <div className="gc-cell-actions">
-          <button className="gc-btn gc-btn-ghost gc-action-btn" type="button" onClick={() => onEdit(r)}>
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
             Edit
           </button>
 
-          <button className="gc-btn gc-btn-ghost gc-action-btn gc-action-danger" type="button" onClick={() => onHardDelete(r.id)}>
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
             Delete
           </button>
         </div>
@@ -652,7 +652,7 @@ export default function Ingredients() {
       )}
 
       {err && (
-        <div className="gc-card p-6 gc-ingredients-pro">
+        <div className="gc-card p-6">
           <div className="gc-label">ERROR</div>
           <div className="mt-2 text-sm text-red-600">{err}</div>
         </div>
@@ -786,8 +786,8 @@ export default function Ingredients() {
                 </div>
               </div>
             ) : (
-              <div className="mt-4 gc-data-table-wrap gc-ingredients-table-wrap">
-                <table className="gc-data-table text-sm gc-ingredients-table">
+              <div className="mt-4 gc-data-table-wrap">
+                <table className="gc-data-table text-sm">
                   <thead>
                     <tr>
                       <th className="gc-col-code">Code</th>
