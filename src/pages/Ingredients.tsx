@@ -116,8 +116,10 @@ const IngredientTableRow = memo(function IngredientTableRow({
 
   return (
     <tr>
-      <td className="text-xs text-neutral-600 gc-col-code">
-        <span className="gc-code-pill"><span className="gc-mono">{r.code ?? '—'}</span></span>
+      <td className="text-xs text-neutral-600">
+        <span className="gc-ing-codepill" title={r.code ?? '—'}>
+          <span className="gc-mono">{r.code ?? '—'}</span>
+        </span>
       </td>
       <td>
         <div className="font-semibold flex flex-wrap items-center gap-2">
@@ -704,6 +706,101 @@ export default function Ingredients() {
 
           {/* List */}
           <div className="gc-card p-6">
+            <style>{`
+              /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
+              .gc-data-table-wrap .gc-ing-pro-table{
+                width:100%;
+                border-collapse:separate;
+                border-spacing:0;
+                table-layout:fixed;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table thead th{
+                position:sticky;
+                top:0;
+                z-index:1;
+                background:rgba(255,255,255,0.85);
+                backdrop-filter:saturate(1.2) blur(8px);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table th,
+              .gc-data-table-wrap .gc-ing-pro-table td{
+                padding:14px 14px;
+                border-bottom:1px solid rgba(0,0,0,0.06);
+                vertical-align:middle;
+              }
+              /* subtle vertical gridlines (Excel-like clarity, SaaS-soft) */
+              .gc-data-table-wrap .gc-ing-pro-table th + th,
+              .gc-data-table-wrap .gc-ing-pro-table td + td{
+                border-left:1px solid rgba(0,0,0,0.04);
+              }
+              /* zebra */
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(odd) td{
+                background:rgba(0,0,0,0.00);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(even) td{
+                background:rgba(0,0,0,0.012);
+              }
+              /* hover (soft) */
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:hover td{
+                background:rgba(34,197,94,0.06); /* subtle green tint */
+              }
+              /* numeric alignment */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-right,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-right{
+                text-align:right;
+                font-variant-numeric:tabular-nums;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
+                text-align:center;
+              }
+              /* code pill */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill{
+                display:inline-flex;
+                align-items:center;
+                gap:6px;
+                max-width:100%;
+                padding:6px 10px;
+                border-radius:999px;
+                border:1px solid rgba(0,0,0,0.08);
+                background:rgba(255,255,255,0.75);
+                box-shadow:0 1px 0 rgba(0,0,0,0.03);
+                font-size:12px;
+                line-height:1;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill .gc-mono{
+                font-size:12px;
+              }
+              /* actions */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions{
+                display:flex;
+                justify-content:center;
+                gap:10px;
+                white-space:nowrap;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn{
+                height:32px;
+                padding:0 12px;
+                border-radius:999px;
+                border:1px solid rgba(0,0,0,0.08);
+                background:rgba(255,255,255,0.85);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn:hover{
+                background:rgba(0,0,0,0.04);
+              }
+              /* tighten first/last columns a bit */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-code{ width: 110px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-pack{ width: 70px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-unit{ width: 80px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-packprice{ width: 120px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-netunit{ width: 130px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 170px; }
+              /* keep name readable but not over-dominant */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 240px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
+            `}</style>
             <div className="flex items-center justify-between">
               <div>
                 <div className="gc-label">LIST</div>
@@ -787,7 +884,7 @@ export default function Ingredients() {
               </div>
             ) : (
               <div className="mt-4 gc-data-table-wrap">
-                <table className="gc-data-table text-sm">
+                <table className="gc-data-table gc-ing-pro-table text-sm">
                   <thead>
                     <tr>
                       <th className="gc-col-code">Code</th>
