@@ -708,11 +708,19 @@ export default function Ingredients() {
           <div className="gc-card p-6">
             <style>{`
               /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
+              .gc-data-table-wrap{
+                max-width:100%;
+                overflow-x:auto;
+                -webkit-overflow-scrolling:touch;
+                padding-bottom:4px;
+              }
               .gc-data-table-wrap .gc-ing-pro-table{
                 width:100%;
+                min-width:980px;
+                margin:0 auto;
                 border-collapse:separate;
                 border-spacing:0;
-                table-layout:fixed;
+                table-layout:auto;
               }
               .gc-data-table-wrap .gc-ing-pro-table thead th{
                 position:sticky;
@@ -796,9 +804,9 @@ export default function Ingredients() {
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-unit{ width: 80px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-packprice{ width: 120px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-netunit{ width: 130px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 170px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 150px; }
               /* keep name readable but not over-dominant */
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 240px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 220px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
             `}</style>
             <div className="flex items-center justify-between">
