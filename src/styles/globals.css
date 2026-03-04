@@ -2150,111 +2150,92 @@ a{
 /* Prevent Actions column clipping */
 .gc-data-table tbody td:last-child{ padding-right: 14px; }
 
-/* === GC PRO: Ingredients Table === */
-/* Scoped to Ingredients list card only (no side effects) */
-.gc-ingredients-pro .gc-ingredients-table-wrap{
-  margin-top: 1rem;
-  border-radius: 18px;
-  border: 1px solid rgba(0,0,0,0.06);
-  background: rgba(255,255,255,0.78);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.04),
-    0 10px 30px rgba(0,0,0,0.06);
+
+/* =========================================================
+   GC SURGERY — RESUSCITATION PATCH
+   Scope: Topbar stability + Ingredients table (Excel-like)
+   Safety: overrides are minimal and use !important only where needed
+   ========================================================= */
+
+/* --- Topbar: never stack vertically, never wrap --- */
+.gc-topbar{ z-index: 40 !important; } /* keep below modals */
+
+.gc-topbar-pill{
+  /* If any later rule changed layout, force a stable 3-column shell */
+  display: grid !important;
+  grid-template-columns: auto 1fr auto !important;
+  align-items: center !important;
+}
+
+.gc-topbar-left,
+.gc-topbar-right{
+  display: inline-flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  flex-wrap: nowrap !important;
+  white-space: nowrap !important;
+  min-width: 0 !important;
+}
+
+.gc-topbar-right{ justify-content: flex-end !important; }
+
+.gc-autosave,
+.gc-kbd-btn,
+.gc-user-trigger-btn{
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  flex: 0 0 auto !important;
+}
+
+/* --- Ingredients table: Excel-like grid clarity --- */
+.gc-data-table{
+  border-radius: 16px;
   overflow: hidden;
 }
 
-.gc-ingredients-pro .gc-ingredients-table{
-  width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+.gc-data-table thead th{
+  background: rgba(248,249,251,.96) !important;
 }
 
-.gc-ingredients-pro .gc-ingredients-table thead th{
-  position: sticky;
-  top: 0;
-  z-index: 1;
-  background: rgba(255,255,255,0.92);
-  backdrop-filter: saturate(1.1) blur(10px);
-  -webkit-backdrop-filter: saturate(1.1) blur(10px);
-  text-transform: none;
-  letter-spacing: .02em;
-  font-weight: 700;
-  font-size: 12px;
-  color: rgba(17,24,39,0.78);
-  border-bottom: 1px solid rgba(0,0,0,0.06);
-  padding: 14px 16px;
+.gc-data-table thead th:not(:last-child),
+.gc-data-table tbody td:not(:last-child){
+  border-right: 1px solid rgba(11,18,32,.06);
 }
 
-.gc-ingredients-pro .gc-ingredients-table tbody td{
-  padding: 14px 16px;
-  border-bottom: 1px solid rgba(0,0,0,0.05);
-  vertical-align: middle;
+.gc-data-table tbody td{
+  border-bottom: 1px solid rgba(11,18,32,.06);
 }
 
-.gc-ingredients-pro .gc-ingredients-table tbody tr:last-child td{
-  border-bottom: 0;
+.gc-data-table tbody tr:nth-child(even) td{
+  background: rgba(255,255,255,.55);
 }
 
-.gc-ingredients-pro .gc-ingredients-table tbody tr:nth-child(even){
-  background: rgba(0,0,0,0.012);
+.gc-dark .gc-data-table thead th{
+  background: rgba(18,22,34,.72) !important;
 }
 
-.gc-ingredients-pro .gc-ingredients-table tbody tr:hover{
-  background: rgba(16,185,129,0.05);
+.gc-dark .gc-data-table thead th:not(:last-child),
+.gc-dark .gc-data-table tbody td:not(:last-child){
+  border-right: 1px solid rgba(255,255,255,.06);
 }
 
-.gc-ingredients-pro .gc-code-pill{
+.gc-dark .gc-data-table tbody td{
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+
+.gc-code-pill{
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 6px 10px;
+  padding: 4px 10px;
   border-radius: 999px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.8);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+  border: 1px solid rgba(11,18,32,.10);
+  background: rgba(255,255,255,.70);
+  box-shadow: 0 1px 0 rgba(11,18,32,.03);
 }
 
-.gc-ingredients-pro .gc-ingredients-table .gc-col-name{
-  min-width: 220px;
-}
-
-.gc-ingredients-pro .gc-ingredients-table .gc-col-category{
-  max-width: 220px;
-}
-
-.gc-ingredients-pro .gc-ingredients-table td:nth-child(3){
-  max-width: 220px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.gc-ingredients-pro .gc-cell-actions{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.gc-ingredients-pro .gc-action-btn{
-  padding: 8px 12px;
-  border-radius: 999px;
-  border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(255,255,255,0.86);
-  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
-}
-
-.gc-ingredients-pro .gc-action-btn:hover{
-  background: rgba(255,255,255,0.96);
-  border-color: rgba(0,0,0,0.10);
-  transform: translateY(-0.5px);
-}
-
-.gc-ingredients-pro .gc-action-btn:active{
-  transform: translateY(0);
-}
-
-.gc-ingredients-pro .gc-action-danger:hover{
-  border-color: rgba(239,68,68,0.25);
-  background: rgba(239,68,68,0.06);
+.gc-dark .gc-code-pill{
+  border-color: rgba(255,255,255,.10);
+  background: rgba(14,18,30,.44);
 }
