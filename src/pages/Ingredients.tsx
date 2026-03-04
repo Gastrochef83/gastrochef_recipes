@@ -958,15 +958,32 @@ export default function Ingredients() {
                             ? 'No ingredients yet'
                             : normalized.length === 0
                               ? 'No active ingredients'
-                              : 'No results found'}
+                              : (search.trim() || category ? 'No ingredients found' : 'No results found')}
                         </div>
                         <div className="mt-1 text-sm text-neutral-600">
                           {rows.length === 0
                             ? 'Start your kitchen database by adding your first ingredient. This powers costing, yields, and recipe accuracy.'
                             : normalized.length === 0
                               ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them, or add a new one.'
-                              : 'Try adjusting your search, category, or inactive filter to find what you need.'}
+                              : (search.trim() || category
+                              ? 'No ingredients match your current search/filters. Try clearing them, or add a new ingredient.'
+                              : 'Try adjusting your search, category, or inactive filter to find what you need.')}
                         </div>
+
+                        {(search.trim() || category) && rows.length > 0 && normalized.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-neutral-600">
+                            {search.trim() ? (
+                              <span className="rounded-full bg-neutral-100 px-2 py-1">
+                                Search: <span className="gc-mono">{search.trim()}</span>
+                              </span>
+                            ) : null}
+                            {category ? (
+                              <span className="rounded-full bg-neutral-100 px-2 py-1">
+                                Category: <span className="gc-mono">{category}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
 
                         {rows.length > 0 && normalized.length > 0 ? (
                           <div className="mt-3 text-xs text-neutral-500">
