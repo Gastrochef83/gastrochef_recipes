@@ -527,6 +527,51 @@ a{
 
 
 .gc-topbar-spacer{ min-width: 0; }
+/* Phase 3 — Premium finish (Topbar capsule only)
+   Keep changes scoped to .gc-topbar-cluster to avoid UI regressions. */
+.gc-topbar-cluster{
+  position: relative;
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.gc-topbar-cluster::before{
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  pointer-events: none;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
+}
+
+.gc-topbar-cluster:hover{
+  background: rgba(255,255,255,.66);
+  border-color: rgba(15,23,42,.12);
+  box-shadow: 0 1px 0 rgba(15,23,42,.05), 0 10px 28px rgba(15,23,42,.10);
+}
+
+.gc-dark .gc-topbar-cluster::before{
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
+}
+
+.gc-dark .gc-topbar-cluster:hover{
+  background: rgba(15,23,42,.52);
+  border-color: rgba(255,255,255,.12);
+  box-shadow: 0 1px 0 rgba(0,0,0,.28), 0 12px 32px rgba(0,0,0,.35);
+}
+
+.gc-topbar-cluster .gc-autosave,
+.gc-topbar-cluster .gc-kbd-btn,
+.gc-topbar-cluster .gc-user-trigger-btn{
+  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+}
+
+.gc-topbar-cluster .gc-autosave,
+.gc-topbar-cluster .gc-kbd-btn{
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
 
 .gc-topbar-logo{
   width: 36px;
