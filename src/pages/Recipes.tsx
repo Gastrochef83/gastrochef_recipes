@@ -6,6 +6,7 @@ import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
 import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
+import EmptyState from '../components/EmptyState'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -198,6 +199,11 @@ useEffect(() => {
       return a.includes(s) || b.includes(s)
     })
   }, [recipes, q, showArchived])
+
+  const hasAnyRecipes = recipes.length > 0
+  const hasActiveRecipes = useMemo(() => recipes.some((r) => !r.is_archived), [recipes])
+  const hasSearch = q.trim().length > 0
+  const showArchivedEmptyHint = !showArchived && hasAnyRecipes && !hasActiveRecipes
 
   async function loadAll() {
     if (mountedRef.current) {
@@ -498,8 +504,54 @@ useEffect(() => {
             Loading…
           </div>
         ) : !filtered.length ? (
-          <div style={{ marginTop: 14 }} className="text-sm">
-            No recipes found.
+          <div style={{ marginTop: 14 }}>
+            <EmptyState
+              title={
+                !hasAnyRecipes
+                  ? 'No recipes yet'
+                  : showArchivedEmptyHint
+                    ? 'No active recipes'
+                    : 'No recipes found'
+              }
+              description={
+                !hasAnyRecipes
+                  ? 'Create your first recipe to start operations and costing.'
+                  : showArchivedEmptyHint
+                    ? 'All your recipes are archived. Show archived recipes, or create a new one.'
+                    : hasSearch
+                      ? `No matches for “${q.trim()}”. Try a different keyword, or create a new recipe.`
+                      : 'Try adjusting your filters, or create a new recipe.'
+              }
+              primaryAction={{
+                label: !hasAnyRecipes ? 'New recipe' : showArchivedEmptyHint ? 'Show archived' : hasSearch ? 'Clear search' : 'New recipe',
+                onClick: () => {
+                  if (!hasAnyRecipes) {
+                    createNewRecipe()
+                    return
+                  }
+                  if (showArchivedEmptyHint) {
+                    setShowArchived(true)
+                    return
+                  }
+                  if (hasSearch) {
+                    setQ('')
+                    return
+                  }
+                  createNewRecipe()
+                },
+              }}
+              secondaryAction={{
+                label: !hasAnyRecipes ? 'Add ingredient' : 'New recipe',
+                onClick: () => {
+                  if (!hasAnyRecipes) {
+                    nav('/ingredients')
+                    return
+                  }
+                  createNewRecipe()
+                },
+              }}
+              icon="🍳"
+            />
           </div>
         ) : (
           <div style={{ marginTop: 14, display: 'grid', gap: 12 }}>
