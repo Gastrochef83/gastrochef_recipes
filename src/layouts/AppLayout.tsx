@@ -303,7 +303,7 @@ useEffect(() => {
 
         <main className="gc-main">
           <div className="gc-topbar" aria-label="Top bar">
-            <div className="gc-topbar-pill" role="banner">
+            <div className="gc-topbar-pill" role="banner" style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center" }}>
               <div className="gc-topbar-left">
                 <img
                   className="gc-topbar-logo gc-topbar-logo--mark"
@@ -325,10 +325,8 @@ useEffect(() => {
 
               <div className="gc-topbar-spacer" aria-hidden="true" />
 
-              <div className="gc-topbar-right">
-                
-                <div className="gc-topbar-cluster" aria-label="Topbar actions">
-<div
+              <div className="gc-topbar-right" style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", alignItems: "center", justifyContent: "flex-end", gap: 10, whiteSpace: "nowrap" }}>
+                <div
                   className={cx(
                     'gc-autosave',
                     a.status === 'saving' && 'is-saving',
@@ -434,7 +432,6 @@ useEffect(() => {
                     </button>
                   </div>
                 </details>
-                </div>
               </div>
             </div>
           </div>
