@@ -37,6 +37,7 @@ function clearAppCaches() {
   } catch {}
 }
 
+
 function applyGlobalDensity(density: 'comfort' | 'cozy' | 'compact') {
   try {
     document.documentElement.setAttribute('data-density', density)
@@ -70,6 +71,7 @@ export default function AppLayout() {
   const a = useAutosave()
 
   const navigate = useNavigate()
+
   const loc = useLocation()
 
   // HashRouter-safe print detection
@@ -84,12 +86,12 @@ export default function AppLayout() {
   const [loggingOut, setLoggingOut] = useState(false)
   const [userEmail, setUserEmail] = useState<string>('')
 
-  // Global density (UI-only). Keeps spacing consistent across pages.
-  useEffect(() => {
-    const d = loadGlobalDensity()
-    applyGlobalDensity(d)
-  }, [])
 
+// Global density (UI-only). Keeps spacing consistent across pages.
+useEffect(() => {
+  const d = loadGlobalDensity()
+  applyGlobalDensity(d)
+}, [])
   const menuRef = useRef<HTMLDetailsElement | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
 
@@ -142,24 +144,6 @@ export default function AppLayout() {
     return 'Dashboard'
   }, [loc.pathname, loc.hash])
 
-  async function handleLogout() {
-    if (loggingOut) return
-    setLoggingOut(true)
-
-    try {
-      await supabase.auth.signOut()
-    } catch {
-      // ignore
-    }
-
-    try {
-      clearAppCaches()
-      setMode('mgmt')
-    } finally {
-      window.location.assign(`${base}#/login`)
-    }
-  }
-
   const commands: CommandItem[] = useMemo(
     () => [
       { id: 'go-dashboard', label: 'Go to Dashboard', kbd: 'G D', run: () => navigate('/dashboard') },
@@ -193,8 +177,26 @@ export default function AppLayout() {
         },
       },
     ],
-    [navigate, dark, k, loggingOut]
+    [navigate, dark, k, handleLogout]
   )
+
+  async function handleLogout() {
+    if (loggingOut) return
+    setLoggingOut(true)
+
+    try {
+      await supabase.auth.signOut()
+    } catch {
+      // ignore
+    }
+
+    try {
+      clearAppCaches()
+      setMode('mgmt')
+    } finally {
+      window.location.assign(`${base}#/login`)
+    }
+  }
 
   function closeMenu() {
     if (menuRef.current) menuRef.current.open = false
@@ -314,124 +316,124 @@ export default function AppLayout() {
                 <div className="gc-topbar-kitchen" title={k.error ? `Kitchen error: ${k.error}` : kitchenLabel}>
                   {k.error ? 'Kitchen error' : kitchenLabel}
                 </div>
-                <span className={cx('gc-live-dot', a.status === 'error' && 'is-error', a.status === 'saving' && 'is-saving')} aria-hidden="true" />
+                <span
+                  className={cx('gc-live-dot', a.status === 'error' && 'is-error', a.status === 'saving' && 'is-saving')}
+                  aria-hidden="true"
+                />
                 <span className="gc-sr-only">{title}</span>
               </div>
 
               <div className="gc-topbar-spacer" aria-hidden="true" />
 
               <div className="gc-topbar-right">
-                {/* ✅ VISUAL DOMINANCE (safe): group actions without changing layout structure */}
-                <div className="gc-topbar-actions">
-                  <div
-                    className={cx('gc-autosave', a.status === 'saving' && 'is-saving', a.status === 'saved' && 'is-saved', a.status === 'error' && 'is-error')}
-                    aria-live="polite"
-                    title={
-                      a.status === 'saving'
-                        ? 'Saving…'
-                        : a.status === 'saved'
-                          ? 'Saved'
-                          : a.status === 'error'
-                            ? (a.message || 'Save issue')
-                            : 'All changes saved'
-                    }
-                  >
-                    <span className="gc-autosave-icon" aria-hidden="true">
-                      {a.status === 'saving' ? '•' : a.status === 'error' ? '!' : '✓'}
+                
+                <div className="gc-topbar-cluster" aria-label="Topbar actions">
+<div
+                  className={cx(
+                    'gc-autosave',
+                    a.status === 'saving' && 'is-saving',
+                    a.status === 'saved' && 'is-saved',
+                    a.status === 'error' && 'is-error'
+                  )}
+                  aria-live="polite"
+                  title={
+                    a.status === 'saving'
+                      ? 'Saving…'
+                      : a.status === 'saved'
+                        ? 'Saved'
+                        : a.status === 'error'
+                          ? (a.message || 'Save issue')
+                          : 'All changes saved'
+                  }
+                >
+                  <span className="gc-autosave-icon" aria-hidden="true">
+                    {a.status === 'saving' ? '•' : a.status === 'error' ? '!' : '✓'}
+                  </span>
+                  <span className="gc-sr-only">
+                    {a.status === 'saving'
+                      ? 'Saving'
+                      : a.status === 'saved'
+                        ? 'Saved'
+                        : a.status === 'error'
+                          ? (a.message || 'Save issue')
+                          : 'All changes saved'}
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  className="gc-kbd-btn"
+                  aria-label="Command palette"
+                  title="Quick actions (Ctrl/⌘ + K)"
+                  onClick={() => setPaletteOpen(true)}
+                >
+                  <span aria-hidden="true">⌘K</span>
+                </button>
+
+                <details ref={menuRef} className="gc-actions-menu gc-user-menu">
+                  <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
+                    <span className="gc-avatar" aria-hidden="true">
+                      {avatarText}
                     </span>
-
-                    {/* ✅ UI-only: small label (won’t break if CSS doesn’t style it) */}
-                    <span className="gc-autosave-text" aria-hidden="true">
-                      {a.status === 'saving' ? 'Saving' : a.status === 'error' ? 'Issue' : 'Saved'}
+                    <span className="gc-user-mini" aria-hidden="true">
+                      ▾
                     </span>
+                  </summary>
 
-                    <span className="gc-sr-only">
-                      {a.status === 'saving'
-                        ? 'Saving'
-                        : a.status === 'saved'
-                          ? 'Saved'
-                          : a.status === 'error'
-                            ? (a.message || 'Save issue')
-                            : 'All changes saved'}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    className="gc-kbd-btn"
-                    aria-label="Command palette"
-                    title="Quick actions (Ctrl/⌘ + K)"
-                    onClick={() => setPaletteOpen(true)}
-                  >
-                    <span aria-hidden="true">⌘K</span>
-                  </button>
-
-                  <details ref={menuRef} className="gc-actions-menu gc-user-menu">
-                    <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
-                      <span className="gc-avatar" aria-hidden="true">
-                        {avatarText}
-                      </span>
-                      <span className="gc-user-mini" aria-hidden="true">
-                        ▾
-                      </span>
-                    </summary>
-
-                    <div className="gc-actions-panel gc-user-panel" role="menu">
-                      <div className="gc-user-header">
-                        <div className="gc-user-header-row">
-                          <span className="gc-avatar gc-avatar--lg" aria-hidden="true">
-                            {avatarText}
-                          </span>
-                          <div className="gc-user-meta">
-                            <div className="gc-user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
-                            <div className="gc-user-sub">
-                              {(k.profile?.role || 'Owner')} • {k.error ? 'Kitchen error' : kitchenLabel}
-                            </div>
-                          </div>
+                  <div className="gc-actions-panel gc-user-panel" role="menu">
+                    <div className="gc-user-header">
+                      <div className="gc-user-header-row">
+                        <span className="gc-avatar gc-avatar--lg" aria-hidden="true">
+                          {avatarText}
+                        </span>
+                        <div className="gc-user-meta">
+                          <div className="gc-user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
+                          <div className="gc-user-sub">{(k.profile?.role || 'Owner')} • {k.error ? 'Kitchen error' : kitchenLabel}</div>
                         </div>
-                        {/* Billion UI: keep email out of the always-visible menu header (reduces clutter) */}
                       </div>
-
-                      <button
-                        className="gc-actions-item"
-                        type="button"
-                        onClick={() => {
-                          setDark((v) => !v)
-                          closeMenu()
-                        }}
-                      >
-                        {dark ? 'Light Mode' : 'Dark Mode'}
-                      </button>
-
-                      <div className="gc-menu-divider" role="separator" aria-hidden="true" />
-
-                      <button
-                        className="gc-actions-item"
-                        type="button"
-                        onClick={async () => {
-                          closeMenu()
-                          await k.refresh().catch(() => {})
-                        }}
-                      >
-                        Refresh kitchen
-                      </button>
-
-                      <div className="gc-menu-divider" role="separator" aria-hidden="true" />
-
-                      <button
-                        className="gc-actions-item gc-actions-danger"
-                        type="button"
-                        onClick={async () => {
-                          closeMenu()
-                          await handleLogout()
-                        }}
-                        disabled={loggingOut}
-                        aria-disabled={loggingOut}
-                      >
-                        {loggingOut ? 'Logging out…' : 'Log out'}
-                      </button>
+                      {/* Billion UI: keep email out of the always-visible menu header (reduces clutter) */}
                     </div>
-                  </details>
+
+
+                    <button
+                      className="gc-actions-item"
+                      type="button"
+                      onClick={() => {
+                        setDark((v) => !v)
+                        closeMenu()
+                      }}
+                    >
+                      {dark ? 'Light Mode' : 'Dark Mode'}
+                    </button>
+
+                    <div className="gc-menu-divider" role="separator" aria-hidden="true" />
+                    <button
+                      className="gc-actions-item"
+                      type="button"
+                      onClick={async () => {
+                        closeMenu()
+                        await k.refresh().catch(() => {})
+                      }}
+                    >
+                      Refresh kitchen
+                    </button>
+
+                    <div className="gc-menu-divider" role="separator" aria-hidden="true" />
+
+                    <button
+                      className="gc-actions-item gc-actions-danger"
+                      type="button"
+                      onClick={async () => {
+                        closeMenu()
+                        await handleLogout()
+                      }}
+                      disabled={loggingOut}
+                      aria-disabled={loggingOut}
+                    >
+                      {loggingOut ? 'Logging out…' : 'Log out'}
+                    </button>
+                  </div>
+                </details>
                 </div>
               </div>
             </div>
