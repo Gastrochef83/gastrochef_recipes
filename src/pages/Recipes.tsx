@@ -80,12 +80,26 @@ type CostPoint = {
   marginPct: number | null
   warnings: string[]
 }
-const COST_CACHE_KEY = 'gc_v5_cost_cache_v1'
+const ING_REV_KEY = 'gc:ingredients:rev'
+
+function getIngredientsRev(): string {
+  try {
+    return localStorage.getItem(ING_REV_KEY) || '0'
+  } catch {
+    return '0'
+  }
+}
+
+function getCostCacheKey() {
+  // include ingredients revision so cached recipe costs refresh immediately after any ingredient price update
+  return `gc_v5_cost_cache_v1::rev:${getIngredientsRev()}`
+}
+
 const COST_TTL_MS = 10 * 60 * 1000
 
 function loadCostCache(): Record<string, CostPoint> {
   try {
-    const raw = localStorage.getItem(COST_CACHE_KEY)
+    const raw = localStorage.getItem(getCostCacheKey())
     if (!raw) return {}
     const obj = JSON.parse(raw) as Record<string, CostPoint>
     if (!obj || typeof obj !== 'object') return {}
@@ -96,7 +110,7 @@ function loadCostCache(): Record<string, CostPoint> {
 }
 function saveCostCache(cache: Record<string, CostPoint>) {
   try {
-    localStorage.setItem(COST_CACHE_KEY, JSON.stringify(cache))
+    localStorage.setItem(getCostCacheKey(), JSON.stringify(cache))
   } catch {}
 }
 
