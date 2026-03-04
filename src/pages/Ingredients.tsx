@@ -437,15 +437,7 @@ export default function Ingredients() {
         showToast('Ingredient created')
       }
 
-      
-
-      // COST AUTO SYNC: bump ingredients revision so other pages invalidate cached costs
-      try {
-        localStorage.setItem('gc:ingredients:rev', String(Date.now()))
-      } catch {
-        // ignore
-      }
-setModalOpen(false)
+      setModalOpen(false)
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Save failed')
@@ -509,10 +501,10 @@ setModalOpen(false)
         const net = calcNetUnitCost(pp, ps)
 
         const { error } = await supabase.from('ingredients').update({ net_unit_cost: net }).eq('id', r.id)
-      invalidateIngredientsCache()
-      invalidateIngredientsCache()
         if (error) throw error
       }
+
+      invalidateIngredientsCache()
       showToast('Bulk recalculation done')
       await load()
     } catch (e: any) {
@@ -531,9 +523,10 @@ setModalOpen(false)
     try {
       for (const r of filtered) {
         const { error } = await supabase.from('ingredients').update({ is_active: active }).eq('id', r.id)
-      invalidateIngredientsCache()
         if (error) throw error
       }
+
+      invalidateIngredientsCache()
       showToast('Bulk update done')
       await load()
     } catch (e: any) {
