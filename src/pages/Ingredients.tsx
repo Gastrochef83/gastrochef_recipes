@@ -830,7 +830,29 @@ export default function Ingredients() {
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-netunit{ width: 130px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 150px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 220px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }`}</style>
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
+              /* ===== GastroChef: Add Ingredient Modal PRO UX (scoped) ===== */
+              .gc-add-ingredient-modal .gc-form-section{
+                margin-top: 2px;
+                padding-top: 6px;
+              }
+              .gc-add-ingredient-modal .gc-form-section-title{
+                font-size: 11px;
+                letter-spacing: .10em;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: rgba(55, 65, 81, .75);
+                padding: 8px 2px 2px 2px;
+                border-top: 1px solid rgba(15, 23, 42, .08);
+              }
+              .gc-add-ingredient-modal .gc-form-section:first-of-type .gc-form-section-title{
+                border-top: none;
+                padding-top: 0;
+              }
+              .gc-add-ingredient-modal .gc-label{
+                letter-spacing: .06em;
+              }
+`}</style>
             <div className="flex items-center justify-between">
               <div>
                 <div className="gc-label">LIST</div>
@@ -942,8 +964,13 @@ export default function Ingredients() {
 
       {/* Modal */}
       <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
-        <div className="gc-form-grid cols-2">
-          <div className="span-2">
+        <div className="gc-add-ingredient-modal gc-form-grid cols-2">
+          {/* IDENTIFICATION */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">IDENTIFICATION</div>
+          </div>
+
+          <div>
             <div className="gc-label">CODE</div>
             <input
               className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
@@ -975,6 +1002,11 @@ export default function Ingredients() {
             <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
           </div>
 
+          {/* CLASSIFICATION */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">CLASSIFICATION</div>
+          </div>
+
           <div>
             <div className="gc-label">CATEGORY</div>
             <input className="gc-input mt-2 w-full" value={fCategory} onChange={(e) => setFCategory(e.target.value)} />
@@ -983,6 +1015,11 @@ export default function Ingredients() {
           <div>
             <div className="gc-label">SUPPLIER</div>
             <input className="gc-input mt-2 w-full" value={fSupplier} onChange={(e) => setFSupplier(e.target.value)} />
+          </div>
+
+          {/* PACK */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">PACK</div>
           </div>
 
           <div>
@@ -1000,6 +1037,11 @@ export default function Ingredients() {
               <option value="l">L</option>
               <option value="pcs">pcs</option>
             </select>
+          </div>
+
+          {/* COST */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">COST</div>
           </div>
 
           <div>
