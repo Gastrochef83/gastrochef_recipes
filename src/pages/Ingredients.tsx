@@ -1,4 +1,5 @@
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
@@ -186,6 +187,19 @@ export default function Ingredients() {
 
   const [rows, setRows] = useState<IngredientRow[]>([])
   const [search, setSearch] = useState('')
+  const loc = useLocation()
+
+  // One-time search prefill from Command Palette
+  useEffect(() => {
+    try {
+      const v = sessionStorage.getItem('gc:prefill:ingredients')
+      if (v && typeof v === 'string') {
+        setSearch(v)
+        sessionStorage.removeItem('gc:prefill:ingredients')
+      }
+    } catch {}
+  }, [loc.pathname, loc.hash])
+
   const deferredSearch = useDeferredValue(search)
   const [category, setCategory] = useState('')
   const [showInactive, setShowInactive] = useState(false)
