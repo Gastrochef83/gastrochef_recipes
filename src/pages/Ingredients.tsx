@@ -115,11 +115,11 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const flag = sanityFlag(net, unit)
 
   return (
-    <tr>
-      <td className="text-xs text-neutral-600">
+    <tr className="gc-ingredients-row">
+      <td className="text-xs text-neutral-600 gc-ingredients-code">
         <span className="gc-mono">{r.code ?? '—'}</span>
       </td>
-      <td>
+      <td className="gc-ingredients-name">
         <div className="font-semibold flex flex-wrap items-center gap-2">
           <span>{r.name ?? '—'}</span>
 
@@ -138,19 +138,19 @@ const IngredientTableRow = memo(function IngredientTableRow({
         {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
       </td>
 
-      <td><span className="gc-ellipsis" title={r.category ?? ''}>{r.category ?? '—'}</span></td>
+      <td>{r.category ?? '—'}</td>
       <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
       <td className="gc-td-center">{unit}</td>
       <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
       <td className="gc-td-right font-semibold">{money(net)}</td>
 
-      <td className="gc-td-center whitespace-nowrap">
-        <div className="gc-cell-actions gc-ingredients-actions">
-          <button className="gc-btn gc-btn-ghost gc-ingredients-action" type="button" onClick={() => onEdit(r)}>
+      <td className="gc-td-center whitespace-nowrap gc-ingredients-actions">
+        <div className="gc-cell-actions">
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
             Edit
           </button>
 
-          <button className="gc-btn gc-btn-ghost gc-ingredients-action gc-ingredients-action--danger" type="button" onClick={() => onHardDelete(r.id)}>
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
             Delete
           </button>
         </div>
@@ -787,7 +787,7 @@ export default function Ingredients() {
               </div>
             ) : (
               <div className="mt-4 gc-data-table-wrap gc-ingredients-table">
-                <table className="gc-data-table text-sm gc-ingredients-table__table">
+                <table className="gc-data-table gc-ingredients-table__table text-sm">
                   <thead>
                     <tr>
                       <th className="gc-col-code">Code</th>
