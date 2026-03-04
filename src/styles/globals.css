@@ -374,7 +374,7 @@ a{
 .gc-topbar{
   position: sticky;
   top: var(--gc-16);
-  z-index: 40;
+  z-index: 60;
   min-width: 0;
 }
 
@@ -401,177 +401,8 @@ a{
   gap: 10px;
   min-width: 0;
 }
-/* Topbar actions cluster (autosave + command palette + user menu)
-   Scoped to prevent global visual regressions. */
-.gc-topbar-cluster{
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 3px;
-  border-radius: 999px;
-  border: 1px solid rgba(15,23,42,.10);
-  background: rgba(255,255,255,.58);
-  box-shadow: 0 1px 0 rgba(15,23,42,.04), var(--gc-shadow-soft);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-}
-
-.gc-dark .gc-topbar-cluster{
-  border-color: rgba(255,255,255,.10);
-  background: rgba(2,6,23,.30);
-  box-shadow: 0 1px 0 rgba(0,0,0,.24), var(--gc-shadow-soft);
-}
-.gc-dark .gc-topbar-cluster{
-  background: rgba(15,23,42,.44);
-}
-
-/* Make inner controls feel like one premium capsule */
-.gc-topbar-cluster .gc-autosave,
-.gc-topbar-cluster .gc-kbd-btn,
-.gc-topbar-cluster .gc-user-trigger-btn{
-  height: 32px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  box-shadow: none;
-}
-
-.gc-user-trigger-btn:hover{
-  background: rgba(15,23,42,.04);
-  border-color: rgba(15,23,42,.06);
-  transform: translateY(-1px);
-}
-
-.gc-user-trigger-btn:active{ transform: translateY(0); }
-
-.gc-user-trigger-btn:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(14,165,166,.22);
-  border-color: rgba(14,165,166,.25);
-}
-
-.gc-dark .gc-user-trigger-btn:hover{
-  background: rgba(255,255,255,.06);
-  border-color: rgba(255,255,255,.08);
-}
-
-.gc-dark .gc-user-trigger-btn:focus-visible{
-  box-shadow: 0 0 0 3px rgba(14,165,166,.28);
-  border-color: rgba(14,165,166,.30);
-}
-
-.gc-topbar-cluster .gc-autosave{
-  width: 32px;
-  border-color: transparent;
-}
-
-.gc-topbar-cluster .gc-kbd-btn{
-  height: 32px;
-  min-width: 52px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-  background: transparent;
-  color: var(--gc-text);
-  box-shadow: none;
-}
-
-.gc-kbd-btn:hover{
-  background: rgba(15,23,42,.04);
-  border-color: rgba(15,23,42,.06);
-  transform: translateY(-1px);
-}
-
-.gc-kbd-btn:active{ transform: translateY(0); }
-
-.gc-kbd-btn:focus-visible{
-  outline: none;
-  box-shadow: 0 0 0 3px rgba(14,165,166,.22);
-  border-color: rgba(14,165,166,.25);
-}
-
-.gc-dark .gc-kbd-btn:hover{
-  background: rgba(255,255,255,.06);
-  border-color: rgba(255,255,255,.08);
-}
-
-.gc-dark .gc-kbd-btn:focus-visible{
-  box-shadow: 0 0 0 3px rgba(14,165,166,.28);
-  border-color: rgba(14,165,166,.30);
-}
-
-.gc-topbar-cluster .gc-user-trigger-btn{
-  padding: 2px 8px;
-  border-color: transparent;
-}
-
-.gc-topbar-cluster .gc-user-trigger-btn:hover,
-.gc-topbar-cluster .gc-kbd-btn:hover{
-  transform: none;
-  border-color: transparent;
-  box-shadow: none;
-}
-
-.gc-topbar-cluster .gc-kbd-btn:focus-visible,
-.gc-topbar-cluster .gc-user-trigger-btn:focus-visible{
-  outline: 2px solid rgba(140,154,91,.35);
-  outline-offset: 2px;
-}
-
-.gc-topbar-cluster .gc-avatar{
-  height: 28px;
-  width: 28px;
-  border-radius: 10px;
-  font-size: 11px;
-}
-
 
 .gc-topbar-spacer{ min-width: 0; }
-/* Phase 3 — Premium finish (Topbar capsule only)
-   Keep changes scoped to .gc-topbar-cluster to avoid UI regressions. */
-.gc-topbar-cluster{
-  position: relative;
-  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
-}
-
-.gc-topbar-cluster::before{
-  content: "";
-  position: absolute;
-  inset: 0;
-  border-radius: 999px;
-  pointer-events: none;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.55);
-}
-
-.gc-topbar-cluster:hover{
-  background: rgba(255,255,255,.66);
-  border-color: rgba(15,23,42,.12);
-  box-shadow: 0 1px 0 rgba(15,23,42,.05), 0 10px 28px rgba(15,23,42,.10);
-}
-
-.gc-dark .gc-topbar-cluster::before{
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12);
-}
-
-.gc-dark .gc-topbar-cluster:hover{
-  background: rgba(15,23,42,.52);
-  border-color: rgba(255,255,255,.12);
-  box-shadow: 0 1px 0 rgba(0,0,0,.28), 0 12px 32px rgba(0,0,0,.35);
-}
-
-.gc-topbar-cluster .gc-autosave,
-.gc-topbar-cluster .gc-kbd-btn,
-.gc-topbar-cluster .gc-user-trigger-btn{
-  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
-}
-
-.gc-topbar-cluster .gc-autosave,
-.gc-topbar-cluster .gc-kbd-btn{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
 
 .gc-topbar-logo{
   width: 36px;
@@ -1310,6 +1141,97 @@ a{
 }
 
 .gc-cell-actions .gc-btn{ min-width: 0; }
+
+/* =========================================================
+   INGREDIENTS TABLE SURGERY (Scoped)
+   هدف: Data-grid احترافي بدون أي تأثير جانبي على باقي الجداول
+   ========================================================= */
+
+.gc-ingredients-table{
+  /* Slight lift + calmer chrome */
+  background: rgba(255,255,255,.66);
+  box-shadow:
+    0 1px 0 rgba(11,18,32,.04),
+    0 10px 30px rgba(11,18,32,.06);
+}
+
+.gc-dark .gc-ingredients-table{
+  background: rgba(14,18,30,.40);
+  box-shadow:
+    0 1px 0 rgba(234,240,255,.06),
+    0 12px 34px rgba(0,0,0,.30);
+}
+
+/* Header feels premium + clearer separation when scrolling */
+.gc-ingredients-table .gc-data-table thead th{
+  z-index: 2;
+  box-shadow: 0 1px 0 rgba(11,18,32,.06);
+}
+
+.gc-dark .gc-ingredients-table .gc-data-table thead th{
+  box-shadow: 0 1px 0 rgba(234,240,255,.10);
+}
+
+/* Zebra + smoother hover (kept extremely subtle) */
+.gc-ingredients-table .gc-data-table tbody tr:nth-child(even) td{
+  background: rgba(11,18,32,.012);
+}
+
+.gc-dark .gc-ingredients-table .gc-data-table tbody tr:nth-child(even) td{
+  background: rgba(234,240,255,.03);
+}
+
+.gc-ingredients-table .gc-data-table tbody tr:hover td{
+  background: rgba(31,122,120,.07);
+}
+
+/* Better scanability: code column calmer + numeric alignment already tabular */
+.gc-ingredients-table .gc-col-code,
+.gc-ingredients-table td:first-child{
+  letter-spacing: .02em;
+}
+
+/* Actions: compact pills + consistent hit-area */
+.gc-ingredients-actions{
+  gap: 10px;
+}
+
+.gc-ingredients-action{
+  padding: 7px 12px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(11,18,32,.10) !important;
+  background: rgba(255,255,255,.70) !important;
+  transition: transform 120ms ease, background 120ms ease, border-color 120ms ease;
+}
+
+.gc-dark .gc-ingredients-action{
+  border-color: rgba(234,240,255,.14) !important;
+  background: rgba(14,18,30,.38) !important;
+}
+
+.gc-ingredients-action:hover{
+  transform: translateY(-1px);
+  background: rgba(255,255,255,.92) !important;
+  border-color: rgba(11,18,32,.16) !important;
+}
+
+.gc-dark .gc-ingredients-action:hover{
+  background: rgba(14,18,30,.62) !important;
+  border-color: rgba(234,240,255,.22) !important;
+}
+
+.gc-ingredients-action--danger:hover{
+  border-color: rgba(220,38,38,.25) !important;
+}
+
+/* Allow tooltips via title while keeping ellipsis */
+.gc-ellipsis{
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* Table column sizing (Kitopi-grade):
    - percentage widths ensure the table fills available space
@@ -2082,24 +2004,15 @@ a{
   display:inline-flex;
   align-items:center;
   gap: 8px;
-  height: 32px;
-  padding: 0 10px;
+  padding: 6px 10px;
   border-radius: 999px;
   font-size: 12px;
   line-height: 1;
-  border: 1px solid rgba(15,23,42,.10);
-  background: rgba(255,255,255,.55);
+  border: 1px solid var(--gc-border);
+  background: rgba(255,255,255,.7);
   color: var(--gc-text);
-  box-shadow: none;
+  box-shadow: var(--gc-shadow-soft);
   white-space: nowrap;
-}
-
-.gc-autosave-pill .gc-autosave-icon{ opacity: .9; }
-
-.gc-dark .gc-autosave-pill{
-  background: rgba(2,6,23,.18);
-  border-color: rgba(255,255,255,.10);
-  color: rgba(255,255,255,.92);
 }
 .gc-dark .gc-autosave-pill{
   background: rgba(17,24,39,.35);
