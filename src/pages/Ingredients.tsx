@@ -138,19 +138,19 @@ const IngredientTableRow = memo(function IngredientTableRow({
         {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
       </td>
 
-      <td>{r.category ?? '—'}</td>
+      <td><span className="gc-ellipsis" title={r.category ?? ''}>{r.category ?? '—'}</span></td>
       <td className="gc-td-right">{Math.max(1, toNum(r.pack_size, 1))}</td>
       <td className="gc-td-center">{unit}</td>
       <td className="gc-td-right font-semibold">{money(toNum(r.pack_price, 0))}</td>
       <td className="gc-td-right font-semibold">{money(net)}</td>
 
       <td className="gc-td-center whitespace-nowrap">
-        <div className="gc-cell-actions">
-          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
+        <div className="gc-cell-actions gc-ingredients-actions">
+          <button className="gc-btn gc-btn-ghost gc-ingredients-action" type="button" onClick={() => onEdit(r)}>
             Edit
           </button>
 
-          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
+          <button className="gc-btn gc-btn-ghost gc-ingredients-action gc-ingredients-action--danger" type="button" onClick={() => onHardDelete(r.id)}>
             Delete
           </button>
         </div>
@@ -236,7 +236,6 @@ export default function Ingredients() {
     'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active'
 
   const PAGE_SIZE = 200
-const UI_BATCH_PAGES = 3
 
   const load = useCallback(async () => {
     setLoading(true)
@@ -251,7 +250,6 @@ const UI_BATCH_PAGES = 3
 
       let offset = 0
       let acc: IngredientRow[] = []
-      let pagesSinceUIUpdate = 0
 
       while (true) {
         // If a newer load started, stop this one
@@ -268,16 +266,13 @@ const UI_BATCH_PAGES = 3
         const chunk = ((data ?? []) as IngredientRow[]) || []
         acc = acc.concat(chunk)
 
-        pagesSinceUIUpdate += 1
-        const shouldUpdateUI = offset === 0 || pagesSinceUIUpdate >= UI_BATCH_PAGES || chunk.length < PAGE_SIZE
+        // Update UI progressively (fast first paint)
+        setRows(acc)
 
-        if (shouldUpdateUI) {
-          // Progressive UI updates: fast first paint, then batched to reduce render churn
-          setRows(acc)
-          primeIngredientsCache(acc as any)
-          pagesSinceUIUpdate = 0
-          if (offset === 0) setLoading(false)
-        }
+        // Prime cache so other pages benefit without refetching within TTL
+        primeIngredientsCache(acc as any)
+
+        if (offset === 0) setLoading(false)
 
         if (!chunk.length || chunk.length < PAGE_SIZE) break
 
@@ -791,8 +786,8 @@ const UI_BATCH_PAGES = 3
                 </div>
               </div>
             ) : (
-              <div className="mt-4 gc-data-table-wrap">
-                <table className="gc-data-table text-sm">
+              <div className="mt-4 gc-data-table-wrap gc-ingredients-table">
+                <table className="gc-data-table text-sm gc-ingredients-table__table">
                   <thead>
                     <tr>
                       <th className="gc-col-code">Code</th>
