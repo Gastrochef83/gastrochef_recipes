@@ -204,65 +204,6 @@ const k = useKitchen()
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
 
-  // =======================================
-  // SMART INGREDIENT FINDER (Recipe Lines) — UI-only, safe
-  // =======================================
-  const [ingFinderQ, setIngFinderQ] = useState<Record<string, string>>({})
-  const [ingFinderOpen, setIngFinderOpen] = useState<Record<string, boolean>>({})
-  const [ingFinderIdx, setIngFinderIdx] = useState<Record<string, number>>({})
-  const ingFinderWrap = useRef<Map<string, HTMLDivElement>>(new Map())
-  const ingFinderOpenRef = useRef<Record<string, boolean>>({})
-
-  useEffect(() => {
-    ingFinderOpenRef.current = ingFinderOpen
-  }, [ingFinderOpen])
-
-  const setFinderOpen = useCallback((lineId: string, open: boolean) => {
-    setIngFinderOpen((p) => ({ ...p, [lineId]: open }))
-    if (open) setIngFinderIdx((p) => ({ ...p, [lineId]: 0 }))
-  }, [])
-
-  const setFinderQ = useCallback((lineId: string, q: string) => {
-    setIngFinderQ((p) => ({ ...p, [lineId]: q }))
-  }, [])
-
-  const ingFinderList = useMemo(() => {
-    return (ingredients || [])
-      .filter((i) => i && (i.is_active ?? true) !== false)
-      .map((i) => {
-        const name = (i.name || '').trim()
-        const code = (i.code || '').trim()
-        const cat = (i.code_category || '').trim()
-        const key = `${name.toLowerCase()} ${code.toLowerCase()} ${cat.toLowerCase()}`
-        return { id: i.id, name, code, cat, key }
-      })
-  }, [ingredients])
-
-  const getIngSuggestions = useCallback(
-    (q: string) => {
-      const s = (q || '').trim().toLowerCase()
-      if (!s) return ingFinderList.slice(0, 12)
-      const out = ingFinderList.filter((x) => x.key.includes(s))
-      return out.slice(0, 12)
-    },
-    [ingFinderList]
-  )
-
-  useEffect(() => {
-    const onDown = (e: MouseEvent) => {
-      const openMap = ingFinderOpenRef.current || {}
-      if (!Object.values(openMap).some(Boolean)) return
-      const target = e.target as HTMLElement | null
-      if (!target) return
-      for (const wrap of ingFinderWrap.current.values()) {
-        if (wrap && wrap.contains(target)) return
-      }
-      setIngFinderOpen({})
-    }
-    document.addEventListener('mousedown', onDown)
-    return () => document.removeEventListener('mousedown', onDown)
-  }, [])
-
   // Toast
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
@@ -749,8 +690,6 @@ useEffect(() => {
       autosave.setSaved()
       return true
     } catch (e: any) {
-      const msg = e?.message || 'Failed to save lines.'
-      autosave.setError(msg)
       try {
         // Keep current lines locally so navigation (Cook Mode) won't lose them.
         const cur = ((override ?? linesRef.current) || []) as Line[]
@@ -1493,156 +1432,6 @@ const addLineLocal = useCallback(async () => {
       .gc-recipe-pro .gc-col-cost{
         text-align: right;
       }
-
-
-      /* ===== Recipe Editor SURGERY — Chef Production Grid (UI-only, scoped) ===== */
-      .gc-recipe-lines-pro{
-        border-radius: 16px;
-      }
-      .gc-recipe-lines-pro .gc-kitopi-table{
-        border-collapse: separate;
-        border-spacing: 0;
-        width: 100%;
-        min-width: 980px; /* prevents cramped columns; wrap provides horizontal scroll */
-      }
-      .gc-recipe-lines-pro{
-        overflow-x: auto;
-      }
-      .gc-recipe-lines-pro .gc-kitopi-table thead th{
-        position: static; /* explicitly not sticky */
-        background: rgba(245,247,246,0.92);
-        backdrop-filter: blur(6px);
-        border-bottom: 1px solid var(--gc-border);
-      }
-      .gc-recipe-lines-pro .gc-kitopi-table td,
-      .gc-recipe-lines-pro .gc-kitopi-table th{
-        padding: 10px 12px;
-        border-right: 1px solid rgba(0,0,0,0.04);
-      }
-      .gc-recipe-lines-pro .gc-kitopi-table td:last-child,
-      .gc-recipe-lines-pro .gc-kitopi-table th:last-child{
-        border-right: none;
-      }
-      .gc-recipe-lines-pro .gc-kitopi-table tbody tr{
-        background: transparent;
-      }
-      .gc-recipe-lines-pro .gc-kitopi-table tbody tr:hover{
-        background: rgba(61,124,103,0.06);
-      }
-      .gc-recipe-lines-pro .gc-col-code,
-      .gc-recipe-lines-pro td:nth-child(1),
-      .gc-recipe-lines-pro th:nth-child(1){
-        text-align: center;
-      }
-      .gc-recipe-lines-pro .gc-col-item,
-      .gc-recipe-lines-pro td:nth-child(2),
-      .gc-recipe-lines-pro th:nth-child(2){
-        text-align: left;
-      }
-      .gc-recipe-lines-pro .gc-col-unit,
-      .gc-recipe-lines-pro td:nth-child(4),
-      .gc-recipe-lines-pro th:nth-child(4),
-      .gc-recipe-lines-pro .gc-col-yield,
-      .gc-recipe-lines-pro td:nth-child(6),
-      .gc-recipe-lines-pro th:nth-child(6){
-        text-align: center;
-      }
-      .gc-recipe-lines-pro .gc-col-net,
-      .gc-recipe-lines-pro .gc-col-gross,
-      .gc-recipe-lines-pro .gc-col-cost,
-      .gc-recipe-lines-pro td:nth-child(3),
-      .gc-recipe-lines-pro td:nth-child(5),
-      .gc-recipe-lines-pro td:nth-child(8),
-      .gc-recipe-lines-pro th:nth-child(3),
-      .gc-recipe-lines-pro th:nth-child(5),
-      .gc-recipe-lines-pro th:nth-child(8){
-        text-align: right;
-      }
-      .gc-recipe-lines-pro .gc-kitopi-money{
-        font-variant-numeric: tabular-nums;
-        font-feature-settings: "tnum";
-        text-align: right;
-      }
-      /* Smart Ingredient Finder (Recipe Lines) */
-      .gc-recipe-pro .gc-ing-finder{
-        position: relative;
-      }
-      .gc-recipe-pro .gc-ing-finder-input{
-        width: 100%;
-      }
-      .gc-recipe-pro .gc-ing-finder-pop{
-        position: absolute;
-        z-index: 80;
-        top: calc(100% + 6px);
-        left: 0;
-        right: 0;
-        max-height: 280px;
-        overflow: auto;
-        border: 1px solid rgba(15, 23, 42, .10);
-        border-radius: 14px;
-        background: rgba(255,255,255,.98);
-        box-shadow: 0 16px 40px rgba(15, 23, 42, .12);
-        padding: 6px;
-      }
-      .gc-recipe-pro .gc-ing-finder-item{
-        width: 100%;
-        border: 0;
-        background: transparent;
-        text-align: left;
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 10px;
-        padding: 8px 10px;
-        border-radius: 10px;
-        cursor: pointer;
-      }
-      .gc-recipe-pro .gc-ing-finder-item:hover,
-      .gc-recipe-pro .gc-ing-finder-item.is-active{
-        background: rgba(16, 185, 129, .10);
-      }
-      .gc-recipe-pro .gc-ing-finder-name{
-        font-weight: 800;
-        font-size: 12.5px;
-        color: var(--gc-text);
-      }
-      .gc-recipe-pro .gc-ing-finder-meta{
-        font-size: 11px;
-        color: rgba(15, 23, 42, .60);
-        white-space: nowrap;
-        font-variant-numeric: tabular-nums;
-        font-feature-settings: "tnum";
-      }
-
-
-      .gc-recipe-lines-summary{
-        display: grid;
-        grid-template-columns: repeat(4, minmax(160px, 1fr));
-        gap: 10px;
-        margin-top: 10px;
-        padding-top: 10px;
-        border-top: 1px solid var(--gc-border);
-      }
-      .gc-recipe-sum-item{
-        padding: 10px 12px;
-        border: 1px solid rgba(0,0,0,0.06);
-        border-radius: 14px;
-        background: rgba(255,255,255,0.6);
-      }
-      .gc-recipe-sum-val{
-        margin-top: 4px;
-        font-weight: 700;
-        font-size: 14px;
-        color: var(--gc-text);
-        font-variant-numeric: tabular-nums;
-        font-feature-settings: "tnum";
-      }
-      @media (max-width: 1100px){
-        .gc-recipe-lines-summary{
-          grid-template-columns: repeat(2, minmax(160px, 1fr));
-        }
-      }
-
     `}</style>
   )
 
@@ -2142,7 +1931,7 @@ const addLineLocal = useCallback(async () => {
               {!visibleLines.length ? (
                 <div className="gc-hint">No lines yet.</div>
               ) : (
-                <div className="gc-kitopi-table-wrap gc-recipe-lines-pro">
+                <div className="gc-kitopi-table-wrap">
                   <table className="gc-kitopi-table gc-kitopi-table-fixed">
                     <colgroup>
                       <col className="gc-col-code" />
@@ -2226,87 +2015,19 @@ const addLineLocal = useCallback(async () => {
                               <div className="gc-kitopi-item">
                                 <div className="gc-kitopi-item-select">
                                   {l.line_type === 'ingredient' ? (
-                                    <div
-                                      className="gc-ing-finder"
-                                      ref={(el) => {
-                                        if (el) ingFinderWrap.current.set(l.id, el)
-                                        else ingFinderWrap.current.delete(l.id)
-                                      }}
+                                    <select
+                                      className="gc-select gc-select-compact"
+                                      value={l.ingredient_id || ''}
+                                      onChange={(e) => updateLine(l.id, { ingredient_id: e.target.value || null })}
+                                      aria-label="Ingredient name"
                                     >
-                                      <input
-                                        className="gc-input gc-input-compact gc-ing-finder-input"
-                                        value={ingFinderOpen[l.id] ? (ingFinderQ[l.id] ?? '') : (ing?.name || '')}
-                                        onFocus={() => {
-                                          setFinderQ(l.id, ing?.name || '')
-                                          setFinderOpen(l.id, true)
-                                        }}
-                                        onChange={(e) => {
-                                          setFinderQ(l.id, e.target.value)
-                                          setFinderOpen(l.id, true)
-                                        }}
-                                        onKeyDown={(e) => {
-                                          const q = ingFinderQ[l.id] ?? (ing?.name || '')
-                                          const list = getIngSuggestions(q)
-                                          const max = list.length
-                                          const curIdx = ingFinderIdx[l.id] ?? 0
-
-                                          if (e.key === 'ArrowDown') {
-                                            e.preventDefault()
-                                            if (!ingFinderOpen[l.id]) setFinderOpen(l.id, true)
-                                            setIngFinderIdx((p) => ({ ...p, [l.id]: Math.min(max - 1, curIdx + 1) }))
-                                            return
-                                          }
-                                          if (e.key === 'ArrowUp') {
-                                            e.preventDefault()
-                                            if (!ingFinderOpen[l.id]) setFinderOpen(l.id, true)
-                                            setIngFinderIdx((p) => ({ ...p, [l.id]: Math.max(0, curIdx - 1) }))
-                                            return
-                                          }
-                                          if (e.key === 'Enter') {
-                                            if (!ingFinderOpen[l.id]) return
-                                            e.preventDefault()
-                                            const pick = list[curIdx]
-                                            if (pick?.id) {
-                                              updateLine(l.id, { ingredient_id: pick.id || null })
-                                              setFinderOpen(l.id, false)
-                                              setFinderQ(l.id, '')
-                                            }
-                                            return
-                                          }
-                                          if (e.key === 'Escape') {
-                                            if (!ingFinderOpen[l.id]) return
-                                            e.preventDefault()
-                                            setFinderOpen(l.id, false)
-                                            setFinderQ(l.id, '')
-                                          }
-                                        }}
-                                        placeholder="Type ingredient…"
-                                      />
-
-                                      {ingFinderOpen[l.id] ? (
-                                        <div className="gc-ing-finder-pop" role="listbox">
-                                          {getIngSuggestions(ingFinderQ[l.id] ?? '').map((opt, i) => (
-                                            <button
-                                              key={opt.id}
-                                              type="button"
-                                              className={cx('gc-ing-finder-item', (ingFinderIdx[l.id] ?? 0) === i && 'is-active')}
-                                              onMouseEnter={() => setIngFinderIdx((p) => ({ ...p, [l.id]: i }))}
-                                              onMouseDown={(ev) => ev.preventDefault()}
-                                              onClick={() => {
-                                                updateLine(l.id, { ingredient_id: opt.id || null })
-                                                setFinderOpen(l.id, false)
-                                                setFinderQ(l.id, '')
-                                              }}
-                                            >
-                                              <span className="gc-ing-finder-name">{opt.name || 'Unnamed'}</span>
-                                              <span className="gc-ing-finder-meta">
-                                                {opt.code || '—'}{opt.cat ? ` • ${opt.cat}` : ''}
-                                              </span>
-                                            </button>
-                                          ))}
-                                        </div>
-                                      ) : null}
-                                    </div>
+                                      <option value="">— Select ingredient —</option>
+                                      {ingredients.map((i) => (
+                                        <option key={i.id} value={i.id}>
+                                          {i.name || 'Unnamed'}
+                                        </option>
+                                      ))}
+                                    </select>
                                   ) : (
                                     <select
                                       className="gc-select gc-select-compact"
@@ -2355,7 +2076,9 @@ const addLineLocal = useCallback(async () => {
                             <td>
                               <input
                                 className="gc-input gc-input-compact"
-                                value={String(clamp(toNum(l.yield_percent, 100), 0.0001, 100))}
+                                value={String(
+                                  Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100
+                                )}
                                 onChange={(e) => onYieldChange(l.id, e.target.value)}
                                 inputMode="decimal"
                               />
@@ -2386,27 +2109,7 @@ const addLineLocal = useCallback(async () => {
                         )
                       })}
                     </tbody>
-                  
                   </table>
-                  <div className="gc-recipe-lines-summary" aria-label="Recipe cost summary">
-                    <div className="gc-recipe-sum-item">
-                      <div className="gc-label">TOTAL COST</div>
-                      <div className="gc-recipe-sum-val">{fmtMoney(totals.totalCost, cur)}</div>
-                    </div>
-                    <div className="gc-recipe-sum-item">
-                      <div className="gc-label">COST / PORTION</div>
-                      <div className="gc-recipe-sum-val">{fmtMoney(totals.cpp, cur)}</div>
-                    </div>
-                    <div className="gc-recipe-sum-item">
-                      <div className="gc-label">FC%</div>
-                      <div className="gc-recipe-sum-val">{totals.fcPct == null ? '—' : `${totals.fcPct.toFixed(1)}%`}</div>
-                    </div>
-                    <div className="gc-recipe-sum-item">
-                      <div className="gc-label">MARGIN</div>
-                      <div className="gc-recipe-sum-val">{fmtMoney(totals.margin, cur)}{totals.marginPct == null ? '' : ` (${totals.marginPct.toFixed(1)}%)`}</div>
-                    </div>
-                  </div>
-
                 </div>
               )}
             </div>
