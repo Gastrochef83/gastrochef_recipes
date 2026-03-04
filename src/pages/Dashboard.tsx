@@ -481,6 +481,38 @@ export default function Dashboard() {
             />
           )}
 
+          {activeRecipes.length === 0 && activeIngredientsCount > 0 && (
+            <EmptyState
+              title="Create your first recipe"
+              description="You already have ingredients. Now create a recipe and the dashboard will show costs, food cost %, and margins."
+              primaryAction={{
+                label: 'Create Recipe',
+                onClick: () => nav('/recipes')
+              }}
+              secondaryAction={{
+                label: 'Add more ingredients',
+                onClick: () => nav('/ingredients')
+              }}
+              icon="🍳"
+            />
+          )}
+
+          {activeIngredientsCount === 0 && activeRecipes.length > 0 && (
+            <EmptyState
+              title="Add ingredients to unlock costing"
+              description="Recipes are ready, but ingredient costs are missing. Add ingredients (with pack size + price) to see accurate cost insights."
+              primaryAction={{
+                label: 'Add Ingredient',
+                onClick: () => nav('/ingredients')
+              }}
+              secondaryAction={{
+                label: 'View recipes',
+                onClick: () => nav('/recipes')
+              }}
+              icon="🧂"
+            />
+          )}
+
           {hasOutliers && (
             <div className="gc-card is-interactive p-6">
               <div className="gc-label">WARNING</div>
