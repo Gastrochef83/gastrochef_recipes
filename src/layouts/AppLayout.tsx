@@ -94,6 +94,57 @@ useEffect(() => {
 }, [])
   const menuRef = useRef<HTMLDetailsElement | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
+  const [ingredientIndex, setIngredientIndex] = useState<Array<{ id: string; name: string; code?: string | null }>>([])
+  const [recipeIndex, setRecipeIndex] = useState<Array<{ id: string; name: string }>>([])
+
+  useEffect(() => {
+    let cancelled = false
+
+    // Build lightweight indexes for global search in the command palette.
+    // NOTE: This is intentionally best-effort; failures must never break the app.
+    async function loadIndexes() {
+      try {
+        const { data } = await supabase
+          .from('ingredients')
+          .select('id,name,code')
+          .order('name', { ascending: true })
+          .limit(300)
+
+        if (!cancelled && Array.isArray(data)) {
+          setIngredientIndex(
+            data
+              .filter((x: any) => x && typeof x.name === 'string')
+              .map((x: any) => ({ id: String(x.id), name: String(x.name), code: x.code ?? null }))
+          )
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        const { data } = await supabase
+          .from('recipes')
+          .select('id,name')
+          .order('name', { ascending: true })
+          .limit(300)
+
+        if (!cancelled && Array.isArray(data)) {
+          setRecipeIndex(
+            data
+              .filter((x: any) => x && typeof x.name === 'string')
+              .map((x: any) => ({ id: String(x.id), name: String(x.name) }))
+          )
+        }
+      } catch {
+        // ignore
+      }
+    }
+
+    loadIndexes()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   // Command palette can be opened from anywhere via Ctrl/⌘+K (see CommandPalette)
   useEffect(() => {
@@ -153,7 +204,32 @@ useEffect(() => {
       { id: 'go-cook', label: 'Open Cook Mode', kbd: 'G C', run: () => navigate('/cook') },
       { id: 'go-print', label: 'Open Print', kbd: 'G P', run: () => navigate('/print') },
       { id: 'go-settings', label: 'Go to Settings', kbd: 'G S', run: () => navigate('/settings') },
-      {
+      
+      // ——— Global Search (Ingredients / Recipes) ———
+      ...ingredientIndex.map((ing) => ({
+        id: `ing-${ing.id}`,
+        label: `Ingredient: ${ing.name}${ing.code ? ` (${ing.code})` : ''}`,
+        kbd: '⏎',
+        run: () => {
+          try {
+            // Hint the Ingredients page to prefill search (safe even if page ignores it)
+            sessionStorage.setItem('gc:prefill:ingredients', ing.name)
+          } catch {}
+          navigate('/ingredients')
+        },
+      })),
+      ...recipeIndex.map((r) => ({
+        id: `rec-${r.id}`,
+        label: `Recipe: ${r.name}`,
+        kbd: '⏎',
+        run: () => {
+          try {
+            sessionStorage.setItem('gc:prefill:recipes', r.name)
+          } catch {}
+          navigate('/recipes')
+        },
+      })),
+{
         id: 'toggle-theme',
         label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
         kbd: 'T',
@@ -177,7 +253,7 @@ useEffect(() => {
         },
       },
     ],
-    [navigate, dark, k, handleLogout]
+    [navigate, dark, k, handleLogout, ingredientIndex, recipeIndex]
   )
 
   async function handleLogout() {
