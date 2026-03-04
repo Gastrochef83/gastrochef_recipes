@@ -1,6 +1,6 @@
 // src/pages/Recipes.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
 import { useMode } from '../lib/mode'
@@ -135,6 +135,19 @@ export default function Recipes() {
   const [loading, setLoading] = useState(true)
 
   const [q, setQ] = useState('')
+  const loc = useLocation()
+
+  // One-time search prefill from Command Palette
+  useEffect(() => {
+    try {
+      const v = sessionStorage.getItem('gc:prefill:recipes')
+      if (v && typeof v === 'string') {
+        setQ(v)
+        sessionStorage.removeItem('gc:prefill:recipes')
+      }
+    } catch {}
+  }, [loc.pathname, loc.hash])
+
   const [showArchived, setShowArchived] = useState(false)
 
   const [recipes, setRecipes] = useState<RecipeRow[]>([])
