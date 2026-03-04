@@ -617,6 +617,7 @@ export default function Ingredients() {
         </div>
 
 
+      </div>
       {/* Loading/Error */}
       {loading && (
         <div className="space-y-4">
