@@ -437,7 +437,15 @@ export default function Ingredients() {
         showToast('Ingredient created')
       }
 
-      setModalOpen(false)
+      
+
+      // COST AUTO SYNC: bump ingredients revision so other pages invalidate cached costs
+      try {
+        localStorage.setItem('gc:ingredients:rev', String(Date.now()))
+      } catch {
+        // ignore
+      }
+setModalOpen(false)
       await load()
     } catch (e: any) {
       showToast(e?.message ?? 'Save failed')
