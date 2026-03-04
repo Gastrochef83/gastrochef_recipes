@@ -31,6 +31,27 @@ export default function CommandPalette({ open, onClose, items }: Props) {
     return items.filter((it) => it.label.toLowerCase().includes(q))
   }, [items, query])
 
+  
+  function maybeStorePrefill(targetId: string, q: string) {
+    const queryText = (q || '').trim()
+    if (!queryText) return
+    try {
+      if (targetId === 'go-ingredients' || targetId.startsWith('ing-')) {
+        sessionStorage.setItem('gc:prefill:ingredients', queryText)
+      }
+      if (targetId === 'go-recipes' || targetId.startsWith('rec-')) {
+        sessionStorage.setItem('gc:prefill:recipes', queryText)
+      }
+    } catch {}
+  }
+
+  function runItem(it: CommandItem) {
+    // Store the palette query as a one-time prefill hint for Ingredients/Recipes.
+    // This is UI-only wiring and is safe even if the destination page ignores it.
+    maybeStorePrefill(it.id, query)
+    return Promise.resolve(it.run())
+  }
+
   useEffect(() => {
     function onKeyDown(e: KeyboardEvent) {
       const mod = mac ? e.metaKey : e.ctrlKey
@@ -51,7 +72,7 @@ export default function CommandPalette({ open, onClose, items }: Props) {
         const first = filtered[0]
         if (first) {
           e.preventDefault()
-          void Promise.resolve(first.run()).finally(() => {
+          void runItem(first).finally(() => {
             onClose()
           })
         }
@@ -105,7 +126,7 @@ export default function CommandPalette({ open, onClose, items }: Props) {
                 role="option"
                 aria-selected={idx === 0}
                 onClick={() => {
-                  void Promise.resolve(it.run()).finally(() => {
+                  void runItem(it).finally(() => {
                     onClose()
                   })
                 }}
