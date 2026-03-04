@@ -734,6 +734,7 @@ export default function Ingredients() {
                 padding:14px 14px;
                 border-bottom:1px solid rgba(0,0,0,0.06);
                 vertical-align:middle;
+                text-align:center;
               }
               /* subtle vertical gridlines (Excel-like clarity, SaaS-soft) */
               .gc-data-table-wrap .gc-ing-pro-table th + th,
@@ -754,7 +755,7 @@ export default function Ingredients() {
               /* numeric alignment */
               .gc-data-table-wrap .gc-ing-pro-table .gc-td-right,
               .gc-data-table-wrap .gc-ing-pro-table .gc-th-right{
-                text-align:right;
+                text-align:center;
                 font-variant-numeric:tabular-nums;
               }
               .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
