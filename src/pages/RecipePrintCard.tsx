@@ -12,7 +12,6 @@ type Recipe = {
   portions: number
   description: string | null
   method: string | null
-  method_legacy?: string | null
   method_steps: string[] | null
   method_step_photos: string[] | null
   created_at: string | null
@@ -142,7 +141,7 @@ export default function RecipePrintCard() {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_legacy,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct,yield_percent,yield_pct'
+            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct,yield_percent,yield_pct'
           )
           .eq('id', id)
           .single()
@@ -294,20 +293,18 @@ export default function RecipePrintCard() {
   const foodCostPct =
     selling != null && selling > 0 ? (perPortion / selling) * 100 : null
 
-  const methodLegacy = String(
-    recipe?.method_legacy ?? recipe?.method ?? ''
-  ).trim()
+  const methodText = String(recipe?.method ?? '').trim()
 
   const steps: string[] = (() => {
     const arr = Array.isArray(recipe?.method_steps)
-      ? (recipe.method_steps as any[])
+      ? recipe.method_steps
       : null
 
     if (arr && arr.length) {
       return arr.map((s) => String(s ?? '').trim()).filter(Boolean)
     }
 
-    return methodLegacy
+    return methodText
       .split(/\r?\n+/)
       .map((s) => s.trim())
       .filter(Boolean)
@@ -613,7 +610,7 @@ export default function RecipePrintCard() {
               </div>
             </Section>
 
-            {(steps.length || methodLegacy) ? (
+            {(steps.length || methodText) ? (
               <Section title="Method">
                 {steps.length ? (
                   <div style={{ display: 'grid', gap: 16 }}>
@@ -662,7 +659,7 @@ export default function RecipePrintCard() {
                   </div>
                 ) : (
                   <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
-                    {methodLegacy}
+                    {methodText}
                   </div>
                 )}
               </Section>
