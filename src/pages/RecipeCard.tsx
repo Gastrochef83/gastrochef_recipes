@@ -43,10 +43,7 @@ export default function RecipePrintCard() {
         .eq("id", id)
         .single()
 
-      if (!error) {
-        setRecipe(data)
-      }
-
+      if (!error) setRecipe(data)
       setLoading(false)
     }
 
@@ -55,6 +52,12 @@ export default function RecipePrintCard() {
 
   if (loading) return <div style={{ padding: 40 }}>Loading...</div>
   if (!recipe) return <div style={{ padding: 40 }}>Recipe not found</div>
+
+  const fmtQty = (n: number) => {
+    if (!Number.isFinite(n)) return ""
+    if (Math.round(n) === n) return String(n)
+    return n.toFixed(2)
+  }
 
   const methodLegacy = String(
     recipe?.method_legacy ??
@@ -83,12 +86,6 @@ export default function RecipePrintCard() {
     ? recipe.method_step_photos
     : []
 
-  const fmtQty = (n: number) => {
-    if (!Number.isFinite(n)) return ""
-    if (Math.round(n) === n) return String(n)
-    return n.toFixed(2)
-  }
-
   const yieldLabel = (() => {
     const qRaw = recipe?.yield_qty
     const uRaw = recipe?.yield_unit
@@ -101,18 +98,25 @@ export default function RecipePrintCard() {
       return u ? `${v} ${u}` : `${v}`
     }
 
+    const pRaw = recipe?.yield_percent ?? recipe?.yield_pct
+    const p = Number(pRaw)
+
+    if (Number.isFinite(p) && pRaw != null) {
+      return `${Math.round(p * 1000) / 1000}%`
+    }
+
     return "—"
   })()
 
   return (
-    <div style={{ padding: 40, fontFamily: "Arial" }}>
+    <div style={{ padding: 40, fontFamily: "Arial", maxWidth: 900, margin: "auto" }}>
       <h1>{recipe.name}</h1>
 
       {recipe.photo_url && (
         <img
           src={recipe.photo_url}
           alt={recipe.name}
-          style={{ width: 300, marginBottom: 20 }}
+          style={{ width: 320, marginBottom: 20 }}
         />
       )}
 
@@ -127,7 +131,7 @@ export default function RecipePrintCard() {
         </>
       )}
 
-      {(steps.length || methodLegacy) ? (
+      {(steps.length || methodLegacy) && (
         <>
           <h2>Method</h2>
 
@@ -146,10 +150,7 @@ export default function RecipePrintCard() {
                       />
                     )}
 
-                    <p>
-                      <strong>Step {i + 1}</strong>
-                    </p>
-
+                    <p><strong>Step {i + 1}</strong></p>
                     <p>{s}</p>
                   </div>
                 )
@@ -159,14 +160,15 @@ export default function RecipePrintCard() {
             <p>{methodLegacy}</p>
           )}
         </>
-      ) : null}
+      )}
 
       <button
         onClick={() => window.print()}
         style={{
           marginTop: 30,
           padding: "10px 20px",
-          fontSize: 16
+          fontSize: 16,
+          cursor: "pointer"
         }}
       >
         Print
