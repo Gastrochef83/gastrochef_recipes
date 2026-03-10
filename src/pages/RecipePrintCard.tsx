@@ -103,15 +103,15 @@ function shortId(id: string | null | undefined) {
   return s.replace(/[^a-fA-F0-9]/g, '').slice(0, 8).toUpperCase() || '—'
 }
 
+function cleanText(s: string | null | undefined) {
+  return String(s ?? '').trim()
+}
+
 function formatDateOnly(value: string | null | undefined) {
   if (!value) return '—'
   const d = new Date(value)
   if (Number.isNaN(d.getTime())) return String(value).slice(0, 10)
   return d.toLocaleDateString()
-}
-
-function cleanText(s: string | null | undefined) {
-  return String(s ?? '').trim()
 }
 
 export default function RecipePrintCard() {
@@ -304,7 +304,7 @@ export default function RecipePrintCard() {
 
   const methodText = cleanText(recipe?.method)
 
-  const steps: string[] = useMemo(() => {
+  const steps = useMemo(() => {
     const arr = Array.isArray(recipe?.method_steps) ? recipe.method_steps : null
     if (arr && arr.length) {
       return arr.map((s) => cleanText(s)).filter(Boolean)
@@ -353,9 +353,9 @@ export default function RecipePrintCard() {
           try {
             window.print()
           } catch {
-            // ignore print errors
+            // ignore
           }
-        }, 500)
+        }, 550)
       })
     })
 
@@ -366,8 +366,8 @@ export default function RecipePrintCard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-stone-100 p-6 text-stone-700">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-stone-200 bg-white p-10 shadow-sm">
+      <div className="min-h-screen bg-[#f3f0ea] p-6 text-stone-700">
+        <div className="mx-auto max-w-6xl rounded-[32px] border border-stone-200 bg-white p-10 shadow-sm">
           Loading recipe card…
         </div>
       </div>
@@ -376,8 +376,8 @@ export default function RecipePrintCard() {
 
   if (err || !recipe) {
     return (
-      <div className="min-h-screen bg-stone-100 p-6 text-stone-700">
-        <div className="mx-auto max-w-5xl rounded-3xl border border-red-200 bg-white p-10 shadow-sm">
+      <div className="min-h-screen bg-[#f3f0ea] p-6 text-stone-700">
+        <div className="mx-auto max-w-6xl rounded-[32px] border border-red-200 bg-white p-10 shadow-sm">
           {err || 'Missing recipe.'}
         </div>
       </div>
@@ -389,22 +389,13 @@ export default function RecipePrintCard() {
       <style>{`
         @page {
           size: A4;
-          margin: 12mm;
+          margin: 10mm;
         }
 
         html, body {
-          background: #f5f5f4;
+          background: #f3f0ea;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
-        }
-
-        .print-shell {
-          width: 100%;
-        }
-
-        .print-card {
-          background: #ffffff;
-          color: #1c1917;
         }
 
         .avoid-break {
@@ -418,7 +409,11 @@ export default function RecipePrintCard() {
 
         .recipe-table tr,
         .recipe-table td,
-        .recipe-table th {
+        .recipe-table th,
+        .step-card,
+        .metric-card,
+        .nutrition-card,
+        .hero-card {
           break-inside: avoid;
           page-break-inside: avoid;
         }
@@ -432,22 +427,23 @@ export default function RecipePrintCard() {
             display: none !important;
           }
 
-          .print-shell {
+          .print-stage {
             padding: 0 !important;
             margin: 0 !important;
             max-width: none !important;
+            background: #ffffff !important;
           }
 
-          .print-card {
-            box-shadow: none !important;
+          .print-paper {
             border: none !important;
             border-radius: 0 !important;
+            box-shadow: none !important;
           }
         }
       `}</style>
 
-      <div className="print-shell min-h-screen bg-stone-100 p-4 md:p-8">
-        <div className="no-print mx-auto mb-4 flex max-w-5xl justify-end">
+      <div className="print-stage min-h-screen bg-[#f3f0ea] p-4 md:p-8">
+        <div className="no-print mx-auto mb-4 flex max-w-6xl justify-end">
           <button
             onClick={() => window.print()}
             className="rounded-2xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
@@ -456,52 +452,55 @@ export default function RecipePrintCard() {
           </button>
         </div>
 
-        <article className="print-card mx-auto max-w-5xl rounded-[28px] border border-stone-200 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.06)]">
-          <header className="border-b border-stone-200 p-6 md:p-8">
-            <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
+        <article className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[34px] border border-stone-200 bg-white shadow-[0_24px_80px_rgba(0,0,0,0.09)]">
+          <section className="hero-card relative overflow-hidden border-b border-stone-200">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(13,148,136,0.16),transparent_32%),radial-gradient(circle_at_top_left,rgba(120,113,108,0.12),transparent_30%),linear-gradient(135deg,#1c1917_0%,#292524_40%,#44403c_100%)]" />
+            <div className="absolute inset-0 opacity-[0.06] [background-image:linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] [background-size:28px_28px]" />
+
+            <div className="relative grid gap-6 p-6 text-white md:grid-cols-[1.25fr_0.75fr] md:p-8">
               <div>
-                <div className="mb-4 inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-600">
-                  GastroChef · Premium Recipe Print
+                <div className="mb-4 inline-flex items-center rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] font-bold uppercase tracking-[0.25em] text-white/90 backdrop-blur">
+                  GastroChef · Signature Print
                 </div>
 
-                <h1 className="text-3xl font-black tracking-tight text-stone-900 md:text-5xl">
+                <h1 className="max-w-4xl text-3xl font-black tracking-tight md:text-5xl">
                   {recipe.name || 'Untitled Recipe'}
                 </h1>
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <MetaPill label="Code" value={recipe.code || '—'} />
-                  <MetaPill label="Category" value={recipe.category || '—'} />
-                  <MetaPill label="Yield" value={yieldLabel} />
-                  <MetaPill label="Portions" value={String(portions)} />
+                <div className="mt-4 flex flex-wrap gap-2">
+                  <GlassPill label="Code" value={recipe.code || '—'} />
+                  <GlassPill label="Category" value={recipe.category || '—'} />
+                  <GlassPill label="Yield" value={yieldLabel} />
+                  <GlassPill label="Portions" value={String(portions)} />
                 </div>
 
                 {recipe.description ? (
-                  <p className="mt-5 max-w-3xl text-sm leading-7 text-stone-600 md:text-[15px]">
+                  <p className="mt-5 max-w-3xl text-sm leading-7 text-white/85 md:text-[15px]">
                     {recipe.description}
                   </p>
                 ) : null}
               </div>
 
-              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
-                <InfoPanel label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
-                <InfoPanel label="Created" value={formatDateOnly(recipe.created_at)} />
-                <InfoPanel label="Printed" value={printedAtHuman} />
-                <InfoPanel label="Code Category" value={recipe.code_category || '—'} />
+              <div className="grid gap-3">
+                <HeroInfo label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
+                <HeroInfo label="Created" value={formatDateOnly(recipe.created_at)} />
+                <HeroInfo label="Printed" value={printedAtHuman} />
+                <HeroInfo label="Code Category" value={recipe.code_category || '—'} />
               </div>
             </div>
-          </header>
+          </section>
 
           <section className="border-b border-stone-200 p-6 md:p-8">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <MetricCard
                 label="Total Recipe Cost"
                 value={fmtMoney(totalCost, currency)}
-                subtle="Total ingredient cost"
+                subtle="Core production cost"
               />
               <MetricCard
                 label="Cost Per Portion"
                 value={fmtMoney(perPortion, currency)}
-                subtle="Based on total portions"
+                subtle="Per serving economics"
               />
               <MetricCard
                 label="Selling Price"
@@ -518,45 +517,96 @@ export default function RecipePrintCard() {
             </div>
           </section>
 
-          {recipe.photo_url ? (
-            <section className="avoid-break border-b border-stone-200 p-6 md:p-8">
-              <SectionTitle
-                eyebrow="Visual"
-                title="Recipe Photo"
-                subtitle="Main presentation image for kitchen, training, or menu reference."
-              />
+          <section className="border-b border-stone-200 p-6 md:p-8">
+            <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
+              {recipe.photo_url ? (
+                <div className="avoid-break overflow-hidden rounded-[28px] border border-stone-200 bg-stone-50">
+                  <div className="border-b border-stone-200 bg-stone-100/80 px-5 py-3 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                    Dish Presentation
+                  </div>
+                  <img
+                    src={recipe.photo_url}
+                    alt={recipe.name || 'Recipe'}
+                    className="h-full max-h-[520px] w-full object-cover"
+                  />
+                </div>
+              ) : (
+                <div className="avoid-break rounded-[28px] border border-dashed border-stone-300 bg-stone-50 p-8">
+                  <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+                    Dish Presentation
+                  </div>
+                  <div className="mt-3 text-lg font-bold text-stone-800">No recipe photo</div>
+                  <p className="mt-2 text-sm leading-6 text-stone-600">
+                    Add a main image to elevate the print card and improve kitchen recognition.
+                  </p>
+                </div>
+              )}
 
-              <div className="overflow-hidden rounded-[24px] border border-stone-200 bg-stone-50">
-                <img
-                  src={recipe.photo_url}
-                  alt={recipe.name || 'Recipe'}
-                  className="h-auto max-h-[460px] w-full object-cover"
+              <aside className="grid gap-4">
+                <PremiumPanel
+                  eyebrow="Operations"
+                  title="Production Summary"
+                  body={
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-1">
+                      <SideInfo label="Recipe Code" value={recipe.code || '—'} />
+                      <SideInfo label="Category" value={recipe.category || '—'} />
+                      <SideInfo label="Yield" value={yieldLabel} />
+                      <SideInfo label="Portions" value={String(portions)} />
+                      <SideInfo label="Currency" value={currency} />
+                      <SideInfo label="Sub Recipes" value={String(subRecipes.length)} />
+                    </div>
+                  }
                 />
-              </div>
-            </section>
-          ) : null}
 
-          <section className="avoid-break border-b border-stone-200 p-6 md:p-8">
+                {showNutrition ? (
+                  <PremiumPanel
+                    eyebrow="Nutrition"
+                    title="Macro Snapshot"
+                    body={
+                      <div className="grid gap-3 sm:grid-cols-2">
+                        <NutritionCard label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
+                        <NutritionCard label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
+                        <NutritionCard label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
+                        <NutritionCard label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
+                      </div>
+                    }
+                  />
+                ) : (
+                  <PremiumPanel
+                    eyebrow="Nutrition"
+                    title="Macro Snapshot"
+                    body={
+                      <div className="rounded-2xl border border-dashed border-stone-300 bg-stone-50 p-4 text-sm text-stone-600">
+                        No nutrition values available for this recipe.
+                      </div>
+                    }
+                  />
+                )}
+              </aside>
+            </div>
+          </section>
+
+          <section className="border-b border-stone-200 p-6 md:p-8">
             <SectionTitle
-              eyebrow="Production"
+              eyebrow="Costing"
               title="Ingredient Breakdown"
-              subtitle="Clean costing and prep view optimized for chefs, costing review, and print."
+              subtitle="Structured for chefs, costing review, and clean A4 print readability."
             />
 
-            <div className="overflow-hidden rounded-[24px] border border-stone-200">
+            <div className="overflow-hidden rounded-[28px] border border-stone-200">
               <div className="overflow-x-auto">
                 <table className="recipe-table min-w-full border-collapse text-sm">
-                  <thead className="bg-stone-100 text-stone-700">
+                  <thead className="bg-stone-900 text-white">
                     <tr>
                       <Th className="w-[10%]">Code</Th>
-                      <Th className="w-[30%]">Item</Th>
+                      <Th className="w-[28%]">Item</Th>
                       <Th className="w-[10%] text-right">Net Qty</Th>
-                      <Th className="w-[10%]">Unit</Th>
+                      <Th className="w-[8%]">Unit</Th>
                       <Th className="w-[10%] text-right">Gross Qty</Th>
-                      <Th className="w-[10%]">Unit</Th>
+                      <Th className="w-[8%]">Unit</Th>
                       <Th className="w-[8%] text-right">Yield</Th>
                       <Th className="w-[12%] text-right">Unit Cost</Th>
-                      <Th className="w-[12%] text-right">Line Cost</Th>
+                      <Th className="w-[14%] text-right">Line Cost</Th>
                     </tr>
                   </thead>
 
@@ -564,7 +614,7 @@ export default function RecipePrintCard() {
                     {lines.map((l, index) => {
                       if (l.line_type === 'group') {
                         return (
-                          <tr key={l.id} className="bg-stone-900 text-white">
+                          <tr key={l.id} className="bg-teal-700 text-white">
                             <td colSpan={9} className="px-4 py-3 text-sm font-bold tracking-wide">
                               {l.group_title || 'Group'}
                             </td>
@@ -575,25 +625,36 @@ export default function RecipePrintCard() {
                       const c = computed.get(l.id)
                       if (!c) return null
 
-                      const zebra = index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
+                      const zebra = index % 2 === 0 ? 'bg-white' : 'bg-stone-50'
 
                       return (
                         <tr key={l.id} className={`${zebra} align-top text-stone-700`}>
-                          <Td className="font-medium text-stone-500">{c.code || '—'}</Td>
-                          <Td className="font-semibold text-stone-900">{c.title}</Td>
+                          <Td className="font-semibold text-stone-500">{c.code || '—'}</Td>
+                          <Td className="font-bold text-stone-900">{c.title}</Td>
                           <Td className="text-right tabular-nums">{fmtQty(c.net)}</Td>
                           <Td>{safeUnit(l.unit)}</Td>
                           <Td className="text-right tabular-nums">{fmtQty(c.gross)}</Td>
                           <Td>{safeUnit(l.unit)}</Td>
                           <Td className="text-right tabular-nums">{c.yieldPct.toFixed(1)}%</Td>
                           <Td className="text-right tabular-nums">{fmtMoney(c.unitCost, currency)}</Td>
-                          <Td className="text-right font-bold tabular-nums text-stone-900">
+                          <Td className="text-right font-black tabular-nums text-stone-900">
                             {fmtMoney(c.lineCost, currency)}
                           </Td>
                         </tr>
                       )
                     })}
                   </tbody>
+
+                  <tfoot>
+                    <tr className="bg-stone-100">
+                      <td colSpan={7} className="px-4 py-4 text-right text-sm font-bold uppercase tracking-[0.16em] text-stone-500">
+                        Total Recipe Cost
+                      </td>
+                      <td colSpan={2} className="px-4 py-4 text-right text-lg font-black text-stone-900">
+                        {fmtMoney(totalCost, currency)}
+                      </td>
+                    </tr>
+                  </tfoot>
                 </table>
               </div>
             </div>
@@ -603,8 +664,8 @@ export default function RecipePrintCard() {
             <section className="border-b border-stone-200 p-6 md:p-8">
               <SectionTitle
                 eyebrow="Execution"
-                title="Method"
-                subtitle="Step-by-step kitchen instructions designed for readability during production."
+                title="Method & Production Flow"
+                subtitle="Readable, elegant, and kitchen-friendly instructions for real operation."
               />
 
               {steps.length ? (
@@ -614,18 +675,18 @@ export default function RecipePrintCard() {
 
                     return (
                       <div
-                        key={`${i}-${s.slice(0, 20)}`}
-                        className="avoid-break overflow-hidden rounded-[24px] border border-stone-200 bg-white"
+                        key={`${i}-${s.slice(0, 24)}`}
+                        className="step-card avoid-break overflow-hidden rounded-[28px] border border-stone-200 bg-white"
                       >
-                        <div className="grid gap-0 md:grid-cols-[88px_1fr]">
-                          <div className="flex items-start justify-center border-b border-stone-200 bg-stone-900 px-4 py-5 md:border-b-0 md:border-r">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-lg font-black text-stone-900">
+                        <div className="grid md:grid-cols-[96px_1fr]">
+                          <div className="flex items-start justify-center border-b border-stone-200 bg-gradient-to-b from-stone-900 to-stone-700 px-4 py-5 md:border-b-0 md:border-r">
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white text-xl font-black text-stone-900 shadow-sm">
                               {i + 1}
                             </div>
                           </div>
 
                           <div className="p-5 md:p-6">
-                            <div className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+                            <div className="mb-3 text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
                               Step {i + 1}
                             </div>
 
@@ -634,7 +695,7 @@ export default function RecipePrintCard() {
                                 <img
                                   src={img}
                                   alt={`Step ${i + 1}`}
-                                  className="max-h-[320px] w-full object-cover"
+                                  className="max-h-[340px] w-full object-cover"
                                 />
                               </div>
                             ) : null}
@@ -649,7 +710,7 @@ export default function RecipePrintCard() {
                   })}
                 </div>
               ) : (
-                <div className="avoid-break rounded-[24px] border border-stone-200 bg-stone-50 p-6">
+                <div className="avoid-break rounded-[28px] border border-stone-200 bg-stone-50 p-6">
                   <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">
                     {methodText}
                   </p>
@@ -658,26 +719,11 @@ export default function RecipePrintCard() {
             </section>
           ) : null}
 
-          {showNutrition ? (
-            <section className="avoid-break border-b border-stone-200 p-6 md:p-8">
-              <SectionTitle
-                eyebrow="Nutrition"
-                title="Nutrition Snapshot"
-                subtitle="Quick macro overview for planning, menu engineering, or nutrition review."
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <NutritionCard label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
-                <NutritionCard label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
-                <NutritionCard label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
-                <NutritionCard label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
-              </div>
-            </section>
-          ) : null}
-
-          <footer className="flex flex-col gap-3 p-6 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-8">
+          <footer className="flex flex-col gap-3 bg-stone-50 px-6 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-8">
             <div className="font-semibold tracking-wide">Generated by GastroChef</div>
-            <div>Printed {printedAtHuman}</div>
+            <div>
+              Printed {printedAtHuman} · Recipe ID {shortId(recipe.id)}
+            </div>
           </footer>
         </article>
       </div>
@@ -705,22 +751,55 @@ function SectionTitle({
   )
 }
 
-function MetaPill({ label, value }: { label: string; value: string }) {
+function GlassPill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-700 shadow-sm">
-      <span className="mr-1 font-bold text-stone-500">{label}:</span>
-      <span className="font-semibold text-stone-900">{value}</span>
+    <div className="rounded-full border border-white/20 bg-white/10 px-3 py-1.5 text-xs text-white/90 shadow-sm backdrop-blur">
+      <span className="mr-1 font-bold text-white/70">{label}:</span>
+      <span className="font-semibold text-white">{value}</span>
     </div>
   )
 }
 
-function InfoPanel({ label, value }: { label: string; value: string }) {
+function HeroInfo({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[20px] border border-stone-200 bg-stone-50 p-4">
-      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+    <div className="rounded-[22px] border border-white/15 bg-white/10 p-4 shadow-sm backdrop-blur">
+      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-white/65">
         {label}
       </div>
-      <div className="mt-2 text-sm font-semibold text-stone-900">{value}</div>
+      <div className="mt-2 text-sm font-semibold text-white">{value}</div>
+    </div>
+  )
+}
+
+function PremiumPanel({
+  eyebrow,
+  title,
+  body,
+}: {
+  eyebrow: string
+  title: string
+  body: ReactNode
+}) {
+  return (
+    <div className="avoid-break overflow-hidden rounded-[28px] border border-stone-200 bg-white shadow-sm">
+      <div className="border-b border-stone-200 bg-gradient-to-r from-stone-100 to-stone-50 px-5 py-4">
+        <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+          {eyebrow}
+        </div>
+        <div className="mt-1 text-lg font-black tracking-tight text-stone-900">{title}</div>
+      </div>
+      <div className="p-5">{body}</div>
+    </div>
+  )
+}
+
+function SideInfo({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-stone-50 p-4">
+      <div className="text-[11px] font-bold uppercase tracking-[0.2em] text-stone-500">
+        {label}
+      </div>
+      <div className="mt-2 text-sm font-bold text-stone-900">{value}</div>
     </div>
   )
 }
@@ -735,7 +814,7 @@ function MetricCard({
   subtle?: string
 }) {
   return (
-    <div className="rounded-[24px] border border-stone-200 bg-gradient-to-b from-white to-stone-50 p-5 shadow-sm">
+    <div className="metric-card rounded-[26px] border border-stone-200 bg-[linear-gradient(180deg,#ffffff_0%,#fafaf9_100%)] p-5 shadow-sm">
       <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </div>
@@ -755,7 +834,7 @@ function NutritionCard({
   unit: string
 }) {
   return (
-    <div className="rounded-[22px] border border-stone-200 bg-stone-50 p-5">
+    <div className="nutrition-card rounded-[22px] border border-stone-200 bg-stone-50 p-5">
       <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </div>
@@ -776,7 +855,7 @@ function Th({
 }) {
   return (
     <th
-      className={`border-b border-stone-200 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.18em] ${className}`}
+      className={`border-b border-stone-700 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.18em] ${className}`}
     >
       {children}
     </th>
