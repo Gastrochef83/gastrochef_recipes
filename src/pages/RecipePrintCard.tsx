@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 
@@ -55,7 +55,7 @@ type SubRecipe = {
   name: string | null
 }
 
-function toNum(x: any, fallback = 0) {
+function toNum(x: unknown, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
@@ -78,11 +78,11 @@ function fmtQty(n: number) {
 function fmtMoney(n: number, currency: string) {
   const v = Number.isFinite(n) ? n : 0
   const cur = (currency || 'USD').toUpperCase()
-
   try {
     return new Intl.NumberFormat(undefined, {
       style: 'currency',
       currency: cur,
+      maximumFractionDigits: 2,
     }).format(v)
   } catch {
     return `${v.toFixed(2)} ${cur}`
@@ -101,6 +101,17 @@ function shortId(id: string | null | undefined) {
   const s = String(id ?? '')
   if (!s) return '—'
   return s.replace(/[^a-fA-F0-9]/g, '').slice(0, 8).toUpperCase() || '—'
+}
+
+function formatDateOnly(value: string | null | undefined) {
+  if (!value) return '—'
+  const d = new Date(value)
+  if (Number.isNaN(d.getTime())) return String(value).slice(0, 10)
+  return d.toLocaleDateString()
+}
+
+function cleanText(s: string | null | undefined) {
+  return String(s ?? '').trim()
 }
 
 export default function RecipePrintCard() {
@@ -176,7 +187,7 @@ export default function RecipePrintCard() {
         const { data: sr, error: sErr } = await supabase
           .from('recipes')
           .select('id,code,name,kitchen_id')
-          .eq('kitchen_id', (r as any).kitchen_id)
+          .eq('kitchen_id', (r as Recipe).kitchen_id)
           .eq('is_subrecipe', true)
 
         if (sErr) throw sErr
@@ -291,24 +302,21 @@ export default function RecipePrintCard() {
   const foodCostPct =
     selling != null && selling > 0 ? (perPortion / selling) * 100 : null
 
-  const methodText = String(recipe?.method ?? '').trim()
+  const methodText = cleanText(recipe?.method)
 
-  const steps: string[] = (() => {
-    const arr = Array.isArray(recipe?.method_steps)
-      ? recipe.method_steps
-      : null
-
+  const steps: string[] = useMemo(() => {
+    const arr = Array.isArray(recipe?.method_steps) ? recipe.method_steps : null
     if (arr && arr.length) {
-      return arr.map((s) => String(s ?? '').trim()).filter(Boolean)
+      return arr.map((s) => cleanText(s)).filter(Boolean)
     }
 
     return methodText
       .split(/\r?\n+/)
       .map((s) => s.trim())
       .filter(Boolean)
-  })()
+  }, [recipe?.method_steps, methodText])
 
-  const yieldLabel = (() => {
+  const yieldLabel = useMemo(() => {
     const qRaw = recipe?.yield_qty
     const uRaw = recipe?.yield_unit
     const q = Number(qRaw)
@@ -320,7 +328,7 @@ export default function RecipePrintCard() {
     }
 
     return '—'
-  })()
+  }, [recipe?.yield_qty, recipe?.yield_unit])
 
   const showNutrition =
     recipe?.calories != null ||
@@ -344,8 +352,10 @@ export default function RecipePrintCard() {
           if (cancelled) return
           try {
             window.print()
-          } catch {}
-        }, 450)
+          } catch {
+            // ignore print errors
+          }
+        }, 500)
       })
     })
 
@@ -355,226 +365,207 @@ export default function RecipePrintCard() {
   }, [autoPrint, loading, err, recipe])
 
   if (loading) {
-    return <div style={{ padding: 24 }}>Loading…</div>
+    return (
+      <div className="min-h-screen bg-stone-100 p-6 text-stone-700">
+        <div className="mx-auto max-w-5xl rounded-3xl border border-stone-200 bg-white p-10 shadow-sm">
+          Loading recipe card…
+        </div>
+      </div>
+    )
   }
 
   if (err || !recipe) {
-    return <div style={{ padding: 24 }}>{err || 'Missing recipe.'}</div>
+    return (
+      <div className="min-h-screen bg-stone-100 p-6 text-stone-700">
+        <div className="mx-auto max-w-5xl rounded-3xl border border-red-200 bg-white p-10 shadow-sm">
+          {err || 'Missing recipe.'}
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div
-      style={{
-        background: '#f6f7f9',
-        minHeight: '100vh',
-        padding: 24,
-        color: '#111827',
-        fontFamily:
-          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-      }}
-    >
+    <>
       <style>{`
+        @page {
+          size: A4;
+          margin: 12mm;
+        }
+
+        html, body {
+          background: #f5f5f4;
+          -webkit-print-color-adjust: exact;
+          print-color-adjust: exact;
+        }
+
+        .print-shell {
+          width: 100%;
+        }
+
+        .print-card {
+          background: #ffffff;
+          color: #1c1917;
+        }
+
+        .avoid-break {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+
+        .recipe-table thead {
+          display: table-header-group;
+        }
+
+        .recipe-table tr,
+        .recipe-table td,
+        .recipe-table th {
+          break-inside: avoid;
+          page-break-inside: avoid;
+        }
+
         @media print {
-          body {
-            background: #fff !important;
+          html, body {
+            background: #ffffff !important;
           }
-          .gc-print-shell {
-            padding: 0 !important;
-          }
-          .gc-no-print {
+
+          .no-print {
             display: none !important;
           }
-          .gc-card {
+
+          .print-shell {
+            padding: 0 !important;
+            margin: 0 !important;
+            max-width: none !important;
+          }
+
+          .print-card {
             box-shadow: none !important;
-            border: 1px solid #ddd !important;
+            border: none !important;
+            border-radius: 0 !important;
           }
         }
       `}</style>
 
-      <div className="gc-print-shell" style={{ maxWidth: 1120, margin: '0 auto' }}>
-        <div
-          className="gc-no-print"
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            marginBottom: 16,
-          }}
-        >
+      <div className="print-shell min-h-screen bg-stone-100 p-4 md:p-8">
+        <div className="no-print mx-auto mb-4 flex max-w-5xl justify-end">
           <button
             onClick={() => window.print()}
-            style={{
-              border: 'none',
-              background: '#111827',
-              color: '#fff',
-              padding: '10px 16px',
-              borderRadius: 10,
-              cursor: 'pointer',
-              fontWeight: 700,
-            }}
+            className="rounded-2xl bg-stone-900 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:opacity-90"
           >
-            Print
+            Print Now
           </button>
         </div>
 
-        <div
-          className="gc-card"
-          style={{
-            background: '#fff',
-            borderRadius: 18,
-            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
-            overflow: 'hidden',
-            border: '1px solid #e5e7eb',
-          }}
-        >
-          <div
-            style={{
-              padding: 20,
-              background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
-              color: '#fff',
-            }}
-          >
-            <div
-              style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                gap: 16,
-                flexWrap: 'wrap',
-              }}
-            >
+        <article className="print-card mx-auto max-w-5xl rounded-[28px] border border-stone-200 bg-white shadow-[0_20px_60px_rgba(0,0,0,0.06)]">
+          <header className="border-b border-stone-200 p-6 md:p-8">
+            <div className="grid gap-6 md:grid-cols-[1.2fr_0.8fr]">
               <div>
-                <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 6 }}>
-                  Gastro Chef
+                <div className="mb-4 inline-flex items-center rounded-full border border-stone-200 bg-stone-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-600">
+                  GastroChef · Premium Recipe Print
                 </div>
-                <div style={{ fontSize: 28, fontWeight: 800 }}>Recipe Card</div>
-                <div style={{ fontSize: 14, opacity: 0.85, marginTop: 6 }}>
+
+                <h1 className="text-3xl font-black tracking-tight text-stone-900 md:text-5xl">
                   {recipe.name || 'Untitled Recipe'}
+                </h1>
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <MetaPill label="Code" value={recipe.code || '—'} />
+                  <MetaPill label="Category" value={recipe.category || '—'} />
+                  <MetaPill label="Yield" value={yieldLabel} />
+                  <MetaPill label="Portions" value={String(portions)} />
                 </div>
+
+                {recipe.description ? (
+                  <p className="mt-5 max-w-3xl text-sm leading-7 text-stone-600 md:text-[15px]">
+                    {recipe.description}
+                  </p>
+                ) : null}
               </div>
 
-              <div style={{ fontSize: 13, lineHeight: 1.8, opacity: 0.95 }}>
-                <div>Date {recipe.created_at ? String(recipe.created_at).slice(0, 10) : '—'}</div>
-                <div>Kitchen Ref {shortId(recipe.kitchen_id)}</div>
-                <div>Printed {printedAtHuman}</div>
-                <div>Code {recipe.code || '—'}</div>
+              <div className="grid gap-3 sm:grid-cols-2 md:grid-cols-1">
+                <InfoPanel label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
+                <InfoPanel label="Created" value={formatDateOnly(recipe.created_at)} />
+                <InfoPanel label="Printed" value={printedAtHuman} />
+                <InfoPanel label="Code Category" value={recipe.code_category || '—'} />
               </div>
             </div>
-          </div>
+          </header>
 
-          <div style={{ padding: 20 }}>
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: 12,
-                marginBottom: 18,
-              }}
-            >
-              <InfoCard label="Category" value={recipe.category || '—'} />
-              <InfoCard label="Portions" value={String(recipe.portions || 1)} />
-              <InfoCard label="Yield" value={yieldLabel} />
-              <InfoCard label="Code" value={recipe.code || '—'} />
-            </div>
-
-            {recipe.description ? (
-              <Section title="Description">
-                <p style={{ margin: 0, lineHeight: 1.7 }}>{recipe.description}</p>
-              </Section>
-            ) : null}
-
-            <div
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-                gap: 12,
-                marginBottom: 18,
-              }}
-            >
-              <MetricCard label="Total Cost" value={fmtMoney(totalCost, currency)} />
-              <MetricCard label="Cost / Portion" value={fmtMoney(perPortion, currency)} />
+          <section className="border-b border-stone-200 p-6 md:p-8">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
               <MetricCard
-                label="Selling"
-                value={selling != null ? fmtMoney(selling, currency) : '—'}
+                label="Total Recipe Cost"
+                value={fmtMoney(totalCost, currency)}
+                subtle="Total ingredient cost"
               />
               <MetricCard
-                label="Food Cost"
-                value={
-                  foodCostPct != null
-                    ? `${foodCostPct.toFixed(1)}%${
-                        targetPct != null ? ` (target ${targetPct.toFixed(1)}%)` : ''
-                      }`
-                    : '—'
+                label="Cost Per Portion"
+                value={fmtMoney(perPortion, currency)}
+                subtle="Based on total portions"
+              />
+              <MetricCard
+                label="Selling Price"
+                value={selling != null ? fmtMoney(selling, currency) : '—'}
+                subtle="Target menu price"
+              />
+              <MetricCard
+                label="Food Cost %"
+                value={foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'}
+                subtle={
+                  targetPct != null ? `Target ${targetPct.toFixed(1)}%` : 'No target set'
                 }
               />
             </div>
+          </section>
 
-            {showNutrition ? (
-              <Section title="Nutrition">
-                <div
-                  style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
-                    gap: 12,
-                  }}
-                >
-                  <InfoCard label="Calories" value={fmtMacro(recipe.calories)} />
-                  <InfoCard label="Protein (g)" value={fmtMacro(recipe.protein_g)} />
-                  <InfoCard label="Carbs (g)" value={fmtMacro(recipe.carbs_g)} />
-                  <InfoCard label="Fat (g)" value={fmtMacro(recipe.fat_g)} />
-                </div>
-              </Section>
-            ) : null}
+          {recipe.photo_url ? (
+            <section className="avoid-break border-b border-stone-200 p-6 md:p-8">
+              <SectionTitle
+                eyebrow="Visual"
+                title="Recipe Photo"
+                subtitle="Main presentation image for kitchen, training, or menu reference."
+              />
 
-            {recipe.photo_url ? (
-              <Section title="Photos">
+              <div className="overflow-hidden rounded-[24px] border border-stone-200 bg-stone-50">
                 <img
                   src={recipe.photo_url}
                   alt={recipe.name || 'Recipe'}
-                  style={{
-                    display: 'block',
-                    width: '100%',
-                    maxWidth: 520,
-                    borderRadius: 14,
-                    border: '1px solid #e5e7eb',
-                  }}
+                  className="h-auto max-h-[460px] w-full object-cover"
                 />
-              </Section>
-            ) : null}
+              </div>
+            </section>
+          ) : null}
 
-            <Section title="Ingredients">
-              <div style={{ overflowX: 'auto' }}>
-                <table
-                  style={{
-                    width: '100%',
-                    borderCollapse: 'collapse',
-                    fontSize: 14,
-                  }}
-                >
-                  <thead>
-                    <tr style={{ background: '#f3f4f6' }}>
-                      <Th>Code</Th>
-                      <Th>Item</Th>
-                      <Th>Net</Th>
-                      <Th>Gross</Th>
-                      <Th>Yield</Th>
-                      <Th>Unit Cost</Th>
-                      <Th>Line Cost</Th>
+          <section className="avoid-break border-b border-stone-200 p-6 md:p-8">
+            <SectionTitle
+              eyebrow="Production"
+              title="Ingredient Breakdown"
+              subtitle="Clean costing and prep view optimized for chefs, costing review, and print."
+            />
+
+            <div className="overflow-hidden rounded-[24px] border border-stone-200">
+              <div className="overflow-x-auto">
+                <table className="recipe-table min-w-full border-collapse text-sm">
+                  <thead className="bg-stone-100 text-stone-700">
+                    <tr>
+                      <Th className="w-[10%]">Code</Th>
+                      <Th className="w-[30%]">Item</Th>
+                      <Th className="w-[10%] text-right">Net Qty</Th>
+                      <Th className="w-[10%]">Unit</Th>
+                      <Th className="w-[10%] text-right">Gross Qty</Th>
+                      <Th className="w-[10%]">Unit</Th>
+                      <Th className="w-[8%] text-right">Yield</Th>
+                      <Th className="w-[12%] text-right">Unit Cost</Th>
+                      <Th className="w-[12%] text-right">Line Cost</Th>
                     </tr>
                   </thead>
+
                   <tbody>
-                    {lines.map((l) => {
+                    {lines.map((l, index) => {
                       if (l.line_type === 'group') {
                         return (
-                          <tr key={l.id}>
-                            <td
-                              colSpan={7}
-                              style={{
-                                padding: '10px 12px',
-                                fontWeight: 800,
-                                background: '#fafafa',
-                                borderTop: '1px solid #e5e7eb',
-                                borderBottom: '1px solid #e5e7eb',
-                              }}
-                            >
+                          <tr key={l.id} className="bg-stone-900 text-white">
+                            <td colSpan={9} className="px-4 py-3 text-sm font-bold tracking-wide">
                               {l.group_title || 'Group'}
                             </td>
                           </tr>
@@ -584,179 +575,220 @@ export default function RecipePrintCard() {
                       const c = computed.get(l.id)
                       if (!c) return null
 
+                      const zebra = index % 2 === 0 ? 'bg-white' : 'bg-stone-50/70'
+
                       return (
-                        <tr key={l.id}>
-                          <Td>{c.code || '—'}</Td>
-                          <Td>{c.title}</Td>
-                          <Td>{fmtQty(c.net)} {safeUnit(l.unit)}</Td>
-                          <Td>{fmtQty(c.gross)} {safeUnit(l.unit)}</Td>
-                          <Td>{c.yieldPct.toFixed(1)}%</Td>
-                          <Td>{fmtMoney(c.unitCost, currency)}</Td>
-                          <Td>{fmtMoney(c.lineCost, currency)}</Td>
+                        <tr key={l.id} className={`${zebra} align-top text-stone-700`}>
+                          <Td className="font-medium text-stone-500">{c.code || '—'}</Td>
+                          <Td className="font-semibold text-stone-900">{c.title}</Td>
+                          <Td className="text-right tabular-nums">{fmtQty(c.net)}</Td>
+                          <Td>{safeUnit(l.unit)}</Td>
+                          <Td className="text-right tabular-nums">{fmtQty(c.gross)}</Td>
+                          <Td>{safeUnit(l.unit)}</Td>
+                          <Td className="text-right tabular-nums">{c.yieldPct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums">{fmtMoney(c.unitCost, currency)}</Td>
+                          <Td className="text-right font-bold tabular-nums text-stone-900">
+                            {fmtMoney(c.lineCost, currency)}
+                          </Td>
                         </tr>
                       )
                     })}
                   </tbody>
                 </table>
               </div>
-            </Section>
+            </div>
+          </section>
 
-            {(steps.length || methodText) ? (
-              <Section title="Method">
-                {steps.length ? (
-                  <div style={{ display: 'grid', gap: 16 }}>
-                    {steps.map((s, i) => {
-                      const img = stepPhotos?.[i]
+          {(steps.length || methodText) ? (
+            <section className="border-b border-stone-200 p-6 md:p-8">
+              <SectionTitle
+                eyebrow="Execution"
+                title="Method"
+                subtitle="Step-by-step kitchen instructions designed for readability during production."
+              />
 
-                      return (
-                        <div
-                          key={i}
-                          style={{
-                            border: '1px solid #e5e7eb',
-                            borderRadius: 14,
-                            padding: 14,
-                            background: '#fff',
-                          }}
-                        >
-                          <div
-                            style={{
-                              fontWeight: 800,
-                              marginBottom: 10,
-                              color: '#111827',
-                            }}
-                          >
-                            Step {i + 1}
+              {steps.length ? (
+                <div className="grid gap-4">
+                  {steps.map((s, i) => {
+                    const img = stepPhotos?.[i]
+
+                    return (
+                      <div
+                        key={`${i}-${s.slice(0, 20)}`}
+                        className="avoid-break overflow-hidden rounded-[24px] border border-stone-200 bg-white"
+                      >
+                        <div className="grid gap-0 md:grid-cols-[88px_1fr]">
+                          <div className="flex items-start justify-center border-b border-stone-200 bg-stone-900 px-4 py-5 md:border-b-0 md:border-r">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-lg font-black text-stone-900">
+                              {i + 1}
+                            </div>
                           </div>
 
-                          {img ? (
-                            <img
-                              src={img}
-                              alt={`Step ${i + 1}`}
-                              style={{
-                                display: 'block',
-                                width: '100%',
-                                maxWidth: 420,
-                                borderRadius: 12,
-                                border: '1px solid #e5e7eb',
-                                marginBottom: 10,
-                              }}
-                            />
-                          ) : null}
+                          <div className="p-5 md:p-6">
+                            <div className="mb-3 text-xs font-bold uppercase tracking-[0.22em] text-stone-500">
+                              Step {i + 1}
+                            </div>
 
-                          <div style={{ lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{s}</div>
+                            {img ? (
+                              <div className="mb-4 overflow-hidden rounded-2xl border border-stone-200 bg-stone-50">
+                                <img
+                                  src={img}
+                                  alt={`Step ${i + 1}`}
+                                  className="max-h-[320px] w-full object-cover"
+                                />
+                              </div>
+                            ) : null}
+
+                            <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">
+                              {s}
+                            </p>
+                          </div>
                         </div>
-                      )
-                    })}
-                  </div>
-                ) : (
-                  <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                      </div>
+                    )
+                  })}
+                </div>
+              ) : (
+                <div className="avoid-break rounded-[24px] border border-stone-200 bg-stone-50 p-6">
+                  <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">
                     {methodText}
-                  </div>
-                )}
-              </Section>
-            ) : null}
+                  </p>
+                </div>
+              )}
+            </section>
+          ) : null}
 
-            <div
-              style={{
-                marginTop: 20,
-                paddingTop: 14,
-                borderTop: '1px solid #e5e7eb',
-                fontSize: 12,
-                color: '#6b7280',
-                textAlign: 'center',
-              }}
-            >
-              Generated by GastroChef • Printed {printedAtHuman}
-            </div>
-          </div>
-        </div>
+          {showNutrition ? (
+            <section className="avoid-break border-b border-stone-200 p-6 md:p-8">
+              <SectionTitle
+                eyebrow="Nutrition"
+                title="Nutrition Snapshot"
+                subtitle="Quick macro overview for planning, menu engineering, or nutrition review."
+              />
+
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+                <NutritionCard label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
+                <NutritionCard label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
+                <NutritionCard label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
+                <NutritionCard label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
+              </div>
+            </section>
+          ) : null}
+
+          <footer className="flex flex-col gap-3 p-6 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-8">
+            <div className="font-semibold tracking-wide">Generated by GastroChef</div>
+            <div>Printed {printedAtHuman}</div>
+          </footer>
+        </article>
+      </div>
+    </>
+  )
+}
+
+function SectionTitle({
+  eyebrow,
+  title,
+  subtitle,
+}: {
+  eyebrow: string
+  title: string
+  subtitle?: string
+}) {
+  return (
+    <div className="mb-5">
+      <div className="mb-2 text-[11px] font-bold uppercase tracking-[0.24em] text-stone-500">
+        {eyebrow}
+      </div>
+      <h2 className="text-2xl font-black tracking-tight text-stone-900">{title}</h2>
+      {subtitle ? <p className="mt-2 text-sm leading-6 text-stone-600">{subtitle}</p> : null}
+    </div>
+  )
+}
+
+function MetaPill({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-full border border-stone-200 bg-white px-3 py-1.5 text-xs text-stone-700 shadow-sm">
+      <span className="mr-1 font-bold text-stone-500">{label}:</span>
+      <span className="font-semibold text-stone-900">{value}</span>
+    </div>
+  )
+}
+
+function InfoPanel({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-[20px] border border-stone-200 bg-stone-50 p-4">
+      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+        {label}
+      </div>
+      <div className="mt-2 text-sm font-semibold text-stone-900">{value}</div>
+    </div>
+  )
+}
+
+function MetricCard({
+  label,
+  value,
+  subtle,
+}: {
+  label: string
+  value: string
+  subtle?: string
+}) {
+  return (
+    <div className="rounded-[24px] border border-stone-200 bg-gradient-to-b from-white to-stone-50 p-5 shadow-sm">
+      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+        {label}
+      </div>
+      <div className="mt-3 text-2xl font-black tracking-tight text-stone-900">{value}</div>
+      {subtle ? <div className="mt-2 text-xs text-stone-500">{subtle}</div> : null}
+    </div>
+  )
+}
+
+function NutritionCard({
+  label,
+  value,
+  unit,
+}: {
+  label: string
+  value: string
+  unit: string
+}) {
+  return (
+    <div className="rounded-[22px] border border-stone-200 bg-stone-50 p-5">
+      <div className="text-[11px] font-bold uppercase tracking-[0.22em] text-stone-500">
+        {label}
+      </div>
+      <div className="mt-3 text-2xl font-black tracking-tight text-stone-900">
+        {value}
+        <span className="ml-1 text-sm font-semibold text-stone-500">{unit}</span>
       </div>
     </div>
   )
 }
 
-function Section({
-  title,
+function Th({
   children,
+  className = '',
 }: {
-  title: string
-  children: React.ReactNode
+  children: ReactNode
+  className?: string
 }) {
   return (
-    <section style={{ marginBottom: 20 }}>
-      <h2
-        style={{
-          margin: '0 0 12px 0',
-          fontSize: 18,
-          fontWeight: 800,
-          color: '#111827',
-        }}
-      >
-        {title}
-      </h2>
-      {children}
-    </section>
-  )
-}
-
-function InfoCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        border: '1px solid #e5e7eb',
-        borderRadius: 14,
-        padding: 14,
-        background: '#fff',
-      }}
-    >
-      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 15, fontWeight: 700 }}>{value}</div>
-    </div>
-  )
-}
-
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div
-      style={{
-        border: '1px solid #dbeafe',
-        background: '#f8fbff',
-        borderRadius: 14,
-        padding: 14,
-      }}
-    >
-      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{label}</div>
-      <div style={{ fontSize: 18, fontWeight: 800 }}>{value}</div>
-    </div>
-  )
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-  return (
     <th
-      style={{
-        textAlign: 'left',
-        padding: '10px 12px',
-        borderBottom: '1px solid #d1d5db',
-        fontWeight: 800,
-        whiteSpace: 'nowrap',
-      }}
+      className={`border-b border-stone-200 px-4 py-3 text-left text-[11px] font-bold uppercase tracking-[0.18em] ${className}`}
     >
       {children}
     </th>
   )
 }
 
-function Td({ children }: { children: React.ReactNode }) {
-  return (
-    <td
-      style={{
-        padding: '10px 12px',
-        borderBottom: '1px solid #e5e7eb',
-        verticalAlign: 'top',
-      }}
-    >
-      {children}
-    </td>
-  )
+function Td({
+  children,
+  className = '',
+}: {
+  children: ReactNode
+  className?: string
+}) {
+  return <td className={`border-b border-stone-200 px-4 py-3 ${className}`}>{children}</td>
 }
