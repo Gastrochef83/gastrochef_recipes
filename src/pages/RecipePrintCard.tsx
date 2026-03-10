@@ -1,4 +1,3 @@
-// src/pages/RecipePrintCard.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -13,19 +12,20 @@ type Recipe = {
   portions: number
   description: string | null
   method: string | null
+  method_legacy?: string | null
   method_steps: string[] | null
   method_step_photos: string[] | null
   created_at: string | null
   yield_qty: number | null
   yield_unit: string | null
+  yield_percent?: number | null
+  yield_pct?: number | null
   currency: string | null
   photo_url: string | null
-
   calories: number | null
   protein_g: number | null
   carbs_g: number | null
   fat_g: number | null
-
   selling_price: number | null
   target_food_cost_pct: number | null
 }
@@ -52,31 +52,46 @@ type Ingredient = {
   net_unit_cost: number | null
 }
 
+type SubRecipe = {
+  id: string
+  code?: string | null
+  name: string | null
+}
+
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
+
 function clamp(n: number, a: number, b: number) {
   return Math.max(a, Math.min(b, n))
 }
-function safeUnit(u: string) {
-  return (u ?? '').trim().toLowerCase() || 'g'
+
+function safeUnit(u: string | null | undefined) {
+  return String(u ?? '').trim().toLowerCase() || 'g'
 }
+
 function fmtQty(n: number) {
   const v = Number.isFinite(n) ? n : 0
   if (Math.abs(v) >= 100) return v.toFixed(1)
   if (Math.abs(v) >= 10) return v.toFixed(2)
   return v.toFixed(3)
 }
+
 function fmtMoney(n: number, currency: string) {
   const v = Number.isFinite(n) ? n : 0
   const cur = (currency || 'USD').toUpperCase()
+
   try {
-    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: cur,
+    }).format(v)
   } catch {
     return `${v.toFixed(2)} ${cur}`
   }
 }
+
 function fmtMacro(n: number | null) {
   if (n == null || !Number.isFinite(Number(n))) return '—'
   const v = Number(n)
@@ -97,6 +112,7 @@ export default function RecipePrintCard() {
   const autoPrint = sp.get('autoprint') === '1'
 
   const mounted = useRef(true)
+
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -106,11 +122,10 @@ export default function RecipePrintCard() {
 
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
-
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
-  const [subRecipes, setSubRecipes] = useState<{ id: string; code?: string | null; name: string | null }[]>([])
+  const [subRecipes, setSubRecipes] = useState<SubRecipe[]>([])
 
   useEffect(() => {
     if (!id) {
@@ -127,10 +142,11 @@ export default function RecipePrintCard() {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct'
+            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_legacy,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct,yield_percent,yield_pct'
           )
           .eq('id', id)
           .single()
+
         if (rErr) throw rErr
 
         const { data: l, error: lErr } = await supabase
@@ -140,15 +156,23 @@ export default function RecipePrintCard() {
           )
           .eq('recipe_id', id)
           .order('position', { ascending: true })
+
         if (lErr) throw lErr
 
-        const ingredientIds = Array.from(new Set((l || [])
-          .filter((x: any) => x?.line_type === 'ingredient' && x?.ingredient_id)
-          .map((x: any) => x.ingredient_id)))
+        const ingredientIds = Array.from(
+          new Set(
+            (l || [])
+              .filter((x: any) => x?.line_type === 'ingredient' && x?.ingredient_id)
+              .map((x: any) => x.ingredient_id)
+          )
+        )
 
         const { data: ing, error: iErr } = ingredientIds.length
-          ? await supabase.from('ingredients').select('id,code,name,pack_unit,net_unit_cost').in('id', ingredientIds)
-          : { data: [], error: null }
+          ? await supabase
+              .from('ingredients')
+              .select('id,code,name,pack_unit,net_unit_cost')
+              .in('id', ingredientIds)
+          : { data: [], error: null as any }
 
         if (iErr) throw iErr
 
@@ -157,13 +181,15 @@ export default function RecipePrintCard() {
           .select('id,code,name,kitchen_id')
           .eq('kitchen_id', (r as any).kitchen_id)
           .eq('is_subrecipe', true)
+
         if (sErr) throw sErr
 
         if (!mounted.current) return
-        setRecipe(r as any)
-        setLines((l || []) as any)
-        setIngredients((ing || []) as any)
-        setSubRecipes((sr || []) as any)
+
+        setRecipe((r || null) as Recipe | null)
+        setLines(((l || []) as Line[]) || [])
+        setIngredients(((ing || []) as Ingredient[]) || [])
+        setSubRecipes(((sr || []) as SubRecipe[]) || [])
       } catch (e: any) {
         if (!mounted.current) return
         setErr(e?.message || 'Failed to load recipe.')
@@ -175,7 +201,6 @@ export default function RecipePrintCard() {
 
   const currency = recipe?.currency || 'USD'
 
-  // Stable print timestamp (must not use hooks after conditional returns)
   const printedAtRef = useRef<Date | null>(null)
   if (!printedAtRef.current) printedAtRef.current = new Date()
   const printedAt = printedAtRef.current
@@ -188,7 +213,7 @@ export default function RecipePrintCard() {
   }, [ingredients])
 
   const subById = useMemo(() => {
-    const m = new Map<string, { id: string; code?: string | null; name: string | null }>()
+    const m = new Map<string, SubRecipe>()
     for (const r of subRecipes) m.set(r.id, r)
     return m
   }, [subRecipes])
@@ -196,7 +221,15 @@ export default function RecipePrintCard() {
   const computed = useMemo(() => {
     const map = new Map<
       string,
-      { code?: string; title: string; net: number; gross: number; yieldPct: number; unitCost: number; lineCost: number; kind: string }
+      {
+        code?: string
+        title: string
+        net: number
+        gross: number
+        yieldPct: number
+        unitCost: number
+        lineCost: number
+      }
     >()
 
     for (const l of lines) {
@@ -205,30 +238,40 @@ export default function RecipePrintCard() {
       const net = Math.max(0, toNum(l.qty, 0))
       const y = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
       const grossAuto = y > 0 ? net / (y / 100) : net
-      const gross = l.gross_qty_override != null && l.gross_qty_override >= 0 ? l.gross_qty_override : grossAuto
+      const gross =
+        l.gross_qty_override != null && l.gross_qty_override >= 0
+          ? l.gross_qty_override
+          : grossAuto
 
       let unitCost = 0
       let title = 'Line'
-      let kind = 'Ingredient'
       let code: string | undefined
 
       if (l.line_type === 'ingredient' && l.ingredient_id) {
-        const ing: any = ingById.get(l.ingredient_id)
+        const ing = ingById.get(l.ingredient_id)
         title = ing?.name || 'Ingredient'
         code = ing?.code || undefined
         unitCost = toNum(ing?.net_unit_cost, 0)
-        kind = 'Ingredient'
       }
+
       if (l.line_type === 'subrecipe' && l.sub_recipe_id) {
-        const sr: any = subById.get(l.sub_recipe_id)
+        const sr = subById.get(l.sub_recipe_id)
         title = sr?.name || 'Subrecipe'
         code = sr?.code || undefined
         unitCost = 0
-        kind = 'Subrecipe'
       }
 
       const lineCost = net * unitCost
-      map.set(l.id, { code, title, net, gross, yieldPct: y, unitCost, lineCost, kind })
+
+      map.set(l.id, {
+        code,
+        title,
+        net,
+        gross,
+        yieldPct: y,
+        unitCost,
+        lineCost,
+      })
     }
 
     return map
@@ -244,7 +287,6 @@ export default function RecipePrintCard() {
     return t
   }, [lines, computed])
 
-  // --- Print KPIs (safe defaults) ---
   const portions = clamp(toNum(recipe?.portions, 1), 1, 1_000_000)
   const perPortion = portions > 0 ? totalCost / portions : totalCost
   const selling = recipe?.selling_price ?? null
@@ -252,13 +294,62 @@ export default function RecipePrintCard() {
   const foodCostPct =
     selling != null && selling > 0 ? (perPortion / selling) * 100 : null
 
+  const methodLegacy = String(
+    recipe?.method_legacy ?? recipe?.method ?? ''
+  ).trim()
 
-  // Auto print once loaded (only when autoprint=1)
+  const steps: string[] = (() => {
+    const arr = Array.isArray(recipe?.method_steps)
+      ? (recipe.method_steps as any[])
+      : null
+
+    if (arr && arr.length) {
+      return arr.map((s) => String(s ?? '').trim()).filter(Boolean)
+    }
+
+    return methodLegacy
+      .split(/\r?\n+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+  })()
+
+  const yieldLabel = (() => {
+    const qRaw = recipe?.yield_qty
+    const uRaw = recipe?.yield_unit
+    const q = Number(qRaw)
+    const u = String(uRaw ?? '').trim()
+
+    if (Number.isFinite(q) && qRaw != null) {
+      const v = fmtQty(q)
+      return u ? `${v} ${u}` : `${v}`
+    }
+
+    const pRaw = recipe?.yield_percent ?? recipe?.yield_pct
+    const p = Number(pRaw)
+
+    if (Number.isFinite(p) && pRaw != null) {
+      return `${Math.round(p * 1000) / 1000}%`
+    }
+
+    return '—'
+  })()
+
+  const showNutrition =
+    recipe?.calories != null ||
+    recipe?.protein_g != null ||
+    recipe?.carbs_g != null ||
+    recipe?.fat_g != null
+
+  const stepPhotos = Array.isArray(recipe?.method_step_photos)
+    ? recipe.method_step_photos.filter(Boolean)
+    : []
+
   useEffect(() => {
     if (!autoPrint) return
     if (loading || err || !recipe) return
 
     let cancelled = false
+
     requestAnimationFrame(() => {
       requestAnimationFrame(() => {
         setTimeout(() => {
@@ -275,253 +366,409 @@ export default function RecipePrintCard() {
     }
   }, [autoPrint, loading, err, recipe])
 
-  if (loading) return <div className="gc-print-loading">Loading…</div>
-  if (err || !recipe) return <div className="gc-print-loading">{err || 'Missing recipe.'}</div>
+  if (loading) {
+    return <div style={{ padding: 24 }}>Loading…</div>
+  }
 
-  const steps: string[] = (() => {
-    const arr = Array.isArray((recipe as any)?.method_steps) ? ((recipe as any).method_steps as any[]) : null
-    if (arr && arr.length) return arr.map((s) => String(s ?? '').trim()).filter(Boolean)
-    return String((recipe as any)?.method || (recipe as any)?.method_legacy || '')
-      .split(/\r?\n+/)
-      .map((s) => s.trim())
-      .filter(Boolean)
-  })()
-const yieldLabel = (() => {
-    const qRaw = (recipe as any)?.yield_qty
-    const uRaw = (recipe as any)?.yield_unit
-    const q = Number(qRaw)
-    const u = String(uRaw ?? '').trim()
-    if (Number.isFinite(q) && qRaw != null) {
-      const v = fmtQty(q)
-      return u ? `${v} ${u}` : `${v}`
-    }
-    const pRaw = (recipe as any)?.yield_percent ?? (recipe as any)?.yield_pct
-    const p = Number(pRaw)
-    if (Number.isFinite(p) && pRaw != null) return `${Math.round(p * 1000) / 1000}%`
-    return '—'
-  })()
-
-
-
-
-  const showNutrition =
-    recipe.calories != null || recipe.protein_g != null || recipe.carbs_g != null || recipe.fat_g != null
-
-  const stepPhotos = (recipe.method_step_photos || []).filter(Boolean)
-  const hasPhotos = Boolean(recipe.photo_url) || stepPhotos.length > 0
+  if (err || !recipe) {
+    return <div style={{ padding: 24 }}>{err || 'Missing recipe.'}</div>
+  }
 
   return (
-    <div className="gc-print-root">
-      <div className="gc-a4">
-        <div className="gc-a4-card">
-          <header className="gc-a4-head">
-            <div className="gc-a4-brand">
-              <img className="gc-a4-logo" src="/gastrochef-logo.png" alt="GastroChef" />
-              <div className="gc-a4-brand-text">
-                <div className="gc-a4-brand-name">
-                  Gastro<span className="gc-a4-brand-accent">Chef</span>
+    <div
+      style={{
+        background: '#f6f7f9',
+        minHeight: '100vh',
+        padding: 24,
+        color: '#111827',
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+      }}
+    >
+      <style>{`
+        @media print {
+          body {
+            background: #fff !important;
+          }
+          .gc-print-shell {
+            padding: 0 !important;
+          }
+          .gc-no-print {
+            display: none !important;
+          }
+          .gc-card {
+            box-shadow: none !important;
+            border: 1px solid #ddd !important;
+          }
+        }
+      `}</style>
+
+      <div className="gc-print-shell" style={{ maxWidth: 1120, margin: '0 auto' }}>
+        <div
+          className="gc-no-print"
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: 16,
+          }}
+        >
+          <button
+            onClick={() => window.print()}
+            style={{
+              border: 'none',
+              background: '#111827',
+              color: '#fff',
+              padding: '10px 16px',
+              borderRadius: 10,
+              cursor: 'pointer',
+              fontWeight: 700,
+            }}
+          >
+            Print
+          </button>
+        </div>
+
+        <div
+          className="gc-card"
+          style={{
+            background: '#fff',
+            borderRadius: 18,
+            boxShadow: '0 10px 30px rgba(0,0,0,0.08)',
+            overflow: 'hidden',
+            border: '1px solid #e5e7eb',
+          }}
+        >
+          <div
+            style={{
+              padding: 20,
+              background: 'linear-gradient(135deg, #111827 0%, #1f2937 100%)',
+              color: '#fff',
+            }}
+          >
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                gap: 16,
+                flexWrap: 'wrap',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 13, opacity: 0.8, marginBottom: 6 }}>
+                  Gastro Chef
                 </div>
-                <div className="gc-a4-brand-sub">Recipe Card</div>
+                <div style={{ fontSize: 28, fontWeight: 800 }}>Recipe Card</div>
+                <div style={{ fontSize: 14, opacity: 0.85, marginTop: 6 }}>
+                  {recipe.name || 'Untitled Recipe'}
+                </div>
+              </div>
+
+              <div style={{ fontSize: 13, lineHeight: 1.8, opacity: 0.95 }}>
+                <div>Date {recipe.created_at ? String(recipe.created_at).slice(0, 10) : '—'}</div>
+                <div>Kitchen Ref {shortId(recipe.kitchen_id)}</div>
+                <div>Printed {printedAtHuman}</div>
+                <div>Code {recipe.code || '—'}</div>
               </div>
             </div>
-
-            <div className="gc-a4-meta">
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Date</span>
-                <span className="gc-a4-v">{recipe.created_at ? String(recipe.created_at).slice(0, 10) : '—'}</span>
-              </div>
-
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Kitchen Ref</span>
-                <span
-                  className="gc-a4-v"
-                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
-                >
-                  {recipe.kitchen_id}
-                </span>
-              </div>
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Printed</span>
-                <span className="gc-a4-v">{printedAtHuman}</span>
-              </div>
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Code</span>
-                <span
-                  className="gc-a4-v"
-                  style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}
-                >
-                  {recipe.code || '—'}
-                </span>
-              </div>
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Category</span>
-                <span className="gc-a4-v">{recipe.category || '—'}</span>
-              </div>
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Portions</span>
-                <span className="gc-a4-v">{recipe.portions || 1}</span>
-              </div>
-              <div className="gc-a4-meta-row">
-                <span className="gc-a4-k">Yield</span>
-                <span className="gc-a4-v">{yieldLabel}</span>
-              </div>
-            </div>
-          </header>
-
-          <div className="gc-a4-title">{recipe.name || 'Untitled Recipe'}</div>
-
-          <div className="gc-a4-codebadge">
-            <span className="gc-a4-codebadge-k">CODE</span>
-            <span className="gc-a4-codebadge-v">{recipe.code || '—'}</span>
           </div>
 
-
-          {recipe.description ? <div className="gc-a4-descblock">{recipe.description}</div> : null}
-
-          <section className="gc-a4-kpis">
-            <div className="gc-a4-kpi">
-              <div className="gc-a4-kpi-k">Total Cost</div>
-              <div className="gc-a4-kpi-v">{fmtMoney(totalCost, currency)}</div>
+          <div style={{ padding: 20 }}>
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 12,
+                marginBottom: 18,
+              }}
+            >
+              <InfoCard label="Category" value={recipe.category || '—'} />
+              <InfoCard label="Portions" value={String(recipe.portions || 1)} />
+              <InfoCard label="Yield" value={yieldLabel} />
+              <InfoCard label="Code" value={recipe.code || '—'} />
             </div>
-            <div className="gc-a4-kpi">
-              <div className="gc-a4-kpi-k">Cost / Portion</div>
-              <div className="gc-a4-kpi-v">{fmtMoney(perPortion, currency)}</div>
+
+            {recipe.description ? (
+              <Section title="Description">
+                <p style={{ margin: 0, lineHeight: 1.7 }}>{recipe.description}</p>
+              </Section>
+            ) : null}
+
+            <div
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
+                gap: 12,
+                marginBottom: 18,
+              }}
+            >
+              <MetricCard label="Total Cost" value={fmtMoney(totalCost, currency)} />
+              <MetricCard label="Cost / Portion" value={fmtMoney(perPortion, currency)} />
+              <MetricCard
+                label="Selling"
+                value={selling != null ? fmtMoney(selling, currency) : '—'}
+              />
+              <MetricCard
+                label="Food Cost"
+                value={
+                  foodCostPct != null
+                    ? `${foodCostPct.toFixed(1)}%${
+                        targetPct != null ? ` (target ${targetPct.toFixed(1)}%)` : ''
+                      }`
+                    : '—'
+                }
+              />
             </div>
-            <div className="gc-a4-kpi">
-              <div className="gc-a4-kpi-k">Selling</div>
-              <div className="gc-a4-kpi-v">{selling != null ? fmtMoney(selling, currency) : '—'}</div>
-              <div className="gc-a4-kpi-sub">
-                Food cost: {foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'}
-                {targetPct != null ? ` (target ${targetPct.toFixed(1)}%)` : ''}
-              </div>
-            </div>
-          </section>
 
-          {showNutrition ? (
-            <section className="gc-a4-section">
-              <div className="gc-a4-section-title">Nutrition</div>
-              <div className="gc-a4-nutri">
-                <div className="gc-a4-nutri-item">
-                  <div className="gc-a4-nutri-k">Calories</div>
-                  <div className="gc-a4-nutri-v">{fmtMacro(recipe.calories)}</div>
+            {showNutrition ? (
+              <Section title="Nutrition">
+                <div
+                  style={{
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+                    gap: 12,
+                  }}
+                >
+                  <InfoCard label="Calories" value={fmtMacro(recipe.calories)} />
+                  <InfoCard label="Protein (g)" value={fmtMacro(recipe.protein_g)} />
+                  <InfoCard label="Carbs (g)" value={fmtMacro(recipe.carbs_g)} />
+                  <InfoCard label="Fat (g)" value={fmtMacro(recipe.fat_g)} />
                 </div>
-                <div className="gc-a4-nutri-item">
-                  <div className="gc-a4-nutri-k">Protein (g)</div>
-                  <div className="gc-a4-nutri-v">{fmtMacro(recipe.protein_g)}</div>
-                </div>
-                <div className="gc-a4-nutri-item">
-                  <div className="gc-a4-nutri-k">Carbs (g)</div>
-                  <div className="gc-a4-nutri-v">{fmtMacro(recipe.carbs_g)}</div>
-                </div>
-                <div className="gc-a4-nutri-item">
-                  <div className="gc-a4-nutri-k">Fat (g)</div>
-                  <div className="gc-a4-nutri-v">{fmtMacro(recipe.fat_g)}</div>
-                </div>
-              </div>
-            </section>
-          ) : null}
+              </Section>
+            ) : null}
 
-          {/*
-            Photos section (print page): keep it clean.
-            - Show ONLY the main recipe photo here.
-            - Step photos are shown inline inside the Method section.
-          */}
-          {recipe.photo_url ? (
-            <section className="gc-a4-section">
-              <div className="gc-a4-section-title">Photos</div>
-              <div className="gc-a4-photos">
-                <div className="gc-a4-photo">
-                  <img src={recipe.photo_url} alt="Recipe" />
-                  <div className="gc-a4-photo-cap">Recipe photo</div>
-                </div>
-              </div>
-            </section>
-          ) : null}
+            {recipe.photo_url ? (
+              <Section title="Photos">
+                <img
+                  src={recipe.photo_url}
+                  alt={recipe.name || 'Recipe'}
+                  style={{
+                    display: 'block',
+                    width: '100%',
+                    maxWidth: 520,
+                    borderRadius: 14,
+                    border: '1px solid #e5e7eb',
+                  }}
+                />
+              </Section>
+            ) : null}
 
-          <section className="gc-a4-section">
-            <div className="gc-a4-section-title">Ingredients</div>
-
-            <table className="gc-a4-table">
-              <thead>
-                <tr>
-                  <th style={{ width: '12%' }}>Code</th>
-                  <th style={{ width: '32%' }}>Item</th>
-                  <th style={{ width: '14%' }}>Net</th>
-                  <th style={{ width: '14%' }}>Gross</th>
-                  <th style={{ width: '10%' }}>Yield</th>
-                  <th style={{ width: '9%' }}>Unit Cost</th>
-                  <th style={{ width: '9%' }}>Line Cost</th>
-                </tr>
-              </thead>
-              <tbody>
-                {lines.map((l) => {
-                  if (l.line_type === 'group') {
-                    return (
-                      <tr key={l.id} className="gc-a4-group">
-                        <td colSpan={7}>{l.group_title || 'Group'}</td>
-                      </tr>
-                    )
-                  }
-                  const c = computed.get(l.id)
-                  if (!c) return null
-                  const pct = totalCost > 0 ? (c.lineCost / totalCost) * 100 : 0
-
-                  return (
-                    <tr key={l.id}>
-                      <td className="gc-a4-num" style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace' }}>{c.code || '—'}</td>
-                      <td className="gc-a4-item">
-                        <div className="gc-a4-item-title">{c.title}</div>
-</td>
-                      <td className="gc-a4-num">
-                        {fmtQty(c.net)} {safeUnit(l.unit)}
-                      </td>
-                      <td className="gc-a4-num">
-                        {fmtQty(c.gross)} {safeUnit(l.unit)}
-                      </td>
-                      <td className="gc-a4-num">{c.yieldPct.toFixed(1)}%</td>
-                      <td className="gc-a4-num">{fmtMoney(c.unitCost, currency)}</td>
-                      <td className="gc-a4-num">{fmtMoney(c.lineCost, currency)}</td>
+            <Section title="Ingredients">
+              <div style={{ overflowX: 'auto' }}>
+                <table
+                  style={{
+                    width: '100%',
+                    borderCollapse: 'collapse',
+                    fontSize: 14,
+                  }}
+                >
+                  <thead>
+                    <tr style={{ background: '#f3f4f6' }}>
+                      <Th>Code</Th>
+                      <Th>Item</Th>
+                      <Th>Net</Th>
+                      <Th>Gross</Th>
+                      <Th>Yield</Th>
+                      <Th>Unit Cost</Th>
+                      <Th>Line Cost</Th>
                     </tr>
-                  )
-                })}
-              </tbody>
-            </table>
-          </section>
+                  </thead>
+                  <tbody>
+                    {lines.map((l) => {
+                      if (l.line_type === 'group') {
+                        return (
+                          <tr key={l.id}>
+                            <td
+                              colSpan={7}
+                              style={{
+                                padding: '10px 12px',
+                                fontWeight: 800,
+                                background: '#fafafa',
+                                borderTop: '1px solid #e5e7eb',
+                                borderBottom: '1px solid #e5e7eb',
+                              }}
+                            >
+                              {l.group_title || 'Group'}
+                            </td>
+                          </tr>
+                        )
+                      }
 
-          {(steps.length || methodLegacy) ? (
-            <section className="gc-a4-section">
-              <div className="gc-a4-section-title">Method</div>
-              {steps.length ? (
-                <ol className="gc-a4-steps">
-                  {steps.map((s, i) => {
-                    const img = stepPhotos?.[i]
-                    return (
-                      <li key={i} style={{ display: 'grid', gridTemplateColumns: img ? '140px 1fr' : '1fr', gap: 10, alignItems: 'start' }}>
-                        {img ? (
-                          <div style={{ width: 140, height: 90, borderRadius: 12, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
-                            <img src={img} alt={`Step ${i + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      const c = computed.get(l.id)
+                      if (!c) return null
+
+                      return (
+                        <tr key={l.id}>
+                          <Td>{c.code || '—'}</Td>
+                          <Td>{c.title}</Td>
+                          <Td>{fmtQty(c.net)} {safeUnit(l.unit)}</Td>
+                          <Td>{fmtQty(c.gross)} {safeUnit(l.unit)}</Td>
+                          <Td>{c.yieldPct.toFixed(1)}%</Td>
+                          <Td>{fmtMoney(c.unitCost, currency)}</Td>
+                          <Td>{fmtMoney(c.lineCost, currency)}</Td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Section>
+
+            {(steps.length || methodLegacy) ? (
+              <Section title="Method">
+                {steps.length ? (
+                  <div style={{ display: 'grid', gap: 16 }}>
+                    {steps.map((s, i) => {
+                      const img = stepPhotos?.[i]
+
+                      return (
+                        <div
+                          key={i}
+                          style={{
+                            border: '1px solid #e5e7eb',
+                            borderRadius: 14,
+                            padding: 14,
+                            background: '#fff',
+                          }}
+                        >
+                          <div
+                            style={{
+                              fontWeight: 800,
+                              marginBottom: 10,
+                              color: '#111827',
+                            }}
+                          >
+                            Step {i + 1}
                           </div>
-                        ) : null}
-                        <div>
-                          <div style={{ fontWeight: 700, marginBottom: 4 }}>Step {i + 1}</div>
-                          <div>{s}</div>
-                        </div>
-                      </li>
-                    )
-                  })}
-                </ol>
-              ) : (
-                <div className="gc-a4-text">{methodLegacy}</div>
-              )}
-            </section>
-          ) : null}
 
-          <footer className="gc-a4-foot">
-            <span>Generated by GastroChef</span>
-            <span>Printed {printedAtHuman}</span>
-          </footer>
+                          {img ? (
+                            <img
+                              src={img}
+                              alt={`Step ${i + 1}`}
+                              style={{
+                                display: 'block',
+                                width: '100%',
+                                maxWidth: 420,
+                                borderRadius: 12,
+                                border: '1px solid #e5e7eb',
+                                marginBottom: 10,
+                              }}
+                            />
+                          ) : null}
+
+                          <div style={{ lineHeight: 1.75, whiteSpace: 'pre-wrap' }}>{s}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div style={{ lineHeight: 1.8, whiteSpace: 'pre-wrap' }}>
+                    {methodLegacy}
+                  </div>
+                )}
+              </Section>
+            ) : null}
+
+            <div
+              style={{
+                marginTop: 20,
+                paddingTop: 14,
+                borderTop: '1px solid #e5e7eb',
+                fontSize: 12,
+                color: '#6b7280',
+                textAlign: 'center',
+              }}
+            >
+              Generated by GastroChef • Printed {printedAtHuman}
+            </div>
+          </div>
         </div>
       </div>
     </div>
+  )
+}
+
+function Section({
+  title,
+  children,
+}: {
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <section style={{ marginBottom: 20 }}>
+      <h2
+        style={{
+          margin: '0 0 12px 0',
+          fontSize: 18,
+          fontWeight: 800,
+          color: '#111827',
+        }}
+      >
+        {title}
+      </h2>
+      {children}
+    </section>
+  )
+}
+
+function InfoCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        border: '1px solid #e5e7eb',
+        borderRadius: 14,
+        padding: 14,
+        background: '#fff',
+      }}
+    >
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 15, fontWeight: 700 }}>{value}</div>
+    </div>
+  )
+}
+
+function MetricCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        border: '1px solid #dbeafe',
+        background: '#f8fbff',
+        borderRadius: 14,
+        padding: 14,
+      }}
+    >
+      <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{label}</div>
+      <div style={{ fontSize: 18, fontWeight: 800 }}>{value}</div>
+    </div>
+  )
+}
+
+function Th({ children }: { children: React.ReactNode }) {
+  return (
+    <th
+      style={{
+        textAlign: 'left',
+        padding: '10px 12px',
+        borderBottom: '1px solid #d1d5db',
+        fontWeight: 800,
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {children}
+    </th>
+  )
+}
+
+function Td({ children }: { children: React.ReactNode }) {
+  return (
+    <td
+      style={{
+        padding: '10px 12px',
+        borderBottom: '1px solid #e5e7eb',
+        verticalAlign: 'top',
+      }}
+    >
+      {children}
+    </td>
   )
 }
