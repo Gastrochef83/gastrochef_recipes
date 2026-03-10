@@ -28,6 +28,7 @@ type Recipe = {
   fat_g: number | null
   selling_price: number | null
   target_food_cost_pct: number | null
+  is_subrecipe?: boolean | null
 }
 
 type Line = {
@@ -143,7 +144,7 @@ export default function RecipePrintCard() {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_legacy,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct,yield_percent,yield_pct'
+            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_legacy,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct,yield_percent,yield_pct,is_subrecipe'
           )
           .eq('id', id)
           .single()
@@ -347,7 +348,7 @@ export default function RecipePrintCard() {
     recipe?.fat_g != null
 
   const stepPhotos = Array.isArray(recipe?.method_step_photos)
-    ? recipe!.method_step_photos!.filter(Boolean)
+    ? recipe.method_step_photos.filter(Boolean)
     : []
 
   useEffect(() => {
