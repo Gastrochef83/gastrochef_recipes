@@ -1,7 +1,6 @@
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
-import { getIngredientsProgressively } from '../services/ingredientsService'
 import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingredientsCache'
 import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
@@ -100,7 +99,6 @@ function Modal({
     </div>
   )
 }
-
 const IngredientTableRow = memo(function IngredientTableRow({
   r,
   isDebug,
@@ -132,6 +130,9 @@ const IngredientTableRow = memo(function IngredientTableRow({
             <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
           )}
 
+          {/* Intentionally hide "Missing cost" badge to reduce visual clutter (user request).
+              Cost issues are still visible via the Net Unit Cost column and diagnostics. */}
+
           {flag.level === 'warn' && (
             <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
           )}
@@ -161,6 +162,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
   )
 })
 
+
 export default function Ingredients() {
   const k = useKitchen()
   const canEditCodes = k.isOwner
@@ -180,7 +182,6 @@ export default function Ingredients() {
       }
       return false
     })()
-
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
 
@@ -247,35 +248,58 @@ export default function Ingredients() {
     return null
   }
 
+  const FIELDS =
+    'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active'
+
+  const PAGE_SIZE = 200
+
   const load = useCallback(async () => {
     setLoading(true)
     setErr(null)
 
+    // cancel any in-flight progressive load
     const runId = Date.now()
     progressiveRunRef.current = runId
 
     try {
       await loadKitchen()
 
-      let firstChunkRendered = false
+      let offset = 0
+      let acc: IngredientRow[] = []
 
-      await getIngredientsProgressively((acc) => {
+      while (true) {
+        // If a newer load started, stop this one
         if (progressiveRunRef.current !== runId) return
 
+        const { data, error } = await supabase
+          .from('ingredients')
+          .select(FIELDS)
+          .order('name', { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1)
+
+        if (error) throw error
+
+        const chunk = ((data ?? []) as IngredientRow[]) || []
+        acc = acc.concat(chunk)
+
+        // Update UI progressively (fast first paint)
         setRows(acc)
+
+        // Prime cache so other pages benefit without refetching within TTL
         primeIngredientsCache(acc as any)
 
-        if (!firstChunkRendered) {
-          firstChunkRendered = true
-          setLoading(false)
-        }
-      })
+        if (offset === 0) setLoading(false)
 
-      if (progressiveRunRef.current !== runId) return
+        if (!chunk.length || chunk.length < PAGE_SIZE) break
+
+        offset += PAGE_SIZE
+
+        // Yield to the browser so scrolling/typing stays responsive
+        await new Promise((r) => setTimeout(r, 0))
+      }
 
       setLoading(false)
     } catch (e: any) {
-      if (progressiveRunRef.current !== runId) return
       setErr(e?.message ?? 'Unknown error')
       setLoading(false)
     }
@@ -398,8 +422,10 @@ export default function Ingredients() {
         name,
         category: fCategory.trim() || null,
         supplier: fSupplier.trim() || null,
+
         pack_size: packSize,
         pack_price: packPrice,
+
         pack_unit: unit,
         net_unit_cost: netFinal,
         is_active: true,
@@ -474,6 +500,7 @@ export default function Ingredients() {
     await load()
   }
 
+
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
     const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
@@ -525,6 +552,7 @@ export default function Ingredients() {
 
   return (
     <div className="gc-ingredients space-y-6">
+      {/* Header */}
       <div className="gc-card p-6 gc-page-header">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -560,6 +588,8 @@ export default function Ingredients() {
           </div>
         </div>
 
+        
+        {/* Filters */}
         <div className="mt-4 gc-ing-toolbar">
           <div className="gc-ing-search">
             <div className="gc-ing-toolbar-label">Search</div>
@@ -600,8 +630,10 @@ export default function Ingredients() {
             </select>
           </div>
         </div>
-      </div>
 
+
+      </div>
+      {/* Loading/Error */}
       {loading && (
         <div className="space-y-4">
           <div className="grid gap-4 md:grid-cols-4">
@@ -658,8 +690,10 @@ export default function Ingredients() {
         </div>
       )}
 
+      {/* Body */}
       {!loading && !err && (
         <>
+          {/* KPIs */}
           <div className="grid gap-4 md:grid-cols-4">
             <div className="gc-card p-5">
               <div className="gc-label">ITEMS</div>
@@ -686,8 +720,11 @@ export default function Ingredients() {
             </div>
           </div>
 
+{/* List */}
           <div className="gc-card p-6">
             <style>{`
+
+              /* ===== GastroChef: Ingredients Search UX (SaaS) — scoped + safe ===== */
               .gc-ing-toolbar{
                 display:flex;
                 flex-wrap:wrap;
@@ -750,6 +787,8 @@ export default function Ingredients() {
                 .gc-ing-filter{ flex:1 1 220px; }
               }
 
+
+              /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
               .gc-data-table-wrap{
                 max-width:100%;
                 overflow-x:auto;
@@ -765,6 +804,7 @@ export default function Ingredients() {
                 table-layout:auto;
               }
 
+              /* header (NON-sticky by request) */
               .gc-data-table-wrap .gc-ing-pro-table thead th{
                 position:static;
                 background:#f4f6f5;
@@ -783,16 +823,19 @@ export default function Ingredients() {
                 text-align:center;
               }
 
+              /* body text */
               .gc-data-table-wrap .gc-ing-pro-table td{
                 font-size:14px;
                 color:#2f3a35;
               }
 
+              /* subtle vertical gridlines (SaaS-soft) */
               .gc-data-table-wrap .gc-ing-pro-table th + th,
               .gc-data-table-wrap .gc-ing-pro-table td + td{
                 border-left:1px solid rgba(0,0,0,0.045);
               }
 
+              /* zebra */
               .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(odd) td{
                 background:rgba(0,0,0,0.00);
               }
@@ -800,10 +843,12 @@ export default function Ingredients() {
                 background:rgba(0,0,0,0.012);
               }
 
+              /* hover (soft neutral) */
               .gc-data-table-wrap .gc-ing-pro-table tbody tr:hover td{
                 background:#eef3f1;
               }
 
+              /* numeric alignment (still centered per your preference) */
               .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
               .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
                 text-align:center;
@@ -814,6 +859,7 @@ export default function Ingredients() {
                 text-align:center;
               }
 
+              /* code pill (smaller + calmer) */
               .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill{
                 display:inline-flex;
                 align-items:center;
@@ -834,10 +880,12 @@ export default function Ingredients() {
                 font-size:12px;
               }
 
+              /* make "Name" feel premium without changing alignment */
               .gc-data-table-wrap .gc-ing-pro-table td.gc-col-name{
                 font-weight:500;
               }
 
+              /* actions */
               .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions{
                 display:flex;
                 justify-content:center;
@@ -855,6 +903,7 @@ export default function Ingredients() {
                 background:rgba(0,0,0,0.04);
               }
 
+              /* column sizing */
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-code{ width: 110px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-pack{ width: 70px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-unit{ width: 80px; }
@@ -863,7 +912,7 @@ export default function Ingredients() {
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 150px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 220px; }
               .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
-
+              /* ===== GastroChef: Add Ingredient Modal PRO UX (scoped) ===== */
               .gc-add-ingredient-modal .gc-form-section{
                 margin-top: 2px;
                 padding-top: 6px;
@@ -884,8 +933,7 @@ export default function Ingredients() {
               .gc-add-ingredient-modal .gc-label{
                 letter-spacing: .06em;
               }
-            `}</style>
-
+`}</style>
             <div className="flex items-center justify-between">
               <div>
                 <div className="gc-label">LIST</div>
@@ -918,8 +966,8 @@ export default function Ingredients() {
                             : normalized.length === 0
                               ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them, or add a new one.'
                               : (search.trim() || category
-                                  ? 'No ingredients match your current search/filters. Try clearing them, or add a new ingredient.'
-                                  : 'Try adjusting your search, category, or inactive filter to find what you need.')}
+                              ? 'No ingredients match your current search/filters. Try clearing them, or add a new ingredient.'
+                              : 'Try adjusting your search, category, or inactive filter to find what you need.')}
                         </div>
 
                         {(search.trim() || category) && rows.length > 0 && normalized.length > 0 ? (
@@ -1012,8 +1060,10 @@ export default function Ingredients() {
         </>
       )}
 
+      {/* Modal */}
       <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
         <div className="gc-add-ingredient-modal gc-form-grid cols-2">
+          {/* IDENTIFICATION */}
           <div className="span-2 gc-form-section">
             <div className="gc-form-section-title">IDENTIFICATION</div>
           </div>
@@ -1021,7 +1071,7 @@ export default function Ingredients() {
           <div>
             <div className="gc-label">CODE</div>
             <input
-              className={cls('gc-input mt-2 w-full', !canEditCodes && 'opacity-60 cursor-not-allowed')}
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
               value={fCode}
               onChange={(e) => setFCode(e.target.value)}
               placeholder="ING-000123 (optional)"
@@ -1034,7 +1084,7 @@ export default function Ingredients() {
           <div>
             <div className="gc-label">CODE CATEGORY</div>
             <input
-              className={cls('gc-input mt-2 w-full', !canEditCodes && 'opacity-60 cursor-not-allowed')}
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
               value={fCodeCategory}
               onChange={(e) => setFCodeCategory(e.target.value)}
               placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
@@ -1050,6 +1100,7 @@ export default function Ingredients() {
             <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
           </div>
 
+          {/* CLASSIFICATION */}
           <div className="span-2 gc-form-section">
             <div className="gc-form-section-title">CLASSIFICATION</div>
           </div>
@@ -1064,6 +1115,7 @@ export default function Ingredients() {
             <input className="gc-input mt-2 w-full" value={fSupplier} onChange={(e) => setFSupplier(e.target.value)} />
           </div>
 
+          {/* PACK */}
           <div className="span-2 gc-form-section">
             <div className="gc-form-section-title">PACK</div>
           </div>
@@ -1085,6 +1137,7 @@ export default function Ingredients() {
             </select>
           </div>
 
+          {/* COST */}
           <div className="span-2 gc-form-section">
             <div className="gc-form-section-title">COST</div>
           </div>
@@ -1101,6 +1154,7 @@ export default function Ingredients() {
             <div className="mt-1 text-xs text-neutral-500">If left 0 → auto-calculated from pack.</div>
           </div>
 
+          {/* Smart helpers */}
           <div className="md:col-span-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
             <div className="text-xs font-semibold text-neutral-600">SMART HELPERS</div>
             <div className="mt-2 flex flex-wrap gap-2">
