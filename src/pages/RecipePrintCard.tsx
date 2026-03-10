@@ -17,8 +17,6 @@ type Recipe = {
   created_at: string | null
   yield_qty: number | null
   yield_unit: string | null
-  yield_percent?: number | null
-  yield_pct?: number | null
   currency: string | null
   photo_url: string | null
   calories: number | null
@@ -141,7 +139,7 @@ export default function RecipePrintCard() {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
           .select(
-            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct,yield_percent,yield_pct'
+            'id,code,code_category,kitchen_id,name,category,portions,description,method,method_steps,method_step_photos,created_at,yield_qty,yield_unit,currency,photo_url,calories,protein_g,carbs_g,fat_g,selling_price,target_food_cost_pct'
           )
           .eq('id', id)
           .single()
@@ -319,13 +317,6 @@ export default function RecipePrintCard() {
     if (Number.isFinite(q) && qRaw != null) {
       const v = fmtQty(q)
       return u ? `${v} ${u}` : `${v}`
-    }
-
-    const pRaw = recipe?.yield_percent ?? recipe?.yield_pct
-    const p = Number(pRaw)
-
-    if (Number.isFinite(p) && pRaw != null) {
-      return `${Math.round(p * 1000) / 1000}%`
     }
 
     return '—'
