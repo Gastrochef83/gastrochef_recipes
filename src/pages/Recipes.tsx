@@ -122,11 +122,11 @@ function saveCostCache(cache: Record<string, CostPoint>) {
 
 function recipeAccent(name: string) {
   const v = (name || '').trim().toLowerCase()
-  if (v.includes('chicken')) return 'recipe-card--amber'
-  if (v.includes('rice')) return 'recipe-card--gold'
-  if (v.includes('salad') || v.includes('raita')) return 'recipe-card--mint'
-  if (v.includes('soup')) return 'recipe-card--warm'
-  return 'recipe-card--olive'
+  if (v.includes('chicken')) return 'recipe-list--amber'
+  if (v.includes('rice')) return 'recipe-list--gold'
+  if (v.includes('salad') || v.includes('raita')) return 'recipe-list--mint'
+  if (v.includes('soup')) return 'recipe-list--warm'
+  return 'recipe-list--olive'
 }
 
 function recipeGlyph(name: string, category?: string | null) {
@@ -146,24 +146,24 @@ function recipeGlyph(name: string, category?: string | null) {
 function RecipesStyles() {
   return (
     <style>{`
-      .recipes-page-v4 {
+      .recipes-page-v5 {
         display: grid;
-        gap: 14px;
+        gap: 12px;
       }
 
-      .recipes-toolbar-v4 {
+      .recipes-toolbar-v5 {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 14px;
+        gap: 12px;
         flex-wrap: wrap;
       }
 
-      .recipes-toolbar-v4__left {
+      .recipes-toolbar-v5__left {
         min-width: 0;
       }
 
-      .recipes-title-v4 {
+      .recipes-title-v5 {
         margin: 0;
         font-size: 12px;
         letter-spacing: .16em;
@@ -171,212 +171,250 @@ function RecipesStyles() {
         color: var(--gc-soft, #7A857F);
       }
 
-      .recipes-subtitle-v4 {
-        margin-top: 5px;
+      .recipes-subtitle-v5 {
+        margin-top: 4px;
         font-size: 14px;
         color: var(--gc-muted, #5F6B66);
         font-weight: 600;
       }
 
-      .recipes-toolbar-v4__right {
+      .recipes-toolbar-v5__right {
         display: flex;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
       }
 
-      .recipes-search-block-v4 {
+      .recipes-search-block-v5 {
         display: grid;
         gap: 6px;
       }
 
-      .recipes-search-label-v4 {
+      .recipes-search-label-v5 {
         font-size: 12px;
         letter-spacing: .16em;
         font-weight: 900;
         color: var(--gc-soft, #7A857F);
       }
 
-      .recipes-search-input-v4 {
+      .recipes-search-input-v5 {
         width: 100%;
-        min-height: 46px;
-        border-radius: 16px;
+        min-height: 42px;
+        border-radius: 14px;
         border: 1px solid rgba(11,18,32,.10);
-        background: rgba(255,255,255,.88);
-        padding: 0 16px;
+        background: rgba(255,255,255,.90);
+        padding: 0 14px;
         outline: none;
         font-size: 14px;
         font-weight: 600;
         color: var(--gc-text, #1F2326);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,.90),
-          0 6px 14px rgba(50,59,44,.025);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.92);
         transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
       }
 
-      .recipes-search-input-v4:focus {
+      .recipes-search-input-v5:focus {
         border-color: rgba(107,127,59,.38);
-        box-shadow:
-          0 0 0 4px rgba(107,127,59,.14),
-          inset 0 1px 0 rgba(255,255,255,.94);
+        box-shadow: 0 0 0 4px rgba(107,127,59,.14);
         background: rgba(255,255,255,.98);
       }
 
-      .recipes-error-v4,
-      .recipes-loading-v4 {
-        border-radius: 16px;
+      .recipes-error-v5,
+      .recipes-loading-v5 {
+        border-radius: 14px;
         border: 1px solid rgba(11,18,32,.08);
-        background: rgba(255,255,255,.80);
+        background: rgba(255,255,255,.82);
         padding: 12px 14px;
         font-weight: 700;
       }
 
-      .recipes-error-v4 {
+      .recipes-error-v5 {
         color: #b42318;
         border-color: rgba(180,35,24,.16);
         background: rgba(255, 241, 240, .92);
       }
 
-      .recipes-list-v4 {
+      .recipes-list-v5 {
         display: grid;
-        gap: 12px;
+        gap: 8px;
       }
 
-      .recipe-card-v4 {
+      .recipes-list-head-v5 {
+        display: grid;
+        grid-template-columns:
+          minmax(280px, 1.7fr)
+          minmax(110px, 0.7fr)
+          minmax(70px, 0.45fr)
+          minmax(110px, 0.6fr)
+          minmax(120px, 0.8fr)
+          minmax(90px, 0.6fr)
+          minmax(120px, 0.8fr)
+          minmax(280px, 1fr);
+        gap: 10px;
+        align-items: center;
+        padding: 0 12px;
+        color: #7a857f;
+        font-size: 11px;
+        text-transform: uppercase;
+        letter-spacing: .12em;
+        font-weight: 900;
+      }
+
+      .recipe-row-v5 {
         position: relative;
         overflow: hidden;
-        border-radius: 20px;
-        border: 1px solid rgba(118, 128, 108, 0.12);
+        border-radius: 16px;
+        border: 1px solid rgba(118,128,108,.12);
         background:
-          radial-gradient(circle at top right, rgba(124,148,78,.04), transparent 24%),
           linear-gradient(180deg, rgba(255,255,255,.98), rgba(248,248,245,.96));
         box-shadow:
-          0 10px 22px rgba(50, 59, 44, 0.04),
-          inset 0 1px 0 rgba(255,255,255,0.88);
+          0 8px 18px rgba(50,59,44,.03),
+          inset 0 1px 0 rgba(255,255,255,.90);
         transition:
-          transform 160ms ease,
-          box-shadow 160ms ease,
-          border-color 160ms ease;
+          transform 150ms ease,
+          border-color 150ms ease,
+          box-shadow 150ms ease;
       }
 
-      .recipe-card-v4:hover {
+      .recipe-row-v5:hover {
         transform: translateY(-1px);
-        border-color: rgba(107, 128, 68, 0.20);
+        border-color: rgba(107,128,68,.18);
         box-shadow:
-          0 16px 28px rgba(50, 59, 44, 0.06),
-          inset 0 1px 0 rgba(255,255,255,0.94);
+          0 12px 22px rgba(50,59,44,.05),
+          inset 0 1px 0 rgba(255,255,255,.94);
       }
 
-      .recipe-card-v4--dense {
-        border-radius: 18px;
-      }
-
-      .recipe-card-v4__accent {
+      .recipe-row-v5__accent {
         position: absolute;
         inset: 0 auto 0 0;
-        width: 5px;
+        width: 4px;
         border-radius: 999px;
         opacity: .96;
       }
 
-      .recipe-card--olive .recipe-card-v4__accent {
+      .recipe-list--olive .recipe-row-v5__accent {
         background: linear-gradient(180deg, #748d3f 0%, #97ab62 100%);
       }
 
-      .recipe-card--amber .recipe-card-v4__accent {
+      .recipe-list--amber .recipe-row-v5__accent {
         background: linear-gradient(180deg, #b7791f 0%, #d6a340 100%);
       }
 
-      .recipe-card--gold .recipe-card-v4__accent {
+      .recipe-list--gold .recipe-row-v5__accent {
         background: linear-gradient(180deg, #b17f1e 0%, #d2b35e 100%);
       }
 
-      .recipe-card--mint .recipe-card-v4__accent {
+      .recipe-list--mint .recipe-row-v5__accent {
         background: linear-gradient(180deg, #4b8f73 0%, #7fc3a4 100%);
       }
 
-      .recipe-card--warm .recipe-card-v4__accent {
+      .recipe-list--warm .recipe-row-v5__accent {
         background: linear-gradient(180deg, #9b6b4e 0%, #cd9a78 100%);
       }
 
-      .recipe-card-v4__body {
-        padding: 14px 14px 14px 18px;
+      .recipe-row-v5__body {
         display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 14px;
+        grid-template-columns:
+          minmax(280px, 1.7fr)
+          minmax(110px, 0.7fr)
+          minmax(70px, 0.45fr)
+          minmax(110px, 0.6fr)
+          minmax(120px, 0.8fr)
+          minmax(90px, 0.6fr)
+          minmax(120px, 0.8fr)
+          minmax(280px, 1fr);
+        gap: 10px;
         align-items: center;
+        min-height: 72px;
+        padding: 10px 12px 10px 16px;
       }
 
-      .recipe-card-v4__left {
+      .recipe-row-v5--dense .recipe-row-v5__body {
+        min-height: 64px;
+        padding-top: 8px;
+        padding-bottom: 8px;
+      }
+
+      .recipe-main-v5 {
         min-width: 0;
-        display: grid;
+        display: flex;
+        align-items: center;
         gap: 10px;
       }
 
-      .recipe-card-v4__top {
-        display: grid;
-        grid-template-columns: 48px minmax(0, 1fr);
-        gap: 12px;
-        align-items: start;
-      }
-
-      .recipe-card-v4__icon {
-        width: 48px;
-        height: 48px;
-        border-radius: 14px;
+      .recipe-main-v5__icon {
+        width: 40px;
+        height: 40px;
+        flex: 0 0 40px;
+        border-radius: 12px;
         display: grid;
         place-items: center;
         background:
           radial-gradient(circle at top left, rgba(255,255,255,.98), rgba(244,245,240,.94));
-        border: 1px solid rgba(118, 128, 108, 0.14);
+        border: 1px solid rgba(118,128,108,.14);
         box-shadow:
           inset 0 1px 0 rgba(255,255,255,.94),
-          0 6px 16px rgba(60, 70, 55, 0.04);
-        font-size: 20px;
+          0 4px 12px rgba(60,70,55,.04);
+        font-size: 18px;
       }
 
-      .recipe-card-v4__headRow {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 10px;
-      }
-
-      .recipe-card-v4__titleWrap {
+      .recipe-main-v5__text {
         min-width: 0;
-        flex: 1 1 auto;
       }
 
-      .recipe-card-v4__title {
+      .recipe-main-v5__title {
         margin: 0;
-        font-size: 1.14rem;
-        line-height: 1.04;
+        font-size: 1rem;
+        line-height: 1.05;
         font-weight: 950;
-        letter-spacing: -0.028em;
+        letter-spacing: -0.02em;
         color: #17210f;
         text-transform: uppercase;
-        word-break: break-word;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .recipe-card-v4__category {
+      .recipe-main-v5__sub {
         margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        flex-wrap: wrap;
         color: #61705d;
-        font-size: 0.9rem;
+        font-size: 0.83rem;
         font-weight: 700;
       }
 
-      .recipe-card-v4__badges {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        justify-content: flex-end;
+      .recipe-dot-v5 {
+        color: #b2baae;
       }
 
-      .recipe-badge-v4 {
-        display: inline-flex;
+      .recipe-cell-v5 {
+        min-width: 0;
+        display: flex;
         align-items: center;
         gap: 6px;
+        color: #24301c;
+        font-size: 0.9rem;
+        font-weight: 800;
+      }
+
+      .recipe-cell-v5--muted {
+        color: #5e6b5a;
+      }
+
+      .recipe-label-v5 {
+        color: #7a857f;
+        font-size: 0.67rem;
+        text-transform: uppercase;
+        letter-spacing: .08em;
+        font-weight: 900;
+      }
+
+      .recipe-badge-v5 {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         min-height: 24px;
         padding: 0 10px;
         border-radius: 999px;
@@ -387,210 +425,163 @@ function RecipesStyles() {
         border: 1px solid transparent;
       }
 
-      .recipe-badge-v4--soft {
+      .recipe-badge-v5--soft {
         color: #496036;
-        background: rgba(117, 141, 63, 0.10);
-        border-color: rgba(117, 141, 63, 0.16);
+        background: rgba(117,141,63,.10);
+        border-color: rgba(117,141,63,.16);
       }
 
-      .recipe-badge-v4--neutral {
+      .recipe-badge-v5--neutral {
         color: #49535d;
-        background: rgba(120, 128, 136, 0.10);
-        border-color: rgba(120, 128, 136, 0.14);
+        background: rgba(120,128,136,.10);
+        border-color: rgba(120,128,136,.14);
       }
 
-      .recipe-badge-v4--archived {
+      .recipe-badge-v5--archived {
         color: #6b6253;
-        background: rgba(176, 162, 129, 0.15);
-        border-color: rgba(176, 162, 129, 0.18);
+        background: rgba(176,162,129,.15);
+        border-color: rgba(176,162,129,.18);
       }
 
-      .recipe-badge-v4--warning {
+      .recipe-badge-v5--warning {
         color: #9a5a00;
-        background: rgba(255, 182, 42, 0.15);
-        border-color: rgba(236, 164, 30, 0.24);
+        background: rgba(255,182,42,.15);
+        border-color: rgba(236,164,30,.24);
       }
 
-      .recipe-card-v4__meta {
+      .recipe-metric-v5 {
         display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 8px 14px;
-        margin-left: 60px;
+        flex-direction: column;
+        gap: 3px;
       }
 
-      .recipe-meta-v4 {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        color: #4c5a45;
-        font-size: 0.9rem;
-        font-weight: 700;
-      }
-
-      .recipe-meta-v4__label {
-        color: #788472;
-        font-size: 0.72rem;
+      .recipe-metric-v5__label {
+        color: #7a857f;
+        font-size: 0.64rem;
         text-transform: uppercase;
         letter-spacing: .08em;
         font-weight: 900;
       }
 
-      .recipe-card-v4__right {
-        width: min(640px, 100%);
-        display: grid;
-        gap: 10px;
-        align-items: center;
-      }
-
-      .recipe-card-v4__metrics {
-        display: grid;
-        grid-template-columns: repeat(3, minmax(110px, 1fr));
-        gap: 10px;
-      }
-
-      .metric-card-v4 {
-        border-radius: 16px;
-        border: 1px solid rgba(118, 128, 108, 0.13);
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,245,240,.93));
-        padding: 10px 12px;
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
-      }
-
-      .metric-card-v4__label {
-        font-size: 0.66rem;
-        line-height: 1;
-        text-transform: uppercase;
-        letter-spacing: 0.10em;
-        font-weight: 900;
-        color: #73806d;
-      }
-
-      .metric-card-v4__value {
-        margin-top: 8px;
-        font-size: 1rem;
-        line-height: 1.05;
+      .recipe-metric-v5__value {
+        color: #18210f;
+        font-size: 0.95rem;
         font-weight: 950;
-        letter-spacing: -0.02em;
-        color: #16200f;
+        line-height: 1.05;
+        white-space: nowrap;
       }
 
-      .recipe-card-v4__actions {
+      .recipe-actions-v5 {
         display: flex;
-        flex-wrap: wrap;
         align-items: center;
         justify-content: flex-end;
         gap: 8px;
+        flex-wrap: wrap;
       }
 
-      .recipe-select-v4 {
+      .recipe-select-v5 {
         display: inline-flex;
         align-items: center;
         gap: 8px;
-        min-height: 38px;
+        min-height: 34px;
         padding: 0 10px;
-        border-radius: 12px;
-        border: 1px dashed rgba(118, 128, 108, 0.22);
-        background: rgba(255,255,255,0.72);
+        border-radius: 10px;
+        border: 1px dashed rgba(118,128,108,.22);
+        background: rgba(255,255,255,.72);
         color: #42503b;
         font-weight: 800;
         cursor: pointer;
         user-select: none;
       }
 
-      .recipe-select-v4 input {
-        width: 15px;
-        height: 15px;
+      .recipe-select-v5 input {
+        width: 14px;
+        height: 14px;
         accent-color: #748d3f;
         cursor: pointer;
       }
 
-      .recipe-card-v4 .gc-btn,
-      .recipe-card-v4 button.gc-btn,
-      .recipe-card-v4 a.gc-btn {
-        min-height: 38px !important;
-        padding: 0 12px !important;
-        border-radius: 12px !important;
-        font-size: 0.88rem !important;
+      .recipe-row-v5 .gc-btn,
+      .recipe-row-v5 button.gc-btn,
+      .recipe-row-v5 a.gc-btn {
+        min-height: 34px !important;
+        padding: 0 10px !important;
+        border-radius: 10px !important;
+        font-size: 0.82rem !important;
       }
 
-      @media (max-width: 1280px) {
-        .recipe-card-v4__body {
+      @media (max-width: 1450px) {
+        .recipes-list-head-v5,
+        .recipe-row-v5__body {
+          grid-template-columns:
+            minmax(260px, 1.7fr)
+            minmax(100px, 0.7fr)
+            minmax(60px, 0.4fr)
+            minmax(90px, 0.5fr)
+            minmax(110px, 0.75fr)
+            minmax(80px, 0.55fr)
+            minmax(110px, 0.75fr)
+            minmax(250px, 1fr);
+        }
+      }
+
+      @media (max-width: 1220px) {
+        .recipes-list-head-v5 {
+          display: none;
+        }
+
+        .recipe-row-v5__body {
           grid-template-columns: 1fr;
-        }
-
-        .recipe-card-v4__right {
-          width: 100%;
-        }
-
-        .recipe-card-v4__actions {
-          justify-content: flex-start;
-        }
-      }
-
-      @media (max-width: 860px) {
-        .recipe-card-v4__meta {
-          margin-left: 0;
-        }
-
-        .recipe-card-v4__top {
-          grid-template-columns: 42px minmax(0, 1fr);
-        }
-
-        .recipe-card-v4__icon {
-          width: 42px;
-          height: 42px;
-          border-radius: 12px;
-          font-size: 18px;
-        }
-
-        .recipe-card-v4__title {
-          font-size: 1rem;
-        }
-
-        .recipe-card-v4__metrics {
-          grid-template-columns: 1fr 1fr 1fr;
-        }
-      }
-
-      @media (max-width: 620px) {
-        .recipes-toolbar-v4 {
+          gap: 10px;
           align-items: stretch;
+          min-height: auto;
         }
 
-        .recipes-toolbar-v4__right {
-          width: 100%;
-        }
-
-        .recipe-card-v4__body {
-          padding: 12px 12px 12px 16px;
-        }
-
-        .recipe-card-v4__headRow {
-          flex-direction: column;
+        .recipe-main-v5 {
           align-items: flex-start;
         }
 
-        .recipe-card-v4__badges {
-          justify-content: flex-start;
+        .recipe-mobile-grid-v5 {
+          display: grid;
+          grid-template-columns: repeat(3, minmax(0, 1fr));
+          gap: 10px;
         }
 
-        .recipe-card-v4__metrics {
+        .recipe-actions-v5 {
+          justify-content: flex-start;
+        }
+      }
+
+      @media (max-width: 760px) {
+        .recipes-toolbar-v5 {
+          align-items: stretch;
+        }
+
+        .recipes-toolbar-v5__right {
+          width: 100%;
+        }
+
+        .recipe-mobile-grid-v5 {
+          grid-template-columns: 1fr 1fr;
+        }
+
+        .recipe-actions-v5 > * {
+          width: 100%;
+        }
+
+        .recipe-select-v5 {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .recipe-mobile-grid-v5 {
           grid-template-columns: 1fr;
         }
 
-        .recipe-card-v4__actions {
-          justify-content: stretch;
-        }
-
-        .recipe-card-v4__actions > * {
-          width: 100%;
-        }
-
-        .recipe-select-v4 {
-          width: 100%;
-          justify-content: center;
+        .recipe-main-v5__title {
+          white-space: normal;
         }
       }
     `}</style>
@@ -794,7 +785,7 @@ export default function Recipes() {
     if (loading) return
     if (!filtered.length) return
 
-    const visible = filtered.slice(0, 40)
+    const visible = filtered.slice(0, 60)
     ensureRecipeLinesLoaded(visible.map((r) => r.id)).catch(() => {})
 
     const now = Date.now()
@@ -940,7 +931,7 @@ export default function Recipes() {
   }
 
   const headerRight = (
-    <div className="recipes-toolbar-v4__right">
+    <div className="recipes-toolbar-v5__right">
       <Button onClick={createNewRecipe}>New recipe</Button>
 
       <Button variant="secondary" onClick={() => setShowArchived((v) => !v)}>
@@ -970,11 +961,11 @@ export default function Recipes() {
     <>
       <RecipesStyles />
 
-      <div className="recipes-page-v4">
-        <div className="recipes-toolbar-v4">
-          <div className="recipes-toolbar-v4__left">
-            <div className="recipes-title-v4">RECIPES</div>
-            <div className="recipes-subtitle-v4">
+      <div className="recipes-page-v5">
+        <div className="recipes-toolbar-v5">
+          <div className="recipes-toolbar-v5__left">
+            <div className="recipes-title-v5">RECIPES</div>
+            <div className="recipes-subtitle-v5">
               {isMgmt ? 'Mgmt view: costing & pricing' : 'Kitchen view: fast operations'}
             </div>
           </div>
@@ -982,20 +973,20 @@ export default function Recipes() {
           {headerRight}
         </div>
 
-        <div className="recipes-search-block-v4">
-          <div className="recipes-search-label-v4">SEARCH</div>
+        <div className="recipes-search-block-v5">
+          <div className="recipes-search-label-v5">SEARCH</div>
           <input
-            className="recipes-search-input-v4"
+            className="recipes-search-input-v5"
             value={q}
             onChange={(e) => setQ(e.target.value)}
             placeholder="Search by recipe name or category…"
           />
         </div>
 
-        {err && <div className="recipes-error-v4">{err}</div>}
+        {err && <div className="recipes-error-v5">{err}</div>}
 
         {loading ? (
-          <div className="recipes-loading-v4">Loading…</div>
+          <div className="recipes-loading-v5">Loading…</div>
         ) : !filtered.length ? (
           <EmptyState
             title={
@@ -1053,111 +1044,110 @@ export default function Recipes() {
             icon=""
           />
         ) : (
-          <div className="recipes-list-v4">
-            {filtered.map((r) => {
-              const c = costCache[r.id]
-              const cur = (r.currency || 'USD').toUpperCase()
-              const accentClass = recipeAccent(r.name)
-              const glyph = recipeGlyph(r.name, r.category)
-              const hasWarning = Boolean(c?.warnings?.length)
-              const portions = toNum(r.portions, 1)
+          <>
+            <div className="recipes-list-head-v5">
+              <div>Recipe</div>
+              <div>Type</div>
+              <div>Portions</div>
+              <div>Yield</div>
+              <div>Cost / Portion</div>
+              <div>FC%</div>
+              <div>Margin</div>
+              <div style={{ textAlign: 'right' }}>Actions</div>
+            </div>
 
-              return (
-                <div
-                  key={r.id}
-                  className={`recipe-card-v4 ${accentClass} ${
-                    density === 'dense' ? 'recipe-card-v4--dense' : ''
-                  }`}
-                >
-                  <div className="recipe-card-v4__accent" />
+            <div className="recipes-list-v5">
+              {filtered.map((r) => {
+                const c = costCache[r.id]
+                const cur = (r.currency || 'USD').toUpperCase()
+                const accentClass = recipeAccent(r.name)
+                const glyph = recipeGlyph(r.name, r.category)
+                const hasWarning = Boolean(c?.warnings?.length)
+                const portions = toNum(r.portions, 1)
 
-                  <div className="recipe-card-v4__body">
-                    <div className="recipe-card-v4__left">
-                      <div className="recipe-card-v4__top">
-                        <div className="recipe-card-v4__icon" aria-hidden="true">
+                return (
+                  <div
+                    key={r.id}
+                    className={`recipe-row-v5 ${accentClass} ${
+                      density === 'dense' ? 'recipe-row-v5--dense' : ''
+                    }`}
+                  >
+                    <div className="recipe-row-v5__accent" />
+
+                    <div className="recipe-row-v5__body">
+                      <div className="recipe-main-v5">
+                        <div className="recipe-main-v5__icon" aria-hidden="true">
                           <span>{glyph}</span>
                         </div>
 
-                        <div>
-                          <div className="recipe-card-v4__headRow">
-                            <div className="recipe-card-v4__titleWrap">
-                              <h3 className="recipe-card-v4__title">{r.name}</h3>
-                              <div className="recipe-card-v4__category">
-                                {r.category || 'Uncategorized'}
-                              </div>
-                            </div>
-
-                            <div className="recipe-card-v4__badges">
-                              {r.is_subrecipe ? (
-                                <span className="recipe-badge-v4 recipe-badge-v4--neutral">
-                                  Subrecipe
-                                </span>
-                              ) : (
-                                <span className="recipe-badge-v4 recipe-badge-v4--soft">
-                                  Recipe
-                                </span>
-                              )}
-
-                              {r.is_archived ? (
-                                <span className="recipe-badge-v4 recipe-badge-v4--archived">
-                                  Archived
-                                </span>
-                              ) : null}
-
-                              {hasWarning ? (
-                                <span className="recipe-badge-v4 recipe-badge-v4--warning">
+                        <div className="recipe-main-v5__text">
+                          <h3 className="recipe-main-v5__title">{r.name}</h3>
+                          <div className="recipe-main-v5__sub">
+                            <span>{r.category || 'Uncategorized'}</span>
+                            {hasWarning ? (
+                              <>
+                                <span className="recipe-dot-v5">•</span>
+                                <span className="recipe-badge-v5 recipe-badge-v5--warning">
                                   ⚠ Missing price
                                 </span>
-                              ) : null}
-                            </div>
+                              </>
+                            ) : null}
+                            {r.is_archived ? (
+                              <>
+                                <span className="recipe-dot-v5">•</span>
+                                <span className="recipe-badge-v5 recipe-badge-v5--archived">
+                                  Archived
+                                </span>
+                              </>
+                            ) : null}
                           </div>
                         </div>
                       </div>
 
-                      <div className="recipe-card-v4__meta">
-                        <div className="recipe-meta-v4">
-                          <span className="recipe-meta-v4__label">Portions</span>
-                          <span>{portions}</span>
-                        </div>
-
-                        <div className="recipe-meta-v4">
-                          <span className="recipe-meta-v4__label">Yield</span>
-                          <span>
-                            {r.yield_qty
-                              ? `${r.yield_qty}${r.yield_unit ? ` ${r.yield_unit}` : ''}`
-                              : '—'}
+                      <div className="recipe-cell-v5">
+                        {r.is_subrecipe ? (
+                          <span className="recipe-badge-v5 recipe-badge-v5--neutral">
+                            Subrecipe
                           </span>
-                        </div>
+                        ) : (
+                          <span className="recipe-badge-v5 recipe-badge-v5--soft">
+                            Recipe
+                          </span>
+                        )}
                       </div>
-                    </div>
 
-                    <div className="recipe-card-v4__right">
-                      <div className="recipe-card-v4__metrics">
-                        <div className="metric-card-v4">
-                          <div className="metric-card-v4__label">Cost / Portion</div>
-                          <div className="metric-card-v4__value">
-                            {c ? `${c.cpp.toFixed(2)} ${cur}` : '—'}
-                          </div>
-                        </div>
+                      <div className="recipe-cell-v5">{portions}</div>
 
-                        <div className="metric-card-v4">
-                          <div className="metric-card-v4__label">FC%</div>
-                          <div className="metric-card-v4__value">
-                            {c?.fcPct != null ? `${c.fcPct.toFixed(1)}%` : '—'}
-                          </div>
-                        </div>
+                      <div className="recipe-cell-v5 recipe-cell-v5--muted">
+                        {r.yield_qty
+                          ? `${r.yield_qty}${r.yield_unit ? ` ${r.yield_unit}` : ''}`
+                          : '—'}
+                      </div>
 
-                        <div className="metric-card-v4">
-                          <div className="metric-card-v4__label">Margin</div>
-                          <div className="metric-card-v4__value">
-                            {c ? `${c.margin.toFixed(2)} ${cur}` : '—'}
-                          </div>
+                      <div className="recipe-metric-v5">
+                        <div className="recipe-metric-v5__label">Cost / Portion</div>
+                        <div className="recipe-metric-v5__value">
+                          {c ? `${c.cpp.toFixed(2)} ${cur}` : '—'}
                         </div>
                       </div>
 
-                      <div className="recipe-card-v4__actions">
+                      <div className="recipe-metric-v5">
+                        <div className="recipe-metric-v5__label">FC%</div>
+                        <div className="recipe-metric-v5__value">
+                          {c?.fcPct != null ? `${c.fcPct.toFixed(1)}%` : '—'}
+                        </div>
+                      </div>
+
+                      <div className="recipe-metric-v5">
+                        <div className="recipe-metric-v5__label">Margin</div>
+                        <div className="recipe-metric-v5__value">
+                          {c ? `${c.margin.toFixed(2)} ${cur}` : '—'}
+                        </div>
+                      </div>
+
+                      <div className="recipe-actions-v5">
                         <Button onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                          Open editor
+                          Open
                         </Button>
 
                         <Button variant="secondary" onClick={() => toggleArchive(r)}>
@@ -1168,7 +1158,7 @@ export default function Recipes() {
                           Delete
                         </Button>
 
-                        <label className="recipe-select-v4">
+                        <label className="recipe-select-v5">
                           <input
                             type="checkbox"
                             checked={!!selected[r.id]}
@@ -1177,12 +1167,14 @@ export default function Recipes() {
                           <span>Select</span>
                         </label>
                       </div>
+
+                      <div className="recipe-mobile-grid-v5" style={{ display: 'none' }} />
                     </div>
                   </div>
-                </div>
-              )
-            })}
-          </div>
+                )
+              })}
+            </div>
+          </>
         )}
 
         {toast && <Toast message={toast} onClose={() => setToast(null)} />}
