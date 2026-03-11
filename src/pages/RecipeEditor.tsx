@@ -1324,17 +1324,28 @@ const addLineLocal = useCallback(async () => {
       <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
         ← Back
       </NavLink>
-      <div>
-        <div className="gc-label">RECIPE</div>
-        <div style={{ fontWeight: 900, fontSize: 15 }}>{(name || 'Untitled').trim()}</div>
-        <div className="gc-hint" style={{ marginTop: 2, fontWeight: 700 }}>
-          {autosave.status === 'saving'
-            ? 'Saving…'
-            : autosave.status === 'error'
-            ? (autosave.message || 'Save issue. Retrying…')
-            : autosave.lastSavedAt
-            ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
-            : 'Auto-save ready.'}
+
+      <div className="gc-recipe-pro-titleWrap">
+        <div className="gc-recipe-pro-titleIcon" aria-hidden="true">
+          {isSubRecipe ? '🧪' : '🍽'}
+        </div>
+
+        <div className="gc-recipe-pro-titleBlock">
+          <div className="gc-label">RECIPE EDITOR</div>
+          <div className="gc-recipe-pro-title">{(name || 'Untitled').trim()}</div>
+
+          <div className="gc-recipe-pro-subline">
+            <span className="gc-recipe-pro-statusDot" aria-hidden="true" />
+            <span className="gc-hint" style={{ fontWeight: 800 }}>
+              {autosave.status === 'saving'
+                ? 'Saving…'
+                : autosave.status === 'error'
+                ? (autosave.message || 'Save issue. Retrying…')
+                : autosave.lastSavedAt
+                ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
+                : 'Auto-save ready.'}
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -1362,21 +1373,80 @@ const addLineLocal = useCallback(async () => {
   // Screen-only scoped CSS (safe: does not touch globals.css)
   const ScreenCss = (
     <style>{`
+      .gc-recipe-pro{
+        position: relative;
+      }
       .gc-recipe-pro .gc-card-head{
         align-items: center;
+        padding: 14px 16px;
+        border-radius: 22px;
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,248,244,.94));
+        border: 1px solid rgba(118,128,108,.12);
+        box-shadow:
+          0 10px 24px rgba(38,46,31,.05),
+          inset 0 1px 0 rgba(255,255,255,.82);
       }
       .gc-recipe-pro-head{
         display:flex;
         align-items:center;
         justify-content:space-between;
-        gap:12px;
+        gap:14px;
         flex-wrap:wrap;
       }
       .gc-recipe-pro-head-left{
         display:flex;
         align-items:center;
-        gap:10px;
-        min-width: 260px;
+        gap:12px;
+        min-width: 280px;
+      }
+      .gc-recipe-pro-titleWrap{
+        min-width: 0;
+        display:flex;
+        align-items:center;
+        gap:12px;
+      }
+      .gc-recipe-pro-titleIcon{
+        width: 52px;
+        height: 52px;
+        flex: 0 0 52px;
+        border-radius: 18px;
+        display:grid;
+        place-items:center;
+        font-size: 24px;
+        background:
+          radial-gradient(circle at top left, rgba(255,255,255,.96), rgba(242,245,238,.94));
+        border: 1px solid rgba(118,128,108,.14);
+        box-shadow:
+          inset 0 1px 0 rgba(255,255,255,.88),
+          0 8px 20px rgba(45,56,36,.06);
+      }
+      .gc-recipe-pro-titleBlock{
+        min-width: 0;
+      }
+      .gc-recipe-pro-title{
+        margin-top: 2px;
+        font-weight: 950;
+        font-size: 1.22rem;
+        line-height: 1.08;
+        letter-spacing: -0.02em;
+        color: #18210f;
+        word-break: break-word;
+      }
+      .gc-recipe-pro-subline{
+        margin-top: 6px;
+        display:flex;
+        align-items:center;
+        gap:8px;
+        flex-wrap:wrap;
+      }
+      .gc-recipe-pro-statusDot{
+        width: 9px;
+        height: 9px;
+        border-radius: 999px;
+        background: linear-gradient(180deg, #7aa14b 0%, #4b8f52 100%);
+        box-shadow: 0 0 0 4px rgba(122,161,75,.12);
+        flex: 0 0 9px;
       }
       .gc-recipe-pro-head-right{
         display:flex;
@@ -1394,14 +1464,104 @@ const addLineLocal = useCallback(async () => {
       .gc-recipe-pro-head-right > *{
         flex: 0 0 auto;
       }
+      .gc-recipe-pro .gc-btn-soft{
+        border-radius: 999px;
+        border: 1px solid rgba(118,128,108,.12);
+        background: rgba(255,255,255,.82);
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+      }
       .gc-recipe-pro .gc-btn-soft.is-active{
-        box-shadow: inset 0 0 0 1px rgba(16, 185, 129, .35);
+        box-shadow:
+          inset 0 0 0 1px rgba(116,141,63,.28),
+          0 4px 14px rgba(116,141,63,.10);
+        background: rgba(116,141,63,.10);
+      }
+      .gc-recipe-pro .gc-card-soft,
+      .gc-recipe-pro .gc-card{
+        border-radius: 22px;
+        border: 1px solid rgba(118,128,108,.11);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,248,245,.95));
+        box-shadow:
+          0 8px 24px rgba(38,46,31,.04),
+          inset 0 1px 0 rgba(255,255,255,.8);
+      }
+      .gc-recipe-pro .gc-kpi-card{
+        border-radius: 20px;
+        border: 1px solid rgba(118,128,108,.12);
+        background:
+          linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,246,241,.94));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,.86);
+        padding: 14px 14px 12px;
+      }
+      .gc-recipe-pro .gc-kpi-label{
+        font-size: .77rem;
+        line-height: 1;
+        letter-spacing: .1em;
+        font-weight: 900;
+        color: #72806b;
+        margin-bottom: 12px;
+      }
+      .gc-recipe-pro .gc-kpi-value{
+        font-size: 1.75rem;
+        line-height: 1;
+        letter-spacing: -0.03em;
+        font-weight: 950;
+        color: #15200e;
+      }
+      .gc-recipe-pro .gc-pricing-grid{
+        display:grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .gc-recipe-pro .gc-pricing-field{
+        border-radius: 18px;
+        border: 1px solid rgba(118,128,108,.11);
+        background: rgba(255,255,255,.64);
+        padding: 12px;
+      }
+      .gc-recipe-pro .gc-warning-banner{
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        border: 1px solid rgba(236,164,30,.28);
+        background: rgba(255,191,64,.09);
+        display:flex;
+        align-items:flex-start;
+        gap:10px;
+      }
+      .gc-recipe-pro .gc-warning-icon{
+        width: 28px;
+        height: 28px;
+        flex: 0 0 28px;
+        border-radius: 999px;
+        display:grid;
+        place-items:center;
+        font-size: 14px;
+        background: rgba(255,255,255,.78);
+        border: 1px solid rgba(236,164,30,.22);
+      }
+      .gc-recipe-pro .gc-warning-title{
+        font-size: .78rem;
+        line-height: 1;
+        letter-spacing: .1em;
+        font-weight: 900;
+        color: #9a5a00;
+        margin-bottom: 6px;
+      }
+      .gc-recipe-pro .gc-highlight-head{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        flex-wrap:wrap;
       }
       .gc-recipe-pro .gc-kitopi-table-wrap{
         overflow:auto;
-        border-radius: 16px;
+        border-radius: 18px;
         border: 1px solid rgba(15, 23, 42, .08);
-        background: rgba(255,255,255,.65);
+        background: rgba(255,255,255,.68);
       }
       .gc-recipe-pro .gc-kitopi-table{
         width:100%;
@@ -1420,7 +1580,7 @@ const addLineLocal = useCallback(async () => {
         border-bottom: 1px solid rgba(15, 23, 42, .06);
       }
       .gc-recipe-pro .gc-kitopi-table tbody tr:hover{
-        background: rgba(16, 185, 129, .06);
+        background: rgba(116,141,63,.06);
       }
       .gc-recipe-pro .gc-kitopi-group{
         background: rgba(15, 23, 42, .04) !important;
@@ -1431,6 +1591,26 @@ const addLineLocal = useCallback(async () => {
       .gc-recipe-pro .gc-col-yield,
       .gc-recipe-pro .gc-col-cost{
         text-align: right;
+      }
+      @media (max-width: 980px){
+        .gc-recipe-pro .gc-pricing-grid{
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 760px){
+        .gc-recipe-pro-head-left{
+          min-width: 100%;
+        }
+        .gc-recipe-pro-titleIcon{
+          width: 46px;
+          height: 46px;
+          flex-basis: 46px;
+          border-radius: 14px;
+          font-size: 20px;
+        }
+        .gc-recipe-pro-title{
+          font-size: 1.06rem;
+        }
       }
     `}</style>
   )
@@ -1520,7 +1700,7 @@ const addLineLocal = useCallback(async () => {
           
           {true && (
             <div className="gc-section gc-card-soft">
-              <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div style={{ padding: 14 }} className="gc-highlight-head">
                 <div>
                   <div className="gc-label" id="sec-print">PRINT (A4)</div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
@@ -1560,15 +1740,22 @@ const addLineLocal = useCallback(async () => {
 
           {/* KPI Row */}
           {showCost && (
-            <div className="gc-section gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-              <div className="gc-label" id="sec-cost">KPI</div>
-              <div className="gc-grid-4" style={{ marginTop: 10 }}>
+            <div className="gc-section gc-card-soft" style={{ padding: 14, borderRadius: 18 }}>
+              <div className="gc-highlight-head">
+                <div>
+                  <div className="gc-label" id="sec-cost">KPI</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>Live recipe performance overview.</div>
+                </div>
+                <div className="gc-hint" style={{ fontWeight: 800 }}>Currency: {cur}</div>
+              </div>
+
+              <div className="gc-grid-4" style={{ marginTop: 12 }}>
                 <div className="gc-kpi-card">
                   <div className="gc-kpi-label">TOTAL COST</div>
                   <div className="gc-kpi-value">{fmtMoney(totals.totalCost, cur)}</div>
                 </div>
                 <div className="gc-kpi-card">
-                  <div className="gc-kpi-label">COST/PORTION</div>
+                  <div className="gc-kpi-label">COST / PORTION</div>
                   <div className="gc-kpi-value">{fmtMoney(totals.cpp, cur)}</div>
                 </div>
                 <div className="gc-kpi-card">
@@ -1582,23 +1769,43 @@ const addLineLocal = useCallback(async () => {
               </div>
 
               {totals.warnings?.length ? (
-                <div className="gc-card-soft" style={{ marginTop: 10, padding: 10, borderRadius: 14, borderColor: 'rgba(245,158,11,.35)' }}>
-                  <div className="gc-label" style={{ color: 'var(--gc-warn)' }}>WARN</div>
-                  <div style={{ fontWeight: 900, marginTop: 4, color: 'var(--gc-warn)' }}>{totals.warnings[0]}</div>
+                <div className="gc-warning-banner">
+                  <div className="gc-warning-icon" aria-hidden="true">⚠</div>
+                  <div>
+                    <div className="gc-warning-title">PRICING WARNING</div>
+                    <div style={{ fontWeight: 900, color: 'var(--gc-warn)' }}>{totals.warnings[0]}</div>
+                  </div>
                 </div>
               ) : null}
             </div>
           )}
 {showCost && (
             <div className="gc-section gc-section-alt gc-card-soft">
-              <div style={{ padding: 12 }}>
-                <div className="gc-label">PRICING / PORTION</div>
-                <div className="gc-grid-3" style={{ marginTop: 10 }}>
-                  <div className="gc-field"><div className="gc-label">CURRENCY</div><input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} /></div>
-                  <div className="gc-field"><div className="gc-label">SELLING PRICE</div><input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" /></div>
-                  <div className="gc-field"><div className="gc-label">TARGET FC%</div><input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" /></div>
+              <div style={{ padding: 14 }}>
+                <div className="gc-highlight-head">
+                  <div>
+                    <div className="gc-label">PRICING / PORTION</div>
+                    <div className="gc-hint" style={{ marginTop: 6 }}>Set commercial values for management view and targets.</div>
+                  </div>
+                  <div className="gc-hint" style={{ fontWeight: 800 }}>FC% = cost / portion ÷ selling price</div>
                 </div>
-                <div className="gc-hint" style={{ marginTop: 8 }}>FC% = cost/portion ÷ selling price.</div>
+
+                <div className="gc-pricing-grid">
+                  <div className="gc-pricing-field">
+                    <div className="gc-label">CURRENCY</div>
+                    <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+                  </div>
+
+                  <div className="gc-pricing-field">
+                    <div className="gc-label">SELLING PRICE</div>
+                    <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
+                  </div>
+
+                  <div className="gc-pricing-field">
+                    <div className="gc-label">TARGET FC%</div>
+                    <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
+                  </div>
+                </div>
               </div>
             </div>
           )}
