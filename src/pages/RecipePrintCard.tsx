@@ -114,6 +114,11 @@ function formatDateOnly(value: string | null | undefined) {
   return d.toLocaleDateString()
 }
 
+function pct(n: number | null | undefined) {
+  if (n == null || !Number.isFinite(Number(n))) return '—'
+  return `${Number(n).toFixed(1)}%`
+}
+
 export default function RecipePrintCard() {
   const [sp] = useSearchParams()
   const id = sp.get('id')
@@ -226,22 +231,15 @@ export default function RecipePrintCard() {
     return m
   }, [subRecipes])
 
-  const computed = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        code?: string
-        title: string
-        net: number
-        gross: number
-        yieldPct: number
-        unitCost: number
-        lineCost: number
+  const computedRows = useMemo(() => {
+    const rows = lines.map((l) => {
+      if (l.line_type === 'group') {
+        return {
+          id: l.id,
+          isGroup: true,
+          groupTitle: l.group_title || 'Group',
+        }
       }
-    >()
-
-    for (const l of lines) {
-      if (l.line_type === 'group') continue
 
       const net = Math.max(0, toNum(l.qty, 0))
       const y = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
@@ -254,6 +252,7 @@ export default function RecipePrintCard() {
       let unitCost = 0
       let title = 'Line'
       let code: string | undefined
+      let isSubrecipe = false
 
       if (l.line_type === 'ingredient' && l.ingredient_id) {
         const ing = ingById.get(l.ingredient_id)
@@ -267,33 +266,42 @@ export default function RecipePrintCard() {
         title = sr?.name || 'Subrecipe'
         code = sr?.code || undefined
         unitCost = 0
+        isSubrecipe = true
       }
 
       const lineCost = net * unitCost
 
-      map.set(l.id, {
+      return {
+        id: l.id,
+        isGroup: false,
+        lineType: l.line_type,
+        isSubrecipe,
         code,
         title,
         net,
         gross,
         yieldPct: y,
+        unit: safeUnit(l.unit),
         unitCost,
         lineCost,
-      })
-    }
+      }
+    })
 
-    return map
+    const totalNet = rows.reduce((sum, r) => sum + (!r.isGroup ? r.net : 0), 0)
+
+    return rows.map((r) => {
+      if (r.isGroup) return r
+      const sharePct = totalNet > 0 ? (r.net / totalNet) * 100 : 0
+      return {
+        ...r,
+        sharePct,
+      }
+    })
   }, [lines, ingById, subById])
 
   const totalCost = useMemo(() => {
-    let t = 0
-    for (const l of lines) {
-      const c = computed.get(l.id)
-      if (!c) continue
-      t += c.lineCost
-    }
-    return t
-  }, [lines, computed])
+    return computedRows.reduce((sum, r) => sum + (!r.isGroup ? r.lineCost : 0), 0)
+  }, [computedRows])
 
   const portions = clamp(toNum(recipe?.portions, 1), 1, 1_000_000)
   const perPortion = portions > 0 ? totalCost / portions : totalCost
@@ -301,6 +309,9 @@ export default function RecipePrintCard() {
   const targetPct = recipe?.target_food_cost_pct ?? null
   const foodCostPct =
     selling != null && selling > 0 ? (perPortion / selling) * 100 : null
+
+  const varianceVsTarget =
+    foodCostPct != null && targetPct != null ? foodCostPct - targetPct : null
 
   const methodText = cleanText(recipe?.method)
 
@@ -366,8 +377,8 @@ export default function RecipePrintCard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f7f6f2] p-6 text-stone-700">
-        <div className="mx-auto max-w-5xl rounded-[28px] border border-stone-200 bg-white p-10 shadow-sm">
+      <div className="min-h-screen bg-[#f5f3ee] p-6 text-stone-700">
+        <div className="mx-auto max-w-6xl rounded-[32px] border border-stone-200 bg-white p-10 shadow-sm">
           Loading recipe card…
         </div>
       </div>
@@ -376,8 +387,8 @@ export default function RecipePrintCard() {
 
   if (err || !recipe) {
     return (
-      <div className="min-h-screen bg-[#f7f6f2] p-6 text-stone-700">
-        <div className="mx-auto max-w-5xl rounded-[28px] border border-red-200 bg-white p-10 shadow-sm">
+      <div className="min-h-screen bg-[#f5f3ee] p-6 text-stone-700">
+        <div className="mx-auto max-w-6xl rounded-[32px] border border-red-200 bg-white p-10 shadow-sm">
           {err || 'Missing recipe.'}
         </div>
       </div>
@@ -389,11 +400,11 @@ export default function RecipePrintCard() {
       <style>{`
         @page {
           size: A4;
-          margin: 12mm;
+          margin: 10mm;
         }
 
         html, body {
-          background: #f7f6f2;
+          background: #f5f3ee;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -439,8 +450,8 @@ export default function RecipePrintCard() {
         }
       `}</style>
 
-      <div className="print-stage min-h-screen bg-[#f7f6f2] p-4 md:p-8">
-        <div className="no-print mx-auto mb-4 flex max-w-5xl justify-end">
+      <div className="print-stage min-h-screen bg-[#f5f3ee] px-4 py-5 md:px-8 md:py-8">
+        <div className="no-print mx-auto mb-4 flex max-w-6xl justify-end">
           <button
             onClick={() => window.print()}
             className="rounded-2xl bg-stone-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
@@ -449,25 +460,29 @@ export default function RecipePrintCard() {
           </button>
         </div>
 
-        <article className="print-paper mx-auto max-w-5xl overflow-hidden rounded-[30px] border border-stone-200 bg-white shadow-[0_18px_50px_rgba(0,0,0,0.06)]">
-          <div className="h-1.5 bg-[#667a5a]" />
+        <article className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[34px] border border-stone-200 bg-white shadow-[0_24px_70px_rgba(0,0,0,0.07)]">
+          <div className="h-[6px] bg-gradient-to-r from-[#5f7455] via-[#7f9376] to-[#d7c6a0]" />
 
-          <header className="border-b border-stone-200 px-8 py-8">
-            <div className="grid gap-8 md:grid-cols-[1.2fr_0.8fr]">
+          <header className="relative overflow-hidden border-b border-stone-200 bg-[linear-gradient(135deg,#fbfaf7_0%,#f5f1e8_100%)] px-8 py-8 md:px-10 md:py-10">
+            <div className="absolute right-0 top-0 h-40 w-40 rounded-full bg-[#6b8060]/[0.08] blur-3xl" />
+            <div className="absolute left-10 top-8 h-24 w-24 rounded-full bg-[#d8c7a3]/[0.16] blur-2xl" />
+
+            <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
               <div>
-                <div className="mb-4 text-[11px] font-semibold uppercase tracking-[0.28em] text-stone-500">
-                  GastroChef Recipe Card
+                <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.34em] text-stone-500">
+                  GASTROCHEF · PROFESSIONAL KITCHEN RECIPE SYSTEM
                 </div>
 
-                <h1 className="text-4xl font-semibold tracking-[-0.03em] text-stone-900 md:text-5xl">
+                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.04em] text-stone-900 md:text-5xl">
                   {recipe.name || 'Untitled Recipe'}
                 </h1>
 
-                <div className="mt-4 flex flex-wrap gap-2">
-                  <Tag>{recipe.code || '—'}</Tag>
+                <div className="mt-5 flex flex-wrap gap-2.5">
+                  <Tag tone="dark">{recipe.code || 'NO CODE'}</Tag>
                   <Tag>{recipe.category || 'Uncategorized'}</Tag>
                   <Tag>{yieldLabel}</Tag>
                   <Tag>{portions} portions</Tag>
+                  <Tag>{recipe.code_category || 'General'}</Tag>
                 </div>
 
                 {recipe.description ? (
@@ -477,111 +492,156 @@ export default function RecipePrintCard() {
                 ) : null}
               </div>
 
-              <div className="grid gap-3">
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
                 <InfoRow label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
                 <InfoRow label="Created" value={formatDateOnly(recipe.created_at)} />
                 <InfoRow label="Printed" value={printedAtHuman} />
-                <InfoRow label="Code Category" value={recipe.code_category || '—'} />
+                <InfoRow label="Yield" value={yieldLabel} />
               </div>
             </div>
           </header>
 
-          <section className="border-b border-stone-200 px-8 py-6">
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+          <section className="border-b border-stone-200 px-8 py-6 md:px-10">
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
               <StatCard
                 label="Total Cost"
                 value={fmtMoney(totalCost, currency)}
-                note="Total recipe costing"
+                note="Full recipe cost"
               />
               <StatCard
                 label="Per Portion"
                 value={fmtMoney(perPortion, currency)}
-                note="Based on portions"
+                note="Cost per serving"
               />
               <StatCard
                 label="Selling Price"
                 value={selling != null ? fmtMoney(selling, currency) : '—'}
-                note="Menu price"
+                note="Menu selling price"
               />
               <StatCard
                 label="Food Cost"
                 value={foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'}
                 note={targetPct != null ? `Target ${targetPct.toFixed(1)}%` : 'No target'}
               />
+              <StatCard
+                label="Variance"
+                value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'}
+                note="Vs target food cost"
+              />
+            </div>
+          </section>
+
+          <section className="border-b border-stone-200 px-8 py-7 md:px-10">
+            <div className="grid gap-4 lg:grid-cols-[1.15fr_0.85fr]">
+              <Panel
+                eyebrow="Kitchen Summary"
+                title="Production Snapshot"
+                compact
+              >
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <MiniMetric label="Recipe Code" value={recipe.code || '—'} />
+                  <MiniMetric label="Category" value={recipe.category || '—'} />
+                  <MiniMetric label="Portions" value={String(portions)} />
+                  <MiniMetric label="Yield" value={yieldLabel} />
+                </div>
+              </Panel>
+
+              <Panel
+                eyebrow="Commercial View"
+                title="Menu Positioning"
+                compact
+              >
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <MiniMetric label="Currency" value={currency.toUpperCase()} />
+                  <MiniMetric label="Target FC" value={pct(targetPct)} />
+                  <MiniMetric label="Actual FC" value={pct(foodCostPct)} />
+                </div>
+              </Panel>
             </div>
           </section>
 
           {recipe.photo_url ? (
-            <section className="avoid-break border-b border-stone-200 px-8 py-8">
+            <section className="avoid-break border-b border-stone-200 px-8 py-8 md:px-10">
               <SectionHead
                 overline="Presentation"
-                title="Recipe Image"
-                subtitle="Clean visual reference for production and presentation."
+                title="Hero Recipe Image"
+                subtitle="Premium visual reference for service, training, and consistency."
               />
 
-              <div className="overflow-hidden rounded-[24px] border border-stone-200 bg-stone-50">
+              <div className="overflow-hidden rounded-[28px] border border-stone-200 bg-stone-50 shadow-[0_8px_28px_rgba(0,0,0,0.04)]">
                 <img
                   src={recipe.photo_url}
                   alt={recipe.name || 'Recipe'}
-                  className="max-h-[420px] w-full object-cover"
+                  className="max-h-[460px] w-full object-cover"
                 />
               </div>
             </section>
           ) : null}
 
-          <section className="border-b border-stone-200 px-8 py-8">
+          <section className="border-b border-stone-200 px-8 py-8 md:px-10">
             <SectionHead
               overline="Costing"
-              title="Ingredient Breakdown"
-              subtitle="Clear, elegant costing structure optimized for print."
+              title="Ingredient & Production Breakdown"
+              subtitle="Executive-level costing view with cleaner hierarchy for chefs and managers."
             />
 
-            <div className="overflow-hidden rounded-[24px] border border-stone-200">
+            <div className="overflow-hidden rounded-[28px] border border-stone-200">
               <div className="overflow-x-auto">
                 <table className="recipe-table min-w-full border-collapse text-sm">
                   <thead className="bg-stone-50 text-stone-700">
                     <tr>
-                      <Th className="w-[10%]">Code</Th>
-                      <Th className="w-[30%]">Item</Th>
+                      <Th className="w-[9%]">Code</Th>
+                      <Th className="w-[26%]">Item</Th>
                       <Th className="w-[10%] text-right">Net Qty</Th>
                       <Th className="w-[8%]">Unit</Th>
                       <Th className="w-[10%] text-right">Gross Qty</Th>
                       <Th className="w-[8%]">Unit</Th>
                       <Th className="w-[8%] text-right">Yield</Th>
-                      <Th className="w-[12%] text-right">Unit Cost</Th>
-                      <Th className="w-[14%] text-right">Line Cost</Th>
+                      <Th className="w-[8%] text-right">Share</Th>
+                      <Th className="w-[10%] text-right">Unit Cost</Th>
+                      <Th className="w-[13%] text-right">Line Cost</Th>
                     </tr>
                   </thead>
 
                   <tbody>
-                    {lines.map((l, index) => {
-                      if (l.line_type === 'group') {
+                    {computedRows.map((row, index) => {
+                      if (row.isGroup) {
                         return (
-                          <tr key={l.id} className="bg-[#667a5a] text-white">
-                            <td colSpan={9} className="px-4 py-3 text-sm font-medium tracking-wide">
-                              {l.group_title || 'Group'}
+                          <tr key={row.id} className="bg-[#617355] text-white">
+                            <td colSpan={10} className="px-4 py-3 text-sm font-semibold tracking-[0.16em] uppercase">
+                              {row.groupTitle}
                             </td>
                           </tr>
                         )
                       }
 
-                      const c = computed.get(l.id)
-                      if (!c) return null
-
                       const zebra = index % 2 === 0 ? 'bg-white' : 'bg-stone-50/60'
+                      const subrecipeClass = row.isSubrecipe
+                        ? 'bg-[#eef4ec] text-stone-800'
+                        : zebra
 
                       return (
-                        <tr key={l.id} className={`${zebra} align-top text-stone-700`}>
-                          <Td className="font-medium text-stone-500">{c.code || '—'}</Td>
-                          <Td className="font-semibold text-stone-900">{c.title}</Td>
-                          <Td className="text-right tabular-nums">{fmtQty(c.net)}</Td>
-                          <Td>{safeUnit(l.unit)}</Td>
-                          <Td className="text-right tabular-nums">{fmtQty(c.gross)}</Td>
-                          <Td>{safeUnit(l.unit)}</Td>
-                          <Td className="text-right tabular-nums">{c.yieldPct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{fmtMoney(c.unitCost, currency)}</Td>
+                        <tr key={row.id} className={`${subrecipeClass} align-top text-stone-700`}>
+                          <Td className="font-medium text-stone-500">{row.code || '—'}</Td>
+                          <Td className="font-semibold text-stone-900">
+                            <div className="flex items-center gap-2">
+                              {row.isSubrecipe ? (
+                                <span className="inline-flex rounded-full border border-[#cad9c5] bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#5f7455]">
+                                  Sub Recipe
+                                </span>
+                              ) : null}
+                              <span>{row.title}</span>
+                            </div>
+                          </Td>
+                          <Td className="text-right tabular-nums">{fmtQty(row.net)}</Td>
+                          <Td>{row.unit}</Td>
+                          <Td className="text-right tabular-nums">{fmtQty(row.gross)}</Td>
+                          <Td>{row.unit}</Td>
+                          <Td className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</Td>
                           <Td className="text-right font-semibold tabular-nums text-stone-900">
-                            {fmtMoney(c.lineCost, currency)}
+                            {fmtMoney(row.lineCost, currency)}
                           </Td>
                         </tr>
                       )
@@ -591,7 +651,7 @@ export default function RecipePrintCard() {
                   <tfoot>
                     <tr className="bg-stone-50">
                       <td
-                        colSpan={7}
+                        colSpan={8}
                         className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500"
                       >
                         Total Recipe Cost
@@ -610,11 +670,11 @@ export default function RecipePrintCard() {
           </section>
 
           {(steps.length || methodText) ? (
-            <section className="border-b border-stone-200 px-8 py-8">
+            <section className="border-b border-stone-200 px-8 py-8 md:px-10">
               <SectionHead
                 overline="Method"
-                title="Preparation Steps"
-                subtitle="Structured for calm readability during kitchen execution."
+                title="Preparation Workflow"
+                subtitle="Refined execution layout for real kitchen use, training, and consistency."
               />
 
               {steps.length ? (
@@ -625,11 +685,11 @@ export default function RecipePrintCard() {
                     return (
                       <div
                         key={`${i}-${s.slice(0, 24)}`}
-                        className="avoid-break overflow-hidden rounded-[22px] border border-stone-200 bg-white"
+                        className="avoid-break overflow-hidden rounded-[24px] border border-stone-200 bg-white shadow-[0_6px_20px_rgba(0,0,0,0.03)]"
                       >
-                        <div className="grid md:grid-cols-[72px_1fr]">
-                          <div className="flex items-start justify-center border-b border-stone-200 bg-stone-50 px-4 py-5 md:border-b-0 md:border-r">
-                            <div className="flex h-10 w-10 items-center justify-center rounded-full border border-stone-200 bg-white text-sm font-semibold text-stone-900">
+                        <div className="grid md:grid-cols-[84px_1fr]">
+                          <div className="flex items-start justify-center border-b border-stone-200 bg-[linear-gradient(180deg,#faf8f3_0%,#f3efe5_100%)] px-4 py-5 md:border-b-0 md:border-r">
+                            <div className="flex h-11 w-11 items-center justify-center rounded-full border border-stone-200 bg-white text-sm font-semibold text-stone-900 shadow-sm">
                               {i + 1}
                             </div>
                           </div>
@@ -655,7 +715,7 @@ export default function RecipePrintCard() {
                   })}
                 </div>
               ) : (
-                <div className="avoid-break rounded-[22px] border border-stone-200 bg-stone-50 p-6">
+                <div className="avoid-break rounded-[24px] border border-stone-200 bg-stone-50 p-6">
                   <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">
                     {methodText}
                   </p>
@@ -665,11 +725,11 @@ export default function RecipePrintCard() {
           ) : null}
 
           {showNutrition ? (
-            <section className="avoid-break border-b border-stone-200 px-8 py-8">
+            <section className="avoid-break border-b border-stone-200 px-8 py-8 md:px-10">
               <SectionHead
                 overline="Nutrition"
-                title="Nutrition Overview"
-                subtitle="Simple macro summary in a refined format."
+                title="Macro Overview"
+                subtitle="Clean nutritional block suited for professional cards and premium export."
               />
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -681,9 +741,12 @@ export default function RecipePrintCard() {
             </section>
           ) : null}
 
-          <footer className="flex flex-col gap-2 px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between">
-            <div className="font-medium">Generated by GastroChef</div>
+          <footer className="flex flex-col gap-3 bg-stone-50 px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-10">
             <div>
+              <div className="font-semibold tracking-[0.18em] text-stone-700 uppercase">GastroChef</div>
+              <div className="mt-1">Professional recipe, costing, and kitchen execution card.</div>
+            </div>
+            <div className="text-right">
               Printed {printedAtHuman} · Recipe ID {shortId(recipe.id)}
             </div>
           </footer>
@@ -713,9 +776,15 @@ function SectionHead({
   )
 }
 
-function Tag({ children }: { children: ReactNode }) {
+function Tag({ children, tone = 'default' }: { children: ReactNode; tone?: 'default' | 'dark' }) {
   return (
-    <div className="rounded-full border border-stone-200 bg-stone-50 px-3 py-1.5 text-xs font-medium text-stone-700">
+    <div
+      className={
+        tone === 'dark'
+          ? 'rounded-full border border-stone-900 bg-stone-900 px-3.5 py-1.5 text-xs font-medium text-white'
+          : 'rounded-full border border-stone-200 bg-white px-3.5 py-1.5 text-xs font-medium text-stone-700'
+      }
+    >
       {children}
     </div>
   )
@@ -723,7 +792,7 @@ function Tag({ children }: { children: ReactNode }) {
 
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+    <div className="flex items-center justify-between gap-4 rounded-2xl border border-stone-200 bg-white/75 px-4 py-3 backdrop-blur-sm">
       <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
         {label}
       </div>
@@ -742,7 +811,7 @@ function StatCard({
   note?: string
 }) {
   return (
-    <div className="rounded-[22px] border border-stone-200 bg-white p-5">
+    <div className="rounded-[24px] border border-stone-200 bg-[linear-gradient(180deg,#ffffff_0%,#fbfaf7_100%)] p-5 shadow-[0_6px_20px_rgba(0,0,0,0.03)]">
       <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </div>
@@ -764,7 +833,7 @@ function NutritionCard({
   unit: string
 }) {
   return (
-    <div className="rounded-[22px] border border-stone-200 bg-stone-50 p-5">
+    <div className="rounded-[24px] border border-stone-200 bg-[linear-gradient(180deg,#faf8f3_0%,#f4efe4_100%)] p-5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">
         {label}
       </div>
@@ -772,6 +841,37 @@ function NutritionCard({
         {value}
         <span className="ml-1 text-sm font-medium text-stone-500">{unit}</span>
       </div>
+    </div>
+  )
+}
+
+function Panel({
+  eyebrow,
+  title,
+  compact = false,
+  children,
+}: {
+  eyebrow: string
+  title: string
+  compact?: boolean
+  children: ReactNode
+}) {
+  return (
+    <div className={`rounded-[26px] border border-stone-200 bg-white ${compact ? 'p-5' : 'p-6'}`}>
+      <div className="text-[11px] font-semibold uppercase tracking-[0.2em] text-stone-500">
+        {eyebrow}
+      </div>
+      <div className="mt-2 text-lg font-semibold tracking-[-0.02em] text-stone-900">{title}</div>
+      <div className="mt-4">{children}</div>
+    </div>
+  )
+}
+
+function MiniMetric({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-stone-50 px-4 py-3">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-stone-500">{label}</div>
+      <div className="mt-1.5 text-sm font-semibold text-stone-900">{value}</div>
     </div>
   )
 }
