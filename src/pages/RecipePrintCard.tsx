@@ -40,6 +40,10 @@ type Line = {
   line_type: 'ingredient' | 'subrecipe' | 'group'
   group_title: string | null
   note?: string | null
+  notes?: string | null
+  prep_note?: string | null
+  instruction?: string | null
+  remark?: string | null
 }
 
 type Ingredient = {
@@ -165,9 +169,7 @@ export default function RecipePrintCard() {
 
         const { data: l, error: lErr } = await supabase
           .from('recipe_lines')
-          .select(
-            'id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,gross_qty_override,line_type,group_title,note'
-          )
+          .select('*')
           .eq('recipe_id', id)
           .order('position', { ascending: true })
 
@@ -284,7 +286,13 @@ export default function RecipePrintCard() {
         unit: safeUnit(l.unit),
         unitCost,
         lineCost,
-        note: cleanText(l.note),
+        note: cleanText(
+          (l as any).note ??
+            (l as any).notes ??
+            (l as any).prep_note ??
+            (l as any).instruction ??
+            (l as any).remark
+        ),
       }
     })
 
