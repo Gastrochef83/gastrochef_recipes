@@ -443,7 +443,13 @@ export default function RecipePrintCard() {
       `}</style>
 
       <div className="print-stage min-h-screen bg-[#f7f6f2] px-4 py-5 md:px-8 md:py-8 text-[#2b2b2b]">
-        <div className="no-print mx-auto mb-4 flex max-w-6xl justify-end">
+        <div className="no-print mx-auto mb-4 flex max-w-6xl items-center justify-end gap-3">
+          <button
+            onClick={() => window.print()}
+            className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
+          >
+            Download PDF
+          </button>
           <button
             onClick={() => window.print()}
             className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#2f6f5e] shadow-sm transition hover:bg-[#f7f6f2]"
@@ -613,20 +619,33 @@ export default function RecipePrintCard() {
                         key={`${i}-${s.slice(0, 24)}`}
                         className="avoid-break overflow-hidden rounded-[26px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
                       >
-                        <div className="grid md:grid-cols-[88px_1fr]">
+                        <div className="grid md:grid-cols-[88px_220px_1fr]">
                           <div className="flex items-start justify-center border-b border-[#dfe5df] bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-4 py-5 md:border-b-0 md:border-r">
                             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#2f6f5e] text-sm font-semibold text-white shadow-sm">
                               {i + 1}
                             </div>
                           </div>
 
-                          <div className="p-5 md:p-6">
+                          <div className="border-b border-[#dfe5df] p-5 md:border-b-0 md:border-r md:p-6">
                             {img ? (
-                              <div className="mb-4 overflow-hidden rounded-2xl border border-[#dfe5df] bg-white">
-                                <img src={img} alt={`Step ${i + 1}`} className="max-h-[320px] w-full object-cover" />
+                              <div className="overflow-hidden rounded-2xl border border-[#dfe5df] bg-white">
+                                <img
+                                  src={img}
+                                  alt={`Step ${i + 1}`}
+                                  className="aspect-square w-full object-cover"
+                                />
                               </div>
-                            ) : null}
+                            ) : (
+                              <div className="flex aspect-square w-full items-center justify-center rounded-2xl border border-dashed border-[#dfe5df] bg-[#f7f6f2] px-4 text-center text-sm text-stone-400">
+                                No step photo
+                              </div>
+                            )}
+                          </div>
 
+                          <div className="p-5 md:p-6">
+                            <div className="mb-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-[#556b2f]">
+                              Step {i + 1}
+                            </div>
                             <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">{s}</p>
                           </div>
                         </div>
