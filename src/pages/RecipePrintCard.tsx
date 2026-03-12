@@ -310,10 +310,8 @@ export default function RecipePrintCard() {
   const perPortion = portions > 0 ? totalCost / portions : totalCost
   const selling = recipe?.selling_price ?? null
   const targetPct = recipe?.target_food_cost_pct ?? null
-  const foodCostPct =
-    selling != null && selling > 0 ? (perPortion / selling) * 100 : null
-  const varianceVsTarget =
-    foodCostPct != null && targetPct != null ? foodCostPct - targetPct : null
+  const foodCostPct = selling != null && selling > 0 ? (perPortion / selling) * 100 : null
+  const varianceVsTarget = foodCostPct != null && targetPct != null ? foodCostPct - targetPct : null
 
   const methodText = cleanText(recipe?.method)
 
@@ -379,8 +377,8 @@ export default function RecipePrintCard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#121212] p-6 text-stone-200">
-        <div className="mx-auto max-w-6xl rounded-[34px] border border-[#2a241d] bg-[#181818] p-10 shadow-sm">
+      <div className="min-h-screen bg-[#f7f2ea] p-6 text-stone-700">
+        <div className="mx-auto max-w-6xl rounded-[36px] border border-[#eadfce] bg-white p-10 shadow-sm">
           Loading recipe card…
         </div>
       </div>
@@ -389,8 +387,8 @@ export default function RecipePrintCard() {
 
   if (err || !recipe) {
     return (
-      <div className="min-h-screen bg-[#121212] p-6 text-stone-200">
-        <div className="mx-auto max-w-6xl rounded-[34px] border border-red-900/40 bg-[#181818] p-10 shadow-sm">
+      <div className="min-h-screen bg-[#f7f2ea] p-6 text-stone-700">
+        <div className="mx-auto max-w-6xl rounded-[36px] border border-red-200 bg-white p-10 shadow-sm">
           {err || 'Missing recipe.'}
         </div>
       </div>
@@ -406,7 +404,7 @@ export default function RecipePrintCard() {
         }
 
         html, body {
-          background: #121212;
+          background: #f7f2ea;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -450,79 +448,79 @@ export default function RecipePrintCard() {
         }
       `}</style>
 
-      <div className="print-stage min-h-screen bg-[#121212] px-4 py-5 md:px-8 md:py-8">
+      <div className="print-stage min-h-screen bg-[linear-gradient(180deg,#f8f4ec_0%,#f4ede0_100%)] px-4 py-5 md:px-8 md:py-8">
         <div className="no-print mx-auto mb-4 flex max-w-6xl justify-end">
           <button
             onClick={() => window.print()}
-            className="rounded-2xl border border-[#c6a467] bg-[#181818] px-5 py-3 text-sm font-medium text-[#f2dfb5] shadow-sm transition hover:bg-[#1f1f1f]"
+            className="rounded-2xl border border-[#d8be91] bg-white px-5 py-3 text-sm font-medium text-[#7f6334] shadow-sm transition hover:bg-[#fffaf1]"
           >
             Print Now
           </button>
         </div>
 
-        <article className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[36px] border border-[#3a3024] bg-[linear-gradient(180deg,#121212_0%,#171717_100%)] text-stone-100 shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
-          <div className="h-[9px] bg-[linear-gradient(90deg,#5b4528_0%,#b89154_35%,#f2dfb5_60%,#8c6a3c_100%)]" />
+        <article className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[38px] border border-[#e7dccb] bg-[linear-gradient(180deg,#fffdfa_0%,#fbf6ee_100%)] text-stone-800 shadow-[0_28px_80px_rgba(120,90,45,0.12)]">
+          <div className="h-[9px] bg-[linear-gradient(90deg,#ccb07a_0%,#f2dfb5_22%,#b99052_48%,#f7ead0_72%,#d2b37f_100%)]" />
 
-          <header className="relative overflow-hidden border-b border-[#2f2921] bg-[radial-gradient(circle_at_top_right,rgba(201,160,86,0.20),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(120,90,46,0.16),transparent_22%),linear-gradient(135deg,#171717_0%,#111111_58%,#1b1b1b_100%)] px-8 py-8 md:px-10 md:py-10">
-            <div className="absolute right-[-20px] top-[-10px] h-40 w-40 rounded-full bg-[#d1a767]/10 blur-3xl" />
-            <div className="absolute left-8 top-8 h-24 w-24 rounded-full bg-[#7a5a2f]/12 blur-2xl" />
-            <div className="absolute inset-x-10 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(221,187,121,0.7),transparent)]" />
+          <header className="relative overflow-hidden border-b border-[#eee4d6] bg-[radial-gradient(circle_at_top_right,rgba(212,183,120,0.22),transparent_26%),radial-gradient(circle_at_bottom_left,rgba(236,224,196,0.8),transparent_20%),linear-gradient(135deg,#fffdfa_0%,#f9f2e7_54%,#fff9f1_100%)] px-8 py-8 md:px-10 md:py-10">
+            <div className="absolute right-[-20px] top-[-10px] h-40 w-40 rounded-full bg-[#f2dfb5]/35 blur-3xl" />
+            <div className="absolute left-8 top-8 h-24 w-24 rounded-full bg-[#d8be91]/30 blur-2xl" />
+            <div className="absolute inset-x-10 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(189,151,86,0.8),transparent)]" />
 
             <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
               <div>
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#c7b18a]">
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#9d7a46]">
                   <span>GastroChef</span>
-                  <span className="text-[#d7b06f]">·</span>
-                  <span>Michelin Black Gold Signature Edition</span>
+                  <span className="text-[#c49c57]">·</span>
+                  <span>Michelin Imperial Gold Masterpiece Edition</span>
                 </div>
 
-                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-white md:text-[3.6rem] md:leading-[1.02]">
+                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-stone-900 md:text-[3.6rem] md:leading-[1.02]">
                   {recipe.name || 'Untitled Recipe'}
                 </h1>
 
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <Tag tone="gold-dark">{recipe.code || 'NO CODE'}</Tag>
-                  <Tag tone="dark">{recipe.category || 'Uncategorized'}</Tag>
-                  <Tag tone="dark">{yieldLabel}</Tag>
-                  <Tag tone="dark">{portions} portions</Tag>
-                  <Tag tone="gold-soft">{recipe.code_category || 'Signature'}</Tag>
+                  <TagLight tone="gold-strong">{recipe.code || 'NO CODE'}</TagLight>
+                  <TagLight tone="cream">{recipe.category || 'Uncategorized'}</TagLight>
+                  <TagLight tone="cream">{yieldLabel}</TagLight>
+                  <TagLight tone="cream">{portions} portions</TagLight>
+                  <TagLight tone="gold-soft">{recipe.code_category || 'Signature'}</TagLight>
                 </div>
 
                 {recipe.description ? (
-                  <p className="mt-6 max-w-3xl text-[15px] leading-7 text-stone-300">
+                  <p className="mt-6 max-w-3xl text-[15px] leading-7 text-stone-600">
                     {recipe.description}
                   </p>
                 ) : null}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <InfoRowDark label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
-                <InfoRowDark label="Created" value={formatDateOnly(recipe.created_at)} />
-                <InfoRowDark label="Printed" value={printedAtHuman} />
-                <InfoRowDark label="Yield" value={yieldLabel} />
+                <InfoRowLight label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
+                <InfoRowLight label="Created" value={formatDateOnly(recipe.created_at)} />
+                <InfoRowLight label="Printed" value={printedAtHuman} />
+                <InfoRowLight label="Yield" value={yieldLabel} />
               </div>
             </div>
           </header>
 
-          <section className="border-b border-[#2f2921] px-8 py-7 md:px-10">
+          <section className="border-b border-[#eee4d6] px-8 py-7 md:px-10">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <StatCardDark label="Total Cost" value={fmtMoney(totalCost, currency)} note="Full recipe cost" />
-              <StatCardDark label="Per Portion" value={fmtMoney(perPortion, currency)} note="Unit serving cost" />
-              <StatCardDark label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} note="Menu selling price" />
-              <StatCardDark label="Food Cost" value={foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'} note={targetPct != null ? `Target ${targetPct.toFixed(1)}%` : 'No target'} />
-              <StatCardDark label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} note="Vs target" accentClass={varianceVsTarget != null && varianceVsTarget <= 0 ? 'text-emerald-300' : varianceVsTarget != null && varianceVsTarget > 2 ? 'text-red-300' : 'text-[#f4dfb4]'} />
+              <StatCardLight label="Total Cost" value={fmtMoney(totalCost, currency)} note="Full recipe cost" />
+              <StatCardLight label="Per Portion" value={fmtMoney(perPortion, currency)} note="Unit serving cost" />
+              <StatCardLight label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} note="Menu selling price" />
+              <StatCardLight label="Food Cost" value={foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'} note={targetPct != null ? `Target ${targetPct.toFixed(1)}%` : 'No target'} />
+              <StatCardLight label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} note="Vs target" accentClass={varianceVsTarget != null && varianceVsTarget <= 0 ? 'text-emerald-700' : varianceVsTarget != null && varianceVsTarget > 2 ? 'text-red-700' : 'text-[#9b7a46]'} />
             </div>
           </section>
 
           {recipe.photo_url ? (
-            <section className="avoid-break border-b border-[#2f2921] px-8 py-8 md:px-10">
-              <SectionHeadDark
+            <section className="avoid-break border-b border-[#eee4d6] px-8 py-8 md:px-10">
+              <SectionHeadLight
                 overline="Presentation"
-                title="Signature Dish Image"
-                subtitle="Hero plate image preserved for Michelin-style presentation, plating reference, and premium print identity."
+                title="Imperial Dish Image"
+                subtitle="Hero plate image preserved with a brighter editorial luxury style for premium recipe presentation and plating reference."
               />
 
-              <div className="overflow-hidden rounded-[32px] border border-[#3d3327] bg-[#141414] shadow-[0_16px_36px_rgba(0,0,0,0.35)]">
+              <div className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-white shadow-[0_16px_36px_rgba(170,136,77,0.14)]">
                 <img
                   src={recipe.photo_url}
                   alt={recipe.name || 'Recipe'}
@@ -532,70 +530,70 @@ export default function RecipePrintCard() {
             </section>
           ) : null}
 
-          <section className="border-b border-[#2f2921] px-8 py-8 md:px-10">
+          <section className="border-b border-[#eee4d6] px-8 py-8 md:px-10">
             <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-              <PanelDark eyebrow="Chef Overview" title="Signature Snapshot">
+              <PanelLight eyebrow="Chef Overview" title="Imperial Snapshot">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MiniMetricDark label="Recipe Code" value={recipe.code || '—'} />
-                  <MiniMetricDark label="Category" value={recipe.category || '—'} />
-                  <MiniMetricDark label="Portions" value={String(portions)} />
-                  <MiniMetricDark label="Yield" value={yieldLabel} />
+                  <MiniMetricLight label="Recipe Code" value={recipe.code || '—'} />
+                  <MiniMetricLight label="Category" value={recipe.category || '—'} />
+                  <MiniMetricLight label="Portions" value={String(portions)} />
+                  <MiniMetricLight label="Yield" value={yieldLabel} />
                 </div>
-              </PanelDark>
+              </PanelLight>
 
-              <PanelDark eyebrow="Commercial View" title="Menu Economics">
+              <PanelLight eyebrow="Commercial View" title="Menu Economics">
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <MiniMetricDark label="Currency" value={currency.toUpperCase()} />
-                  <MiniMetricDark label="Target FC" value={pct(targetPct)} />
-                  <MiniMetricDark label="Actual FC" value={pct(foodCostPct)} />
+                  <MiniMetricLight label="Currency" value={currency.toUpperCase()} />
+                  <MiniMetricLight label="Target FC" value={pct(targetPct)} />
+                  <MiniMetricLight label="Actual FC" value={pct(foodCostPct)} />
                 </div>
-              </PanelDark>
+              </PanelLight>
             </div>
           </section>
 
-          <section className="border-b border-[#2f2921] px-8 py-8 md:px-10">
-            <SectionHeadDark
+          <section className="border-b border-[#eee4d6] px-8 py-8 md:px-10">
+            <SectionHeadLight
               overline="Costing"
-              title="Black Gold Ingredient Breakdown"
-              subtitle="Luxury black-and-gold costing layout with visible dish economics, quantity share, and cost share."
+              title="Imperial Gold Ingredient Breakdown"
+              subtitle="A bright luxury costing layout with executive clarity, refined hierarchy, and premium editorial rhythm."
             />
 
             <div className="mb-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-              <PanelDark eyebrow="Executive Summary" title="Costing Intelligence">
+              <PanelLight eyebrow="Executive Summary" title="Costing Intelligence">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MiniMetricDark label="Total Cost" value={fmtMoney(totalCost, currency)} />
-                  <MiniMetricDark label="Portion Cost" value={fmtMoney(perPortion, currency)} />
-                  <MiniMetricDark label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} />
-                  <MiniMetricDark label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} />
+                  <MiniMetricLight label="Total Cost" value={fmtMoney(totalCost, currency)} />
+                  <MiniMetricLight label="Portion Cost" value={fmtMoney(perPortion, currency)} />
+                  <MiniMetricLight label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} />
+                  <MiniMetricLight label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} />
                 </div>
-              </PanelDark>
+              </PanelLight>
 
-              <PanelDark eyebrow="Chef Lens" title="Recipe Identity">
+              <PanelLight eyebrow="Chef Lens" title="Recipe Identity">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <MiniMetricDark label="Recipe ID" value={shortId(recipe.id)} />
-                  <MiniMetricDark label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
-                  <MiniMetricDark label="Code Category" value={recipe.code_category || '—'} />
-                  <MiniMetricDark label="Printed" value={formatDateOnly(printedAt.toISOString())} />
+                  <MiniMetricLight label="Recipe ID" value={shortId(recipe.id)} />
+                  <MiniMetricLight label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
+                  <MiniMetricLight label="Code Category" value={recipe.code_category || '—'} />
+                  <MiniMetricLight label="Printed" value={formatDateOnly(printedAt.toISOString())} />
                 </div>
-              </PanelDark>
+              </PanelLight>
             </div>
 
-            <div className="overflow-hidden rounded-[32px] border border-[#3d3327] shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
+            <div className="overflow-hidden rounded-[34px] border border-[#eadfce] shadow-[0_12px_28px_rgba(170,136,77,0.12)]">
               <div className="overflow-x-auto">
                 <table className="recipe-table min-w-full border-collapse text-sm">
-                  <thead className="bg-[linear-gradient(180deg,#231d17_0%,#1a1713_100%)] text-[#ead7ae]">
+                  <thead className="bg-[linear-gradient(180deg,#fff8ec_0%,#f7eddc_100%)] text-[#8a6a38]">
                     <tr>
-                      <ThDark className="w-[8%]">Code</ThDark>
-                      <ThDark className="w-[24%]">Item</ThDark>
-                      <ThDark className="w-[10%] text-right">Net Qty</ThDark>
-                      <ThDark className="w-[7%]">Unit</ThDark>
-                      <ThDark className="w-[10%] text-right">Gross Qty</ThDark>
-                      <ThDark className="w-[7%]">Unit</ThDark>
-                      <ThDark className="w-[8%] text-right">Yield</ThDark>
-                      <ThDark className="w-[8%] text-right">Qty %</ThDark>
-                      <ThDark className="w-[8%] text-right">Cost %</ThDark>
-                      <ThDark className="w-[8%] text-right">Unit Cost</ThDark>
-                      <ThDark className="w-[12%] text-right">Line Cost</ThDark>
+                      <ThLight className="w-[8%]">Code</ThLight>
+                      <ThLight className="w-[24%]">Item</ThLight>
+                      <ThLight className="w-[10%] text-right">Net Qty</ThLight>
+                      <ThLight className="w-[7%]">Unit</ThLight>
+                      <ThLight className="w-[10%] text-right">Gross Qty</ThLight>
+                      <ThLight className="w-[7%]">Unit</ThLight>
+                      <ThLight className="w-[8%] text-right">Yield</ThLight>
+                      <ThLight className="w-[8%] text-right">Qty %</ThLight>
+                      <ThLight className="w-[8%] text-right">Cost %</ThLight>
+                      <ThLight className="w-[8%] text-right">Unit Cost</ThLight>
+                      <ThLight className="w-[12%] text-right">Line Cost</ThLight>
                     </tr>
                   </thead>
 
@@ -603,7 +601,7 @@ export default function RecipePrintCard() {
                     {computedRows.map((row, index) => {
                       if (row.isGroup) {
                         return (
-                          <tr key={row.id} className="bg-[linear-gradient(90deg,#5d4528_0%,#b89154_45%,#6b512f_100%)] text-[#fff5df]">
+                          <tr key={row.id} className="bg-[linear-gradient(90deg,#d9ba83_0%,#f1dfba_45%,#d6b276_100%)] text-[#6a4d20]">
                             <td colSpan={11} className="px-4 py-3 text-sm font-semibold tracking-[0.16em] uppercase">
                               {row.groupTitle}
                             </td>
@@ -611,38 +609,38 @@ export default function RecipePrintCard() {
                         )
                       }
 
-                      const zebra = index % 2 === 0 ? 'bg-[#171717]' : 'bg-[#1b1b1b]'
-                      const rowClass = row.isSubrecipe ? 'bg-[#211c16] text-stone-100' : zebra
+                      const zebra = index % 2 === 0 ? 'bg-white' : 'bg-[#fffaf3]'
+                      const rowClass = row.isSubrecipe ? 'bg-[#fbf1e3] text-stone-800' : zebra
 
                       return (
-                        <tr key={row.id} className={`${rowClass} align-top text-stone-200`}>
-                          <TdDark className="font-medium text-[#c7b18a]">{row.code || '—'}</TdDark>
-                          <TdDark className="font-semibold text-white">
+                        <tr key={row.id} className={`${rowClass} align-top text-stone-700`}>
+                          <TdLight className="font-medium text-[#b18a4a]">{row.code || '—'}</TdLight>
+                          <TdLight className="font-semibold text-stone-900">
                             <div className="flex items-center gap-2">
-                              {row.isSubrecipe ? <SubBadgeDark>Sub Recipe</SubBadgeDark> : null}
+                              {row.isSubrecipe ? <SubBadgeLight>Sub Recipe</SubBadgeLight> : null}
                               <span>{row.title}</span>
                             </div>
-                          </TdDark>
-                          <TdDark className="text-right tabular-nums">{fmtQty(row.net)}</TdDark>
-                          <TdDark>{row.unit}</TdDark>
-                          <TdDark className="text-right tabular-nums">{fmtQty(row.gross)}</TdDark>
-                          <TdDark>{row.unit}</TdDark>
-                          <TdDark className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</TdDark>
-                          <TdDark className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</TdDark>
-                          <TdDark className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</TdDark>
-                          <TdDark className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</TdDark>
-                          <TdDark className="text-right font-semibold tabular-nums text-[#f2dfb5]">{fmtMoney(row.lineCost, currency)}</TdDark>
+                          </TdLight>
+                          <TdLight className="text-right tabular-nums">{fmtQty(row.net)}</TdLight>
+                          <TdLight>{row.unit}</TdLight>
+                          <TdLight className="text-right tabular-nums">{fmtQty(row.gross)}</TdLight>
+                          <TdLight>{row.unit}</TdLight>
+                          <TdLight className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</TdLight>
+                          <TdLight className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</TdLight>
+                          <TdLight className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</TdLight>
+                          <TdLight className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</TdLight>
+                          <TdLight className="text-right font-semibold tabular-nums text-[#8c6631]">{fmtMoney(row.lineCost, currency)}</TdLight>
                         </tr>
                       )
                     })}
                   </tbody>
 
                   <tfoot>
-                    <tr className="bg-[linear-gradient(180deg,#231d17_0%,#1a1713_100%)]">
-                      <td colSpan={9} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-[#bfa67a]">
+                    <tr className="bg-[linear-gradient(180deg,#fff8ec_0%,#f6ebd9_100%)]">
+                      <td colSpan={9} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-[#b28f58]">
                         Total Recipe Cost
                       </td>
-                      <td colSpan={2} className="px-4 py-4 text-right text-lg font-semibold text-[#f3e0b7]">
+                      <td colSpan={2} className="px-4 py-4 text-right text-lg font-semibold text-[#8c6631]">
                         {fmtMoney(totalCost, currency)}
                       </td>
                     </tr>
@@ -653,11 +651,11 @@ export default function RecipePrintCard() {
           </section>
 
           {(steps.length || methodText) ? (
-            <section className="border-b border-[#2f2921] px-8 py-8 md:px-10">
-              <SectionHeadDark
+            <section className="border-b border-[#eee4d6] px-8 py-8 md:px-10">
+              <SectionHeadLight
                 overline="Method"
-                title="Signature Preparation Flow"
-                subtitle="Step photos and recipe steps remain fully preserved for training, consistency, and premium chef presentation."
+                title="Imperial Preparation Flow"
+                subtitle="Step photos and recipe steps remain fully preserved in a brighter luxury layout for chef training and elegant print presentation."
               />
 
               {steps.length ? (
@@ -666,22 +664,22 @@ export default function RecipePrintCard() {
                     const img = stepPhotos?.[i]
 
                     return (
-                      <div key={`${i}-${s.slice(0, 24)}`} className="avoid-break overflow-hidden rounded-[28px] border border-[#3d3327] bg-[linear-gradient(180deg,#171717_0%,#121212_100%)] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
+                      <div key={`${i}-${s.slice(0, 24)}`} className="avoid-break overflow-hidden rounded-[30px] border border-[#eadfce] bg-[linear-gradient(180deg,#fffdfa_0%,#fbf6ee_100%)] shadow-[0_10px_24px_rgba(170,136,77,0.10)]">
                         <div className="grid md:grid-cols-[92px_1fr]">
-                          <div className="flex items-start justify-center border-b border-[#2f2921] bg-[linear-gradient(180deg,#231d17_0%,#181511_100%)] px-4 py-5 md:border-b-0 md:border-r">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#b89154] bg-[#171717] text-sm font-semibold text-[#f2dfb5] shadow-sm">
+                          <div className="flex items-start justify-center border-b border-[#eee4d6] bg-[linear-gradient(180deg,#fff8ec_0%,#f7ecdc_100%)] px-4 py-5 md:border-b-0 md:border-r">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#d9ba83] bg-white text-sm font-semibold text-[#8a6a38] shadow-sm">
                               {i + 1}
                             </div>
                           </div>
 
                           <div className="p-5 md:p-6">
                             {img ? (
-                              <div className="mb-4 overflow-hidden rounded-2xl border border-[#3d3327] bg-[#141414]">
+                              <div className="mb-4 overflow-hidden rounded-2xl border border-[#eadfce] bg-white">
                                 <img src={img} alt={`Step ${i + 1}`} className="max-h-[320px] w-full object-cover" />
                               </div>
                             ) : null}
 
-                            <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-200">{s}</p>
+                            <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">{s}</p>
                           </div>
                         </div>
                       </div>
@@ -689,34 +687,34 @@ export default function RecipePrintCard() {
                   })}
                 </div>
               ) : (
-                <div className="avoid-break rounded-[28px] border border-[#3d3327] bg-[#171717] p-6">
-                  <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-200">{methodText}</p>
+                <div className="avoid-break rounded-[30px] border border-[#eadfce] bg-[#fffaf3] p-6">
+                  <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">{methodText}</p>
                 </div>
               )}
             </section>
           ) : null}
 
           {showNutrition ? (
-            <section className="avoid-break border-b border-[#2f2921] px-8 py-8 md:px-10">
-              <SectionHeadDark
+            <section className="avoid-break border-b border-[#eee4d6] px-8 py-8 md:px-10">
+              <SectionHeadLight
                 overline="Nutrition"
-                title="Black Gold Nutrition Overview"
-                subtitle="Premium macro presentation suited for fine dining, wellness menus, and polished recipe exports."
+                title="Imperial Gold Nutrition Overview"
+                subtitle="Bright premium macro presentation suited for fine dining, wellness menus, and polished recipe exports."
               />
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <NutritionCardDark label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
-                <NutritionCardDark label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
-                <NutritionCardDark label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
-                <NutritionCardDark label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
+                <NutritionCardLight label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
+                <NutritionCardLight label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
+                <NutritionCardLight label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
+                <NutritionCardLight label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
               </div>
             </section>
           ) : null}
 
-          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#181818_0%,#131313_100%)] px-8 py-5 text-xs text-stone-400 md:flex-row md:items-center md:justify-between md:px-10">
+          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#fffaf2_0%,#f7ecdc_100%)] px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-10">
             <div>
-              <div className="font-semibold uppercase tracking-[0.2em] text-[#f0ddb3]">GastroChef Signature</div>
-              <div className="mt-1">Michelin Black Gold Signature Edition with hero dish image and step photos preserved.</div>
+              <div className="font-semibold uppercase tracking-[0.2em] text-[#a17d47]">GastroChef Signature</div>
+              <div className="mt-1">Michelin Imperial Gold Masterpiece Edition with hero dish image and step photos preserved.</div>
             </div>
             <div className="text-right">Printed {printedAtHuman} · Recipe ID {shortId(recipe.id)}</div>
           </footer>
@@ -726,7 +724,7 @@ export default function RecipePrintCard() {
   )
 }
 
-function SectionHeadDark({
+function SectionHeadLight({
   overline,
   title,
   subtitle,
@@ -737,44 +735,44 @@ function SectionHeadDark({
 }) {
   return (
     <div className="mb-6">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.30em] text-[#c6a467]">{overline}</div>
-      <h2 className="text-[2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.2rem]">{title}</h2>
-      {subtitle ? <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">{subtitle}</p> : null}
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.30em] text-[#b18a4a]">{overline}</div>
+      <h2 className="text-[2rem] font-semibold tracking-[-0.04em] text-stone-900 md:text-[2.2rem]">{title}</h2>
+      {subtitle ? <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-600">{subtitle}</p> : null}
     </div>
   )
 }
 
-function Tag({
+function TagLight({
   children,
-  tone = 'dark',
+  tone = 'cream',
 }: {
   children: ReactNode
-  tone?: 'dark' | 'gold-soft' | 'gold-dark'
+  tone?: 'cream' | 'gold-soft' | 'gold-strong'
 }) {
   const classes =
-    tone === 'gold-dark'
-      ? 'rounded-full border border-[#b89154] bg-[#2a2117] px-3.5 py-1.5 text-xs font-medium text-[#f2dfb5]'
+    tone === 'gold-strong'
+      ? 'rounded-full border border-[#d2b37f] bg-[#fff4de] px-3.5 py-1.5 text-xs font-medium text-[#8c6631]'
       : tone === 'gold-soft'
-        ? 'rounded-full border border-[#5e492c] bg-[#1b1813] px-3.5 py-1.5 text-xs font-medium text-[#daba83]'
-        : 'rounded-full border border-[#3b3226] bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-stone-200'
+        ? 'rounded-full border border-[#eadfce] bg-[#fbf2e4] px-3.5 py-1.5 text-xs font-medium text-[#ad8447]'
+        : 'rounded-full border border-[#eadfce] bg-white px-3.5 py-1.5 text-xs font-medium text-stone-700'
 
   return <div className={classes}>{children}</div>
 }
 
-function InfoRowDark({ label, value }: { label: string; value: string }) {
+function InfoRowLight({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[#3a3024] bg-[#181818]/90 px-4 py-3 backdrop-blur-sm">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b99e6d]">{label}</div>
-      <div className="text-sm font-medium text-stone-100">{value}</div>
+    <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[#eadfce] bg-white/90 px-4 py-3 backdrop-blur-sm">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b18a4a]">{label}</div>
+      <div className="text-sm font-medium text-stone-800">{value}</div>
     </div>
   )
 }
 
-function StatCardDark({
+function StatCardLight({
   label,
   value,
   note,
-  accentClass = 'text-[#f2dfb5]',
+  accentClass = 'text-[#9b7a46]',
 }: {
   label: string
   value: string
@@ -782,15 +780,15 @@ function StatCardDark({
   accentClass?: string
 }) {
   return (
-    <div className="rounded-[28px] border border-[#3a3024] bg-[linear-gradient(180deg,#1b1b1b_0%,#141414_100%)] p-5 shadow-[0_10px_26px_rgba(0,0,0,0.22)]">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#b99e6d]">{label}</div>
+    <div className="rounded-[28px] border border-[#eadfce] bg-[linear-gradient(180deg,#ffffff_0%,#fdf7ee_100%)] p-5 shadow-[0_10px_26px_rgba(170,136,77,0.10)]">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#b18a4a]">{label}</div>
       <div className={`mt-3 text-[1.95rem] font-semibold tracking-[-0.04em] ${accentClass}`}>{value}</div>
       {note ? <div className="mt-2 text-xs text-stone-500">{note}</div> : null}
     </div>
   )
 }
 
-function NutritionCardDark({
+function NutritionCardLight({
   label,
   value,
   unit,
@@ -800,17 +798,17 @@ function NutritionCardDark({
   unit: string
 }) {
   return (
-    <div className="rounded-[26px] border border-[#3a3024] bg-[linear-gradient(180deg,#1b1b1b_0%,#141414_100%)] p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b99e6d]">{label}</div>
-      <div className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-[#f2dfb5]">
+    <div className="rounded-[26px] border border-[#eadfce] bg-[linear-gradient(180deg,#fffdfa_0%,#f9f0e2_100%)] p-5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b18a4a]">{label}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-[#8c6631]">
         {value}
-        <span className="ml-1 text-sm font-medium text-stone-400">{unit}</span>
+        <span className="ml-1 text-sm font-medium text-stone-500">{unit}</span>
       </div>
     </div>
   )
 }
 
-function PanelDark({
+function PanelLight({
   eyebrow,
   title,
   children,
@@ -820,32 +818,32 @@ function PanelDark({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-[30px] border border-[#3a3024] bg-[linear-gradient(180deg,#1b1b1b_0%,#151515_100%)] p-5 shadow-[0_8px_22px_rgba(0,0,0,0.2)]">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#b99e6d]">{eyebrow}</div>
-      <div className="mt-2 text-lg font-semibold tracking-[-0.03em] text-white">{title}</div>
+    <div className="rounded-[30px] border border-[#eadfce] bg-[linear-gradient(180deg,#ffffff_0%,#fcf6ed_100%)] p-5 shadow-[0_8px_22px_rgba(170,136,77,0.08)]">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#b18a4a]">{eyebrow}</div>
+      <div className="mt-2 text-lg font-semibold tracking-[-0.03em] text-stone-900">{title}</div>
       <div className="mt-4">{children}</div>
     </div>
   )
 }
 
-function MiniMetricDark({ label, value }: { label: string; value: string }) {
+function MiniMetricLight({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[#3a3024] bg-[#171717] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#b99e6d]">{label}</div>
-      <div className="mt-1.5 text-sm font-semibold text-stone-100">{value}</div>
+    <div className="rounded-[22px] border border-[#eadfce] bg-white px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#b18a4a]">{label}</div>
+      <div className="mt-1.5 text-sm font-semibold text-stone-800">{value}</div>
     </div>
   )
 }
 
-function SubBadgeDark({ children }: { children: ReactNode }) {
+function SubBadgeLight({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex rounded-full border border-[#8f6d3d] bg-[#231c14] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#f0ddb3]">
+    <span className="inline-flex rounded-full border border-[#d2b37f] bg-[#fff5e2] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9b7340]">
       {children}
     </span>
   )
 }
 
-function ThDark({
+function ThLight({
   children,
   className = '',
 }: {
@@ -853,18 +851,18 @@ function ThDark({
   className?: string
 }) {
   return (
-    <th className={`border-b border-[#3a3024] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] ${className}`}>
+    <th className={`border-b border-[#eadfce] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] ${className}`}>
       {children}
     </th>
   )
 }
 
-function TdDark({
+function TdLight({
   children,
   className = '',
 }: {
   children: ReactNode
   className?: string
 }) {
-  return <td className={`border-b border-[#272117] px-4 py-3 ${className}`}>{children}</td>
+  return <td className={`border-b border-[#f2e8da] px-4 py-3 ${className}`}>{children}</td>
 }
