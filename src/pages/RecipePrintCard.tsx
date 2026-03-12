@@ -39,6 +39,7 @@ type Line = {
   gross_qty_override: number | null
   line_type: 'ingredient' | 'subrecipe' | 'group'
   group_title: string | null
+  note?: string | null
 }
 
 type Ingredient = {
@@ -165,7 +166,7 @@ export default function RecipePrintCard() {
         const { data: l, error: lErr } = await supabase
           .from('recipe_lines')
           .select(
-            'id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,gross_qty_override,line_type,group_title'
+            'id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,gross_qty_override,line_type,group_title,note'
           )
           .eq('recipe_id', id)
           .order('position', { ascending: true })
@@ -283,6 +284,7 @@ export default function RecipePrintCard() {
         unit: safeUnit(l.unit),
         unitCost,
         lineCost,
+        note: cleanText(l.note),
       }
     })
 
@@ -548,6 +550,7 @@ export default function RecipePrintCard() {
                       <Th className="w-[8%] text-right">Yield</Th>
                       <Th className="w-[8%] text-right">Qty %</Th>
                       <Th className="w-[8%] text-right">Cost %</Th>
+                      <Th className="w-[10%]">Note</Th>
                       <Th className="w-[8%] text-right">Unit Cost</Th>
                       <Th className="w-[12%] text-right">Line Cost</Th>
                     </tr>
@@ -558,7 +561,7 @@ export default function RecipePrintCard() {
                       if (row.isGroup) {
                         return (
                           <tr key={row.id} className="bg-[linear-gradient(90deg,#556b2f_0%,#2f6f5e_100%)] text-white">
-                            <td colSpan={11} className="px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em]">
+                            <td colSpan={12} className="px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em]">
                               {row.groupTitle}
                             </td>
                           </tr>
@@ -584,6 +587,7 @@ export default function RecipePrintCard() {
                           <Td className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</Td>
                           <Td className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</Td>
                           <Td className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</Td>
+                          <Td className="max-w-[180px] text-stone-600">{row.note || '—'}</Td>
                           <Td className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</Td>
                           <Td className="text-right font-semibold tabular-nums text-[#556b2f]">{fmtMoney(row.lineCost, currency)}</Td>
                         </tr>
@@ -593,7 +597,7 @@ export default function RecipePrintCard() {
 
                   <tfoot>
                     <tr className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)]">
-                      <td colSpan={9} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                      <td colSpan={10} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                         Total Recipe Cost
                       </td>
                       <td colSpan={2} className="px-4 py-4 text-right text-lg font-semibold text-[#556b2f]">
