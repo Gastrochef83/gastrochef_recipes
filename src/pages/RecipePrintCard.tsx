@@ -119,13 +119,6 @@ function pct(n: number | null | undefined) {
   return `${Number(n).toFixed(1)}%`
 }
 
-function toneForVariance(v: number | null) {
-  if (v == null || !Number.isFinite(v)) return 'text-stone-900'
-  if (v <= 0) return 'text-emerald-700'
-  if (v <= 2) return 'text-amber-700'
-  return 'text-red-700'
-}
-
 export default function RecipePrintCard() {
   const [sp] = useSearchParams()
   const id = sp.get('id')
@@ -319,7 +312,6 @@ export default function RecipePrintCard() {
   const targetPct = recipe?.target_food_cost_pct ?? null
   const foodCostPct =
     selling != null && selling > 0 ? (perPortion / selling) * 100 : null
-
   const varianceVsTarget =
     foodCostPct != null && targetPct != null ? foodCostPct - targetPct : null
 
@@ -387,8 +379,8 @@ export default function RecipePrintCard() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-[#f6f1e8] p-6 text-stone-700">
-        <div className="mx-auto max-w-6xl rounded-[34px] border border-[#e5dccf] bg-white p-10 shadow-sm">
+      <div className="min-h-screen bg-[#121212] p-6 text-stone-200">
+        <div className="mx-auto max-w-6xl rounded-[34px] border border-[#2a241d] bg-[#181818] p-10 shadow-sm">
           Loading recipe card…
         </div>
       </div>
@@ -397,8 +389,8 @@ export default function RecipePrintCard() {
 
   if (err || !recipe) {
     return (
-      <div className="min-h-screen bg-[#f6f1e8] p-6 text-stone-700">
-        <div className="mx-auto max-w-6xl rounded-[34px] border border-red-200 bg-white p-10 shadow-sm">
+      <div className="min-h-screen bg-[#121212] p-6 text-stone-200">
+        <div className="mx-auto max-w-6xl rounded-[34px] border border-red-900/40 bg-[#181818] p-10 shadow-sm">
           {err || 'Missing recipe.'}
         </div>
       </div>
@@ -414,7 +406,7 @@ export default function RecipePrintCard() {
         }
 
         html, body {
-          background: #f6f1e8;
+          background: #121212;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
         }
@@ -453,159 +445,157 @@ export default function RecipePrintCard() {
           }
 
           .print-paper {
-            border: none !important;
-            border-radius: 0 !important;
             box-shadow: none !important;
           }
         }
       `}</style>
 
-      <div className="print-stage min-h-screen bg-[#f6f1e8] px-4 py-5 md:px-8 md:py-8">
+      <div className="print-stage min-h-screen bg-[#121212] px-4 py-5 md:px-8 md:py-8">
         <div className="no-print mx-auto mb-4 flex max-w-6xl justify-end">
           <button
             onClick={() => window.print()}
-            className="rounded-2xl bg-stone-900 px-5 py-3 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+            className="rounded-2xl border border-[#c6a467] bg-[#181818] px-5 py-3 text-sm font-medium text-[#f2dfb5] shadow-sm transition hover:bg-[#1f1f1f]"
           >
             Print Now
           </button>
         </div>
 
-        <article className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[36px] border border-[#e4dacd] bg-white shadow-[0_28px_80px_rgba(0,0,0,0.08)]">
-          <div className="h-[8px] bg-[linear-gradient(90deg,#171717_0%,#5c4b35_24%,#b8945d_56%,#ecd9b8_82%,#faf2e7_100%)]" />
+        <article className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[36px] border border-[#3a3024] bg-[linear-gradient(180deg,#121212_0%,#171717_100%)] text-stone-100 shadow-[0_30px_90px_rgba(0,0,0,0.45)]">
+          <div className="h-[9px] bg-[linear-gradient(90deg,#5b4528_0%,#b89154_35%,#f2dfb5_60%,#8c6a3c_100%)]" />
 
-          <header className="relative overflow-hidden border-b border-[#ebe1d4] bg-[radial-gradient(circle_at_top_right,rgba(200,171,120,0.16),transparent_24%),linear-gradient(135deg,#fffdf9_0%,#f8f1e5_45%,#fbf6ee_100%)] px-8 py-8 md:px-10 md:py-10">
-            <div className="absolute right-[-24px] top-[-16px] h-40 w-40 rounded-full bg-[#c5a972]/15 blur-3xl" />
-            <div className="absolute left-8 top-8 h-24 w-24 rounded-full bg-[#7d6847]/10 blur-2xl" />
-            <div className="absolute inset-x-10 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(188,156,109,0.85),transparent)]" />
+          <header className="relative overflow-hidden border-b border-[#2f2921] bg-[radial-gradient(circle_at_top_right,rgba(201,160,86,0.20),transparent_24%),radial-gradient(circle_at_bottom_left,rgba(120,90,46,0.16),transparent_22%),linear-gradient(135deg,#171717_0%,#111111_58%,#1b1b1b_100%)] px-8 py-8 md:px-10 md:py-10">
+            <div className="absolute right-[-20px] top-[-10px] h-40 w-40 rounded-full bg-[#d1a767]/10 blur-3xl" />
+            <div className="absolute left-8 top-8 h-24 w-24 rounded-full bg-[#7a5a2f]/12 blur-2xl" />
+            <div className="absolute inset-x-10 bottom-0 h-px bg-[linear-gradient(90deg,transparent,rgba(221,187,121,0.7),transparent)]" />
 
-            <div className="relative grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
+            <div className="relative grid gap-8 lg:grid-cols-[1.15fr_0.85fr]">
               <div>
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.34em] text-stone-500">
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.34em] text-[#c7b18a]">
                   <span>GastroChef</span>
-                  <span className="text-[#b8945d]">·</span>
-                  <span>Three-Star Michelin Recipe Card</span>
+                  <span className="text-[#d7b06f]">·</span>
+                  <span>Michelin Black Gold Signature Edition</span>
                 </div>
 
-                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-stone-900 md:text-[3.55rem] md:leading-[1.02]">
+                <h1 className="max-w-4xl text-4xl font-semibold tracking-[-0.05em] text-white md:text-[3.6rem] md:leading-[1.02]">
                   {recipe.name || 'Untitled Recipe'}
                 </h1>
 
                 <div className="mt-6 flex flex-wrap gap-2.5">
-                  <Tag tone="dark">{recipe.code || 'NO CODE'}</Tag>
-                  <Tag>{recipe.category || 'Uncategorized'}</Tag>
-                  <Tag>{yieldLabel}</Tag>
-                  <Tag>{portions} portions</Tag>
-                  <Tag tone="gold">{recipe.code_category || 'Signature'}</Tag>
+                  <Tag tone="gold-dark">{recipe.code || 'NO CODE'}</Tag>
+                  <Tag tone="dark">{recipe.category || 'Uncategorized'}</Tag>
+                  <Tag tone="dark">{yieldLabel}</Tag>
+                  <Tag tone="dark">{portions} portions</Tag>
+                  <Tag tone="gold-soft">{recipe.code_category || 'Signature'}</Tag>
                 </div>
 
                 {recipe.description ? (
-                  <p className="mt-6 max-w-3xl text-[15px] leading-7 text-stone-600">
+                  <p className="mt-6 max-w-3xl text-[15px] leading-7 text-stone-300">
                     {recipe.description}
                   </p>
                 ) : null}
               </div>
 
               <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-1">
-                <InfoRow label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
-                <InfoRow label="Created" value={formatDateOnly(recipe.created_at)} />
-                <InfoRow label="Printed" value={printedAtHuman} />
-                <InfoRow label="Yield" value={yieldLabel} />
+                <InfoRowDark label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
+                <InfoRowDark label="Created" value={formatDateOnly(recipe.created_at)} />
+                <InfoRowDark label="Printed" value={printedAtHuman} />
+                <InfoRowDark label="Yield" value={yieldLabel} />
               </div>
             </div>
           </header>
 
-          <section className="border-b border-[#ebe1d4] px-8 py-7 md:px-10">
+          <section className="border-b border-[#2f2921] px-8 py-7 md:px-10">
             <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-5">
-              <StatCard label="Total Cost" value={fmtMoney(totalCost, currency)} note="Full recipe cost" />
-              <StatCard label="Per Portion" value={fmtMoney(perPortion, currency)} note="Unit serving cost" />
-              <StatCard label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} note="Menu selling price" />
-              <StatCard label="Food Cost" value={foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'} note={targetPct != null ? `Target ${targetPct.toFixed(1)}%` : 'No target'} />
-              <StatCard label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} note="Vs target" accent={varianceVsTarget != null && varianceVsTarget <= 0 ? 'good' : varianceVsTarget != null && varianceVsTarget > 2 ? 'bad' : 'neutral'} />
-            </div>
-          </section>
-
-          <section className="border-b border-[#ebe1d4] px-8 py-8 md:px-10">
-            <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-              <Panel eyebrow="Chef Overview" title="Signature Snapshot">
-                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MiniMetric label="Recipe Code" value={recipe.code || '—'} />
-                  <MiniMetric label="Category" value={recipe.category || '—'} />
-                  <MiniMetric label="Portions" value={String(portions)} />
-                  <MiniMetric label="Yield" value={yieldLabel} />
-                </div>
-              </Panel>
-
-              <Panel eyebrow="Commercial View" title="Menu Economics">
-                <div className="grid gap-3 sm:grid-cols-3">
-                  <MiniMetric label="Currency" value={currency.toUpperCase()} />
-                  <MiniMetric label="Target FC" value={pct(targetPct)} />
-                  <MiniMetric label="Actual FC" value={pct(foodCostPct)} />
-                </div>
-              </Panel>
+              <StatCardDark label="Total Cost" value={fmtMoney(totalCost, currency)} note="Full recipe cost" />
+              <StatCardDark label="Per Portion" value={fmtMoney(perPortion, currency)} note="Unit serving cost" />
+              <StatCardDark label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} note="Menu selling price" />
+              <StatCardDark label="Food Cost" value={foodCostPct != null ? `${foodCostPct.toFixed(1)}%` : '—'} note={targetPct != null ? `Target ${targetPct.toFixed(1)}%` : 'No target'} />
+              <StatCardDark label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} note="Vs target" accentClass={varianceVsTarget != null && varianceVsTarget <= 0 ? 'text-emerald-300' : varianceVsTarget != null && varianceVsTarget > 2 ? 'text-red-300' : 'text-[#f4dfb4]'} />
             </div>
           </section>
 
           {recipe.photo_url ? (
-            <section className="avoid-break border-b border-[#ebe1d4] px-8 py-8 md:px-10">
-              <SectionHead
+            <section className="avoid-break border-b border-[#2f2921] px-8 py-8 md:px-10">
+              <SectionHeadDark
                 overline="Presentation"
-                title="Hero Dish Image"
-                subtitle="Elegant visual reference for executive review, plating consistency, and premium recipe presentation."
+                title="Signature Dish Image"
+                subtitle="Hero plate image preserved for Michelin-style presentation, plating reference, and premium print identity."
               />
 
-              <div className="overflow-hidden rounded-[32px] border border-[#e3d8cb] bg-stone-50 shadow-[0_12px_32px_rgba(0,0,0,0.05)]">
+              <div className="overflow-hidden rounded-[32px] border border-[#3d3327] bg-[#141414] shadow-[0_16px_36px_rgba(0,0,0,0.35)]">
                 <img
                   src={recipe.photo_url}
                   alt={recipe.name || 'Recipe'}
-                  className="max-h-[470px] w-full object-cover"
+                  className="max-h-[500px] w-full object-cover"
                 />
               </div>
             </section>
           ) : null}
 
-          <section className="border-b border-[#ebe1d4] px-8 py-8 md:px-10">
-            <SectionHead
+          <section className="border-b border-[#2f2921] px-8 py-8 md:px-10">
+            <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+              <PanelDark eyebrow="Chef Overview" title="Signature Snapshot">
+                <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                  <MiniMetricDark label="Recipe Code" value={recipe.code || '—'} />
+                  <MiniMetricDark label="Category" value={recipe.category || '—'} />
+                  <MiniMetricDark label="Portions" value={String(portions)} />
+                  <MiniMetricDark label="Yield" value={yieldLabel} />
+                </div>
+              </PanelDark>
+
+              <PanelDark eyebrow="Commercial View" title="Menu Economics">
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <MiniMetricDark label="Currency" value={currency.toUpperCase()} />
+                  <MiniMetricDark label="Target FC" value={pct(targetPct)} />
+                  <MiniMetricDark label="Actual FC" value={pct(foodCostPct)} />
+                </div>
+              </PanelDark>
+            </div>
+          </section>
+
+          <section className="border-b border-[#2f2921] px-8 py-8 md:px-10">
+            <SectionHeadDark
               overline="Costing"
-              title="Three-Star Ingredient Breakdown"
-              subtitle="More couture, more hierarchy, and a calmer premium rhythm inspired by fine-dining recipe books."
+              title="Black Gold Ingredient Breakdown"
+              subtitle="Luxury black-and-gold costing layout with visible dish economics, quantity share, and cost share."
             />
 
             <div className="mb-5 grid gap-4 xl:grid-cols-[1.1fr_0.9fr]">
-              <Panel eyebrow="Executive Summary" title="Costing Intelligence">
+              <PanelDark eyebrow="Executive Summary" title="Costing Intelligence">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                  <MiniMetric label="Total Cost" value={fmtMoney(totalCost, currency)} />
-                  <MiniMetric label="Portion Cost" value={fmtMoney(perPortion, currency)} />
-                  <MiniMetric label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} />
-                  <MiniMetric label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} />
+                  <MiniMetricDark label="Total Cost" value={fmtMoney(totalCost, currency)} />
+                  <MiniMetricDark label="Portion Cost" value={fmtMoney(perPortion, currency)} />
+                  <MiniMetricDark label="Selling Price" value={selling != null ? fmtMoney(selling, currency) : '—'} />
+                  <MiniMetricDark label="Variance" value={varianceVsTarget != null ? `${varianceVsTarget >= 0 ? '+' : ''}${varianceVsTarget.toFixed(1)}%` : '—'} />
                 </div>
-              </Panel>
+              </PanelDark>
 
-              <Panel eyebrow="Chef Lens" title="Recipe Identity">
+              <PanelDark eyebrow="Chef Lens" title="Recipe Identity">
                 <div className="grid gap-3 sm:grid-cols-2">
-                  <MiniMetric label="Recipe ID" value={shortId(recipe.id)} />
-                  <MiniMetric label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
-                  <MiniMetric label="Code Category" value={recipe.code_category || '—'} />
-                  <MiniMetric label="Printed" value={formatDateOnly(printedAt.toISOString())} />
+                  <MiniMetricDark label="Recipe ID" value={shortId(recipe.id)} />
+                  <MiniMetricDark label="Kitchen Ref" value={shortId(recipe.kitchen_id)} />
+                  <MiniMetricDark label="Code Category" value={recipe.code_category || '—'} />
+                  <MiniMetricDark label="Printed" value={formatDateOnly(printedAt.toISOString())} />
                 </div>
-              </Panel>
+              </PanelDark>
             </div>
 
-            <div className="overflow-hidden rounded-[32px] border border-[#e4dacd] shadow-[0_10px_28px_rgba(0,0,0,0.04)]">
+            <div className="overflow-hidden rounded-[32px] border border-[#3d3327] shadow-[0_12px_28px_rgba(0,0,0,0.28)]">
               <div className="overflow-x-auto">
                 <table className="recipe-table min-w-full border-collapse text-sm">
-                  <thead className="bg-[linear-gradient(180deg,#fbf8f2_0%,#f2e7d4_100%)] text-stone-700">
+                  <thead className="bg-[linear-gradient(180deg,#231d17_0%,#1a1713_100%)] text-[#ead7ae]">
                     <tr>
-                      <Th className="w-[8%]">Code</Th>
-                      <Th className="w-[24%]">Item</Th>
-                      <Th className="w-[10%] text-right">Net Qty</Th>
-                      <Th className="w-[7%]">Unit</Th>
-                      <Th className="w-[10%] text-right">Gross Qty</Th>
-                      <Th className="w-[7%]">Unit</Th>
-                      <Th className="w-[8%] text-right">Yield</Th>
-                      <Th className="w-[8%] text-right">Qty %</Th>
-                      <Th className="w-[8%] text-right">Cost %</Th>
-                      <Th className="w-[8%] text-right">Unit Cost</Th>
-                      <Th className="w-[12%] text-right">Line Cost</Th>
+                      <ThDark className="w-[8%]">Code</ThDark>
+                      <ThDark className="w-[24%]">Item</ThDark>
+                      <ThDark className="w-[10%] text-right">Net Qty</ThDark>
+                      <ThDark className="w-[7%]">Unit</ThDark>
+                      <ThDark className="w-[10%] text-right">Gross Qty</ThDark>
+                      <ThDark className="w-[7%]">Unit</ThDark>
+                      <ThDark className="w-[8%] text-right">Yield</ThDark>
+                      <ThDark className="w-[8%] text-right">Qty %</ThDark>
+                      <ThDark className="w-[8%] text-right">Cost %</ThDark>
+                      <ThDark className="w-[8%] text-right">Unit Cost</ThDark>
+                      <ThDark className="w-[12%] text-right">Line Cost</ThDark>
                     </tr>
                   </thead>
 
@@ -613,7 +603,7 @@ export default function RecipePrintCard() {
                     {computedRows.map((row, index) => {
                       if (row.isGroup) {
                         return (
-                          <tr key={row.id} className="bg-[linear-gradient(90deg,#1f1f1f_0%,#6f5d42_100%)] text-white">
+                          <tr key={row.id} className="bg-[linear-gradient(90deg,#5d4528_0%,#b89154_45%,#6b512f_100%)] text-[#fff5df]">
                             <td colSpan={11} className="px-4 py-3 text-sm font-semibold tracking-[0.16em] uppercase">
                               {row.groupTitle}
                             </td>
@@ -621,38 +611,38 @@ export default function RecipePrintCard() {
                         )
                       }
 
-                      const zebra = index % 2 === 0 ? 'bg-white' : 'bg-[#fcfaf6]'
-                      const rowClass = row.isSubrecipe ? 'bg-[#f5efe4] text-stone-800' : zebra
+                      const zebra = index % 2 === 0 ? 'bg-[#171717]' : 'bg-[#1b1b1b]'
+                      const rowClass = row.isSubrecipe ? 'bg-[#211c16] text-stone-100' : zebra
 
                       return (
-                        <tr key={row.id} className={`${rowClass} align-top text-stone-700`}>
-                          <Td className="font-medium text-stone-500">{row.code || '—'}</Td>
-                          <Td className="font-semibold text-stone-900">
+                        <tr key={row.id} className={`${rowClass} align-top text-stone-200`}>
+                          <TdDark className="font-medium text-[#c7b18a]">{row.code || '—'}</TdDark>
+                          <TdDark className="font-semibold text-white">
                             <div className="flex items-center gap-2">
-                              {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
+                              {row.isSubrecipe ? <SubBadgeDark>Sub Recipe</SubBadgeDark> : null}
                               <span>{row.title}</span>
                             </div>
-                          </Td>
-                          <Td className="text-right tabular-nums">{fmtQty(row.net)}</Td>
-                          <Td>{row.unit}</Td>
-                          <Td className="text-right tabular-nums">{fmtQty(row.gross)}</Td>
-                          <Td>{row.unit}</Td>
-                          <Td className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</Td>
-                          <Td className="text-right font-semibold tabular-nums text-stone-900">{fmtMoney(row.lineCost, currency)}</Td>
+                          </TdDark>
+                          <TdDark className="text-right tabular-nums">{fmtQty(row.net)}</TdDark>
+                          <TdDark>{row.unit}</TdDark>
+                          <TdDark className="text-right tabular-nums">{fmtQty(row.gross)}</TdDark>
+                          <TdDark>{row.unit}</TdDark>
+                          <TdDark className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</TdDark>
+                          <TdDark className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</TdDark>
+                          <TdDark className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</TdDark>
+                          <TdDark className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</TdDark>
+                          <TdDark className="text-right font-semibold tabular-nums text-[#f2dfb5]">{fmtMoney(row.lineCost, currency)}</TdDark>
                         </tr>
                       )
                     })}
                   </tbody>
 
                   <tfoot>
-                    <tr className="bg-[linear-gradient(180deg,#faf6f0_0%,#f1e6d6_100%)]">
-                      <td colSpan={9} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                    <tr className="bg-[linear-gradient(180deg,#231d17_0%,#1a1713_100%)]">
+                      <td colSpan={9} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-[#bfa67a]">
                         Total Recipe Cost
                       </td>
-                      <td colSpan={2} className="px-4 py-4 text-right text-lg font-semibold text-stone-900">
+                      <td colSpan={2} className="px-4 py-4 text-right text-lg font-semibold text-[#f3e0b7]">
                         {fmtMoney(totalCost, currency)}
                       </td>
                     </tr>
@@ -663,11 +653,11 @@ export default function RecipePrintCard() {
           </section>
 
           {(steps.length || methodText) ? (
-            <section className="border-b border-[#ebe1d4] px-8 py-8 md:px-10">
-              <SectionHead
+            <section className="border-b border-[#2f2921] px-8 py-8 md:px-10">
+              <SectionHeadDark
                 overline="Method"
-                title="Three-Star Preparation Flow"
-                subtitle="A softer, more editorial step experience with premium spacing and refined visual cadence."
+                title="Signature Preparation Flow"
+                subtitle="Step photos and recipe steps remain fully preserved for training, consistency, and premium chef presentation."
               />
 
               {steps.length ? (
@@ -676,22 +666,22 @@ export default function RecipePrintCard() {
                     const img = stepPhotos?.[i]
 
                     return (
-                      <div key={`${i}-${s.slice(0, 24)}`} className="avoid-break overflow-hidden rounded-[28px] border border-[#e4dacd] bg-white shadow-[0_8px_22px_rgba(0,0,0,0.03)]">
+                      <div key={`${i}-${s.slice(0, 24)}`} className="avoid-break overflow-hidden rounded-[28px] border border-[#3d3327] bg-[linear-gradient(180deg,#171717_0%,#121212_100%)] shadow-[0_10px_24px_rgba(0,0,0,0.28)]">
                         <div className="grid md:grid-cols-[92px_1fr]">
-                          <div className="flex items-start justify-center border-b border-[#ebe1d4] bg-[linear-gradient(180deg,#faf6ee_0%,#f2e8d8_100%)] px-4 py-5 md:border-b-0 md:border-r">
-                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#dbc8a8] bg-white text-sm font-semibold text-stone-900 shadow-sm">
+                          <div className="flex items-start justify-center border-b border-[#2f2921] bg-[linear-gradient(180deg,#231d17_0%,#181511_100%)] px-4 py-5 md:border-b-0 md:border-r">
+                            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-[#b89154] bg-[#171717] text-sm font-semibold text-[#f2dfb5] shadow-sm">
                               {i + 1}
                             </div>
                           </div>
 
                           <div className="p-5 md:p-6">
                             {img ? (
-                              <div className="mb-4 overflow-hidden rounded-2xl border border-[#e4dacd] bg-stone-50">
-                                <img src={img} alt={`Step ${i + 1}`} className="max-h-[300px] w-full object-cover" />
+                              <div className="mb-4 overflow-hidden rounded-2xl border border-[#3d3327] bg-[#141414]">
+                                <img src={img} alt={`Step ${i + 1}`} className="max-h-[320px] w-full object-cover" />
                               </div>
                             ) : null}
 
-                            <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">{s}</p>
+                            <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-200">{s}</p>
                           </div>
                         </div>
                       </div>
@@ -699,34 +689,34 @@ export default function RecipePrintCard() {
                   })}
                 </div>
               ) : (
-                <div className="avoid-break rounded-[28px] border border-[#e4dacd] bg-[#fbf7f0] p-6">
-                  <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-700">{methodText}</p>
+                <div className="avoid-break rounded-[28px] border border-[#3d3327] bg-[#171717] p-6">
+                  <p className="whitespace-pre-wrap text-[15px] leading-7 text-stone-200">{methodText}</p>
                 </div>
               )}
             </section>
           ) : null}
 
           {showNutrition ? (
-            <section className="avoid-break border-b border-[#ebe1d4] px-8 py-8 md:px-10">
-              <SectionHead
+            <section className="avoid-break border-b border-[#2f2921] px-8 py-8 md:px-10">
+              <SectionHeadDark
                 overline="Nutrition"
-                title="Nutrition Overview"
-                subtitle="Minimal and elegant macro presentation for premium hospitality workflows."
+                title="Black Gold Nutrition Overview"
+                subtitle="Premium macro presentation suited for fine dining, wellness menus, and polished recipe exports."
               />
 
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                <NutritionCard label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
-                <NutritionCard label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
-                <NutritionCard label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
-                <NutritionCard label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
+                <NutritionCardDark label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
+                <NutritionCardDark label="Protein" value={fmtMacro(recipe.protein_g)} unit="g" />
+                <NutritionCardDark label="Carbs" value={fmtMacro(recipe.carbs_g)} unit="g" />
+                <NutritionCardDark label="Fat" value={fmtMacro(recipe.fat_g)} unit="g" />
               </div>
             </section>
           ) : null}
 
-          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#faf6f0_0%,#f3ebde_100%)] px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-10">
+          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#181818_0%,#131313_100%)] px-8 py-5 text-xs text-stone-400 md:flex-row md:items-center md:justify-between md:px-10">
             <div>
-              <div className="font-semibold uppercase tracking-[0.2em] text-stone-700">GastroChef Signature</div>
-              <div className="mt-1">Three-star Michelin inspired premium recipe, costing, and kitchen presentation card.</div>
+              <div className="font-semibold uppercase tracking-[0.2em] text-[#f0ddb3]">GastroChef Signature</div>
+              <div className="mt-1">Michelin Black Gold Signature Edition with hero dish image and step photos preserved.</div>
             </div>
             <div className="text-right">Printed {printedAtHuman} · Recipe ID {shortId(recipe.id)}</div>
           </footer>
@@ -736,7 +726,7 @@ export default function RecipePrintCard() {
   )
 }
 
-function SectionHead({
+function SectionHeadDark({
   overline,
   title,
   subtitle,
@@ -747,63 +737,60 @@ function SectionHead({
 }) {
   return (
     <div className="mb-6">
-      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.30em] text-[#8c7550]">{overline}</div>
-      <h2 className="text-[2rem] font-semibold tracking-[-0.04em] text-stone-900 md:text-[2.2rem]">{title}</h2>
-      {subtitle ? <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-600">{subtitle}</p> : null}
+      <div className="mb-2 text-[11px] font-semibold uppercase tracking-[0.30em] text-[#c6a467]">{overline}</div>
+      <h2 className="text-[2rem] font-semibold tracking-[-0.04em] text-white md:text-[2.2rem]">{title}</h2>
+      {subtitle ? <p className="mt-2 max-w-3xl text-sm leading-6 text-stone-400">{subtitle}</p> : null}
     </div>
   )
 }
 
 function Tag({
   children,
-  tone = 'default',
+  tone = 'dark',
 }: {
   children: ReactNode
-  tone?: 'default' | 'dark' | 'gold'
+  tone?: 'dark' | 'gold-soft' | 'gold-dark'
 }) {
   const classes =
-    tone === 'dark'
-      ? 'rounded-full border border-stone-900 bg-stone-900 px-3.5 py-1.5 text-xs font-medium text-white'
-      : tone === 'gold'
-        ? 'rounded-full border border-[#d9c39b] bg-[#f7efe1] px-3.5 py-1.5 text-xs font-medium text-[#8a6a38]'
-        : 'rounded-full border border-[#e7ddd0] bg-white px-3.5 py-1.5 text-xs font-medium text-stone-700'
+    tone === 'gold-dark'
+      ? 'rounded-full border border-[#b89154] bg-[#2a2117] px-3.5 py-1.5 text-xs font-medium text-[#f2dfb5]'
+      : tone === 'gold-soft'
+        ? 'rounded-full border border-[#5e492c] bg-[#1b1813] px-3.5 py-1.5 text-xs font-medium text-[#daba83]'
+        : 'rounded-full border border-[#3b3226] bg-[#171717] px-3.5 py-1.5 text-xs font-medium text-stone-200'
 
   return <div className={classes}>{children}</div>
 }
 
-function InfoRow({ label, value }: { label: string; value: string }) {
+function InfoRowDark({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[#e7ddd0] bg-white/80 px-4 py-3 backdrop-blur-sm">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{label}</div>
-      <div className="text-sm font-medium text-stone-900">{value}</div>
+    <div className="flex items-center justify-between gap-4 rounded-[18px] border border-[#3a3024] bg-[#181818]/90 px-4 py-3 backdrop-blur-sm">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b99e6d]">{label}</div>
+      <div className="text-sm font-medium text-stone-100">{value}</div>
     </div>
   )
 }
 
-function StatCard({
+function StatCardDark({
   label,
   value,
   note,
-  accent = 'neutral',
+  accentClass = 'text-[#f2dfb5]',
 }: {
   label: string
   value: string
   note?: string
-  accent?: 'neutral' | 'good' | 'bad'
+  accentClass?: string
 }) {
-  const accentClass =
-    accent === 'good' ? 'text-emerald-700' : accent === 'bad' ? 'text-red-700' : 'text-stone-900'
-
   return (
-    <div className="rounded-[28px] border border-[#e7ddd0] bg-[linear-gradient(180deg,#ffffff_0%,#fbf6ee_100%)] p-5 shadow-[0_10px_26px_rgba(0,0,0,0.04)]">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#8b7450]">{label}</div>
+    <div className="rounded-[28px] border border-[#3a3024] bg-[linear-gradient(180deg,#1b1b1b_0%,#141414_100%)] p-5 shadow-[0_10px_26px_rgba(0,0,0,0.22)]">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.26em] text-[#b99e6d]">{label}</div>
       <div className={`mt-3 text-[1.95rem] font-semibold tracking-[-0.04em] ${accentClass}`}>{value}</div>
       {note ? <div className="mt-2 text-xs text-stone-500">{note}</div> : null}
     </div>
   )
 }
 
-function NutritionCard({
+function NutritionCardDark({
   label,
   value,
   unit,
@@ -813,17 +800,17 @@ function NutritionCard({
   unit: string
 }) {
   return (
-    <div className="rounded-[26px] border border-[#e7ddd0] bg-[linear-gradient(180deg,#fbf8f2_0%,#f2eadc_100%)] p-5">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-stone-500">{label}</div>
-      <div className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-stone-900">
+    <div className="rounded-[26px] border border-[#3a3024] bg-[linear-gradient(180deg,#1b1b1b_0%,#141414_100%)] p-5">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#b99e6d]">{label}</div>
+      <div className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-[#f2dfb5]">
         {value}
-        <span className="ml-1 text-sm font-medium text-stone-500">{unit}</span>
+        <span className="ml-1 text-sm font-medium text-stone-400">{unit}</span>
       </div>
     </div>
   )
 }
 
-function Panel({
+function PanelDark({
   eyebrow,
   title,
   children,
@@ -833,32 +820,32 @@ function Panel({
   children: ReactNode
 }) {
   return (
-    <div className="rounded-[30px] border border-[#e7ddd0] bg-[linear-gradient(180deg,#ffffff_0%,#fcf8f1_100%)] p-5 shadow-[0_8px_22px_rgba(0,0,0,0.03)]">
-      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#8b7450]">{eyebrow}</div>
-      <div className="mt-2 text-lg font-semibold tracking-[-0.03em] text-stone-900">{title}</div>
+    <div className="rounded-[30px] border border-[#3a3024] bg-[linear-gradient(180deg,#1b1b1b_0%,#151515_100%)] p-5 shadow-[0_8px_22px_rgba(0,0,0,0.2)]">
+      <div className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#b99e6d]">{eyebrow}</div>
+      <div className="mt-2 text-lg font-semibold tracking-[-0.03em] text-white">{title}</div>
       <div className="mt-4">{children}</div>
     </div>
   )
 }
 
-function MiniMetric({ label, value }: { label: string; value: string }) {
+function MiniMetricDark({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[#ebe1d4] bg-white px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-      <div className="text-[10px] font-semibold uppercase tracking-[0.20em] text-stone-500">{label}</div>
-      <div className="mt-1.5 text-sm font-semibold text-stone-900">{value}</div>
+    <div className="rounded-[22px] border border-[#3a3024] bg-[#171717] px-4 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.02)]">
+      <div className="text-[10px] font-semibold uppercase tracking-[0.20em] text-[#b99e6d]">{label}</div>
+      <div className="mt-1.5 text-sm font-semibold text-stone-100">{value}</div>
     </div>
   )
 }
 
-function SubBadge({ children }: { children: ReactNode }) {
+function SubBadgeDark({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex rounded-full border border-[#dcc9a8] bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#8a6a38]">
+    <span className="inline-flex rounded-full border border-[#8f6d3d] bg-[#231c14] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#f0ddb3]">
       {children}
     </span>
   )
 }
 
-function Th({
+function ThDark({
   children,
   className = '',
 }: {
@@ -866,18 +853,18 @@ function Th({
   className?: string
 }) {
   return (
-    <th className={`border-b border-[#e7ddd0] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] ${className}`}>
+    <th className={`border-b border-[#3a3024] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] ${className}`}>
       {children}
     </th>
   )
 }
 
-function Td({
+function TdDark({
   children,
   className = '',
 }: {
   children: ReactNode
   className?: string
 }) {
-  return <td className={`border-b border-[#f0e8dc] px-4 py-3 ${className}`}>{children}</td>
+  return <td className={`border-b border-[#272117] px-4 py-3 ${className}`}>{children}</td>
 }
