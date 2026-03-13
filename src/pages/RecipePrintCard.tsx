@@ -551,17 +551,17 @@ export default function RecipePrintCard() {
                   <thead className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] text-[#556b2f]">
                     <tr>
                       <Th className="w-[8%]">Code</Th>
-                      <Th className="w-[24%]">Item</Th>
-                      <Th className="w-[10%] text-right">Net Qty</Th>
-                      <Th className="w-[7%]">Unit</Th>
-                      <Th className="w-[10%] text-right">Gross Qty</Th>
-                      <Th className="w-[7%]">Unit</Th>
-                      <Th className="w-[8%] text-right">Yield</Th>
-                      <Th className="w-[8%] text-right">Qty %</Th>
-                      <Th className="w-[8%] text-right">Cost %</Th>
-                      <Th className="w-[10%]">Note</Th>
-                      <Th className="w-[8%] text-right">Unit Cost</Th>
-                      <Th className="w-[12%] text-right">Line Cost</Th>
+                      <Th className="w-[22%]">Item</Th>
+                      <Th className="w-[12%]">Note</Th>
+                      <Th className="w-[9%] text-right">Net Qty</Th>
+                      <Th className="w-[6%]">Unit</Th>
+                      <Th className="w-[9%] text-right">Gross Qty</Th>
+                      <Th className="w-[6%]">Unit</Th>
+                      <Th className="w-[7%] text-right">Yield</Th>
+                      <Th className="w-[7%] text-right">Qty %</Th>
+                      <Th className="w-[7%] text-right">Cost %</Th>
+                      <Th className="w-[9%] text-right">Unit Cost</Th>
+                      <Th className="w-[10%] text-right">Line Cost</Th>
                     </tr>
                   </thead>
 
@@ -589,6 +589,7 @@ export default function RecipePrintCard() {
                               <span>{row.title}</span>
                             </div>
                           </Td>
+                          <Td className="max-w-[180px] text-stone-600">{row.note || '—'}</Td>
                           <Td className="text-right tabular-nums">{fmtQty(row.net)}</Td>
                           <Td>{row.unit}</Td>
                           <Td className="text-right tabular-nums">{fmtQty(row.gross)}</Td>
@@ -596,7 +597,6 @@ export default function RecipePrintCard() {
                           <Td className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</Td>
                           <Td className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</Td>
                           <Td className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</Td>
-                          <Td className="max-w-[180px] text-stone-600">{row.note || '—'}</Td>
                           <Td className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</Td>
                           <Td className="text-right font-semibold tabular-nums text-[#556b2f]">{fmtMoney(row.lineCost, currency)}</Td>
                         </tr>
