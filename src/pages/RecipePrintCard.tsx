@@ -457,8 +457,9 @@ export default function RecipePrintCard() {
           <button
             onClick={() => window.print()}
             className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
+            title="Uses the browser print dialog so you can choose Save as PDF"
           >
-            Download PDF
+            Save as PDF
           </button>
           <button
             onClick={() => window.print()}
