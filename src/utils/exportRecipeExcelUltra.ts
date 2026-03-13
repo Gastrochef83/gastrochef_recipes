@@ -38,6 +38,21 @@ export type ExcelLineRow = {
   warnings?: string[]
 }
 
+const COLORS = {
+  olive: 'FF556B2F',
+  oliveSoft: 'FFEAF0E2',
+  teal: 'FF0F766E',
+  tealSoft: 'FFE6F7F5',
+  charcoal: 'FF1F2937',
+  slate: 'FF64748B',
+  border: 'FFD7E1D8',
+  paper: 'FFFFFCF7',
+  panel: 'FFF8FAFC',
+  white: 'FFFFFFFF',
+  goldSoft: 'FFFEF3C7',
+  dangerSoft: 'FFFEE2E2',
+}
+
 function clamp(n: number, a: number, b: number) {
   return Math.min(b, Math.max(a, n))
 }
@@ -47,14 +62,28 @@ function safeNum(x: any, fallback = 0) {
   return Number.isFinite(n) ? n : fallback
 }
 
+function safeText(x: any, fallback = '') {
+  const v = String(x ?? '').trim()
+  return v || fallback
+}
+
 function toTitle(s: string) {
   const t = (s || '').trim()
   return t ? t : 'Recipe'
 }
 
-function fmtPercent(n: number | null | undefined) {
+function fmtPercent(n: number | null | undefined, decimals = 1) {
   if (n == null || !Number.isFinite(n)) return ''
-  return `${n.toFixed(1)}%`
+  return `${n.toFixed(decimals)}%`
+}
+
+function safeFileName(name: string) {
+  return name.replace(/[\\/:*?"<>|]+/g, '_')
+}
+
+function moneyFmt(currency: string, decimals = 2) {
+  const zeroes = '0'.repeat(Math.max(0, decimals))
+  return `"${currency}" #,##0${decimals > 0 ? `.${zeroes}` : ''}`
 }
 
 function arrayBufferToBase64(buffer: ArrayBuffer) {
@@ -74,15 +103,29 @@ function dataUrlToBase64(dataUrl: string) {
   }
 }
 
-function safeFileName(name: string) {
-  return name.replace(/[\\/:*?"<>|]+/g, '_')
-}
-
 function fill(cell: ExcelJS.Cell, argb: string) {
   cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb } }
 }
 
-function thinBorder(cell: ExcelJS.Cell, color = 'FFE2E8F0') {
+function font(cell: ExcelJS.Cell, opts: Partial<ExcelJS.Font>) {
+  cell.font = {
+    name: 'Calibri',
+    size: 11,
+    color: { argb: COLORS.charcoal },
+    ...opts,
+  }
+}
+
+function align(cell: ExcelJS.Cell, opts: Partial<ExcelJS.Alignment>) {
+  cell.alignment = {
+    vertical: 'middle',
+    horizontal: 'left',
+    wrapText: true,
+    ...opts,
+  }
+}
+
+function thinBorder(cell: ExcelJS.Cell, color = COLORS.border) {
   cell.border = {
     top: { style: 'thin', color: { argb: color } },
     left: { style: 'thin', color: { argb: color } },
@@ -91,22 +134,102 @@ function thinBorder(cell: ExcelJS.Cell, color = 'FFE2E8F0') {
   }
 }
 
+function styleTitle(cell: ExcelJS.Cell, text: string) {
+  cell.value = text
+  font(cell, { size: 18, bold: true, color: { argb: COLORS.charcoal } as any })
+  align(cell, { horizontal: 'left', vertical: 'middle' })
+}
+
+function styleSectionLabel(cell: ExcelJS.Cell, text: string, bg = COLORS.tealSoft) {
+  cell.value = text
+  fill(cell, bg)
+  thinBorder(cell)
+  font(cell, { bold: true, size: 11, color: { argb: COLORS.charcoal } as any })
+  align(cell, { horizontal: 'left' })
+}
+
+function styleValue(cell: ExcelJS.Cell, value: any, bg = COLORS.white) {
+  cell.value = value ?? ''
+  fill(cell, bg)
+  thinBorder(cell)
+  font(cell, { size: 11 })
+  align(cell, { horizontal: 'left' })
+}
+
+function styleTableHeader(row: ExcelJS.Row, bg = COLORS.oliveSoft) {
+  row.height = 22
+  row.eachCell((cell) => {
+    fill(cell, bg)
+    thinBorder(cell)
+    font(cell, { bold: true, size: 11, color: { argb: COLORS.charcoal } as any })
+    align(cell, { horizontal: 'left' })
+  })
+}
+
+function styleKpiBlock(sheet: ExcelJS.Worksheet, rangeStart: string, rangeEnd: string, title: string, value: any, opts?: {
+  accent?: boolean
+  note?: string
+  isPercent?: boolean
+  currency?: string
+}) {
+  sheet.mergeCells(`${rangeStart}:${rangeEnd}`)
+  const tl = sheet.getCell(rangeStart)
+  const startCol = rangeStart.replace(/[0-9]/g, '')
+  const rowNum = Number(rangeStart.replace(/[^0-9]/g, ''))
+  fill(tl, opts?.accent ? COLORS.teal : COLORS.panel)
+  thinBorder(tl)
+  align(tl, { vertical: 'top', horizontal: 'left' })
+
+  const t = sheet.getCell(`${startCol}${rowNum}`)
+  t.value = title
+  font(t, { bold: true, size: 11, color: { argb: opts?.accent ? COLORS.white : COLORS.charcoal } as any })
+
+  const v = sheet.getCell(`${startCol}${rowNum + 1}`)
+  v.value = value == null ? '' : value
+  font(v, { bold: true, size: 17, color: { argb: opts?.accent ? COLORS.white : COLORS.charcoal } as any })
+  if (opts?.isPercent) v.numFmt = '0.0%'
+  else if (opts?.currency) v.numFmt = moneyFmt(opts.currency, 2)
+  align(v, { vertical: 'middle', horizontal: 'left' })
+
+  if (opts?.note) {
+    const n = sheet.getCell(`${startCol}${rowNum + 2}`)
+    n.value = opts.note
+    font(n, { size: 9, color: { argb: opts?.accent ? 'FFE2E8F0' : COLORS.slate } as any })
+  }
+}
+
+function autosizeColumns(sheet: ExcelJS.Worksheet, min = 10, max = 40) {
+  sheet.columns?.forEach((column) => {
+    let longest = min
+    column.eachCell?.({ includeEmpty: true }, (cell) => {
+      const raw = cell.value
+      const text = typeof raw === 'object' && raw != null && 'richText' in raw
+        ? (raw as any).richText?.map((x: any) => x.text).join('') || ''
+        : String(raw ?? '')
+      const candidate = text.split('\n').reduce((acc, line) => Math.max(acc, line.length), 0)
+      longest = Math.max(longest, Math.min(max, candidate + 2))
+    })
+    column.width = Math.max(min, Math.min(max, longest))
+  })
+}
+
+function normalizeStepPhotos(steps: string[], photos: string[] | null | undefined) {
+  const cleanPhotos = (photos || []).map((x) => (x || '').trim())
+  return steps.map((_, i) => cleanPhotos[i] || '')
+}
+
 async function fetchImageForExcel(url: string): Promise<{ base64: string; extension: 'png' | 'jpeg' } | null> {
   try {
     const finalUrl = (url || '').trim()
     if (!finalUrl) return null
 
-    if (finalUrl.startsWith('data:image/')) {
-      return dataUrlToBase64(finalUrl)
-    }
+    if (finalUrl.startsWith('data:image/')) return dataUrlToBase64(finalUrl)
 
     const res = await fetch(finalUrl, { cache: 'no-store', mode: 'cors' })
     if (!res.ok) return null
 
     const contentType = (res.headers.get('content-type') || '').toLowerCase()
-    if (!contentType.includes('png') && !contentType.includes('jpeg') && !contentType.includes('jpg')) {
-      return null
-    }
+    if (!contentType.includes('png') && !contentType.includes('jpeg') && !contentType.includes('jpg')) return null
 
     const ab = await res.arrayBuffer()
     const base64 = arrayBufferToBase64(ab)
@@ -138,20 +261,17 @@ async function tryAddLogo(
   sheet: ExcelJS.Worksheet,
   opts?: { col?: number; row?: number; width?: number; height?: number },
 ) {
-  try {
-    const candidates = ['/gastrochef-logo.png', '/logo.png']
-    for (const url of candidates) {
-      const ok = await addImageFromUrl(workbook, sheet, url, {
-        col: opts?.col ?? 0.1,
-        row: opts?.row ?? 0.1,
-        width: opts?.width ?? 78,
-        height: opts?.height ?? 78,
-      })
-      if (ok) return
-    }
-  } catch {
-    // ignore
+  const candidates = ['/gastrochef-logo.png', '/logo.png', '/gastrochef-icon-512.png']
+  for (const url of candidates) {
+    const ok = await addImageFromUrl(workbook, sheet, url, {
+      col: opts?.col ?? 0.2,
+      row: opts?.row ?? 0.2,
+      width: opts?.width ?? 72,
+      height: opts?.height ?? 72,
+    })
+    if (ok) return true
   }
+  return false
 }
 
 async function tryAddQr(
@@ -163,52 +283,39 @@ async function tryAddQr(
   try {
     const dataUrl = await QRCode.toDataURL(payload, { margin: 1, width: 256, errorCorrectionLevel: 'M' })
     const parsed = dataUrlToBase64(dataUrl)
-    if (!parsed) return
+    if (!parsed) return false
     const imgId = workbook.addImage({ base64: parsed.base64, extension: parsed.extension })
-    const col = opts?.col ?? 3.15
-    const row = opts?.row ?? 1.1
-    const size = opts?.size ?? 86
+    const col = opts?.col ?? 7.1
+    const row = opts?.row ?? 0.8
+    const size = opts?.size ?? 84
     sheet.addImage(imgId, { tl: { col, row }, ext: { width: size, height: size } })
+    return true
   } catch {
-    // ignore
+    return false
   }
 }
 
-function applyWatermark(sheet: ExcelJS.Worksheet, text: string) {
-  try {
-    sheet.mergeCells('A22:D28')
-    const c = sheet.getCell('A22')
-    c.value = text
-    c.font = { name: 'Calibri', size: 42, bold: true, color: { argb: '11CBD5E1' } }
-    c.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 45 }
-  } catch {
-    // ignore
+function addPlaceholderBox(sheet: ExcelJS.Worksheet, range: string, title: string, subtitle: string, bg = COLORS.panel) {
+  sheet.mergeCells(range)
+  const cell = sheet.getCell(range.split(':')[0])
+  cell.value = `${title}\n\n${subtitle}`
+  fill(cell, bg)
+  thinBorder(cell)
+  font(cell, { size: 11, bold: true, color: { argb: COLORS.slate } as any })
+  align(cell, { horizontal: 'center', vertical: 'middle' })
+}
+
+function setSheetDefaults(sheet: ExcelJS.Worksheet, title: string, orientation: 'portrait' | 'landscape' = 'portrait') {
+  sheet.pageSetup = {
+    orientation,
+    paperSize: 9,
+    fitToPage: true,
+    fitToWidth: 1,
+    fitToHeight: 0,
+    margins: { left: 0.35, right: 0.35, top: 0.5, bottom: 0.45, header: 0.2, footer: 0.2 },
   }
-}
-
-function autosizeColumns(sheet: ExcelJS.Worksheet, min = 10, max = 40) {
-  sheet.columns?.forEach((column) => {
-    let longest = min
-    column.eachCell?.({ includeEmpty: true }, (cell) => {
-      const raw = cell.value
-      const text = typeof raw === 'object' && raw != null && 'richText' in raw
-        ? (raw as any).richText?.map((x: any) => x.text).join('') || ''
-        : String(raw ?? '')
-      const candidate = text.split('\n').reduce((acc, line) => Math.max(acc, line.length), 0)
-      longest = Math.max(longest, Math.min(max, candidate + 2))
-    })
-    column.width = Math.max(min, Math.min(max, longest))
-  })
-}
-
-function moneyFmt(currency: string, decimals = 2) {
-  const zeroes = '0'.repeat(Math.max(0, decimals))
-  return `"${currency}" #,##0${decimals > 0 ? `.${zeroes}` : ''}`
-}
-
-function normalizeStepPhotos(steps: string[], photos: string[] | null | undefined) {
-  const cleanPhotos = (photos || []).map((x) => (x || '').trim())
-  return steps.map((_, i) => cleanPhotos[i] || '')
+  sheet.headerFooter.oddHeader = `&C&"Calibri,Bold"&12GastroChef — ${title}`
+  sheet.headerFooter.oddFooter = '&L&8Confidential&R&8Page &P / &N'
 }
 
 export async function exportRecipeExcelUltra(args: {
@@ -219,218 +326,168 @@ export async function exportRecipeExcelUltra(args: {
   const { meta, totals, lines } = args
 
   const name = toTitle(meta.name)
-  const currency = (meta.currency || 'USD').toUpperCase()
+  const currency = safeText(meta.currency, 'USD').toUpperCase()
   const portions = Math.max(1, Math.floor(safeNum(meta.portions, 1)))
   const yieldQty = safeNum(meta.yield_qty, 0) || null
-  const yieldUnit = (meta.yield_unit || '').trim() || null
+  const yieldUnit = safeText(meta.yield_unit)
   const sell = safeNum(meta.selling_price, 0)
   const targetFc = meta.target_food_cost_pct != null ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100) : null
   const cleanSteps = (meta.steps || []).map((s) => (s || '').trim()).filter(Boolean)
   const stepPhotos = normalizeStepPhotos(cleanSteps, meta.step_photos)
+  const description = safeText(meta.description)
 
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'GastroChef'
+  workbook.company = 'GastroChef'
+  workbook.title = `${name} — Ultimate Recipe Export`
+  workbook.subject = `${name} recipe export`
   workbook.created = new Date()
   workbook.modified = new Date()
-  workbook.company = 'GastroChef'
-  workbook.subject = `${name} recipe export`
-  workbook.title = `${name} — Ultra Professional Export`
+  workbook.calcProperties.fullCalcOnLoad = true
 
   const now = new Date()
   const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
-  const recipeId = meta.id ? String(meta.id) : ''
-  const recipeCode = meta.code ? String(meta.code) : ''
-  const kitchenRef = meta.kitchen_id ? String(meta.kitchen_id) : ''
-  const auditStamp = (() => {
-    const id6 = recipeId.replace(/[^a-z0-9]/gi, '').slice(0, 6).toUpperCase() || 'XXXXXX'
-    const ymd = reportId.slice(0, 8)
-    const hm = reportId.slice(-4)
-    return `GC-${ymd}-${hm}-${id6}`
-  })()
-
+  const recipeId = safeText(meta.id)
+  const recipeCode = safeText(meta.code)
+  const kitchenRef = safeText(meta.kitchen_id)
+  const auditStamp = `GC-${reportId}-${(recipeId.replace(/[^a-z0-9]/gi, '').slice(0, 6) || 'LOCAL').toUpperCase()}`
   const baseUrl = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : ''
-  const qrPayload = recipeId && baseUrl ? `${baseUrl}/#/recipe?id=${encodeURIComponent(recipeId)}` : (recipeId ? `GastroChef Recipe: ${recipeId}` : `GastroChef Recipe: ${name}`)
+  const qrPayload = recipeId && baseUrl
+    ? `${baseUrl}/#/recipe?id=${encodeURIComponent(recipeId)}`
+    : `GastroChef Recipe | ${name}${recipeId ? ` | ${recipeId}` : ''}`
 
   const totalWarnings = lines.reduce((acc, line) => acc + (line.warnings?.length || 0), 0)
-  const ingredientCost = lines.filter((l) => l.type === 'ingredient').reduce((acc, l) => acc + safeNum(l.line_cost), 0)
-  const subrecipeCost = lines.filter((l) => l.type === 'subrecipe').reduce((acc, l) => acc + safeNum(l.line_cost), 0)
+  const ingredientLines = lines.filter((l) => l.type === 'ingredient')
+  const subrecipeLines = lines.filter((l) => l.type === 'subrecipe')
+  const ingredientCost = ingredientLines.reduce((acc, l) => acc + safeNum(l.line_cost), 0)
+  const subrecipeCost = subrecipeLines.reduce((acc, l) => acc + safeNum(l.line_cost), 0)
+  const topDrivers = lines.slice().sort((a, b) => safeNum(b.line_cost) - safeNum(a.line_cost)).slice(0, 10)
 
-  const summary = workbook.addWorksheet('Summary', {
-    views: [{ showGridLines: false }],
-    pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 1 },
-  })
-  summary.columns = [{ width: 20 }, { width: 28 }, { width: 20 }, { width: 28 }]
-  summary.pageSetup.margins = { left: 0.45, right: 0.45, top: 0.55, bottom: 0.55, header: 0.25, footer: 0.25 }
-  summary.headerFooter.oddHeader = `&C&"Calibri,Bold"&12GastroChef — Ultra Recipe Export`
-  summary.headerFooter.oddFooter = `&L&8Report: ${reportId}${recipeCode ? `  |  Code: ${recipeCode}` : ''}${recipeId ? `  |  Recipe: ${recipeId}` : ''}  |  Audit: ${auditStamp}&R&8Page &P / &N`
+  const controls = workbook.addWorksheet('Controls', { views: [{ showGridLines: false }] })
+  setSheetDefaults(controls, 'Controls')
+  controls.columns = [{ width: 24 }, { width: 26 }, { width: 18 }, { width: 18 }]
+  controls.mergeCells('A1:D1')
+  styleTitle(controls.getCell('A1'), 'GastroChef Export Controls')
+  controls.getRow(2).height = 12
+  styleSectionLabel(controls.getCell('A3'), 'Field', COLORS.oliveSoft)
+  styleSectionLabel(controls.getCell('B3'), 'Value', COLORS.oliveSoft)
+  styleSectionLabel(controls.getCell('C3'), 'Editable', COLORS.oliveSoft)
+  styleSectionLabel(controls.getCell('D3'), 'Notes', COLORS.oliveSoft)
 
-  summary.getRow(1).height = 18
-  summary.getRow(2).height = 54
-  summary.getRow(3).height = 24
-  summary.getRow(4).height = 8
-  summary.getRow(5).height = 16
-  summary.getRow(6).height = 10
-  summary.getRow(7).height = 30
-
-  await tryAddLogo(workbook, summary, { col: 0.8, row: 1.0, width: 58, height: 58 })
-  await tryAddQr(workbook, summary, qrPayload, { col: 3.2, row: 1.0, size: 72 })
-
-  summary.mergeCells('A3:D3')
-  summary.getCell('A3').value = 'GastroChef'
-  summary.getCell('A3').font = { name: 'Calibri', size: 20, bold: true, color: { argb: 'FF0F172A' } }
-  summary.getCell('A3').alignment = { vertical: 'middle', horizontal: 'center' }
-
-  summary.mergeCells('B4:C4')
-  fill(summary.getCell('B4'), 'FF0F766E')
-  fill(summary.getCell('C4'), 'FF0F766E')
-
-  summary.mergeCells('A5:D5')
-  summary.getCell('A5').value = 'Kitchen Intelligence — Costing, Nutrition, Method & Images'
-  summary.getCell('A5').font = { name: 'Calibri', size: 11, color: { argb: 'FF475569' } }
-  summary.getCell('A5').alignment = { vertical: 'middle', horizontal: 'center' }
-
-  summary.mergeCells('A6:D6')
-  summary.getCell('A6').value = `Report ID: ${reportId}${recipeId ? `   |   Recipe ID: ${recipeId}` : ''}`
-  summary.getCell('A6').font = { name: 'Calibri', size: 9, color: { argb: 'FF64748B' } }
-  summary.getCell('A6').alignment = { vertical: 'middle', horizontal: 'center' }
-
-  summary.mergeCells('A7:D7')
-  summary.getCell('A7').value = name
-  summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true, color: { argb: 'FF0F172A' } }
-  summary.getCell('A7').alignment = { vertical: 'middle', horizontal: 'left' }
-
-  const kv = (row: number, label: string, value: any) => {
-    summary.getCell(`A${row}`).value = label
-    summary.getCell(`A${row}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF334155' } }
-    summary.getCell(`B${row}`).value = value ?? ''
-    summary.getCell(`B${row}`).font = { name: 'Calibri', size: 11 }
-    summary.mergeCells(`B${row}:D${row}`)
-    summary.getCell(`B${row}`).alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }
+  const controlRows: Array<[string, any, string, string]> = [
+    ['Recipe Name', name, 'No', 'Pulled from current recipe'],
+    ['Recipe Code', recipeCode, 'No', 'Shows blank if not set'],
+    ['Currency', currency, 'No', 'Controls money formatting'],
+    ['Base Portions', portions, 'No', 'Original recipe servings'],
+    ['Target Portions', portions, 'Yes', 'Use in Scale Lab sheet'],
+    ['Selling Price', sell || '', 'Yes', 'Optional commercial field'],
+    ['Target Food Cost %', targetFc != null ? targetFc / 100 : '', 'Yes', 'Use decimal percent in Excel'],
+    ['Report ID', reportId, 'No', 'Generated at export time'],
+  ]
+  let cr = 4
+  for (const [field, value, editable, note] of controlRows) {
+    styleSectionLabel(controls.getCell(`A${cr}`), field, COLORS.panel)
+    styleValue(controls.getCell(`B${cr}`), value)
+    styleValue(controls.getCell(`C${cr}`), editable, editable === 'Yes' ? COLORS.tealSoft : COLORS.panel)
+    styleValue(controls.getCell(`D${cr}`), note)
+    if (field === 'Target Food Cost %') controls.getCell(`B${cr}`).numFmt = '0.0%'
+    if (field === 'Selling Price') controls.getCell(`B${cr}`).numFmt = moneyFmt(currency, 2)
+    cr += 1
   }
 
-  let r = 9
-  kv(r++, 'Code', recipeCode)
-  kv(r++, 'Kitchen Ref', kitchenRef)
-  kv(r++, 'Audit Stamp', auditStamp)
-  kv(r++, 'Category', meta.category || '')
-  kv(r++, 'Portions', portions)
-  kv(r++, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
-  kv(r++, 'Currency', currency)
-  kv(r++, 'Selling Price', sell > 0 ? sell : '')
-  kv(r++, 'Target FC%', targetFc != null ? fmtPercent(targetFc) : '')
-  kv(r++, 'Description', (meta.description || '').trim())
+  const recipeCard = workbook.addWorksheet('Recipe Card', { views: [{ showGridLines: false }] })
+  setSheetDefaults(recipeCard, 'Recipe Card')
+  recipeCard.columns = [{ width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }]
+  recipeCard.properties.defaultRowHeight = 18
+  await tryAddLogo(workbook, recipeCard, { col: 0.2, row: 0.2, width: 68, height: 68 })
+  await tryAddQr(workbook, recipeCard, qrPayload, { col: 6.6, row: 0.4, size: 84 })
 
-  r++
+  recipeCard.mergeCells('A2:H2')
+  styleTitle(recipeCard.getCell('A2'), name)
+  recipeCard.mergeCells('A3:H3')
+  recipeCard.getCell('A3').value = 'Ultimate Excel Recipe Template — Professional Kitchen Export'
+  font(recipeCard.getCell('A3'), { size: 10, color: { argb: COLORS.slate } as any })
+  align(recipeCard.getCell('A3'), { horizontal: 'left' })
 
-  const card = (
-    topRow: number,
-    left: 'A' | 'C',
-    title: string,
-    value: number | null,
-    opts?: { isPercent?: boolean; accent?: boolean; note?: string },
-  ) => {
-    const col1 = left
-    const col2 = left === 'A' ? 'B' : 'D'
-    const r1 = topRow
-    const r2 = topRow + 2
+  styleSectionLabel(recipeCard.getCell('A5'), 'Recipe Overview', COLORS.oliveSoft)
+  recipeCard.mergeCells('A5:D5')
+  styleSectionLabel(recipeCard.getCell('E5'), 'Commercial Snapshot', COLORS.oliveSoft)
+  recipeCard.mergeCells('E5:H5')
 
-    summary.mergeCells(`${col1}${r1}:${col2}${r2}`)
-    const base = summary.getCell(`${col1}${r1}`)
-    base.alignment = { vertical: 'top', horizontal: 'left', wrapText: true }
-    fill(base, opts?.accent ? 'FF0F766E' : 'FFF8FAFC')
-    thinBorder(base)
-
-    const t = summary.getCell(`${col1}${r1}`)
-    t.value = title
-    t.font = { name: 'Calibri', size: 11, bold: true, color: { argb: opts?.accent ? 'FFFFFFFF' : 'FF0F172A' } }
-
-    const vRow = r1 + 1
-    summary.getCell(`${col1}${vRow}`).value = value == null ? '' : value
-    summary.getCell(`${col1}${vRow}`).font = { name: 'Calibri', size: 16, bold: true, color: { argb: opts?.accent ? 'FFFFFFFF' : 'FF0F172A' } }
-    summary.getCell(`${col1}${vRow}`).alignment = { vertical: 'middle', horizontal: 'left' }
-    summary.getCell(`${col1}${vRow}`).numFmt = opts?.isPercent ? '0.0%' : moneyFmt(currency, 2)
-
-    if (opts?.note) {
-      const nRow = r1 + 2
-      summary.getCell(`${col1}${nRow}`).value = opts.note
-      summary.getCell(`${col1}${nRow}`).font = { name: 'Calibri', size: 9, color: { argb: opts?.accent ? 'FFE2E8F0' : 'FF64748B' } }
-      summary.getCell(`${col1}${nRow}`).alignment = { vertical: 'middle', horizontal: 'left' }
-    }
+  const addKv = (row: number, leftLabel: string, leftValue: any, rightLabel: string, rightValue: any) => {
+    styleSectionLabel(recipeCard.getCell(`A${row}`), leftLabel, COLORS.panel)
+    recipeCard.mergeCells(`B${row}:D${row}`)
+    styleValue(recipeCard.getCell(`B${row}`), leftValue)
+    styleSectionLabel(recipeCard.getCell(`E${row}`), rightLabel, COLORS.panel)
+    recipeCard.mergeCells(`F${row}:H${row}`)
+    styleValue(recipeCard.getCell(`F${row}`), rightValue)
   }
 
-  const kpiTop = r
-  for (let i = 0; i < 6; i++) summary.getRow(kpiTop + i).height = i % 3 === 1 ? 20 : 18
+  addKv(6, 'Code', recipeCode, 'Category', meta.category || '')
+  addKv(7, 'Kitchen Ref', kitchenRef, 'Portions', portions)
+  addKv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '', 'Currency', currency)
+  addKv(9, 'Report ID', reportId, 'Audit Stamp', auditStamp)
+  addKv(10, 'Selling Price', sell || '', 'Target Food Cost', targetFc != null ? fmtPercent(targetFc) : '')
+  recipeCard.getCell('B10').numFmt = moneyFmt(currency, 2)
 
-  card(kpiTop, 'A', `Total Cost (${currency})`, totals.totalCost, { accent: true, note: 'Recipe total' })
-  card(kpiTop, 'C', `Cost / Portion (${currency})`, totals.cpp, { note: 'Per serving' })
-  card(kpiTop + 3, 'A', 'Food Cost %', totals.fcPct != null ? totals.fcPct / 100 : null, { isPercent: true, note: targetFc != null ? `Target: ${fmtPercent(targetFc)}` : '' })
-  card(kpiTop + 3, 'C', `Margin (${currency})`, totals.margin, { note: totals.marginPct != null ? `Margin: ${totals.marginPct.toFixed(1)}%` : '' })
+  styleSectionLabel(recipeCard.getCell('A12'), 'Description', COLORS.tealSoft)
+  recipeCard.mergeCells('A12:H12')
+  recipeCard.mergeCells('A13:H15')
+  styleValue(recipeCard.getCell('A13'), description || 'No description provided.', COLORS.white)
+  align(recipeCard.getCell('A13'), { vertical: 'top', horizontal: 'left', wrapText: true })
 
-  r = kpiTop + 7
-  summary.getCell(`A${r}`).value = 'Financial Summary'
-  summary.getCell(`A${r}`).font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF0F172A' } }
-  r += 1
-
-  const summaryRows = [
-    ['Ingredient Cost', ingredientCost],
-    ['Sub-Recipe Cost', subrecipeCost],
-    ['Total Recipe Cost', totals.totalCost],
-    ['Cost per Portion', totals.cpp],
-    ['Selling Price', sell || null],
-    ['Margin', totals.margin],
-  ] as const
-
-  summaryRows.forEach(([label, value]) => {
-    summary.getCell(`A${r}`).value = label
-    summary.getCell(`A${r}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } }
-    summary.getCell(`B${r}`).value = value ?? ''
-    summary.getCell(`B${r}`).numFmt = moneyFmt(currency, 2)
-    thinBorder(summary.getCell(`A${r}`))
-    thinBorder(summary.getCell(`B${r}`))
-    fill(summary.getCell(`A${r}`), 'FFF8FAFC')
-    fill(summary.getCell(`B${r}`), 'FFFFFFFF')
-    r += 1
+  for (let r = 17; r <= 22; r++) recipeCard.getRow(r).height = r === 18 || r === 21 ? 22 : 18
+  styleKpiBlock(recipeCard, 'A17', 'B19', `Total Cost (${currency})`, totals.totalCost, {
+    accent: true,
+    note: 'Recipe total',
+    currency,
+  })
+  styleKpiBlock(recipeCard, 'C17', 'D19', `Cost / Portion (${currency})`, totals.cpp, {
+    note: 'Per serving',
+    currency,
+  })
+  styleKpiBlock(recipeCard, 'E17', 'F19', 'Food Cost %', totals.fcPct != null ? totals.fcPct / 100 : null, {
+    note: targetFc != null ? `Target: ${fmtPercent(targetFc)}` : 'Based on selling price',
+    isPercent: true,
+  })
+  styleKpiBlock(recipeCard, 'G17', 'H19', `Margin (${currency})`, totals.margin, {
+    note: totals.marginPct != null ? `${totals.marginPct.toFixed(1)}% margin` : 'Commercial margin',
+    currency,
   })
 
-  summary.getCell(`C${r - 6}`).value = 'Lines'
-  summary.getCell(`D${r - 6}`).value = lines.length
-  summary.getCell(`C${r - 5}`).value = 'Warnings'
-  summary.getCell(`D${r - 5}`).value = totalWarnings
-  summary.getCell(`C${r - 4}`).value = 'Recipe Photo'
-  summary.getCell(`D${r - 4}`).value = meta.photo_url ? 'Included when image is reachable' : 'Not available'
-  summary.getCell(`C${r - 3}`).value = 'Step Photos'
-  summary.getCell(`D${r - 3}`).value = stepPhotos.filter(Boolean).length
-  summary.getCell(`C${r - 2}`).value = 'Method Steps'
-  summary.getCell(`D${r - 2}`).value = cleanSteps.length
-  summary.getCell(`C${r - 1}`).value = 'Prepared'
-  summary.getCell(`D${r - 1}`).value = now.toLocaleDateString()
-  for (let rr = r - 6; rr <= r - 1; rr++) {
-    summary.getCell(`C${rr}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } }
-    summary.getCell(`D${rr}`).font = { name: 'Calibri', size: 10, color: { argb: 'FF0F172A' } }
-    thinBorder(summary.getCell(`C${rr}`))
-    thinBorder(summary.getCell(`D${rr}`))
-    fill(summary.getCell(`C${rr}`), 'FFF8FAFC')
-    fill(summary.getCell(`D${rr}`), 'FFFFFFFF')
+  styleSectionLabel(recipeCard.getCell('A24'), 'Main Recipe Photo', COLORS.oliveSoft)
+  recipeCard.mergeCells('A24:D24')
+  styleSectionLabel(recipeCard.getCell('E24'), 'Export Status', COLORS.oliveSoft)
+  recipeCard.mergeCells('E24:H24')
+
+  const mainPhotoAdded = await addImageFromUrl(workbook, recipeCard, meta.photo_url, { col: 0.15, row: 24.2, width: 360, height: 220 })
+  if (!mainPhotoAdded) {
+    addPlaceholderBox(recipeCard, 'A25:D35', 'Recipe Photo', meta.photo_url ? 'Image not reachable. Use a public PNG/JPG URL or base64 data URL.' : 'No recipe photo provided.')
   }
 
-  applyWatermark(summary, 'CONFIDENTIAL')
-  const sigRow = Math.max(r + 2, 33)
-  summary.getCell(`A${sigRow}`).value = 'Prepared by:'
-  summary.getCell(`A${sigRow}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: 'FF334155' } }
-  summary.mergeCells(`B${sigRow}:C${sigRow}`)
-  summary.getCell(`B${sigRow}`).value = '__________________________'
-  summary.getCell(`D${sigRow}`).value = `Date: ${now.toLocaleDateString()}`
-  summary.getCell(`D${sigRow}`).font = { name: 'Calibri', size: 10, color: { argb: 'FF334155' } }
+  const statusRows: Array<[string, any]> = [
+    ['Ingredients', lines.length],
+    ['Warnings', totalWarnings],
+    ['Method Steps', cleanSteps.length],
+    ['Step Photos', stepPhotos.filter(Boolean).length],
+    ['Recipe QR', 'Generated'],
+    ['Prepared', now.toLocaleDateString()],
+    ['Photo Status', mainPhotoAdded ? 'Embedded' : 'Placeholder'],
+  ]
+  let sr = 25
+  for (const [label, value] of statusRows) {
+    styleSectionLabel(recipeCard.getCell(`E${sr}`), label, COLORS.panel)
+    recipeCard.mergeCells(`F${sr}:H${sr}`)
+    styleValue(recipeCard.getCell(`F${sr}`), value)
+    sr += 1
+  }
 
-  const ingredients = workbook.addWorksheet('Ingredients', {
-    views: [{ state: 'frozen', ySplit: 2 }],
-    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
-  })
-
+  const ingredients = workbook.addWorksheet('Ingredients', { views: [{ state: 'frozen', ySplit: 2 }] })
+  setSheetDefaults(ingredients, 'Ingredients', 'landscape')
   ingredients.columns = [
     { header: 'Type', key: 'type', width: 12 },
     { header: 'Code', key: 'code', width: 16 },
-    { header: 'Name', key: 'name', width: 34 },
+    { header: 'Ingredient / Item', key: 'name', width: 34 },
     { header: 'Net Qty', key: 'net', width: 12 },
     { header: 'Unit', key: 'unit', width: 10 },
     { header: 'Yield %', key: 'yield', width: 10 },
@@ -440,26 +497,14 @@ export async function exportRecipeExcelUltra(args: {
     { header: 'Notes', key: 'notes', width: 26 },
     { header: 'Warnings', key: 'warnings', width: 28 },
   ]
-
   ingredients.mergeCells('A1:K1')
-  ingredients.getCell('A1').value = `${name} — Ingredients & Costing`
-  ingredients.getCell('A1').font = { name: 'Calibri', size: 14, bold: true, color: { argb: 'FF0F172A' } }
-  ingredients.getCell('A1').alignment = { vertical: 'middle', horizontal: 'left' }
+  styleTitle(ingredients.getCell('A1'), `${name} — Ingredients & Costing`)
+  ingredients.getRow(2).values = ingredients.columns.map((col) => col.header)
+  styleTableHeader(ingredients.getRow(2))
 
-  const headerRow = ingredients.getRow(2)
-  headerRow.values = ingredients.columns.map((col) => col.header)
-  headerRow.font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF0F172A' } }
-  headerRow.alignment = { vertical: 'middle', horizontal: 'left' }
-  headerRow.height = 20
-  headerRow.eachCell((cell) => {
-    fill(cell, 'FFE2E8F0')
-    thinBorder(cell, 'FFCBD5E1')
-  })
-
-  let rowNumber = 3
   for (const row of lines) {
     const warnings = (row.warnings || []).join(', ')
-    const rAdded = ingredients.addRow({
+    const added = ingredients.addRow({
       type: row.type,
       code: row.code || '',
       name: row.name,
@@ -472,262 +517,247 @@ export async function exportRecipeExcelUltra(args: {
       notes: row.notes || '',
       warnings,
     })
-
-    rAdded.eachCell((cell) => {
+    added.eachCell((cell) => {
       thinBorder(cell)
-      cell.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }
+      align(cell, { vertical: 'middle', horizontal: 'left' })
     })
-    rAdded.getCell('yield').numFmt = '0.0%'
-    rAdded.getCell('net').numFmt = '#,##0.000'
-    rAdded.getCell('gross').numFmt = '#,##0.000'
-    rAdded.getCell('unitCost').numFmt = moneyFmt(currency, 3)
-    rAdded.getCell('lineCost').numFmt = moneyFmt(currency, 3)
+    added.getCell('yield').numFmt = '0.0%'
+    added.getCell('net').numFmt = '#,##0.000'
+    added.getCell('gross').numFmt = '#,##0.000'
+    added.getCell('unitCost').numFmt = moneyFmt(currency, 3)
+    added.getCell('lineCost').numFmt = moneyFmt(currency, 3)
+    if (row.type === 'subrecipe') fill(added.getCell('A'), COLORS.tealSoft)
+    if (warnings) fill(added.getCell('K'), COLORS.goldSoft)
+  }
+  const ingredientsFooter = ingredients.addRow({ name: 'TOTAL', lineCost: totals.totalCost } as any)
+  ingredientsFooter.eachCell((cell) => {
+    fill(cell, COLORS.panel)
+    thinBorder(cell)
+    font(cell, { bold: true })
+  })
+  ingredientsFooter.getCell('lineCost').numFmt = moneyFmt(currency, 2)
+  ingredients.autoFilter = 'A2:K2'
+  autosizeColumns(ingredients, 10, 36)
 
-    if (row.type === 'subrecipe') fill(rAdded.getCell('A'), 'FFF0FDFA')
-    if (warnings) fill(rAdded.getCell('K'), 'FFFEF3C7')
-    rowNumber += 1
+  const stepsSheet = workbook.addWorksheet('Preparation Steps', { views: [{ showGridLines: false }] })
+  setSheetDefaults(stepsSheet, 'Preparation Steps')
+  stepsSheet.columns = [{ width: 10 }, { width: 54 }, { width: 36 }]
+  stepsSheet.mergeCells('A1:C1')
+  styleTitle(stepsSheet.getCell('A1'), `${name} — Preparation Steps`)
+  stepsSheet.getRow(3).values = ['Step', 'Method', 'Photo Status']
+  styleTableHeader(stepsSheet.getRow(3), COLORS.tealSoft)
+  if (cleanSteps.length) {
+    let rowIndex = 4
+    cleanSteps.forEach((step, idx) => {
+      stepsSheet.getCell(`A${rowIndex}`).value = idx + 1
+      stepsSheet.getCell(`B${rowIndex}`).value = step
+      stepsSheet.getCell(`C${rowIndex}`).value = stepPhotos[idx] ? 'Photo linked' : 'No photo linked'
+      ;['A', 'B', 'C'].forEach((col) => {
+        thinBorder(stepsSheet.getCell(`${col}${rowIndex}`))
+        align(stepsSheet.getCell(`${col}${rowIndex}`), { vertical: 'top' })
+      })
+      if (!stepPhotos[idx]) fill(stepsSheet.getCell(`C${rowIndex}`), COLORS.panel)
+      stepsSheet.getRow(rowIndex).height = Math.max(26, Math.ceil(step.length / 5))
+      rowIndex += 1
+    })
+  } else {
+    addPlaceholderBox(stepsSheet, 'A4:C8', 'No preparation steps', 'Add steps in RecipeEditor to populate this sheet.')
   }
 
-  const footer = ingredients.addRow({
-    name: 'TOTAL',
-    lineCost: totals.totalCost,
-  } as any)
-  footer.font = { name: 'Calibri', size: 11, bold: true }
-  footer.getCell('lineCost').numFmt = moneyFmt(currency, 2)
-  footer.eachCell((cell) => {
-    thinBorder(cell, 'FFCBD5E1')
-    fill(cell, 'FFF1F5F9')
-  })
+  const nutrition = workbook.addWorksheet('Nutrition', { views: [{ showGridLines: false }] })
+  setSheetDefaults(nutrition, 'Nutrition')
+  nutrition.columns = [{ width: 28 }, { width: 22 }, { width: 24 }]
+  nutrition.mergeCells('A1:C1')
+  styleTitle(nutrition.getCell('A1'), `${name} — Nutrition`)
+  nutrition.getRow(3).values = ['Metric', 'Value', 'Notes']
+  styleTableHeader(nutrition.getRow(3))
+  const nutritionRows: Array<[string, any, string]> = [
+    ['Calories', meta.calories ?? '', 'Per recipe or current recipe basis'],
+    ['Protein (g)', meta.protein_g ?? '', 'Macronutrient'],
+    ['Carbs (g)', meta.carbs_g ?? '', 'Macronutrient'],
+    ['Fat (g)', meta.fat_g ?? '', 'Macronutrient'],
+    ['Portions', portions, 'Current serving count'],
+    ['Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '', 'Final output'],
+  ]
+  let nr = 4
+  for (const [metric, value, note] of nutritionRows) {
+    styleSectionLabel(nutrition.getCell(`A${nr}`), metric, COLORS.panel)
+    styleValue(nutrition.getCell(`B${nr}`), value)
+    styleValue(nutrition.getCell(`C${nr}`), note)
+    nr += 1
+  }
 
-  ingredients.autoFilter = 'A2:K2'
-  autosizeColumns(ingredients, 10, 34)
-  void rowNumber
-
-  const analysis = workbook.addWorksheet('Cost Analysis', {
-    views: [{ showGridLines: false }],
-    pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
-  })
-  analysis.columns = [{ width: 28 }, { width: 18 }, { width: 18 }, { width: 20 }]
-
-  analysis.getCell('A1').value = `${name} — Cost Analysis`
-  analysis.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  analysis.mergeCells('A1:D1')
-
-  const analysisHeader = ['Bucket', 'Value', 'Share %', 'Notes']
-  analysis.getRow(3).values = analysisHeader
-  analysis.getRow(3).font = { name: 'Calibri', size: 11, bold: true }
-  analysis.getRow(3).eachCell((cell) => {
-    fill(cell, 'FFE2E8F0')
-    thinBorder(cell)
-  })
+  const costAnalysis = workbook.addWorksheet('Cost Analysis', { views: [{ showGridLines: false }] })
+  setSheetDefaults(costAnalysis, 'Cost Analysis')
+  costAnalysis.columns = [{ width: 28 }, { width: 18 }, { width: 18 }, { width: 28 }]
+  costAnalysis.mergeCells('A1:D1')
+  styleTitle(costAnalysis.getCell('A1'), `${name} — Cost Analysis`)
+  costAnalysis.getRow(3).values = ['Bucket', 'Value', 'Share %', 'Notes']
+  styleTableHeader(costAnalysis.getRow(3), COLORS.tealSoft)
 
   const buckets = [
     ['Ingredients', ingredientCost, totals.totalCost > 0 ? ingredientCost / totals.totalCost : 0, 'Direct ingredient items'],
     ['Sub-Recipes', subrecipeCost, totals.totalCost > 0 ? subrecipeCost / totals.totalCost : 0, 'Nested recipe cost'],
+    ['Total Recipe Cost', totals.totalCost, 1, 'Recipe total cost'],
     ['Food Cost %', totals.fcPct != null ? totals.fcPct / 100 : 0, totals.fcPct != null ? totals.fcPct / 100 : 0, 'Relative to selling price'],
     ['Margin %', totals.marginPct != null ? totals.marginPct / 100 : 0, totals.marginPct != null ? totals.marginPct / 100 : 0, 'Commercial margin'],
   ] as const
-
-  let ar = 4
-  for (const [label, value, share, notes] of buckets) {
-    analysis.getCell(`A${ar}`).value = label
-    analysis.getCell(`B${ar}`).value = value
-    analysis.getCell(`C${ar}`).value = share
-    analysis.getCell(`D${ar}`).value = notes
-    analysis.getCell(`B${ar}`).numFmt = label.includes('%') ? '0.0%' : moneyFmt(currency, 2)
-    analysis.getCell(`C${ar}`).numFmt = '0.0%'
-    ;['A', 'B', 'C', 'D'].forEach((col) => thinBorder(analysis.getCell(`${col}${ar}`)))
-    ar += 1
+  let car = 4
+  for (const [label, value, share, note] of buckets) {
+    styleSectionLabel(costAnalysis.getCell(`A${car}`), label, COLORS.panel)
+    styleValue(costAnalysis.getCell(`B${car}`), value)
+    styleValue(costAnalysis.getCell(`C${car}`), share)
+    styleValue(costAnalysis.getCell(`D${car}`), note)
+    costAnalysis.getCell(`B${car}`).numFmt = label.includes('%') ? '0.0%' : moneyFmt(currency, 2)
+    costAnalysis.getCell(`C${car}`).numFmt = '0.0%'
+    car += 1
   }
-
-  ar += 1
-  analysis.getCell(`A${ar}`).value = 'Top Cost Drivers'
-  analysis.getCell(`A${ar}`).font = { name: 'Calibri', size: 12, bold: true, color: { argb: 'FF0F172A' } }
-  ar += 1
-
-  analysis.getRow(ar).values = ['Item', 'Line Cost', 'Share %', 'Type']
-  analysis.getRow(ar).font = { name: 'Calibri', size: 11, bold: true }
-  analysis.getRow(ar).eachCell((cell) => {
-    fill(cell, 'FFE2E8F0')
-    thinBorder(cell)
-  })
-  ar += 1
-
-  lines
-    .slice()
-    .sort((a, b) => safeNum(b.line_cost) - safeNum(a.line_cost))
-    .slice(0, 10)
-    .forEach((line) => {
-      analysis.getCell(`A${ar}`).value = line.name
-      analysis.getCell(`B${ar}`).value = line.line_cost
-      analysis.getCell(`C${ar}`).value = totals.totalCost > 0 ? line.line_cost / totals.totalCost : 0
-      analysis.getCell(`D${ar}`).value = line.type
-      analysis.getCell(`B${ar}`).numFmt = moneyFmt(currency, 2)
-      analysis.getCell(`C${ar}`).numFmt = '0.0%'
-      ;['A', 'B', 'C', 'D'].forEach((col) => thinBorder(analysis.getCell(`${col}${ar}`)))
-      ar += 1
+  car += 1
+  costAnalysis.getRow(car).values = ['Top Cost Driver', 'Line Cost', 'Share %', 'Type']
+  styleTableHeader(costAnalysis.getRow(car), COLORS.oliveSoft)
+  car += 1
+  topDrivers.forEach((line) => {
+    costAnalysis.getCell(`A${car}`).value = line.name
+    costAnalysis.getCell(`B${car}`).value = line.line_cost
+    costAnalysis.getCell(`C${car}`).value = totals.totalCost > 0 ? line.line_cost / totals.totalCost : 0
+    costAnalysis.getCell(`D${car}`).value = line.type
+    ;['A', 'B', 'C', 'D'].forEach((col) => {
+      thinBorder(costAnalysis.getCell(`${col}${car}`))
+      align(costAnalysis.getCell(`${col}${car}`), {})
     })
-
-  autosizeColumns(analysis, 12, 32)
-
-  const scaleLab = workbook.addWorksheet('Scale Lab', {
-    views: [{ showGridLines: false, ySplit: 4 }],
-    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    costAnalysis.getCell(`B${car}`).numFmt = moneyFmt(currency, 2)
+    costAnalysis.getCell(`C${car}`).numFmt = '0.0%'
+    car += 1
   })
-  scaleLab.columns = [
-    { width: 30 },
-    { width: 16 },
-    { width: 14 },
-    { width: 16 },
-    { width: 16 },
-    { width: 18 },
-  ]
 
-  scaleLab.getCell('A1').value = `${name} — Kitchen Scaling Lab`
-  scaleLab.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
+  const scaleLab = workbook.addWorksheet('Scale Lab', { views: [{ showGridLines: false, ySplit: 5 }] })
+  setSheetDefaults(scaleLab, 'Scale Lab', 'landscape')
+  scaleLab.columns = [{ width: 30 }, { width: 16 }, { width: 14 }, { width: 18 }, { width: 18 }, { width: 18 }]
   scaleLab.mergeCells('A1:F1')
-  scaleLab.getCell('A2').value = 'Base Portions'
-  scaleLab.getCell('B2').value = portions
-  scaleLab.getCell('D2').value = 'Target Portions'
-  scaleLab.getCell('E2').value = portions
-  scaleLab.getCell('A3').value = 'Scale Factor'
-  scaleLab.getCell('B3').value = { formula: `IFERROR(E2/B2,1)` }
-  scaleLab.getCell('B3').numFmt = '0.00x'
-  ;['A2', 'B2', 'D2', 'E2', 'A3', 'B3'].forEach((ref) => {
-    thinBorder(scaleLab.getCell(ref))
-  })
-  fill(scaleLab.getCell('A2'), 'FFF8FAFC')
-  fill(scaleLab.getCell('D2'), 'FFF8FAFC')
-  fill(scaleLab.getCell('A3'), 'FFF8FAFC')
-
-  scaleLab.getRow(5).values = ['Ingredient / Sub-Recipe', 'Base Net Qty', 'Unit', 'Scaled Net Qty', 'Scaled Gross Qty', 'Scaled Line Cost']
-  scaleLab.getRow(5).font = { name: 'Calibri', size: 11, bold: true }
-  scaleLab.getRow(5).eachCell((cell) => {
-    fill(cell, 'FFE2E8F0')
-    thinBorder(cell)
-  })
-
-  let sr = 6
+  styleTitle(scaleLab.getCell('A1'), `${name} — Scaling Lab`)
+  styleSectionLabel(scaleLab.getCell('A3'), 'Base Portions', COLORS.panel)
+  styleValue(scaleLab.getCell('B3'), portions)
+  styleSectionLabel(scaleLab.getCell('D3'), 'Target Portions', COLORS.panel)
+  scaleLab.getCell('E3').value = portions
+  thinBorder(scaleLab.getCell('E3'))
+  fill(scaleLab.getCell('E3'), COLORS.tealSoft)
+  font(scaleLab.getCell('E3'), { bold: true })
+  align(scaleLab.getCell('E3'), { horizontal: 'center' })
+  styleSectionLabel(scaleLab.getCell('A4'), 'Scale Factor', COLORS.panel)
+  scaleLab.getCell('B4').value = { formula: 'IFERROR(E3/B3,1)' }
+  scaleLab.getCell('B4').numFmt = '0.00x'
+  thinBorder(scaleLab.getCell('B4'))
+  fill(scaleLab.getCell('B4'), COLORS.white)
+  scaleLab.getRow(6).values = ['Ingredient / Sub-Recipe', 'Base Net Qty', 'Unit', 'Scaled Net Qty', 'Scaled Gross Qty', 'Scaled Line Cost']
+  styleTableHeader(scaleLab.getRow(6), COLORS.tealSoft)
+  let slr = 7
   lines.forEach((line) => {
-    scaleLab.getCell(`A${sr}`).value = line.name
-    scaleLab.getCell(`B${sr}`).value = line.net_qty
-    scaleLab.getCell(`C${sr}`).value = line.unit
-    scaleLab.getCell(`D${sr}`).value = { formula: `B${sr}*$B$3` }
-    scaleLab.getCell(`E${sr}`).value = { formula: `${safeNum(line.gross_qty)}*$B$3` }
-    scaleLab.getCell(`F${sr}`).value = { formula: `${safeNum(line.line_cost)}*$B$3` }
-    ;['B', 'D', 'E'].forEach((col) => (scaleLab.getCell(`${col}${sr}`).numFmt = '#,##0.000'))
-    scaleLab.getCell(`F${sr}`).numFmt = moneyFmt(currency, 2)
-    ;['A', 'B', 'C', 'D', 'E', 'F'].forEach((col) => thinBorder(scaleLab.getCell(`${col}${sr}`)))
-    sr += 1
+    scaleLab.getCell(`A${slr}`).value = line.name
+    scaleLab.getCell(`B${slr}`).value = line.net_qty
+    scaleLab.getCell(`C${slr}`).value = line.unit
+    scaleLab.getCell(`D${slr}`).value = { formula: `B${slr}*$B$4` }
+    scaleLab.getCell(`E${slr}`).value = { formula: `${safeNum(line.gross_qty)}*$B$4` }
+    scaleLab.getCell(`F${slr}`).value = { formula: `${safeNum(line.line_cost)}*$B$4` }
+    ;['A', 'B', 'C', 'D', 'E', 'F'].forEach((col) => thinBorder(scaleLab.getCell(`${col}${slr}`)))
+    ;['B', 'D', 'E'].forEach((col) => (scaleLab.getCell(`${col}${slr}`).numFmt = '#,##0.000'))
+    scaleLab.getCell(`F${slr}`).numFmt = moneyFmt(currency, 2)
+    slr += 1
   })
-  autosizeColumns(scaleLab, 12, 34)
 
-  const method = workbook.addWorksheet('Method', {
-    views: [{ showGridLines: false }],
-    pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
-  })
-  method.columns = [{ width: 8 }, { width: 74 }]
+  const photoGallery = workbook.addWorksheet('Photo Gallery', { views: [{ showGridLines: false }] })
+  setSheetDefaults(photoGallery, 'Photo Gallery', 'landscape')
+  photoGallery.columns = [{ width: 23 }, { width: 23 }, { width: 23 }, { width: 23 }, { width: 23 }, { width: 23 }]
+  photoGallery.mergeCells('A1:F1')
+  styleTitle(photoGallery.getCell('A1'), `${name} — Photo Gallery`)
+  photoGallery.mergeCells('A2:F2')
+  photoGallery.getCell('A2').value = 'Images appear when the URL is public and reachable by the browser, or when the photo is passed as a base64 data URL.'
+  font(photoGallery.getCell('A2'), { size: 10, color: { argb: COLORS.slate } as any })
 
-  method.getCell('A1').value = name
-  method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  method.mergeCells('A1:B1')
-  method.getCell('A3').value = 'Preparation Method'
-  method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF334155' } }
-  method.mergeCells('A3:B3')
+  styleSectionLabel(photoGallery.getCell('A4'), 'Main Recipe Photo', COLORS.oliveSoft)
+  photoGallery.mergeCells('A4:C4')
+  const galleryMainAdded = await addImageFromUrl(workbook, photoGallery, meta.photo_url, { col: 0.15, row: 4.25, width: 340, height: 210 })
+  if (!galleryMainAdded) addPlaceholderBox(photoGallery, 'A5:C14', 'Recipe Photo', meta.photo_url ? 'Check CORS/public access or image format.' : 'No main image provided.')
 
-  let methodRow = 5
-  if (cleanSteps.length) {
-    for (let i = 0; i < cleanSteps.length; i++) {
-      method.getCell(`A${methodRow}`).value = `${i + 1}.`
-      method.getCell(`A${methodRow}`).alignment = { vertical: 'top', horizontal: 'right' }
-      method.getCell(`A${methodRow}`).font = { name: 'Calibri', size: 11, bold: true }
-      method.getCell(`B${methodRow}`).value = cleanSteps[i]
-      method.getCell(`B${methodRow}`).alignment = { vertical: 'top', horizontal: 'left', wrapText: true }
-      method.getCell(`B${methodRow}`).font = { name: 'Calibri', size: 11 }
-      thinBorder(method.getCell(`A${methodRow}`))
-      thinBorder(method.getCell(`B${methodRow}`))
-      method.getRow(methodRow).height = Math.max(24, Math.ceil(cleanSteps[i].length / 9))
-      methodRow += 1
-    }
-  } else {
-    method.getCell('A5').value = '—'
-    method.getCell('B5').value = 'No steps provided.'
+  let currentRow = 4
+  for (let i = 0; i < Math.max(cleanSteps.length, 1); i++) {
+    const titleCol = i % 2 === 0 ? 'D' : 'A'
+    if (i > 0 && i % 2 === 0) currentRow += 11
+    const startColIndex = titleCol === 'D' ? 3.1 : 0.15
+    const boxTop = currentRow
+    photoGallery.getCell(`${titleCol}${boxTop}`).value = `Step ${i + 1}`
+    font(photoGallery.getCell(`${titleCol}${boxTop}`), { bold: true, size: 11 })
+    const photoOk = cleanSteps[i]
+      ? await addImageFromUrl(workbook, photoGallery, stepPhotos[i], { col: startColIndex, row: boxTop + 0.25, width: 340, height: 180 })
+      : false
+    const placeRange = titleCol === 'D' ? `D${boxTop + 1}:F${boxTop + 9}` : `A${boxTop + 1}:C${boxTop + 9}`
+    if (cleanSteps[i] && !photoOk) addPlaceholderBox(photoGallery, placeRange, `Step ${i + 1} Photo`, 'No step photo embedded.')
+    const noteCell = photoGallery.getCell(titleCol === 'D' ? `D${boxTop + 10}` : `A${boxTop + 10}`)
+    noteCell.value = cleanSteps[i] || 'No step content available.'
+    font(noteCell, { size: 10, color: { argb: COLORS.charcoal } as any })
+    align(noteCell, { vertical: 'top', wrapText: true })
   }
 
-  const nutrition = workbook.addWorksheet('Nutrition', {
-    views: [{ showGridLines: false }],
-    pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  const printCard = workbook.addWorksheet('Print Card', { views: [{ showGridLines: false }] })
+  setSheetDefaults(printCard, 'Print Card')
+  printCard.columns = [{ width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }, { width: 18 }]
+  printCard.properties.defaultRowHeight = 18
+  printCard.mergeCells('A1:F1')
+  styleTitle(printCard.getCell('A1'), name)
+  printCard.mergeCells('A2:F2')
+  printCard.getCell('A2').value = 'Kitchen-ready quick print card'
+  font(printCard.getCell('A2'), { size: 10, color: { argb: COLORS.slate } as any })
+  await tryAddLogo(workbook, printCard, { col: 4.8, row: 0.15, width: 56, height: 56 })
+
+  styleSectionLabel(printCard.getCell('A4'), 'Quick Summary', COLORS.oliveSoft)
+  printCard.mergeCells('A4:C4')
+  styleSectionLabel(printCard.getCell('D4'), 'Photo', COLORS.oliveSoft)
+  printCard.mergeCells('D4:F4')
+  styleSectionLabel(printCard.getCell('A5'), 'Code', COLORS.panel)
+  styleValue(printCard.getCell('B5'), recipeCode)
+  styleSectionLabel(printCard.getCell('A6'), 'Category', COLORS.panel)
+  styleValue(printCard.getCell('B6'), meta.category || '')
+  styleSectionLabel(printCard.getCell('A7'), 'Portions', COLORS.panel)
+  styleValue(printCard.getCell('B7'), portions)
+  styleSectionLabel(printCard.getCell('A8'), 'Yield', COLORS.panel)
+  styleValue(printCard.getCell('B8'), yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
+  styleSectionLabel(printCard.getCell('A9'), 'Cost / Portion', COLORS.panel)
+  styleValue(printCard.getCell('B9'), totals.cpp)
+  printCard.getCell('B9').numFmt = moneyFmt(currency, 2)
+
+  const printMainAdded = await addImageFromUrl(workbook, printCard, meta.photo_url, { col: 3.15, row: 4.15, width: 255, height: 145 })
+  if (!printMainAdded) addPlaceholderBox(printCard, 'D5:F10', 'Recipe Photo', 'Print-friendly placeholder')
+
+  styleSectionLabel(printCard.getCell('A12'), 'Ingredients', COLORS.tealSoft)
+  printCard.mergeCells('A12:C12')
+  styleSectionLabel(printCard.getCell('D12'), 'Method', COLORS.tealSoft)
+  printCard.mergeCells('D12:F12')
+  let pir = 13
+  lines.slice(0, 14).forEach((line) => {
+    printCard.getCell(`A${pir}`).value = `${line.name}`
+    printCard.getCell(`B${pir}`).value = line.net_qty
+    printCard.getCell(`C${pir}`).value = line.unit
+    ;['A', 'B', 'C'].forEach((col) => {
+      thinBorder(printCard.getCell(`${col}${pir}`))
+      align(printCard.getCell(`${col}${pir}`), { vertical: 'middle' })
+    })
+    printCard.getCell(`B${pir}`).numFmt = '#,##0.000'
+    pir += 1
   })
-  nutrition.columns = [{ width: 28 }, { width: 22 }]
-  nutrition.getCell('A1').value = `${name} — Nutrition`
-  nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  nutrition.mergeCells('A1:B1')
+  if (!lines.length) addPlaceholderBox(printCard, 'A13:C16', 'No ingredients', 'Add recipe lines to populate this section.')
 
-  const nkv = (row: number, label: string, value: any) => {
-    nutrition.getCell(`A${row}`).value = label
-    nutrition.getCell(`A${row}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: 'FF334155' } }
-    nutrition.getCell(`B${row}`).value = value ?? ''
-    nutrition.getCell(`B${row}`).font = { name: 'Calibri', size: 11 }
-    thinBorder(nutrition.getCell(`A${row}`))
-    thinBorder(nutrition.getCell(`B${row}`))
-  }
-
-  nkv(3, 'Calories', meta.calories ?? '')
-  nkv(4, 'Protein (g)', meta.protein_g ?? '')
-  nkv(5, 'Carbs (g)', meta.carbs_g ?? '')
-  nkv(6, 'Fat (g)', meta.fat_g ?? '')
-  nkv(7, 'Portions', portions)
-  nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
-
-  const gallery = workbook.addWorksheet('Photos', {
-    views: [{ showGridLines: false }],
-    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+  let pmr = 13
+  cleanSteps.slice(0, 10).forEach((step, idx) => {
+    printCard.mergeCells(`D${pmr}:F${pmr}`)
+    const c = printCard.getCell(`D${pmr}`)
+    c.value = `${idx + 1}. ${step}`
+    thinBorder(c)
+    font(c, { size: 10 })
+    align(c, { vertical: 'top', horizontal: 'left', wrapText: true })
+    pmr += 1
   })
-  gallery.columns = [{ width: 24 }, { width: 24 }, { width: 24 }, { width: 24 }]
-  gallery.getCell('A1').value = `${name} — Photo Gallery`
-  gallery.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  gallery.mergeCells('A1:D1')
-  gallery.getCell('A2').value = 'Recipe image + step photos will appear here when image URLs are reachable by the browser and are PNG/JPG or data URLs.'
-  gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: 'FF64748B' } }
-  gallery.mergeCells('A2:D2')
-
-  let galleryRow = 4
-  gallery.getRow(galleryRow).height = 20
-  gallery.getCell(`A${galleryRow}`).value = 'Main Recipe Photo'
-  gallery.getCell(`A${galleryRow}`).font = { name: 'Calibri', size: 11, bold: true }
-  gallery.mergeCells(`A${galleryRow}:B${galleryRow}`)
-  const mainPhotoAdded = await addImageFromUrl(workbook, gallery, meta.photo_url, { col: 0.2, row: galleryRow + 0.2, width: 300, height: 200 })
-  if (!mainPhotoAdded) {
-    gallery.mergeCells(`A${galleryRow + 1}:B${galleryRow + 8}`)
-    gallery.getCell(`A${galleryRow + 1}`).value = meta.photo_url ? 'Recipe photo could not be embedded. Check image format/CORS/public access.' : 'No recipe photo available.'
-    gallery.getCell(`A${galleryRow + 1}`).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    fill(gallery.getCell(`A${galleryRow + 1}`), 'FFF8FAFC')
-    thinBorder(gallery.getCell(`A${galleryRow + 1}`))
-  }
-
-  let photoCardStartRow = 4
-  let photoCardStartCol = 2.1
-  for (let i = 0; i < cleanSteps.length; i++) {
-    const titleCell = i % 2 === 0 ? `C${photoCardStartRow}` : `A${photoCardStartRow + 10}`
-    gallery.getCell(titleCell).value = `Step ${i + 1}`
-    gallery.getCell(titleCell).font = { name: 'Calibri', size: 11, bold: true }
-    const targetCol = i % 2 === 0 ? 2.1 : 0.2
-    const targetRow = i % 2 === 0 ? photoCardStartRow + 0.2 : photoCardStartRow + 10.2
-    if (i > 1) {
-      photoCardStartRow += 10
-    }
-    const photoUrl = stepPhotos[i]
-    const ok = await addImageFromUrl(workbook, gallery, photoUrl, { col: targetCol, row: targetRow, width: 300, height: 170 })
-    const noteCell = i % 2 === 0 ? `C${(i > 1 ? photoCardStartRow + 8 : 12)}` : `A${(i > 1 ? photoCardStartRow + 18 : 22)}`
-    gallery.getCell(noteCell).value = cleanSteps[i]
-    gallery.getCell(noteCell).alignment = { wrapText: true, vertical: 'top', horizontal: 'left' }
-    gallery.getCell(noteCell).font = { name: 'Calibri', size: 10 }
-    if (!ok) {
-      gallery.getCell(noteCell).value = `${cleanSteps[i]}\n\n[No step photo embedded]`
-    }
-  }
+  if (!cleanSteps.length) addPlaceholderBox(printCard, 'D13:F16', 'No method', 'Add preparation steps to populate this section.')
 
   const buf = await workbook.xlsx.writeBuffer()
   const blob = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
-  saveAs(blob, `${safeFileName(name)} - Ultra Export.xlsx`)
+  saveAs(blob, `${safeFileName(name)} - Ultimate Export.xlsx`)
 }
