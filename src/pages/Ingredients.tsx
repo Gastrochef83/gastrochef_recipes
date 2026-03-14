@@ -1,0 +1,1184 @@
+import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
+import { useLocation } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingredientsCache'
+import { Toast } from '../components/Toast'
+import { Skeleton } from '../components/Skeleton'
+import { useKitchen } from '../lib/kitchen'
+
+type IngredientRow = {
+  id: string
+  code?: string | null
+  code_category?: string | null
+  name?: string
+  category?: string | null
+  supplier?: string | null
+
+  // Required (NOT NULL in your DB)
+  pack_size?: number | null
+  pack_price?: number | null
+
+  pack_unit?: string | null
+  net_unit_cost?: number | null
+
+  is_active?: boolean
+  kitchen_id?: string
+}
+
+function toNum(x: any, fallback = 0) {
+  const n = Number(x)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function money(n: number) {
+  const v = Number.isFinite(n) ? n : 0
+  return new Intl.NumberFormat(undefined, { style: 'currency', currency: 'USD' }).format(v)
+}
+
+function cls(...xs: (string | false | undefined | null)[]) {
+  return xs.filter(Boolean).join(' ')
+}
+
+function safeUnit(u: string) {
+  return (u ?? '').trim().toLowerCase() || 'g'
+}
+
+function calcNetUnitCost(packPrice: number, packSize: number) {
+  const ps = Math.max(1e-9, packSize)
+  const pp = Math.max(0, packPrice)
+  return pp / ps
+}
+
+function sanityFlag(net: number, unit: string) {
+  // Simple heuristics: if cost per "g/ml" is extremely high, probably wrong units.
+  // We keep it gentle; it’s a hint, not a blocker.
+  const u = safeUnit(unit)
+  if (!Number.isFinite(net) || net <= 0) return { level: 'missing' as const, msg: 'Missing cost' }
+
+  if (u === 'g' || u === 'ml') {
+    if (net > 1) return { level: 'warn' as const, msg: 'Looks too high per g/ml (unit mismatch?)' }
+  }
+  if (u === 'kg' || u === 'l') {
+    if (net > 200) return { level: 'warn' as const, msg: 'Looks too high per kg/L' }
+  }
+  if (u === 'pcs') {
+    if (net > 500) return { level: 'warn' as const, msg: 'Looks too high per piece' }
+  }
+  return { level: 'ok' as const, msg: '' }
+}
+
+function Modal({
+  open,
+  title,
+  children,
+  onClose,
+}: {
+  open: boolean
+  title: string
+  children: ReactNode
+  onClose: () => void
+}) {
+  if (!open) return null
+  return (
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2">
+        <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col">
+          <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-black/10">
+            <div>
+              <div className="gc-label">INGREDIENT</div>
+              <div className="mt-1 text-xl font-extrabold">{title}</div>
+            </div>
+            <button className="gc-btn gc-btn-ghost" onClick={onClose} type="button">
+              Close
+            </button>
+          </div>
+          <div className="p-6 pt-5 overflow-auto">{children}</div>
+        </div>
+      </div>
+    </div>
+  )
+}
+const IngredientTableRow = memo(function IngredientTableRow({
+  r,
+  isDebug,
+  onEdit,
+  onHardDelete,
+}: {
+  r: IngredientRow
+  isDebug: boolean
+  onEdit: (r: IngredientRow) => void
+  onHardDelete: (id: string) => void
+}) {
+  const active = r.is_active !== false
+  const net = toNum(r.net_unit_cost, 0)
+  const unit = r.pack_unit ?? 'g'
+  const flag = sanityFlag(net, unit)
+
+  return (
+    <tr>
+      <td className="text-xs text-neutral-600">
+        <span className="gc-ing-codepill" title={r.code ?? '—'}>
+          <span className="gc-mono">{r.code ?? '—'}</span>
+        </span>
+      </td>
+      <td>
+        <div className="font-semibold flex flex-wrap items-center gap-2">
+          <span>{r.name ?? '—'}</span>
+
+          {!active && (
+            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
+          )}
+
+          {/* Intentionally hide "Missing cost" badge to reduce visual clutter (user request).
+              Cost issues are still visible via the Net Unit Cost column and diagnostics. */}
+
+          {flag.level === 'warn' && (
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
+          )}
+        </div>
+        {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
+        {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
+      </td>
+
+      <td>{r.category ?? '—'}</td>
+      <td className="gc-td-center">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="gc-td-center">{unit}</td>
+      <td className="gc-td-center font-semibold">{money(toNum(r.pack_price, 0))}</td>
+      <td className="gc-td-center font-semibold">{money(net)}</td>
+
+      <td className="gc-td-center whitespace-nowrap">
+        <div className="gc-cell-actions">
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
+            Edit
+          </button>
+
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
+            Delete
+          </button>
+        </div>
+      </td>
+    </tr>
+  )
+})
+
+
+export default function Ingredients() {
+  const k = useKitchen()
+  const canEditCodes = k.isOwner
+  const isDebug =
+    import.meta.env.DEV ||
+    (() => {
+      try {
+        if (new URLSearchParams(window.location.search).has('debug')) return true
+        const hash = window.location.hash || ''
+        const qIdx = hash.indexOf('?')
+        if (qIdx >= 0) {
+          const hashParams = new URLSearchParams(hash.slice(qIdx + 1))
+          if (hashParams.has('debug')) return true
+        }
+      } catch {
+        // ignore
+      }
+      return false
+    })()
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+
+  const [rows, setRows] = useState<IngredientRow[]>([])
+  const [search, setSearch] = useState('')
+  const loc = useLocation()
+
+  // One-time search prefill from Command Palette
+  useEffect(() => {
+    try {
+      const v = sessionStorage.getItem('gc:prefill:ingredients')
+      if (v && typeof v === 'string') {
+        setSearch(v)
+        sessionStorage.removeItem('gc:prefill:ingredients')
+      }
+    } catch {}
+  }, [loc.pathname, loc.hash])
+
+  const deferredSearch = useDeferredValue(search)
+  const [category, setCategory] = useState('')
+  const [showInactive, setShowInactive] = useState(false)
+  const [sortBy, setSortBy] = useState<'name' | 'cost' | 'pack_price'>('name')
+
+  const [kitchenId, setKitchenId] = useState<string | null>(null)
+
+  // Toast
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastOpen, setToastOpen] = useState(false)
+  const showToast = (msg: string) => {
+    setToastMsg(msg)
+    setToastOpen(true)
+  }
+
+  // Modal state
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingId, setEditingId] = useState<string | null>(null)
+
+  const [fCode, setFCode] = useState('')
+  const [fCodeCategory, setFCodeCategory] = useState('')
+  const [fName, setFName] = useState('')
+  const [fCategory, setFCategory] = useState('')
+  const [fSupplier, setFSupplier] = useState('')
+
+  // Required fields
+  const [fPackSize, setFPackSize] = useState('1')
+  const [fPackPrice, setFPackPrice] = useState('0')
+
+  const [fPackUnit, setFPackUnit] = useState('g')
+  const [fNetUnitCost, setFNetUnitCost] = useState('0')
+
+  const [saving, setSaving] = useState(false)
+  const [bulkWorking, setBulkWorking] = useState(false)
+
+  const progressiveRunRef = useRef<number>(0)
+
+  const loadKitchen = async () => {
+    const { data, error } = await supabase.rpc('current_kitchen_id')
+    if (!error) {
+      const kid = (data as string) ?? null
+      setKitchenId(kid)
+      return kid
+    }
+    setKitchenId(null)
+    return null
+  }
+
+  const FIELDS =
+    'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active'
+
+  const PAGE_SIZE = 200
+
+  const load = useCallback(async () => {
+    setLoading(true)
+    setErr(null)
+
+    // cancel any in-flight progressive load
+    const runId = Date.now()
+    progressiveRunRef.current = runId
+
+    try {
+      await loadKitchen()
+
+      let offset = 0
+      let acc: IngredientRow[] = []
+
+      while (true) {
+        // If a newer load started, stop this one
+        if (progressiveRunRef.current !== runId) return
+
+        const { data, error } = await supabase
+          .from('ingredients')
+          .select(FIELDS)
+          .order('name', { ascending: true })
+          .range(offset, offset + PAGE_SIZE - 1)
+
+        if (error) throw error
+
+        const chunk = ((data ?? []) as IngredientRow[]) || []
+        acc = acc.concat(chunk)
+
+        // Update UI progressively (fast first paint)
+        setRows(acc)
+
+        // Prime cache so other pages benefit without refetching within TTL
+        primeIngredientsCache(acc as any)
+
+        if (offset === 0) setLoading(false)
+
+        if (!chunk.length || chunk.length < PAGE_SIZE) break
+
+        offset += PAGE_SIZE
+
+        // Yield to the browser so scrolling/typing stays responsive
+        await new Promise((r) => setTimeout(r, 0))
+      }
+
+      setLoading(false)
+    } catch (e: any) {
+      setErr(e?.message ?? 'Unknown error')
+      setLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    load()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const normalized = useMemo(() => {
+    return rows.filter((r) => (showInactive ? true : r.is_active !== false))
+  }, [rows, showInactive])
+
+  const categories = useMemo(() => {
+    const s = new Set<string>()
+    for (const r of normalized) {
+      const c = (r.category ?? '').trim()
+      if (c) s.add(c)
+    }
+    return Array.from(s).sort((a, b) => a.localeCompare(b))
+  }, [normalized])
+
+  const filtered = useMemo(() => {
+    const s = deferredSearch.trim().toLowerCase()
+    let list = normalized.filter((r) => {
+      const name = (r.name ?? '').toLowerCase()
+      const sup = (r.supplier ?? '').toLowerCase()
+      const okSearch = !s || name.includes(s) || sup.includes(s)
+      const okCat = !category || (r.category ?? '') === category
+      return okSearch && okCat
+    })
+
+    if (sortBy === 'name') {
+      list = list.sort((a, b) => (a.name ?? '').localeCompare(b.name ?? ''))
+    } else if (sortBy === 'cost') {
+      list = list.sort((a, b) => toNum(b.net_unit_cost, 0) - toNum(a.net_unit_cost, 0))
+    } else {
+      list = list.sort((a, b) => toNum(b.pack_price, 0) - toNum(a.pack_price, 0))
+    }
+
+    return list
+  }, [normalized, deferredSearch, category, sortBy])
+
+  const stats = useMemo(() => {
+    const items = filtered.length
+    const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
+    const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
+
+    const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
+    const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
+
+    return { items, avgNet, maxPack, missingCost, warnUnits }
+  }, [filtered])
+
+  const openCreate = () => {
+    setEditingId(null)
+    setFCode('')
+    setFCodeCategory('')
+    setFName('')
+    setFCategory('')
+    setFSupplier('')
+    setFPackSize('1')
+    setFPackPrice('0')
+    setFPackUnit('g')
+    setFNetUnitCost('0')
+    setModalOpen(true)
+  }
+
+  const openEdit = (r: IngredientRow) => {
+    setEditingId(r.id)
+    setFCode((r.code ?? '').toUpperCase())
+    setFCodeCategory((r.code_category ?? '').toUpperCase())
+    setFName(r.name ?? '')
+    setFCategory(r.category ?? '')
+    setFSupplier(r.supplier ?? '')
+    setFPackSize(String(Math.max(1, toNum(r.pack_size, 1))))
+    setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
+    setFPackUnit(r.pack_unit ?? 'g')
+    setFNetUnitCost(String(Math.max(0, toNum(r.net_unit_cost, 0))))
+    setModalOpen(true)
+  }
+
+  const smartRecalcNetCost = () => {
+    const ps = Math.max(1, toNum(fPackSize, 1))
+    const pp = Math.max(0, toNum(fPackPrice, 0))
+    const net = calcNetUnitCost(pp, ps)
+    setFNetUnitCost(String(Math.round(net * 1000000) / 1000000))
+    showToast('Net Unit Cost recalculated from Pack')
+  }
+
+  const save = async () => {
+    const name = fName.trim()
+    if (!name) return showToast('Name is required')
+
+    const codeInput = (fCode || '').trim().toUpperCase()
+    if (codeInput && !codeInput.startsWith('ING-')) return showToast('Ingredient code must start with ING-')
+
+    const codeCatInput = (fCodeCategory || '').trim().toUpperCase()
+    if (codeCatInput) {
+      const norm = codeCatInput.replace(/[^A-Z0-9]/g, '')
+      if (!norm) return showToast('Code category must be A-Z/0-9')
+      if (norm.length > 6) return showToast('Code category max 6 chars')
+    }
+
+    const packSize = Math.max(1, toNum(fPackSize, 1))
+    const packPrice = Math.max(0, toNum(fPackPrice, 0))
+
+    const unit = safeUnit(fPackUnit || 'g')
+    const net = Math.max(0, toNum(fNetUnitCost, 0))
+
+    // If user left net cost empty/zero, auto compute from pack
+    const netFinal = net > 0 ? net : calcNetUnitCost(packPrice, packSize)
+
+    setSaving(true)
+    try {
+      const payload: any = {
+        code: (fCode || '').trim().toUpperCase() || null,
+        code_category: (fCodeCategory || '').trim().toUpperCase() || null,
+        name,
+        category: fCategory.trim() || null,
+        supplier: fSupplier.trim() || null,
+
+        pack_size: packSize,
+        pack_price: packPrice,
+
+        pack_unit: unit,
+        net_unit_cost: netFinal,
+        is_active: true,
+      }
+
+      if (kitchenId) payload.kitchen_id = kitchenId
+
+      if (editingId) {
+        let { error } = await supabase.from('ingredients').update(payload).eq('id', editingId)
+        if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
+          delete payload.kitchen_id
+          ;({ error } = await supabase.from('ingredients').update(payload).eq('id', editingId))
+        }
+        if (error) throw error
+        showToast('Ingredient updated')
+      } else {
+        let { error } = await supabase.from('ingredients').insert(payload)
+        if (error && String(error.message || '').includes('column "kitchen_id" does not exist')) {
+          delete payload.kitchen_id
+          ;({ error } = await supabase.from('ingredients').insert(payload))
+        }
+        if (error) throw error
+        showToast('Ingredient created')
+      }
+
+      setModalOpen(false)
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Save failed')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const suggestedCodeCategory = useMemo(() => {
+    const raw = (fCategory || 'GEN').toUpperCase()
+    const norm = raw.replace(/[^A-Z0-9]/g, '')
+    return (norm || 'GEN').slice(0, 6)
+  }, [fCategory])
+
+  const deactivate = async (id: string) => {
+    const ok = confirm('Deactivate ingredient? It will be hidden from pickers.')
+    if (!ok) return
+    const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
+    if (error) return showToast(error.message)
+    showToast('Ingredient deactivated')
+    await load()
+  }
+
+  const restore = async (id: string) => {
+    const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
+    if (error) return showToast(error.message)
+    showToast('Ingredient restored')
+    await load()
+  }
+
+  const hardDelete = async (id: string) => {
+    const ok = confirm('Delete ingredient permanently? This cannot be undone.')
+    if (!ok) return
+
+    const { error } = await supabase.from('ingredients').delete().eq('id', id)
+    if (error) {
+      const msg = String((error as any).message || '')
+      const code = String((error as any).code || '')
+      if (code === '23503' || msg.toLowerCase().includes('foreign key')) {
+        return showToast('Cannot delete: this ingredient is used in recipes. Remove it from recipe lines first.')
+      }
+      return showToast(msg || 'Delete failed')
+    }
+
+    showToast('Ingredient deleted')
+    await load()
+  }
+
+
+  const bulkRecalcNetCosts = async () => {
+    if (filtered.length === 0) return
+    const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
+    if (!ok) return
+
+    setBulkWorking(true)
+    try {
+      // Update sequentially to keep it simple and safe (no RPC required)
+      for (const r of filtered) {
+        const ps = Math.max(1, toNum(r.pack_size, 1))
+        const pp = Math.max(0, toNum(r.pack_price, 0))
+        const net = calcNetUnitCost(pp, ps)
+
+        const { error } = await supabase.from('ingredients').update({ net_unit_cost: net }).eq('id', r.id)
+        if (error) throw error
+      }
+
+      invalidateIngredientsCache()
+      showToast('Bulk recalculation done')
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Bulk recalculation failed')
+    } finally {
+      setBulkWorking(false)
+    }
+  }
+
+  const bulkSetActive = async (active: boolean) => {
+    if (filtered.length === 0) return
+    const ok = confirm(`${active ? 'Activate' : 'Deactivate'} ${filtered.length} ingredients?`)
+    if (!ok) return
+
+    setBulkWorking(true)
+    try {
+      for (const r of filtered) {
+        const { error } = await supabase.from('ingredients').update({ is_active: active }).eq('id', r.id)
+        if (error) throw error
+      }
+
+      invalidateIngredientsCache()
+      showToast('Bulk update done')
+      await load()
+    } catch (e: any) {
+      showToast(e?.message ?? 'Bulk update failed')
+    } finally {
+      setBulkWorking(false)
+    }
+  }
+
+  return (
+    <div className="gc-ingredients space-y-6">
+      {/* Header */}
+      <div className="gc-card p-6 gc-page-header">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="gc-label">INGREDIENTS — PRO</div>
+            <div className="mt-2 text-2xl font-extrabold">Database</div>
+            <div className="mt-2 text-sm text-neutral-600">Search, filter, sort, validate costs, and manage ingredients.</div>
+            {isDebug && (
+              <div className="mt-3 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-neutral-700">
+              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+              Show inactive
+            </label>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={bulkRecalcNetCosts} disabled={bulkWorking}>
+              {bulkWorking ? 'Working…' : 'Recalc net cost (filtered)'}
+            </button>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => bulkSetActive(true)} disabled={bulkWorking}>
+              Activate (filtered)
+            </button>
+
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => bulkSetActive(false)} disabled={bulkWorking}>
+              Deactivate (filtered)
+            </button>
+
+            <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
+              + Add ingredient
+            </button>
+          </div>
+        </div>
+
+        
+        {/* Filters */}
+        <div className="mt-4 gc-ing-toolbar">
+          <div className="gc-ing-search">
+            <div className="gc-ing-toolbar-label">Search</div>
+            <div className="gc-ing-search-control">
+              <span className="gc-ing-search-icon" aria-hidden="true">🔍</span>
+              <input
+                className="gc-input gc-ing-search-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ingredients (name, code, supplier)…"
+              />
+              {search && (
+                <button type="button" className="gc-ing-clear" onClick={() => setSearch('')} aria-label="Clear search">
+                  ×
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="gc-ing-filter">
+            <div className="gc-ing-toolbar-label">Category</div>
+            <select className="gc-input gc-ing-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">All categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="gc-ing-filter">
+            <div className="gc-ing-toolbar-label">Sort</div>
+            <select className="gc-input gc-ing-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+              <option value="name">Name (A→Z)</option>
+              <option value="cost">Net Unit Cost (High→Low)</option>
+              <option value="pack_price">Pack Price (High→Low)</option>
+            </select>
+          </div>
+        </div>
+
+
+      </div>
+      {/* Loading/Error */}
+      {loading && (
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-4">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <div key={i} className="gc-card p-5">
+                <Skeleton className="h-3 w-28 rounded-md" />
+                <div className="mt-3">
+                  <Skeleton className="h-8 w-28 rounded-lg" />
+                </div>
+                <div className="mt-2">
+                  <Skeleton className="h-3 w-32 rounded-md" />
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div className="gc-card p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <Skeleton className="h-10 w-full rounded-xl md:w-[420px]" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-28 rounded-xl" />
+                <Skeleton className="h-10 w-28 rounded-xl" />
+                <Skeleton className="h-10 w-28 rounded-xl" />
+              </div>
+            </div>
+          </div>
+
+          <div className="gc-card p-5">
+            <Skeleton className="h-4 w-48 rounded-md" />
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-4 w-20 rounded-md" />
+                <Skeleton className="h-4 w-48 rounded-md" />
+                <Skeleton className="h-4 w-32 rounded-md" />
+                <Skeleton className="h-4 w-24 rounded-md" />
+              </div>
+              {Array.from({ length: 8 }).map((_, r) => (
+                <div key={r} className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                  <Skeleton className="h-4 w-1/2 rounded-md" />
+                  <Skeleton className="h-4 w-32 rounded-md" />
+                  <Skeleton className="h-4 w-24 rounded-md" />
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {err && (
+        <div className="gc-card p-6">
+          <div className="gc-label">ERROR</div>
+          <div className="mt-2 text-sm text-red-600">{err}</div>
+        </div>
+      )}
+
+      {/* Body */}
+      {!loading && !err && (
+        <>
+          {/* KPIs */}
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="gc-card p-5">
+              <div className="gc-label">ITEMS</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.items}</div>
+              <div className="mt-1 text-xs text-neutral-500">Filtered results</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-label">AVG NET UNIT</div>
+              <div className="mt-2 text-2xl font-extrabold">{money(stats.avgNet)}</div>
+              <div className="mt-1 text-xs text-neutral-500">Average net unit cost</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-label">MISSING COST</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.missingCost}</div>
+              <div className="mt-1 text-xs text-neutral-500">net_unit_cost = 0 or empty</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-label">UNIT WARNINGS</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.warnUnits}</div>
+              <div className="mt-1 text-xs text-neutral-500">Possible unit mismatch</div>
+            </div>
+          </div>
+
+{/* List */}
+          <div className="gc-card p-6">
+            <style>{`
+
+              /* ===== GastroChef: Ingredients Search UX (SaaS) — scoped + safe ===== */
+              .gc-ing-toolbar{
+                display:flex;
+                flex-wrap:wrap;
+                gap:12px;
+                align-items:flex-end;
+              }
+              .gc-ing-toolbar-label{
+                font-size:11px;
+                letter-spacing:.08em;
+                text-transform:uppercase;
+                color:rgba(107,122,114,.95);
+                font-weight:600;
+                margin-bottom:6px;
+              }
+              .gc-ing-search{
+                flex:1 1 340px;
+                min-width:280px;
+              }
+              .gc-ing-filter{
+                flex:0 1 240px;
+                min-width:200px;
+              }
+              .gc-ing-search-control{
+                position:relative;
+              }
+              .gc-ing-search-icon{
+                position:absolute;
+                left:12px;
+                top:50%;
+                transform:translateY(-50%);
+                opacity:.75;
+                font-size:14px;
+                pointer-events:none;
+              }
+              .gc-ing-search-input{
+                padding-left:36px !important;
+                padding-right:36px !important;
+              }
+              .gc-ing-select{
+                width:100%;
+              }
+              .gc-ing-clear{
+                position:absolute;
+                right:10px;
+                top:50%;
+                transform:translateY(-50%);
+                width:26px;
+                height:26px;
+                border-radius:999px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:18px;
+                line-height:1;
+                opacity:.7;
+              }
+              .gc-ing-clear:hover{ opacity:1; }
+              .gc-ing-clear:focus{ outline:none; }
+              @media (max-width: 768px){
+                .gc-ing-filter{ flex:1 1 220px; }
+              }
+
+
+              /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
+              .gc-data-table-wrap{
+                max-width:100%;
+                overflow-x:auto;
+                -webkit-overflow-scrolling:touch;
+                padding-bottom:4px;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table{
+                width:100%;
+                min-width:980px;
+                margin:0 auto;
+                border-collapse:separate;
+                border-spacing:0;
+                table-layout:auto;
+              }
+
+              /* header (NON-sticky by request) */
+              .gc-data-table-wrap .gc-ing-pro-table thead th{
+                position:static;
+                background:#f4f6f5;
+                color:#6b7a72;
+                font-size:12px;
+                letter-spacing:.04em;
+                font-weight:600;
+                border-bottom:1px solid rgba(0,0,0,0.08);
+              }
+
+              .gc-data-table-wrap .gc-ing-pro-table th,
+              .gc-data-table-wrap .gc-ing-pro-table td{
+                padding:14px 14px;
+                border-bottom:1px solid rgba(0,0,0,0.06);
+                vertical-align:middle;
+                text-align:center;
+              }
+
+              /* body text */
+              .gc-data-table-wrap .gc-ing-pro-table td{
+                font-size:14px;
+                color:#2f3a35;
+              }
+
+              /* subtle vertical gridlines (SaaS-soft) */
+              .gc-data-table-wrap .gc-ing-pro-table th + th,
+              .gc-data-table-wrap .gc-ing-pro-table td + td{
+                border-left:1px solid rgba(0,0,0,0.045);
+              }
+
+              /* zebra */
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(odd) td{
+                background:rgba(0,0,0,0.00);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(even) td{
+                background:rgba(0,0,0,0.012);
+              }
+
+              /* hover (soft neutral) */
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:hover td{
+                background:#eef3f1;
+              }
+
+              /* numeric alignment (still centered per your preference) */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
+                text-align:center;
+                font-variant-numeric:tabular-nums;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
+                text-align:center;
+              }
+
+              /* code pill (smaller + calmer) */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill{
+                display:inline-flex;
+                align-items:center;
+                gap:6px;
+                max-width:100%;
+                padding:4px 10px;
+                border-radius:999px;
+                border:1px solid rgba(0,0,0,0.08);
+                background:#f1f4f3;
+                box-shadow:none;
+                font-size:12px;
+                line-height:1;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill .gc-mono{
+                font-size:12px;
+              }
+
+              /* make "Name" feel premium without changing alignment */
+              .gc-data-table-wrap .gc-ing-pro-table td.gc-col-name{
+                font-weight:500;
+              }
+
+              /* actions */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions{
+                display:flex;
+                justify-content:center;
+                gap:10px;
+                white-space:nowrap;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn{
+                height:32px;
+                padding:0 12px;
+                border-radius:999px;
+                border:1px solid rgba(0,0,0,0.08);
+                background:rgba(255,255,255,0.90);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn:hover{
+                background:rgba(0,0,0,0.04);
+              }
+
+              /* column sizing */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-code{ width: 110px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-pack{ width: 70px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-unit{ width: 80px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-packprice{ width: 120px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-netunit{ width: 130px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 150px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 220px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
+              /* ===== GastroChef: Add Ingredient Modal PRO UX (scoped) ===== */
+              .gc-add-ingredient-modal .gc-form-section{
+                margin-top: 2px;
+                padding-top: 6px;
+              }
+              .gc-add-ingredient-modal .gc-form-section-title{
+                font-size: 11px;
+                letter-spacing: .10em;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: rgba(55, 65, 81, .75);
+                padding: 8px 2px 2px 2px;
+                border-top: 1px solid rgba(15, 23, 42, .08);
+              }
+              .gc-add-ingredient-modal .gc-form-section:first-of-type .gc-form-section-title{
+                border-top: none;
+                padding-top: 0;
+              }
+              .gc-add-ingredient-modal .gc-label{
+                letter-spacing: .06em;
+              }
+`}</style>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="gc-label">LIST</div>
+                <div className="mt-1 text-sm text-neutral-600">Click Edit to validate pack + cost.</div>
+              </div>
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
+                Refresh
+              </button>
+            </div>
+
+            {filtered.length === 0 ? (
+              <div className="mt-4">
+                <div className="rounded-2xl border border-black/5 bg-white p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/5 text-xl" aria-hidden>
+                        🧂
+                      </div>
+                      <div>
+                        <div className="text-base font-semibold text-neutral-900">
+                          {rows.length === 0
+                            ? 'No ingredients yet'
+                            : normalized.length === 0
+                              ? 'No active ingredients'
+                              : (search.trim() || category ? 'No ingredients found' : 'No results found')}
+                        </div>
+                        <div className="mt-1 text-sm text-neutral-600">
+                          {rows.length === 0
+                            ? 'Start your kitchen database by adding your first ingredient. This powers costing, yields, and recipe accuracy.'
+                            : normalized.length === 0
+                              ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them, or add a new one.'
+                              : (search.trim() || category
+                              ? 'No ingredients match your current search/filters. Try clearing them, or add a new ingredient.'
+                              : 'Try adjusting your search, category, or inactive filter to find what you need.')}
+                        </div>
+
+                        {(search.trim() || category) && rows.length > 0 && normalized.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-neutral-600">
+                            {search.trim() ? (
+                              <span className="rounded-full bg-neutral-100 px-2 py-1">
+                                Search: <span className="gc-mono">{search.trim()}</span>
+                              </span>
+                            ) : null}
+                            {category ? (
+                              <span className="rounded-full bg-neutral-100 px-2 py-1">
+                                Category: <span className="gc-mono">{category}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        {rows.length > 0 && normalized.length > 0 ? (
+                          <div className="mt-3 text-xs text-neutral-500">
+                            Tip: clear filters to return to the full list.
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {rows.length === 0 ? (
+                        <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
+                          + Add ingredient
+                        </button>
+                      ) : normalized.length === 0 ? (
+                        <>
+                          <button className="gc-btn gc-btn-primary" type="button" onClick={() => setShowInactive(true)}>
+                            Show inactive
+                          </button>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
+                            + Add ingredient
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="gc-btn gc-btn-primary"
+                            type="button"
+                            onClick={() => {
+                              setSearch('')
+                              setCategory('')
+                            }}
+                          >
+                            Clear filters
+                          </button>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
+                            + Add ingredient
+                          </button>
+                        </>
+                      )}
+
+                      <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
+                        Refresh
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-4 gc-data-table-wrap">
+                <table className="gc-data-table gc-ing-pro-table text-sm">
+                  <thead>
+                    <tr>
+                      <th className="gc-col-code">Code</th>
+                      <th className="gc-col-name">Name</th>
+                      <th className="gc-col-category">Category</th>
+                      <th className={cls('gc-th-center', 'gc-col-pack')}>Pack</th>
+                      <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
+                      <th className={cls('gc-th-center', 'gc-col-packprice')}>Pack Price</th>
+                      <th className={cls('gc-th-center', 'gc-col-netunit')}>Net Unit Cost</th>
+                      <th className={cls('gc-th-center', 'gc-col-actions')}>Actions</th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="align-top">
+                    {filtered.map((r) => (
+                      <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
+        </>
+      )}
+
+      {/* Modal */}
+      <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
+        <div className="gc-add-ingredient-modal gc-form-grid cols-2">
+          {/* IDENTIFICATION */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">IDENTIFICATION</div>
+          </div>
+
+          <div>
+            <div className="gc-label">CODE</div>
+            <input
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
+              value={fCode}
+              onChange={(e) => setFCode(e.target.value)}
+              placeholder="ING-000123 (optional)"
+              disabled={!canEditCodes}
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">Leave empty to auto-generate. If provided, must start with ING-</div>
+            {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
+          </div>
+
+          <div>
+            <div className="gc-label">CODE CATEGORY</div>
+            <input
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
+              value={fCodeCategory}
+              onChange={(e) => setFCodeCategory(e.target.value)}
+              placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
+              disabled={!canEditCodes}
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">
+              Optional (up to 6 chars A–Z/0–9). If empty, DB uses Category (suggested: <span className="font-mono">{suggestedCodeCategory}</span>).
+            </div>
+          </div>
+
+          <div className="span-2">
+            <div className="gc-label">NAME</div>
+            <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
+          </div>
+
+          {/* CLASSIFICATION */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">CLASSIFICATION</div>
+          </div>
+
+          <div>
+            <div className="gc-label">CATEGORY</div>
+            <input className="gc-input mt-2 w-full" value={fCategory} onChange={(e) => setFCategory(e.target.value)} />
+          </div>
+
+          <div>
+            <div className="gc-label">SUPPLIER</div>
+            <input className="gc-input mt-2 w-full" value={fSupplier} onChange={(e) => setFSupplier(e.target.value)} />
+          </div>
+
+          {/* PACK */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">PACK</div>
+          </div>
+
+          <div>
+            <div className="gc-label">PACK SIZE</div>
+            <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={fPackSize} onChange={(e) => setFPackSize(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
+          </div>
+
+          <div>
+            <div className="gc-label">UNIT</div>
+            <select className="gc-input mt-2 w-full" value={fPackUnit} onChange={(e) => setFPackUnit(e.target.value)}>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">L</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </div>
+
+          {/* COST */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">COST</div>
+          </div>
+
+          <div>
+            <div className="gc-label">PACK PRICE</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.01" value={fPackPrice} onChange={(e) => setFPackPrice(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
+          </div>
+
+          <div>
+            <div className="gc-label">NET UNIT COST</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.000001" value={fNetUnitCost} onChange={(e) => setFNetUnitCost(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">If left 0 → auto-calculated from pack.</div>
+          </div>
+
+          {/* Smart helpers */}
+          <div className="md:col-span-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <div className="text-xs font-semibold text-neutral-600">SMART HELPERS</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={smartRecalcNetCost}>
+                Recalculate net cost from pack
+              </button>
+              <div className="text-xs text-neutral-500 flex items-center">
+                net = pack_price ÷ pack_size
+              </div>
+            </div>
+          </div>
+
+          <div className="md:col-span-2 flex justify-end gap-2">
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setModalOpen(false)}>
+              Cancel
+            </button>
+            <button className="gc-btn gc-btn-primary" type="button" onClick={save} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
+            </button>
+          </div>
+        </div>
+      </Modal>
+
+      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
+    </div>
+  )
+}

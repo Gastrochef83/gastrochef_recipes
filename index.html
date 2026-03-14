@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#6B7F3B" />
+
+    <link rel="icon" type="image/png" href="/gastrochef-logo.png" />
+    <link rel="icon" type="image/x-icon" href="/favicon.ico" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <title>GastroChef</title>
+
+    <!-- ✅ Pre-React Splash (prevents white flash) -->
+    <style>
+      #gc-preload {
+        position: fixed;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: radial-gradient(1200px 700px at 50% -10%, rgba(31, 122, 120, 0.22), transparent 55%),
+                    radial-gradient(900px 520px at 15% 110%, rgba(107, 127, 59, 0.22), transparent 55%),
+                    #0b1220;
+        color: rgba(248, 250, 252, 0.88);
+        z-index: 9999;
+      }
+      .gc-preload-card {
+        width: min(520px, 92vw);
+        border: 1px solid rgba(148, 163, 184, 0.18);
+        background: rgba(15, 23, 42, 0.72);
+        border-radius: 20px;
+        padding: 28px;
+        box-shadow: 0 26px 70px rgba(0, 0, 0, 0.55);
+      }
+      .gc-preload-top {
+        display: flex;
+        align-items: center;
+        gap: 14px;
+      }
+      .gc-preload-logo {
+        width: 44px;
+        height: 44px;
+        border-radius: 14px;
+        background: rgba(255, 255, 255, 0.08);
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+      }
+      .gc-preload-logo img {
+        width: 34px;
+        height: 34px;
+        object-fit: contain;
+        display: block;
+      }
+      .gc-preload-title {
+        font: 800 18px/1.2 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, Arial;
+        letter-spacing: 0.2px;
+        color: rgba(248, 250, 252, 0.95);
+      }
+      .gc-preload-sub {
+        margin-top: 2px;
+        font: 500 13px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, Arial;
+        color: rgba(248, 250, 252, 0.68);
+      }
+      .gc-preload-row {
+        margin-top: 18px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .gc-preload-hint {
+        font: 500 12px/1.4 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Inter, Roboto, Arial;
+        color: rgba(248, 250, 252, 0.60);
+      }
+      .gc-preload-spinner {
+        width: 22px;
+        height: 22px;
+        border-radius: 999px;
+        border: 2px solid rgba(248, 250, 252, 0.22);
+        border-top-color: rgba(107, 127, 59, 0.95);
+        animation: gcspin 0.9s linear infinite;
+      }
+      @keyframes gcspin {
+        to { transform: rotate(360deg); }
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="gc-preload" aria-label="Loading GastroChef">
+      <div class="gc-preload-card">
+        <div class="gc-preload-top">
+          <div class="gc-preload-logo">
+            <img src="/gastrochef-logo.png" alt="GastroChef" />
+          </div>
+          <div>
+            <div class="gc-preload-title">GastroChef</div>
+            <div class="gc-preload-sub">Kitchen intelligence is loading…</div>
+          </div>
+        </div>
+
+        <div class="gc-preload-row">
+          <div class="gc-preload-hint">Preparing dashboard & cost engine</div>
+          <div class="gc-preload-spinner" aria-hidden="true"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
