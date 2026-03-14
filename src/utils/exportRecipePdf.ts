@@ -1,30 +1,27 @@
 import html2canvas from "html2canvas";
 import { jsPDF } from "jspdf";
 
-// Configuration Constants
+// إعدادات محسنة للأداء والحجم
 const CONFIG = {
   scale: 2,
   margin: 6,
   overlapPx: 10,
-  imageQuality: 0.9, // Reduced slightly to decrease file size
-  imageFormat: "PNG",
+  imageQuality: 0.75, // تقليل الجودة لتخفيف الحجم بشكل ملحوظ
+  imageFormat: "JPEG", // تغيير من PNG إلى JPEG لتقليل الحجم
+  maxPages: 20, // حد أقصى للصفحات لمنع الحلقة اللانهائية
+  maxFileSize: 10 * 1024 * 1024, // 10MB حد أقصى لحجم الملف
 };
 
-/**
- * Export recipe card as PDF with improved performance and UX
- * @param {string} recipeTitle - Optional recipe title for dynamic filename
- */
 export async function exportRecipePdf(recipeTitle = "recipe") {
   const element = document.getElementById("recipe-print-card");
-  const btn = document.getElementById("export-btn"); // Assume button exists for state management
+  const btn = document.getElementById("export-btn");
 
-  // Validate element exists
   if (!element) {
     showNotification("Error: Recipe card not found", "error");
     return;
   }
 
-  // UX Improvement: Activate loading state
+  // تحسين تجربة المستخدم: حالة التحميل
   const originalBtnText = btn ? btn.innerText : "";
   if (btn) {
     btn.disabled = true;
@@ -32,13 +29,13 @@ export async function exportRecipePdf(recipeTitle = "recipe") {
   }
 
   try {
-    // Performance Improvement: Focus only on element dimensions
+    // تحسين الأداء: التركيز على العنصر فقط بدون أبعاد النافذة العامة
     const canvas = await html2canvas(element, {
       scale: CONFIG.scale,
       useCORS: true,
       backgroundColor: "#ffffff",
       logging: false,
-      // Remove general windowWidth/Height to focus on element
+      // إزالة windowWidth/Height لتسريع العملية
     });
 
     const pdf = new jsPDF("p", "mm", "a4");
@@ -48,13 +45,12 @@ export async function exportRecipePdf(recipeTitle = "recipe") {
     const usableWidth = pageWidth - CONFIG.margin * 2;
     const usableHeight = pageHeight - CONFIG.margin * 2;
 
-    // Calculate page height inside canvas in pixels
     const pageCanvasHeight = Math.max(
       1,
       Math.floor((canvas.width * usableHeight) / usableWidth)
     );
 
-    // Memory Improvement: Create one temporary canvas and reuse it
+    // تحسين الذاكرة: Canvas مؤقت واحد بدلاً من إنشاء جديد في كل مرة
     const sliceCanvas = document.createElement("canvas");
     sliceCanvas.width = canvas.width;
     const ctx = sliceCanvas.getContext("2d");
@@ -67,17 +63,22 @@ export async function exportRecipePdf(recipeTitle = "recipe") {
     let pageIndex = 0;
 
     while (renderedHeight < canvas.height) {
+      // حماية من الحلقة اللانهائية
+      if (pageIndex >= CONFIG.maxPages) {
+        console.warn(`Max pages (${CONFIG.maxPages}) reached. Stopping export.`);
+        showNotification("Recipe too long. Exported first 20 pages.", "warning");
+        break;
+      }
+
       const remainingHeight = canvas.height - renderedHeight;
       const sliceHeight = Math.min(pageCanvasHeight, remainingHeight);
 
-      // Update temporary canvas height only
       sliceCanvas.height = sliceHeight;
 
-      // Draw white background
+      // خلفية بيضاء (مهمة لصيغة JPEG)
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
 
-      // Slice image from original canvas
       ctx.drawImage(
         canvas,
         0,
@@ -94,6 +95,12 @@ export async function exportRecipePdf(recipeTitle = "recipe") {
         `image/${CONFIG.imageFormat}`,
         CONFIG.imageQuality
       );
+
+      // التحقق من حجم البيانات
+      const estimatedSize = (pageData.length * 3) / 4; // تقريب حجم Base64
+      if (pageIndex > 0 && estimatedSize > CONFIG.maxFileSize) {
+        console.warn("File size limit approaching.");
+      }
 
       if (pageIndex > 0) {
         pdf.addPage();
@@ -120,18 +127,20 @@ export async function exportRecipePdf(recipeTitle = "recipe") {
       pageIndex += 1;
     }
 
-    // Dynamic filename with text sanitization
+    // اسم ملف ديناميكي
     const safeFileName = recipeTitle
       .replace(/[^a-z0-9]/gi, "_")
       .toLowerCase();
     pdf.save(`${safeFileName}.pdf`);
 
-    showNotification("Recipe exported successfully", "success");
+    showNotification(
+      `Exported ${pageIndex + 1} pages successfully`,
+      "success"
+    );
   } catch (error) {
     console.error("PDF export failed:", error);
     showNotification("Export failed. Please try again.", "error");
   } finally {
-    // Restore button state
     if (btn) {
       btn.disabled = false;
       btn.innerText = originalBtnText;
@@ -139,13 +148,6 @@ export async function exportRecipePdf(recipeTitle = "recipe") {
   }
 }
 
-/**
- * Helper function for notifications (can be replaced with a library like Toastify)
- * @param {string} message - Notification message
- * @param {string} type - Notification type (success, error, warning, info)
- */
 function showNotification(message, type) {
-  // Here you can call a real notification library
   console.log(`[${type.toUpperCase()}] ${message}`);
-  // alert(message); // Temporary fallback
 }
