@@ -1,6 +1,6 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 
-import AppLayout from './layouts/AppLayout.tsx'
+import AppLayout from './layouts/AppLayout'
 import AuthGate from './components/AuthGate'
 
 import Dashboard from './pages/Dashboard'
