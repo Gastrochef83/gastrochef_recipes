@@ -26,22 +26,41 @@ export async function exportRecipePdf() {
   const imgWidth = pageWidth;
   const imgHeight = (canvas.height * imgWidth) / canvas.width;
 
-  let heightLeft = imgHeight;
-  let position = 0;
+  const pageCanvasHeight = (canvas.width * pageHeight) / pageWidth;
 
-  pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+  let renderedHeight = 0;
+  let page = 0;
 
-  heightLeft -= pageHeight;
+  while (renderedHeight < canvas.height) {
 
-  while (heightLeft > 0) {
+    const pageCanvas = document.createElement("canvas");
+    pageCanvas.width = canvas.width;
+    pageCanvas.height = Math.min(pageCanvasHeight, canvas.height - renderedHeight);
 
-    position = heightLeft - imgHeight;
+    const ctx = pageCanvas.getContext("2d");
 
-    pdf.addPage();
+    ctx?.drawImage(
+      canvas,
+      0,
+      renderedHeight,
+      canvas.width,
+      pageCanvas.height,
+      0,
+      0,
+      canvas.width,
+      pageCanvas.height
+    );
 
-    pdf.addImage(imgData, "PNG", 0, position, imgWidth, imgHeight);
+    const pageData = pageCanvas.toDataURL("image/png");
 
-    heightLeft -= pageHeight;
+    if (page > 0) pdf.addPage();
+
+    const pageImgHeight = (pageCanvas.height * imgWidth) / canvas.width;
+
+    pdf.addImage(pageData, "PNG", 0, 0, imgWidth, pageImgHeight);
+
+    renderedHeight += pageCanvas.height;
+    page++;
 
   }
 
