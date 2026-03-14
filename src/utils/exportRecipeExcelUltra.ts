@@ -87,7 +87,7 @@ function moneyFmt(currency: string, decimals = 2): string {
   return `"${currency}" #,##0${decimals > 0 ? '.' + zeros : ''}`
 }
 
-// ================= Colors & Styling =================
+// ================= Colors =================
 const COLORS = {
   primary: 'FF0F766E',
   primaryLight: 'FFF0FDFA',
@@ -230,20 +230,20 @@ function normalizeStepPhotos(steps: string[], photos: string[] | null | undefine
   return steps.map((_, i) => clean[i] || '')
 }
 
-// ================= Photo Card Builder (PROFESSIONAL) =================
+// ================= Photo Card Builder (MATCHING REFERENCE) =================
 async function createPhotoCard(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
   startRow: number,
-  startCol: number,
+  colIndex: number,
   stepNumber: number,
   description: string,
   imageUrl: string | null
 ) {
-  const colLetter = String.fromCharCode(65 + startCol)
+  const colLetter = String.fromCharCode(65 + (colIndex * 2)) // A=0, C=2, E=4
   
-  // Card container with border
-  sheet.mergeCells(`${colLetter}${startRow}:${colLetter}${startRow + 14}`)
+  // Card container with border (16 rows total per card)
+  sheet.mergeCells(`${colLetter}${startRow}:${colLetter}${startRow + 15}`)
   const cardCell = sheet.getCell(`${colLetter}${startRow}`)
   fill(cardCell, COLORS.white)
   cardCell.border = {
@@ -253,33 +253,33 @@ async function createPhotoCard(
     right: { style: 'thin', color: { argb: COLORS.border } },
   }
 
-  // Step badge (green circle with number)
+  // Step Number Badge (top-left, green like reference)
   const badgeCell = sheet.getCell(`${colLetter}${startRow}`)
   badgeCell.value = `${stepNumber}`
-  badgeCell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.white } }
+  badgeCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.white } }
   badgeCell.alignment = { horizontal: 'center', vertical: 'middle' }
   fill(badgeCell, COLORS.primary)
 
-  // Photo area
+  // Photo Area (rows 2-11, ~240px height)
   const photoRow = startRow + 1
   if (imageUrl) {
     const added = await addImageToSheet(workbook, sheet, imageUrl, {
-      col: startCol + 0.15,
+      col: (colIndex * 2) + 0.15,
       row: photoRow + 0.15,
-      width: 270,
-      height: 180,
+      width: 380,
+      height: 240,
     })
     if (!added) {
       const placeholderCell = sheet.getCell(`${colLetter}${photoRow + 3}`)
-      placeholderCell.value = '📷'
-      placeholderCell.alignment = { horizontal: 'center', vertical: 'middle' }
-      placeholderCell.font = { size: 24, color: { argb: COLORS.textMuted } }
+      placeholderCell.value = '📷\nPhoto not available'
+      placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+      placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
     }
   }
 
-  // Description area
+  // Description Area (rows 12-15, light gray background)
   const descRow = startRow + 12
-  sheet.mergeCells(`${colLetter}${descRow}:${colLetter}${startRow + 14}`)
+  sheet.mergeCells(`${colLetter}${descRow}:${colLetter}${startRow + 15}`)
   const descCell = sheet.getCell(`${colLetter}${descRow}`)
   descCell.value = description || 'No description'
   descCell.font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
@@ -333,7 +333,6 @@ export async function exportRecipeExcelUltra(args: {
   summary.columns = [{ width: 20 }, { width: 28 }, { width: 20 }, { width: 28 }]
   summary.pageSetup.margins = { left: 0.5, right: 0.5, top: 0.6, bottom: 0.6 }
 
-  // Header
   await addLogo(workbook, summary)
   await addQRCode(workbook, summary, qrPayload)
 
@@ -346,7 +345,6 @@ export async function exportRecipeExcelUltra(args: {
   summary.getCell('A7').value = name
   summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true }
 
-  // Key-Value rows
   let r = 9
   const kv = (label: string, value: any) => {
     summary.getCell(`A${r}`).value = label
@@ -363,7 +361,6 @@ export async function exportRecipeExcelUltra(args: {
   kv('Selling Price', sellingPrice > 0 ? sellingPrice : '')
   kv('Target FC%', targetFc != null ? fmtPercent(targetFc) : '')
 
-  // KPI Cards
   const kpiRow = r + 1
   const makeCard = (row: number, col: 'A' | 'C', title: string, value: any, accent = false) => {
     summary.mergeCells(`${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
@@ -401,7 +398,6 @@ export async function exportRecipeExcelUltra(args: {
     { header: 'Notes', key: 'notes', width: 20 },
   ]
 
-  // Header
   ingredients.mergeCells('A1:J1')
   ingredients.getCell('A1').value = `${name} — Ingredients`
   ingredients.getCell('A1').font = { name: 'Calibri', size: 14, bold: true }
@@ -411,7 +407,6 @@ export async function exportRecipeExcelUltra(args: {
   headerRow.font = { name: 'Calibri', size: 10, bold: true }
   headerRow.eachCell(c => applyHeaderStyle(c))
 
-  // Data rows
   for (const line of lines) {
     const row = ingredients.addRow({
       type: line.type,
@@ -434,7 +429,6 @@ export async function exportRecipeExcelUltra(args: {
     if (line.type === 'subrecipe') fill(row.getCell('A'), COLORS.primaryLight)
   }
 
-  // Footer
   const footer = ingredients.addRow({ name: 'TOTAL', lCost: totals.totalCost })
   footer.font = { name: 'Calibri', size: 11, bold: true }
   footer.getCell('lCost').numFmt = moneyFmt(currency, 2)
@@ -453,7 +447,6 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
   scaleLab.mergeCells('A1:F1')
 
-  // Inputs
   scaleLab.getCell('A2').value = 'Base Portions'; scaleLab.getCell('B2').value = portions
   scaleLab.getCell('D2').value = 'Target Portions'; scaleLab.getCell('E2').value = portions
   scaleLab.getCell('A3').value = 'Scale Factor'; scaleLab.getCell('B3').value = { formula: 'IFERROR(E2/B2,1)' }
@@ -461,12 +454,10 @@ export async function exportRecipeExcelUltra(args: {
   ;['A2','B2','D2','E2','A3','B3'].forEach(ref => { thinBorder(scaleLab.getCell(ref)); fill(scaleLab.getCell(ref), COLORS.bgSoft) })
   scaleLab.getCell('E2').protection = { locked: false }
 
-  // Table header
   scaleLab.getRow(5).values = ['Item', 'Net', 'Unit', 'Scaled Net', 'Scaled Gross', 'Scaled Cost']
   scaleLab.getRow(5).font = { name: 'Calibri', size: 10, bold: true }
   scaleLab.getRow(5).eachCell(c => applyHeaderStyle(c))
 
-  // Data
   let sr = 6
   for (const line of lines) {
     scaleLab.getCell(`A${sr}`).value = line.name
@@ -524,20 +515,26 @@ export async function exportRecipeExcelUltra(args: {
   nkv(7, 'Portions', portions); nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
   await nutrition.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
-  // ===== 6. PHOTOS SHEET (PROFESSIONAL GALLERY - SINGLE PAGE) =====
+  // ===== 6. PHOTOS SHEET (PROFESSIONAL GALLERY - MATCHING REFERENCE) =====
   const gallery = workbook.addWorksheet('Photos', {
-    views: [{ showGridLines: false, zoom: 85 }],
+    views: [{ showGridLines: false, zoom: 90 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5 } },
   })
-  gallery.columns = [{ width: 38 }, { width: 38 }, { width: 38 }]
+
+  // 3 columns for cards + spacing columns
+  gallery.columns = [
+    { width: 42 }, { width: 2 },  // Card 1 + spacing
+    { width: 42 }, { width: 2 },  // Card 2 + spacing
+    { width: 42 },                // Card 3
+  ]
 
   // Title
-  gallery.mergeCells('A1:C1')
+  gallery.mergeCells('A1:F1')
   gallery.getCell('A1').value = `${name} — Photo Gallery`
   gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
   gallery.getCell('A1').alignment = { horizontal: 'center', vertical: 'bottom' }
 
-  gallery.mergeCells('A2:C2')
+  gallery.mergeCells('A2:F2')
   gallery.getCell('A2').value = 'Step-by-step visual preparation guide'
   gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   gallery.getCell('A2').alignment = { horizontal: 'center', vertical: 'top' }
@@ -546,48 +543,58 @@ export async function exportRecipeExcelUltra(args: {
 
   // Main Recipe Photo (Full Width)
   if (meta.photo_url) {
-    gallery.mergeCells(`A${currentRow}:C${currentRow}`)
+    gallery.mergeCells(`A${currentRow}:F${currentRow}`)
     gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
     gallery.getCell(`A${currentRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
     currentRow++
 
-    gallery.mergeCells(`A${currentRow}:C${currentRow + 11}`)
+    gallery.mergeCells(`A${currentRow}:F${currentRow + 10}`)
     const mainCell = gallery.getCell(`A${currentRow}`)
-    mainCell.border = { top: { style: 'medium', color: { argb: COLORS.border } }, left: { style: 'medium', color: { argb: COLORS.border } }, bottom: { style: 'medium', color: { argb: COLORS.border } }, right: { style: 'medium', color: { argb: COLORS.border } } }
+    mainCell.border = {
+      top: { style: 'medium', color: { argb: COLORS.border } },
+      left: { style: 'medium', color: { argb: COLORS.border } },
+      bottom: { style: 'medium', color: { argb: COLORS.border } },
+      right: { style: 'medium', color: { argb: COLORS.border } },
+    }
     fill(mainCell, COLORS.bgSoft)
 
-    const added = await addImageToSheet(workbook, gallery, meta.photo_url, { col: 0.4, row: currentRow + 0.4, width: 460, height: 300 })
-    if (!added) {
+    const mainPhotoAdded = await addImageToSheet(workbook, gallery, meta.photo_url, {
+      col: 0.3,
+      row: currentRow + 0.3,
+      width: 680,
+      height: 340,
+    })
+
+    if (!mainPhotoAdded) {
       gallery.getCell(`A${currentRow}`).value = 'Photo not available'
       gallery.getCell(`A${currentRow}`).alignment = { vertical: 'middle', horizontal: 'center' }
       gallery.getCell(`A${currentRow}`).font = { color: { argb: COLORS.textMuted } }
     }
-    currentRow += 13
+    currentRow += 12
   }
 
-  // Step Photos Grid (3 columns)
-  const photosPerRow = 3
+  // Step Photos Grid (3 cards per row)
+  const cardsPerRow = 3
   const cardHeight = 16
 
   for (let i = 0; i < cleanSteps.length; i++) {
-    const colIndex = i % photosPerRow
-    const rowIndex = Math.floor(i / photosPerRow)
-    const startCol = colIndex * 2 // 0, 2, 4 for columns A, C, E (but we use A, B, C with spacing)
+    const colIndex = i % cardsPerRow
+    const rowIndex = Math.floor(i / cardsPerRow)
     const startRow = currentRow + (rowIndex * cardHeight)
 
     await createPhotoCard(
       workbook,
       gallery,
       startRow,
-      colIndex * 2, // A=0, C=2, E=4
+      colIndex,
       i + 1,
       cleanSteps[i],
       stepPhotos[i] || null
     )
   }
 
-  // Set row heights for visual spacing
-  const totalRows = currentRow + (Math.ceil(cleanSteps.length / photosPerRow) * cardHeight)
+  // Set row heights
+  const totalRows = currentRow + (Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight)
   for (let ri = currentRow; ri < totalRows; ri++) {
     gallery.getRow(ri).height = 12
   }
