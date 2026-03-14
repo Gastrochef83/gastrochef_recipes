@@ -456,13 +456,6 @@ export default function RecipePrintCard() {
       <div className="print-stage min-h-screen bg-[#f7f6f2] px-4 py-5 md:px-8 md:py-8 text-[#2b2b2b]">
         <div className="no-print mx-auto mb-4 flex max-w-6xl items-center justify-end gap-3">
           <button
-            onClick={exportRecipePdf}
-            className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
-            title="Exports this recipe card directly as a PDF file"
-          >
-            Export PDF
-          </button>
-          <button
             onClick={() => window.print()}
             className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
             title="Uses the browser print dialog so you can choose Save as PDF"
