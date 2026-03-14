@@ -199,6 +199,18 @@ async function tryAddQr(
   }
 }
 
+function applyWatermark(sheet: ExcelJS.Worksheet, text: string) {
+  try {
+    sheet.mergeCells('A22:D28')
+    const c = sheet.getCell('A22')
+    c.value = text
+    c.font = { name: 'Calibri', size: 42, bold: true, color: { argb: '11CBD5E1' } }
+    c.alignment = { horizontal: 'center', vertical: 'middle', textRotation: 45 }
+  } catch {
+    // ignore
+  }
+}
+
 function autosizeColumns(sheet: ExcelJS.Worksheet, min = 10, max = 40) {
   sheet.columns?.forEach((column) => {
     let longest = min
@@ -217,6 +229,63 @@ function autosizeColumns(sheet: ExcelJS.Worksheet, min = 10, max = 40) {
 function normalizeStepPhotos(steps: string[], photos: string[] | null | undefined) {
   const cleanPhotos = (photos || []).map((x) => (x || '').trim())
   return steps.map((_, i) => cleanPhotos[i] || '')
+}
+
+// ================= Photo Card Builder (Single Sheet) =================
+async function createPhotoCard(
+  workbook: ExcelJS.Workbook,
+  sheet: ExcelJS.Worksheet,
+  startRow: number,
+  startCol: number,
+  title: string,
+  description: string,
+  imageUrl: string | null,
+) {
+  const colLetter = String.fromCharCode(65 + startCol)
+  const mergeRange = `${colLetter}${startRow}:${String.fromCharCode(65 + startCol + 1)}${startRow + 11}`
+  
+  // 1. Create card border and background
+  sheet.mergeCells(mergeRange)
+  const cardCell = sheet.getCell(`${colLetter}${startRow}`)
+  fill(cardCell, COLORS.white)
+  cardCell.border = {
+    top: { style: 'medium', color: { argb: COLORS.border } },
+    left: { style: 'medium', color: { argb: COLORS.border } },
+    bottom: { style: 'medium', color: { argb: COLORS.border } },
+    right: { style: 'medium', color: { argb: COLORS.border } },
+  }
+
+  // 2. Title header
+  const titleCell = sheet.getCell(`${colLetter}${startRow}`)
+  titleCell.value = title
+  titleCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.primary } }
+  titleCell.alignment = { horizontal: 'center', vertical: 'bottom' }
+  fill(titleCell, COLORS.primaryLight)
+
+  // 3. Image
+  if (imageUrl) {
+    const img = await fetchImageForExcel(imageUrl)
+    if (img) {
+      const imgId = workbook.addImage({ base64: img.base64, extension: img.extension })
+      sheet.addImage(imgId, {
+        tl: { col: startCol + 0.1, row: startRow + 1.2 },
+        ext: { width: 390, height: 260 },
+        editAs: 'oneCell',
+      })
+    } else {
+      const placeholderCell = sheet.getCell(`${colLetter}${startRow + 2}`)
+      placeholderCell.value = '📷 Image not available'
+      placeholderCell.alignment = { horizontal: 'center', vertical: 'middle' }
+      placeholderCell.font = { color: { argb: COLORS.textMuted } }
+    }
+  }
+
+  // 4. Description caption
+  const captionRow = startRow + 10
+  const captionCell = sheet.getCell(`${colLetter}${captionRow}`)
+  captionCell.value = description || 'No description'
+  captionCell.font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
+  captionCell.alignment = { horizontal: 'left', vertical: 'bottom', wrapText: true }
 }
 
 // ================= Main Export Function =================
@@ -280,7 +349,6 @@ export async function exportRecipeExcelUltra(args: {
   summary.headerFooter.oddHeader = `&C&"Calibri,Bold"&12GastroChef — Ultra Recipe Export`
   summary.headerFooter.oddFooter = `&L&8Report: ${reportId}${recipeCode ? `  |  Code: ${recipeCode}` : ''}${recipeId ? `  |  Recipe: ${recipeId}` : ''}  |  Audit: ${auditStamp}&R&8Page &P / &N`
 
-  // Header Rows
   summary.getRow(1).height = 18
   summary.getRow(2).height = 54
   summary.getRow(3).height = 24
@@ -316,7 +384,6 @@ export async function exportRecipeExcelUltra(args: {
   summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true, color: { argb: COLORS.text } }
   summary.getCell('A7').alignment = { vertical: 'middle', horizontal: 'left' }
 
-  // Key-Value Helper
   const kv = (row: number, label: string, value: any) => {
     summary.getCell(`A${row}`).value = label
     summary.getCell(`A${row}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
@@ -339,7 +406,6 @@ export async function exportRecipeExcelUltra(args: {
   kv(r++, 'Description', (meta.description || '').trim())
   r++
 
-  // KPI Cards
   const card = (
     topRow: number,
     left: 'A' | 'C',
@@ -379,28 +445,6 @@ export async function exportRecipeExcelUltra(args: {
   card(kpiTop + 3, 'A', 'Food Cost %', totals.fcPct != null ? totals.fcPct / 100 : null, { isPercent: true, note: targetFc != null ? `Target: ${fmtPercent(targetFc)}` : '' })
   card(kpiTop + 3, 'C', `Margin (${currency})`, totals.margin, { note: totals.marginPct != null ? `Margin: ${totals.marginPct.toFixed(1)}%` : '' })
 
-  // Conditional Formatting for Food Cost
-  if (totals.fcPct != null) {
-    const fcCellRef = `A${kpiTop + 4}`
-    summary.addConditionalFormatting({
-      ref: fcCellRef,
-      rules: [
-        {
-          type: 'cellIs',
-          operator: 'greaterThan',
-          value: '0.35',
-          style: { fill: { fgColor: { argb: COLORS.danger } }, font: { color: { argb: 'FFC00000' } } },
-        },
-        {
-          type: 'cellIs',
-          operator: 'between',
-          value: '0.25,0.35',
-          style: { fill: { fgColor: { argb: COLORS.warning } }, font: { color: { argb: 'FF9A5A00' } } },
-        },
-      ],
-    })
-  }
-
   r = kpiTop + 7
   summary.getCell(`A${r}`).value = 'Financial Summary'
   summary.getCell(`A${r}`).font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.text } }
@@ -427,7 +471,6 @@ export async function exportRecipeExcelUltra(args: {
     r += 1
   })
 
-  // Metadata Table
   summary.getCell(`C${r - 6}`).value = 'Lines'
   summary.getCell(`D${r - 6}`).value = lines.length
   summary.getCell(`C${r - 5}`).value = 'Warnings'
@@ -450,7 +493,8 @@ export async function exportRecipeExcelUltra(args: {
     fill(summary.getCell(`D${rr}`), COLORS.white)
   }
 
-  // Signature
+  applyWatermark(summary, 'CONFIDENTIAL')
+
   const sigRow = Math.max(r + 2, 33)
   summary.getCell(`A${sigRow}`).value = 'Prepared by:'
   summary.getCell(`A${sigRow}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
@@ -459,7 +503,6 @@ export async function exportRecipeExcelUltra(args: {
   summary.getCell(`D${sigRow}`).value = `Date: ${now.toLocaleDateString()}`
   summary.getCell(`D${sigRow}`).font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
 
-  // Protect Summary Sheet (Read Only)
   await summary.protect('GastroChef2024', {
     selectLockedCells: true,
     selectUnlockedCells: false,
@@ -468,7 +511,7 @@ export async function exportRecipeExcelUltra(args: {
     deleteRows: false,
   })
 
-  // ================= 2. INGREDIENTS SHEET (With Table) =================
+  // ================= 2. INGREDIENTS SHEET =================
   const ingredients = workbook.addWorksheet('Ingredients', {
     views: [{ state: 'frozen', ySplit: 2 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
@@ -496,10 +539,11 @@ export async function exportRecipeExcelUltra(args: {
   const headerRow = ingredients.getRow(2)
   headerRow.values = ingredients.columns.map((col) => col.header)
   headerRow.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.text } }
-  headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+  headerRow.alignment = { vertical: 'middle', horizontal: 'left' }
   headerRow.height = 20
   headerRow.eachCell((cell) => {
-    applyHeaderStyle(cell)
+    fill(cell, COLORS.header)
+    thinBorder(cell, COLORS.border)
   })
 
   let rowNumber = 3
@@ -543,24 +587,9 @@ export async function exportRecipeExcelUltra(args: {
     fill(cell, COLORS.bgSoft)
   })
 
-  // Auto Filter
   ingredients.autoFilter = 'A2:K2'
-
-  // Data Validation for Units
-  const unitCol = ingredients.getColumn(5)
-  unitCol.eachCell({ includeEmpty: false }, (cell) => {
-    if (cell.row.number > 2) {
-      cell.dataValidation = {
-        type: 'list',
-        allowBlank: true,
-        formulae: ['"g,kg,ml,l,pcs,oz,lb"'],
-      }
-    }
-  })
-
   autosizeColumns(ingredients, 10, 34)
 
-  // Protect Ingredients Sheet (Allow sorting/filtering)
   await ingredients.protect('GastroChef2024', {
     selectLockedCells: true,
     selectUnlockedCells: true,
@@ -570,7 +599,7 @@ export async function exportRecipeExcelUltra(args: {
     deleteRows: false,
   })
 
-  // ================= 3. SCALE LAB SHEET (Interactive) =================
+  // ================= 3. SCALE LAB SHEET =================
   const scaleLab = workbook.addWorksheet('Scale Lab', {
     views: [{ showGridLines: false, ySplit: 4 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
@@ -589,19 +618,15 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
   scaleLab.mergeCells('A1:F1')
 
-  // Input Cells (Unlocked for user)
   scaleLab.getCell('A2').value = 'Base Portions'
   scaleLab.getCell('B2').value = portions
   scaleLab.getCell('D2').value = 'Target Portions'
-  scaleLab.getCell('E2').value = portions // User can edit this
+  scaleLab.getCell('E2').value = portions
   scaleLab.getCell('A3').value = 'Scale Factor'
   scaleLab.getCell('B3').value = { formula: `IFERROR(E2/B2,1)` }
   scaleLab.getCell('B3').numFmt = '0.00x'
 
-  const inputCells = ['E2']
-  const lockedCells = ['A2', 'B2', 'D2', 'A3', 'B3']
-
-  ;[...inputCells, ...lockedCells].forEach((ref) => {
+  ;['A2', 'B2', 'D2', 'E2', 'A3', 'B3'].forEach((ref) => {
     thinBorder(scaleLab.getCell(ref))
   })
 
@@ -609,15 +634,13 @@ export async function exportRecipeExcelUltra(args: {
   fill(scaleLab.getCell('D2'), COLORS.bgSoft)
   fill(scaleLab.getCell('A3'), COLORS.bgSoft)
 
-  // Unlock input cells before protection
-  inputCells.forEach((ref) => {
-    scaleLab.getCell(ref).protection = { locked: false }
-  })
+  scaleLab.getCell('E2').protection = { locked: false }
 
   scaleLab.getRow(5).values = ['Ingredient / Sub-Recipe', 'Base Net Qty', 'Unit', 'Scaled Net Qty', 'Scaled Gross Qty', 'Scaled Line Cost']
   scaleLab.getRow(5).font = { name: 'Calibri', size: 11, bold: true }
   scaleLab.getRow(5).eachCell((cell) => {
-    applyHeaderStyle(cell)
+    fill(cell, COLORS.header)
+    thinBorder(cell)
   })
 
   let sr = 6
@@ -636,7 +659,6 @@ export async function exportRecipeExcelUltra(args: {
 
   autosizeColumns(scaleLab, 12, 34)
 
-  // Protect Scale Lab (Allow editing Target Portions)
   await scaleLab.protect('GastroChef2024', {
     selectLockedCells: true,
     selectUnlockedCells: true,
@@ -716,57 +738,101 @@ export async function exportRecipeExcelUltra(args: {
     selectUnlockedCells: false,
   })
 
-  // ================= 6. PHOTOS SHEET =================
+  // ================= 6. PHOTOS SHEET (SINGLE PAGE - ENHANCED) =================
   const gallery = workbook.addWorksheet('Photos', {
-    views: [{ showGridLines: false }],
-    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, fitToWidth: 1, fitToHeight: 0 },
+    views: [{ showGridLines: false, zoom: 85 }],
+    pageSetup: { 
+      orientation: 'landscape', 
+      paperSize: 9, 
+      fitToPage: true,
+      fitToWidth: 1,
+      fitToHeight: 0,
+      margins: { left: 0.3, right: 0.3, top: 0.5, bottom: 0.5 }
+    },
   })
 
-  gallery.columns = [{ width: 24 }, { width: 24 }, { width: 24 }, { width: 24 }]
+  // Setup columns for 2-column grid layout
+  gallery.columns = [
+    { width: 42 }, { width: 42 }, // Two photo columns
+    { width: 2 }, { width: 2 }    // Spacing columns
+  ]
+
+  // Title
   gallery.getCell('A1').value = `${name} — Photo Gallery`
-  gallery.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
+  gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
   gallery.mergeCells('A1:D1')
 
-  gallery.getCell('A2').value = 'Recipe image + step photos will appear here when image URLs are reachable by the browser and are PNG/JPG or data URLs.'
+  gallery.getCell('A2').value = 'Professional photo documentation for recipe preparation steps'
   gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   gallery.mergeCells('A2:D2')
 
-  let galleryRow = 4
-  gallery.getRow(galleryRow).height = 20
-  gallery.getCell(`A${galleryRow}`).value = 'Main Recipe Photo'
-  gallery.getCell(`A${galleryRow}`).font = { name: 'Calibri', size: 11, bold: true }
-  gallery.mergeCells(`A${galleryRow}:B${galleryRow}`)
+  let currentRow = 4
 
-  const mainPhotoAdded = await addImageFromUrl(workbook, gallery, meta.photo_url, { col: 0.2, row: galleryRow + 0.2, width: 300, height: 200 })
-  if (!mainPhotoAdded) {
-    gallery.mergeCells(`A${galleryRow + 1}:B${galleryRow + 8}`)
-    gallery.getCell(`A${galleryRow + 1}`).value = meta.photo_url ? 'Recipe photo could not be embedded. Check image format/CORS/public access.' : 'No recipe photo available.'
-    gallery.getCell(`A${galleryRow + 1}`).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-    fill(gallery.getCell(`A${galleryRow + 1}`), COLORS.bgSoft)
-    thinBorder(gallery.getCell(`A${galleryRow + 1}`))
-  }
+  // Main Recipe Photo (Hero)
+  if (meta.photo_url) {
+    gallery.mergeCells(`A${currentRow}:D${currentRow}`)
+    gallery.getCell(`A${currentRow}`).value = 'Recipe Hero Image'
+    gallery.getCell(`A${currentRow}`).font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.textMuted } }
+    currentRow++
 
-  let photoCardStartRow = 4
-  for (let i = 0; i < cleanSteps.length; i++) {
-    const titleCell = i % 2 === 0 ? `C${photoCardStartRow}` : `A${photoCardStartRow + 10}`
-    gallery.getCell(titleCell).value = `Step ${i + 1}`
-    gallery.getCell(titleCell).font = { name: 'Calibri', size: 11, bold: true }
-    const targetCol = i % 2 === 0 ? 2.1 : 0.2
-    const targetRow = i % 2 === 0 ? photoCardStartRow + 0.2 : photoCardStartRow + 10.2
-    if (i > 1) {
-      photoCardStartRow += 10
-    }
-    const photoUrl = stepPhotos[i]
-    const ok = await addImageFromUrl(workbook, gallery, photoUrl, { col: targetCol, row: targetRow, width: 300, height: 170 })
-    const noteCell = i % 2 === 0 ? `C${(i > 1 ? photoCardStartRow + 8 : 12)}` : `A${(i > 1 ? photoCardStartRow + 18 : 22)}`
-    gallery.getCell(noteCell).value = cleanSteps[i]
-    gallery.getCell(noteCell).alignment = { wrapText: true, vertical: 'top', horizontal: 'left' }
-    gallery.getCell(noteCell).font = { name: 'Calibri', size: 10 }
-    if (!ok) {
-      gallery.getCell(noteCell).value = `${cleanSteps[i]}\n[No step photo embedded]`
+    const mainImg = await fetchImageForExcel(meta.photo_url)
+    if (mainImg) {
+      const imgId = workbook.addImage({ base64: mainImg.base64, extension: mainImg.extension })
+      gallery.addImage(imgId, {
+        tl: { col: 0.5, row: currentRow },
+        ext: { width: 550, height: 300 },
+        editAs: 'oneCell',
+      })
+      currentRow += 14
+    } else {
+      gallery.mergeCells(`A${currentRow}:D${currentRow + 8}`)
+      gallery.getCell(`A${currentRow}`).value = 'Recipe photo could not be embedded. Check image format/CORS/public access.'
+      gallery.getCell(`A${currentRow}`).alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+      fill(gallery.getCell(`A${currentRow}`), COLORS.bgSoft)
+      thinBorder(gallery.getCell(`A${currentRow}`))
+      currentRow += 10
     }
   }
 
+  // Step Photos in 2-Column Grid (ALL on ONE sheet)
+  const stepPhotosWithDesc = cleanSteps.map((step, i) => ({
+    step: i + 1,
+    description: step,
+    url: stepPhotos[i] || null,
+  }))
+
+  // Calculate how many cards fit per row (2 cards per row)
+  const cardsPerRow = 2
+  const rowsPerCard = 13
+
+  for (let i = 0; i < stepPhotosWithDesc.length; i++) {
+    const item = stepPhotosWithDesc[i]
+    
+    // Calculate position in grid
+    const colOffset = (i % cardsPerRow) * 2  // 0 or 2
+    const rowOffset = Math.floor(i / cardsPerRow) * rowsPerCard
+
+    await createPhotoCard(
+      workbook,
+      gallery,
+      currentRow + rowOffset,
+      colOffset,
+      `Step ${item.step}`,
+      item.description,
+      item.url
+    )
+  }
+
+  // Final row count adjustment
+  const totalCards = stepPhotosWithDesc.length
+  const totalRowsNeeded = currentRow + (Math.ceil(totalCards / cardsPerRow) * rowsPerCard)
+  
+  // Set row heights for better visual spacing
+  for (let rowIdx = currentRow; rowIdx < totalRowsNeeded; rowIdx++) {
+    gallery.getRow(rowIdx).height = 12
+  }
+
+  // Protect Photos Sheet
   await gallery.protect('GastroChef2024', {
     selectLockedCells: true,
     selectUnlockedCells: false,
