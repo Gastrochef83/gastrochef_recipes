@@ -414,21 +414,47 @@ export default function RecipePrintCard() {
           print-color-adjust: exact;
         }
 
-        .avoid-break {
+        #recipe-print-card {
+          isolation: isolate;
+        }
+
+        .avoid-break,
+        .step-card,
+        .hero-card,
+        .summary-card,
+        .panel-card,
+        .method-text-card {
           break-inside: avoid;
           page-break-inside: avoid;
+        }
+
+        .recipe-table {
+          width: 100%;
+          border-collapse: separate;
+          border-spacing: 0;
         }
 
         .recipe-table thead {
           display: table-header-group;
         }
 
+        .recipe-table tfoot {
+          display: table-row-group;
+        }
+
         .recipe-table tr,
         .recipe-table td,
         .recipe-table th,
-        .avoid-break {
+        .recipe-table tbody,
+        .recipe-table thead,
+        .recipe-table tfoot {
           break-inside: avoid;
           page-break-inside: avoid;
+        }
+
+        .step-grid {
+          display: grid;
+          gap: 1.25rem;
         }
 
         @media print {
@@ -449,6 +475,23 @@ export default function RecipePrintCard() {
 
           .print-paper {
             box-shadow: none !important;
+            border-radius: 0 !important;
+          }
+
+          .recipe-table tr,
+          .avoid-break,
+          .step-card,
+          .hero-card,
+          .summary-card,
+          .panel-card,
+          .method-text-card {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
+          }
+
+          img {
+            break-inside: avoid !important;
+            page-break-inside: avoid !important;
           }
         }
       `}</style>
@@ -457,8 +500,8 @@ export default function RecipePrintCard() {
         <div className="no-print mx-auto mb-4 flex max-w-6xl items-center justify-end gap-3">
           <button
             onClick={exportRecipePdf}
-            className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
-            title="Exports this recipe card directly as a PDF file"
+            className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#8b5e34] shadow-sm transition hover:bg-[#f7f6f2]"
+            title="Export current recipe card as PDF"
           >
             Export PDF
           </button>
@@ -632,13 +675,13 @@ export default function RecipePrintCard() {
               <SectionTitle>Preparation Method & Step Photos</SectionTitle>
 
               {steps.length ? (
-                <div className="grid gap-5">
+                <div className="step-grid">
                   {steps.map((s, i) => {
                     const img = stepPhotos?.[i]
                     return (
                       <div
                         key={`${i}-${s.slice(0, 24)}`}
-                        className="avoid-break overflow-hidden rounded-[26px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
+                        className="step-card avoid-break overflow-hidden rounded-[26px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
                       >
                         <div className="grid md:grid-cols-[88px_220px_1fr]">
                           <div className="flex items-start justify-center border-b border-[#dfe5df] bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-4 py-5 md:border-b-0 md:border-r">
@@ -727,7 +770,7 @@ function Tag({ children, tone = 'primary' }: { children: ReactNode; tone?: 'prim
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-[22px] border border-[#dfe5df] bg-white px-4 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
+    <div className="summary-card avoid-break rounded-[22px] border border-[#dfe5df] bg-white px-4 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
       <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">{label}</div>
       <div className="mt-1.5 text-lg font-semibold text-[#2f6f5e]">{value}</div>
     </div>
@@ -736,7 +779,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function Panel({ title, accent, children }: { title: string; accent: 'olive' | 'teal'; children: ReactNode }) {
   return (
-    <div className="rounded-[28px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
+    <div className="panel-card avoid-break rounded-[28px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
       <div className={`text-[11px] font-semibold uppercase tracking-[0.26em] ${accent === 'olive' ? 'text-[#556b2f]' : 'text-[#2f6f5e]'}`}>
         {title}
       </div>
