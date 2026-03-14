@@ -1,6 +1,7 @@
 import { ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
+import { exportRecipePdf } from '../utils/exportRecipePdf'
 
 type Recipe = {
   id: string
@@ -403,55 +404,36 @@ export default function RecipePrintCard() {
     <>
       <style>{`
         @page {
-          size: A4 portrait;
+          size: A4;
           margin: 10mm;
         }
 
-        html,
-        body {
+        html, body {
           background: #f7f6f2;
           -webkit-print-color-adjust: exact;
           print-color-adjust: exact;
-          color-adjust: exact;
         }
 
-        .avoid-break,
-        .print-section,
-        .print-panel,
-        .method-step,
-        .nutrition-card {
+        .avoid-break {
           break-inside: avoid;
           page-break-inside: avoid;
-        }
-
-        .recipe-table {
-          width: 100%;
-          border-collapse: collapse;
-          table-layout: fixed;
         }
 
         .recipe-table thead {
           display: table-header-group;
         }
 
-        .recipe-table tfoot {
-          display: table-row-group;
-        }
-
         .recipe-table tr,
         .recipe-table td,
-        .recipe-table th {
+        .recipe-table th,
+        .avoid-break {
           break-inside: avoid;
           page-break-inside: avoid;
-          vertical-align: top;
         }
 
         @media print {
-          html,
-          body {
+          html, body {
             background: #ffffff !important;
-            margin: 0 !important;
-            padding: 0 !important;
           }
 
           .no-print {
@@ -459,7 +441,6 @@ export default function RecipePrintCard() {
           }
 
           .print-stage {
-            min-height: auto !important;
             padding: 0 !important;
             margin: 0 !important;
             max-width: none !important;
@@ -467,70 +448,24 @@ export default function RecipePrintCard() {
           }
 
           .print-paper {
-            width: 100% !important;
-            max-width: none !important;
-            overflow: visible !important;
-            border: none !important;
-            border-radius: 0 !important;
             box-shadow: none !important;
-          }
-
-          .print-paper .overflow-x-auto,
-          .print-paper .overflow-hidden {
-            overflow: visible !important;
-          }
-
-          .ingredient-table-shell {
-            overflow: visible !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-          }
-
-          .hero-grid {
-            display: block !important;
-          }
-
-          .hero-photo,
-          .hero-photo img {
-            min-height: 220px !important;
-            max-height: 260px !important;
-          }
-
-          .recipe-table {
-            font-size: 10px !important;
-          }
-
-          .recipe-table th,
-          .recipe-table td {
-            padding: 7px 8px !important;
-          }
-
-          .recipe-table th {
-            font-size: 9px !important;
-            line-height: 1.25 !important;
-          }
-
-          .print-section {
-            break-inside: auto;
-            page-break-inside: auto;
-          }
-
-          .method-step,
-          .nutrition-card,
-          .print-panel,
-          .avoid-break {
-            break-inside: avoid;
-            page-break-inside: avoid;
           }
         }
       `}</style>
 
-      <div className="print-stage min-h-screen bg-[#f7f6f2] px-4 py-5 text-[#2b2b2b] md:px-8 md:py-8">
+      <div className="print-stage min-h-screen bg-[#f7f6f2] px-4 py-5 md:px-8 md:py-8 text-[#2b2b2b]">
         <div className="no-print mx-auto mb-4 flex max-w-6xl items-center justify-end gap-3">
+          <button
+            onClick={exportRecipePdf}
+            className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
+            title="Exports this recipe card directly as a PDF file"
+          >
+            Export PDF
+          </button>
           <button
             onClick={() => window.print()}
             className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#556b2f] shadow-sm transition hover:bg-[#f7f6f2]"
-            title="Open browser print and choose Save as PDF"
+            title="Uses the browser print dialog so you can choose Save as PDF"
           >
             Save as PDF
           </button>
@@ -542,11 +477,11 @@ export default function RecipePrintCard() {
           </button>
         </div>
 
-        <article className="print-paper mx-auto max-w-6xl rounded-[38px] border border-[#dfe5df] bg-white shadow-[0_22px_60px_rgba(0,0,0,0.08)]">
+        <article id="recipe-print-card" className="print-paper mx-auto max-w-6xl overflow-hidden rounded-[38px] border border-[#dfe5df] bg-white shadow-[0_22px_60px_rgba(0,0,0,0.08)]">
           <div className="h-[8px] bg-[linear-gradient(90deg,#556b2f_0%,#2f6f5e_48%,#dfe5df_100%)]" />
 
-          <header className="print-section border-b border-[#dfe5df] bg-[linear-gradient(135deg,#ffffff_0%,#f7f6f2_100%)]">
-            <div className="hero-grid grid lg:grid-cols-[1.05fr_0.95fr]">
+          <header className="border-b border-[#dfe5df] bg-[linear-gradient(135deg,#ffffff_0%,#f7f6f2_100%)]">
+            <div className="grid lg:grid-cols-[1.05fr_0.95fr]">
               <div className="p-8 md:p-10">
                 <div className="text-xs font-semibold uppercase tracking-[0.34em] text-[#556b2f]">
                   GastroChef Ultimate Recipe Card
@@ -579,7 +514,7 @@ export default function RecipePrintCard() {
               </div>
 
               {recipe.photo_url ? (
-                <div className="hero-photo min-h-[280px] border-l border-[#dfe5df] bg-[#f7f6f2]">
+                <div className="min-h-[280px] border-l border-[#dfe5df] bg-[#f7f6f2]">
                   <img
                     src={recipe.photo_url}
                     alt={recipe.name || 'Recipe'}
@@ -587,14 +522,14 @@ export default function RecipePrintCard() {
                   />
                 </div>
               ) : (
-                <div className="hero-photo flex min-h-[280px] items-center justify-center border-l border-[#dfe5df] bg-[linear-gradient(135deg,#f7f6f2_0%,#eef3ef_100%)] p-10 text-center text-sm text-stone-500">
+                <div className="flex min-h-[280px] items-center justify-center border-l border-[#dfe5df] bg-[linear-gradient(135deg,#f7f6f2_0%,#eef3ef_100%)] p-10 text-center text-sm text-stone-500">
                   Add a recipe photo to show the hero dish here.
                 </div>
               )}
             </div>
           </header>
 
-          <section className="print-section border-b border-[#dfe5df] px-8 py-8 md:px-10">
+          <section className="border-b border-[#dfe5df] px-8 py-8 md:px-10">
             <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
               <Panel title="Recipe Identity" accent="olive">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -615,12 +550,12 @@ export default function RecipePrintCard() {
             </div>
           </section>
 
-          <section className="print-section ingredients-section border-b border-[#dfe5df] px-8 py-8 md:px-10">
+          <section className="border-b border-[#dfe5df] px-8 py-8 md:px-10">
             <SectionTitle>Ingredient Costing & Sub-Recipes</SectionTitle>
 
-            <div className="ingredient-table-shell rounded-[28px] border border-[#dfe5df]">
+            <div className="overflow-hidden rounded-[28px] border border-[#dfe5df]">
               <div className="overflow-x-auto">
-                <table className="recipe-table min-w-full text-sm">
+                <table className="recipe-table min-w-full border-collapse text-sm">
                   <thead className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] text-[#556b2f]">
                     <tr>
                       <Th className="w-[8%]">Code</Th>
@@ -693,7 +628,7 @@ export default function RecipePrintCard() {
           </section>
 
           {(steps.length || methodText) ? (
-            <section className="print-section border-b border-[#dfe5df] px-8 py-8 md:px-10">
+            <section className="border-b border-[#dfe5df] px-8 py-8 md:px-10">
               <SectionTitle>Preparation Method & Step Photos</SectionTitle>
 
               {steps.length ? (
@@ -703,7 +638,7 @@ export default function RecipePrintCard() {
                     return (
                       <div
                         key={`${i}-${s.slice(0, 24)}`}
-                        className="method-step avoid-break overflow-hidden rounded-[26px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
+                        className="avoid-break overflow-hidden rounded-[26px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] shadow-[0_8px_20px_rgba(0,0,0,0.03)]"
                       >
                         <div className="grid md:grid-cols-[88px_220px_1fr]">
                           <div className="flex items-start justify-center border-b border-[#dfe5df] bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-4 py-5 md:border-b-0 md:border-r">
@@ -748,7 +683,7 @@ export default function RecipePrintCard() {
           ) : null}
 
           {showNutrition ? (
-            <section className="print-section avoid-break border-b border-[#dfe5df] px-8 py-8 md:px-10">
+            <section className="avoid-break border-b border-[#dfe5df] px-8 py-8 md:px-10">
               <SectionTitle>Nutrition Overview</SectionTitle>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <NutritionCard label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
@@ -759,7 +694,7 @@ export default function RecipePrintCard() {
             </section>
           ) : null}
 
-          <footer className="print-section flex flex-col gap-3 bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-10">
+          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-10">
             <div>
               <div className="font-semibold uppercase tracking-[0.2em] text-[#556b2f]">GastroChef World-Class Kitchen System</div>
               <div className="mt-1">Live recipe data from your system, with dish image, step photos, costing, and kitchen-ready preparation flow.</div>
@@ -792,7 +727,7 @@ function Tag({ children, tone = 'primary' }: { children: ReactNode; tone?: 'prim
 
 function MetricCard({ label, value }: { label: string; value: string }) {
   return (
-    <div className="print-panel rounded-[22px] border border-[#dfe5df] bg-white px-4 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
+    <div className="rounded-[22px] border border-[#dfe5df] bg-white px-4 py-4 shadow-[0_4px_16px_rgba(0,0,0,0.03)]">
       <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-stone-500">{label}</div>
       <div className="mt-1.5 text-lg font-semibold text-[#2f6f5e]">{value}</div>
     </div>
@@ -801,7 +736,7 @@ function MetricCard({ label, value }: { label: string; value: string }) {
 
 function Panel({ title, accent, children }: { title: string; accent: 'olive' | 'teal'; children: ReactNode }) {
   return (
-    <div className="print-panel rounded-[28px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
+    <div className="rounded-[28px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#fbfcfb_100%)] p-5 shadow-[0_6px_18px_rgba(0,0,0,0.03)]">
       <div className={`text-[11px] font-semibold uppercase tracking-[0.26em] ${accent === 'olive' ? 'text-[#556b2f]' : 'text-[#2f6f5e]'}`}>
         {title}
       </div>
@@ -829,7 +764,7 @@ function SubBadge({ children }: { children: ReactNode }) {
 
 function NutritionCard({ label, value, unit }: { label: string; value: string; unit: string }) {
   return (
-    <div className="nutrition-card rounded-[24px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#f7f6f2_100%)] p-5">
+    <div className="rounded-[24px] border border-[#dfe5df] bg-[linear-gradient(180deg,#ffffff_0%,#f7f6f2_100%)] p-5">
       <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-[#556b2f]">{label}</div>
       <div className="mt-3 text-2xl font-semibold tracking-[-0.02em] text-[#2b2b2b]">
         {value}
