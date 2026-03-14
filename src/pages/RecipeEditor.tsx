@@ -453,7 +453,7 @@ useEffect(() => {
           .order('position', { ascending: true })
         if (lErr) throw lErr
         if (!alive) return
-        const draft = readDraftLines(id)
+        const draft = id ? readDraftLines(id) : []
         const mergedLines = draft?.length ? mergeDbAndDraft((l || []) as Line[], draft) : ((l || []) as Line[])
         setLines(mergedLines as Line[])
 
@@ -695,6 +695,8 @@ useEffect(() => {
         const cur = ((override ?? linesRef.current) || []) as Line[]
         writeDraftLines(rid, cur)
       } catch {}
+      const msg = e?.message || 'Failed to save lines.'
+      autosave.setError(msg)
       setErr(msg)
       return false
     } finally {
@@ -2121,7 +2123,7 @@ const addLineLocal = useCallback(async () => {
                 <Button variant="primary" type="button" onClick={addLineLocal}>
                   Add line
                 </Button>
-                <Button variant="ghost" type="button" onClick={saveLinesNow}>
+                <Button variant="ghost" type="button" onClick={() => { saveLinesNow().catch(() => {}) }}>
                   Save lines
                 </Button>
               </div>
