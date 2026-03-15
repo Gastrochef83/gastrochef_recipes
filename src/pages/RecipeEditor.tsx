@@ -229,6 +229,7 @@ const k = useKitchen()
   // Steps
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
+  const [newStepImage, setNewStepImage] = useState<File | null>(null)
   const [methodLegacy, setMethodLegacy] = useState('')
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
 
@@ -1140,15 +1141,29 @@ const addLineLocal = useCallback(async () => {
   )
 
   // ---------- Steps ----------
-  const addStep = useCallback(() => {
+  const addStep = useCallback(async () => {
     const s = (newStep || '').trim()
     if (!s) return
+
+    const stepIndex = steps.length
+    const file = newStepImage
+
     setSteps((prev) => [...prev, s])
     setStepPhotos((prev) => [...prev, ''])
     setNewStep('')
+    setNewStepImage(null)
+
     // Persist steps/step photos via meta autosave
     scheduleMetaSave()
-  }, [newStep, scheduleMetaSave])
+
+    if (file) {
+      try {
+        await uploadStepPhoto(file, stepIndex)
+      } catch {
+        // uploadStepPhoto already handles toast/error state
+      }
+    }
+  }, [newStep, newStepImage, scheduleMetaSave, steps.length, uploadStepPhoto])
 
   const removeStep = useCallback(
     (idx: number) => {
@@ -2122,12 +2137,56 @@ const addLineLocal = useCallback(async () => {
                 ) : null}
               </div>
 
+              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px dashed var(--gc-border)' }}>
+                <div className="gc-label">QUICK METHOD STEP</div>
+                <div className="gc-hint" style={{ marginTop: 6 }}>
+                  Add a preparation note and optional photo here without scrolling down. The full Method section below still works exactly the same.
+                </div>
+
+                <div className="gc-field-row" style={{ marginTop: 10 }}>
+                  <div className="gc-col-8">
+                    <div className="gc-field">
+                      <div className="gc-label">NOTE</div>
+                      <textarea
+                        className="gc-textarea"
+                        value={newStep}
+                        onChange={(e) => setNewStep(e.target.value)}
+                        placeholder="Write a step note…"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="gc-col-4">
+                    <div className="gc-field">
+                      <div className="gc-label">STEP IMAGE</div>
+                      <input
+                        className="gc-input"
+                        type="file"
+                        accept="image/*"
+                        disabled={stepUploading}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0] || null
+                          setNewStepImage(f)
+                        }}
+                      />
+                      <div className="gc-hint" style={{ marginTop: 6 }}>
+                        {newStepImage ? `Selected: ${newStepImage.name}` : 'Optional. The image will be attached to the new step.'}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
               <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
                 <Button variant="primary" type="button" onClick={addLineLocal}>
                   Add line
                 </Button>
                 <Button variant="ghost" type="button" onClick={() => { saveLinesNow().catch(() => {}) }}>
                   Save lines
+                </Button>
+                <Button variant="ghost" type="button" onClick={() => { addStep().catch(() => {}) }} disabled={!newStep.trim() || stepUploading}>
+                  {stepUploading ? 'Uploading step…' : 'Add quick step'}
                 </Button>
               </div>
             </div>
@@ -2347,10 +2406,21 @@ const addLineLocal = useCallback(async () => {
                 <div className="gc-label">NEW STEP</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
-                    Add step
+                  <input
+                    className="gc-input"
+                    type="file"
+                    accept="image/*"
+                    disabled={stepUploading}
+                    onChange={(e) => {
+                      const f = e.target.files?.[0] || null
+                      setNewStepImage(f)
+                    }}
+                  />
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={() => { addStep().catch(() => {}) }} disabled={!newStep.trim() || stepUploading}>
+                    {stepUploading ? 'Uploading…' : 'Add step'}
                   </button>
                 </div>
+                {newStepImage ? <div className="gc-hint" style={{ marginTop: 8 }}>Selected image: {newStepImage.name}</div> : null}
               </div>
 
               {steps.length ? (
