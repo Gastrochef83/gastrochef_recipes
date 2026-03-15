@@ -626,7 +626,7 @@ useEffect(() => {
       }
 
       // 2) split draft vs persisted
-      const cur = ((override ?? linesRef.current) || []) as Line[]
+      const cur = normalizeLinePositions((((override ?? linesRef.current) || []) as Line[]))
       const drafts = cur.filter(isDraftLine)
       const persisted = cur.filter((l) => !isDraftLine(l))
       const needsReload = drafts.length > 0 || delIds.length > 0
@@ -744,7 +744,7 @@ useEffect(() => {
         // keep ingredient/subrecipe ids, qty/unit/yield/notes/gross override, type
       }
 
-      const next = [...cur, copy].sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0))
+      const next = normalizeLinePositions([...cur, copy])
       linesRef.current = next
       setLinesSafe(next)
       // Persist immediately so Cook Mode sees it and it won't disappear.
@@ -758,7 +758,7 @@ const deleteLineLocal = useCallback(
       if (!lineId) return
 
       const cur = (linesRef.current || []) as Line[]
-      const next = cur.filter((x) => x.id !== lineId)
+      const next = normalizeLinePositions(cur.filter((x) => x.id !== lineId))
 
       // mark for DB delete if needed (avoid duplicates)
       if (!lineId.startsWith('tmp_') && !deletedLineIdsRef.current.includes(lineId)) {
@@ -911,7 +911,7 @@ const addLineLocal = useCallback(async () => {
         group_title: null,
       }
       setErr(null)
-      const next = [...(linesRef.current || []), newL]
+      const next = normalizeLinePositions([...(linesRef.current || []), newL])
       linesRef.current = next
       setLinesSafe(next)
       setFlashLineId(newL.id)
@@ -945,7 +945,7 @@ const addLineLocal = useCallback(async () => {
         group_title: null,
       }
       setErr(null)
-      const next = [...(linesRef.current || []), newL]
+      const next = normalizeLinePositions([...(linesRef.current || []), newL])
       linesRef.current = next
       setLinesSafe(next)
       setFlashLineId(newL.id)
@@ -1056,7 +1056,7 @@ const addLineLocal = useCallback(async () => {
   // ---------- Reorder ----------
   const moveLine = useCallback(
     (lineId: string, dir: -1 | 1) => {
-      const arr = [...linesRef.current].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
+      const arr = normalizeLinePositions([...linesRef.current])
       const idx = arr.findIndex((x) => x.id === lineId)
       if (idx < 0) return
       const j = idx + dir
@@ -1064,9 +1064,12 @@ const addLineLocal = useCallback(async () => {
       const tmp = arr[idx]
       arr[idx] = arr[j]
       arr[j] = tmp
-      setLinesSafe(arr)
+      const next = normalizeLinePositions(arr)
+      linesRef.current = next
+      setLinesSafe(next)
+      saveLinesNow(next).then(() => {}).catch(() => {})
     },
-    [setLinesSafe]
+    [saveLinesNow, setLinesSafe]
   )
 
   // ---------- Photo upload ----------
