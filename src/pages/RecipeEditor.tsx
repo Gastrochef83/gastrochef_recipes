@@ -334,6 +334,7 @@ useEffect(() => {
   const [addUnit, setAddUnit] = useState('g')
   const [addYield, setAddYield] = useState('100')
   const [addGross, setAddGross] = useState('') // optional gross override
+  const [addNote, setAddNote] = useState('')
   const [flashLineId, setFlashLineId] = useState<string | null>(null)
 
     useEffect(() => {
@@ -906,7 +907,7 @@ const addLineLocal = useCallback(async () => {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: null,
+        notes: addNote.trim() || null,
         gross_qty_override: gross,
         line_type: 'ingredient',
         group_title: null,
@@ -916,6 +917,7 @@ const addLineLocal = useCallback(async () => {
       linesRef.current = next
       setLinesSafe(next)
       setFlashLineId(newL.id)
+      setAddNote('')
       const ok = await saveLinesNow(next)
       if (ok) {
         showToast('Line added & saved.')
@@ -940,7 +942,7 @@ const addLineLocal = useCallback(async () => {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: null,
+        notes: addNote.trim() || null,
         gross_qty_override: gross,
         line_type: 'subrecipe',
         group_title: null,
@@ -950,6 +952,7 @@ const addLineLocal = useCallback(async () => {
       linesRef.current = next
       setLinesSafe(next)
       setFlashLineId(newL.id)
+      setAddNote('')
       const ok = await saveLinesNow(next)
       showToast(ok ? 'Subrecipe line added & saved.' : 'Subrecipe line added — saved locally (syncing...).')
       if (!ok) scheduleLinesSave()
@@ -994,6 +997,7 @@ const addLineLocal = useCallback(async () => {
     addUnit,
     addYield,
     addGross,
+    addNote,
     setLinesSafe,
     saveLinesNow,
     scheduleLinesSave,
@@ -2133,49 +2137,20 @@ const addLineLocal = useCallback(async () => {
                         <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="leave empty to auto" />
                       </div>
                     </div>
-                  </>
-                ) : null}
-              </div>
 
-              <div style={{ marginTop: 14, paddingTop: 14, borderTop: '1px dashed var(--gc-border)' }}>
-                <div className="gc-label">QUICK METHOD STEP</div>
-                <div className="gc-hint" style={{ marginTop: 6 }}>
-                  Add a preparation note and optional photo here without scrolling down. The full Method section below still works exactly the same.
-                </div>
-
-                <div className="gc-field-row" style={{ marginTop: 10 }}>
-                  <div className="gc-col-8">
-                    <div className="gc-field">
-                      <div className="gc-label">NOTE</div>
-                      <textarea
-                        className="gc-textarea"
-                        value={newStep}
-                        onChange={(e) => setNewStep(e.target.value)}
-                        placeholder="Write a step note…"
-                        rows={3}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="gc-col-4">
-                    <div className="gc-field">
-                      <div className="gc-label">STEP IMAGE</div>
-                      <input
-                        className="gc-input"
-                        type="file"
-                        accept="image/*"
-                        disabled={stepUploading}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0] || null
-                          setNewStepImage(f)
-                        }}
-                      />
-                      <div className="gc-hint" style={{ marginTop: 6 }}>
-                        {newStepImage ? `Selected: ${newStepImage.name}` : 'Optional. The image will be attached to the new step.'}
+                    <div className="gc-col-12">
+                      <div className="gc-field">
+                        <div className="gc-label">NOTE</div>
+                        <input
+                          className="gc-input"
+                          value={addNote}
+                          onChange={(e) => setAddNote(e.target.value)}
+                          placeholder="Optional note for this ingredient line"
+                        />
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                ) : null}
               </div>
 
               <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
@@ -2184,9 +2159,6 @@ const addLineLocal = useCallback(async () => {
                 </Button>
                 <Button variant="ghost" type="button" onClick={() => { saveLinesNow().catch(() => {}) }}>
                   Save lines
-                </Button>
-                <Button variant="ghost" type="button" onClick={() => { addStep().catch(() => {}) }} disabled={!newStep.trim() || stepUploading}>
-                  {stepUploading ? 'Uploading step…' : 'Add quick step'}
                 </Button>
               </div>
             </div>
