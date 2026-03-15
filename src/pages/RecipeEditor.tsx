@@ -1513,6 +1513,38 @@ const addLineLocal = useCallback(async () => {
           0 8px 24px rgba(38,46,31,.04),
           inset 0 1px 0 rgba(255,255,255,.8);
       }
+      .gc-recipe-pro .gc-card-body{
+        padding: 16px 18px;
+      }
+      .gc-recipe-pro .gc-section{
+        padding: 16px 18px;
+      }
+      .gc-recipe-pro .gc-input,
+      .gc-recipe-pro .gc-select{
+        height: 40px;
+        min-height: 40px;
+        padding: 0 12px;
+        border-radius: 10px;
+      }
+      .gc-recipe-pro textarea.gc-input{
+        min-height: 96px;
+        height: auto;
+        padding: 10px 12px;
+      }
+      .gc-recipe-pro .gc-card-head .gc-label{
+        display: inline-block;
+        padding-bottom: 6px;
+        border-bottom: 1px solid rgba(118,128,108,.18);
+      }
+      .gc-recipe-pro .gc-btn-primary{
+        border-radius: 10px;
+        box-shadow: 0 8px 18px rgba(74,111,42,.14);
+      }
+      .gc-recipe-pro .gc-btn-secondary,
+      .gc-recipe-pro .gc-btn-ghost,
+      .gc-recipe-pro .gc-btn-soft{
+        border-radius: 10px;
+      }
       .gc-recipe-pro .gc-kpi-card{
         border-radius: 20px;
         border: 1px solid rgba(118,128,108,.12);
@@ -1606,8 +1638,24 @@ const addLineLocal = useCallback(async () => {
       .gc-recipe-pro .gc-kitopi-table tbody td{
         border-bottom: 1px solid rgba(15, 23, 42, .06);
       }
+      .gc-recipe-pro .gc-kitopi-table tbody tr:nth-child(even){
+        background: rgba(15, 23, 42, .025);
+      }
       .gc-recipe-pro .gc-kitopi-table tbody tr:hover{
         background: rgba(116,141,63,.06);
+      }
+      .gc-recipe-pro .gc-add-line-grid{
+        display:grid;
+        grid-template-columns: repeat(12, minmax(0, 1fr));
+        gap: 12px;
+        align-items: end;
+      }
+      .gc-recipe-pro .gc-add-line-grid > .gc-col-12{ grid-column: span 12; }
+      .gc-recipe-pro .gc-add-line-grid > .gc-col-9{ grid-column: span 9; }
+      .gc-recipe-pro .gc-add-line-grid > .gc-col-6{ grid-column: span 6; }
+      .gc-recipe-pro .gc-add-line-grid > .gc-col-3{ grid-column: span 3; }
+      .gc-recipe-pro .gc-add-line-note .gc-input{
+        min-width: 240px;
       }
       .gc-recipe-pro .gc-kitopi-group{
         background: rgba(15, 23, 42, .04) !important;
@@ -1623,8 +1671,19 @@ const addLineLocal = useCallback(async () => {
         .gc-recipe-pro .gc-pricing-grid{
           grid-template-columns: 1fr;
         }
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-9,
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-6,
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-3{
+          grid-column: span 6;
+        }
       }
       @media (max-width: 760px){
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-9,
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-6,
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-3,
+        .gc-recipe-pro .gc-add-line-grid > .gc-col-12{
+          grid-column: span 12;
+        }
         .gc-recipe-pro-head-left{
           min-width: 100%;
         }
@@ -1879,7 +1938,7 @@ const addLineLocal = useCallback(async () => {
             </div>
 
             <div className="gc-card-body">
-              <div className="gc-field-row">
+              <div className="gc-field-row gc-add-line-grid">
                 <div className="gc-col-6">
                   <div className="gc-field">
                     <div className="gc-label">CODE</div>
@@ -2117,7 +2176,7 @@ const addLineLocal = useCallback(async () => {
                       </div>
                     </div>
 
-                    <div className="gc-col-3">
+                    <div className="gc-col-3" style={{ maxWidth: 120 }}>
                       <div className="gc-field">
                         <div className="gc-label">UNIT</div>
                         <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
@@ -2138,7 +2197,7 @@ const addLineLocal = useCallback(async () => {
                       </div>
                     </div>
 
-                    <div className="gc-col-12">
+                    <div className="gc-col-12 gc-add-line-note">
                       <div className="gc-field">
                         <div className="gc-label">NOTE</div>
                         <input
