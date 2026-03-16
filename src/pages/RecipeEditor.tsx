@@ -1605,6 +1605,7 @@ export default function RecipeEditor() {
         font-size: 0.95rem;
         transition: all 0.15s ease;
         width: 100%;
+        color: var(--text);
       }
 
       .gc-recipe-pro .gc-input:focus,
@@ -1649,27 +1650,9 @@ export default function RecipeEditor() {
       }
 
       /* أنماط جديدة لعرض النص بشكل صحيح */
-      .gc-recipe-pro .gc-text-display {
-        font-family: 'Courier New', monospace;
-        font-size: 0.9rem;
-        font-weight: 500;
-        color: var(--text);
-        padding: 8px 12px;
-        background: rgba(46,125,120,0.02);
-        border-radius: 8px;
-        border-left: 3px solid var(--primary);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-text-display-sm {
-        font-size: 0.8rem;
-        padding: 4px 8px;
-      }
-
       .gc-recipe-pro .gc-code-display {
         font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
         font-weight: 600;
         color: var(--primary-dark);
         background: rgba(46,125,120,0.05);
@@ -1678,24 +1661,53 @@ export default function RecipeEditor() {
         display: inline-block;
       }
 
-      .gc-recipe-pro .gc-name-display {
+      .gc-recipe-pro .gc-name-with-note {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .gc-recipe-pro .gc-name-main {
         font-weight: 500;
         color: var(--text);
+      }
+
+      .gc-recipe-pro .gc-name-note {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        margin-top: 2px;
+        font-style: italic;
       }
 
       .gc-recipe-pro .gc-unit-display {
         font-size: 0.8rem;
         color: var(--text-light);
         background: var(--bg-gradient);
-        padding: 2px 6px;
-        border-radius: 4px;
+        padding: 4px 8px;
+        border-radius: 6px;
         display: inline-block;
+        font-weight: 500;
       }
 
       .gc-recipe-pro .gc-checkmark {
         color: var(--primary);
         font-size: 1.1rem;
         margin: 0 2px;
+      }
+
+      /* تحسين ظهور الـ selects */
+      .gc-recipe-pro .gc-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 12px center;
+        background-size: 16px;
+        padding-right: 40px;
+      }
+
+      .gc-recipe-pro .gc-select option {
+        color: var(--text);
+        background: white;
+        padding: 8px;
       }
 
       @media (max-width: 1024px) {
@@ -2083,7 +2095,7 @@ export default function RecipeEditor() {
               <div className="gc-card-head">
                 <div className="gc-label">META</div>
                 <div className="gc-hint" style={{ marginTop: 6 }}>
-                  Labels are always above inputs (premium SaaS). Auto-save is enabled.
+                  Labels are always above inputs. Auto-save is enabled.
                 </div>
               </div>
 
@@ -2370,27 +2382,25 @@ export default function RecipeEditor() {
                     <div className="gc-kitopi-table-wrap">
                       <table className="gc-kitopi-table gc-kitopi-table-fixed">
                         <colgroup>
-                          <col className="gc-col-code" />
-                          <col className="gc-col-item" />
-                          <col className="gc-col-net" />
-                          <col className="gc-col-unit" />
-                          <col className="gc-col-gross" />
-                          <col className="gc-col-yield" />
-                          <col className="gc-col-note" />
-                          {showCost ? <col className="gc-col-cost" /> : null}
-                          <col className="gc-col-actions" />
+                          <col style={{ width: '12%' }} />
+                          <col style={{ width: '25%' }} />
+                          <col style={{ width: '10%' }} />
+                          <col style={{ width: '8%' }} />
+                          <col style={{ width: '12%' }} />
+                          <col style={{ width: '10%' }} />
+                          {showCost ? <col style={{ width: '12%' }} /> : null}
+                          <col style={{ width: '5%' }} />
                         </colgroup>
                         <thead>
                           <tr>
-                            <th style={{ width: '14%' }}>Code</th>
-                            <th style={{ width: '20%' }}>Ingredient</th>
-                            <th style={{ width: '11%' }}>Net</th>
-                            <th style={{ width: '9%' }}>Unit</th>
-                            <th style={{ width: '11%' }}>Gross</th>
-                            <th style={{ width: '10%' }}>Yield</th>
-                            <th style={{ width: '12%' }}>Note</th>
-                            {showCost ? <th style={{ width: '12%' }}>Cost</th> : null}
-                            <th style={{ width: '5%' }} />
+                            <th>CODE</th>
+                            <th>INGREDIENT</th>
+                            <th>NET</th>
+                            <th>UNIT</th>
+                            <th>GROSS</th>
+                            <th>YIELD</th>
+                            {showCost ? <th>COST</th> : null}
+                            <th></th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2426,16 +2436,16 @@ export default function RecipeEditor() {
                                 </td>
 
                                 <td>
-                                  <span className="gc-name-display">
-                                    {l.line_type === 'ingredient'
-                                      ? (ing?.name || 'Ingredient')
-                                      : (sub?.name || 'Subrecipe')}
-                                  </span>
-                                  {l.notes && (
-                                    <div className="gc-hint" style={{ fontSize: '0.75rem', marginTop: 2 }}>
-                                      {l.notes}
-                                    </div>
-                                  )}
+                                  <div className="gc-name-with-note">
+                                    <span className="gc-name-main">
+                                      {l.line_type === 'ingredient'
+                                        ? (ing?.name || 'Ingredient')
+                                        : (sub?.name || 'Subrecipe')}
+                                    </span>
+                                    {l.notes && (
+                                      <span className="gc-name-note">{l.notes}</span>
+                                    )}
+                                  </div>
                                 </td>
 
                                 <td>
@@ -2469,15 +2479,6 @@ export default function RecipeEditor() {
                                     )}
                                     onChange={(e) => onYieldChange(l.id, e.target.value)}
                                     inputMode="decimal"
-                                  />
-                                </td>
-
-                                <td>
-                                  <input
-                                    className="gc-input gc-input-compact"
-                                    value={l.notes ?? ''}
-                                    onChange={(e) => updateLine(l.id, { notes: e.target.value })}
-                                    placeholder="—"
                                   />
                                 </td>
 
@@ -2658,12 +2659,12 @@ export default function RecipeEditor() {
               <thead>
                 <tr>
                   <th>Code</th>
-                  <th>Item</th>
+                  <th>Ingredient</th>
                   <th>Net</th>
                   <th>Unit</th>
                   <th>Gross</th>
                   <th>Yield%</th>
-                  <th>Notes</th>
+                  <th>Note</th>
                 </tr>
               </thead>
               <tbody>
@@ -2679,9 +2680,14 @@ export default function RecipeEditor() {
                     return (
                       <tr key={l.id}>
                         <td><span className="gc-code-display">{code}</span></td>
-                        <td>{name}</td>
+                        <td>
+                          <div>
+                            <div>{name}</div>
+                            {l.notes && <div style={{ fontSize: '8pt', color: '#64748B' }}>{l.notes}</div>}
+                          </div>
+                        </td>
                         <td>{c ? fmtQty(c.net) : '—'}</td>
-                        <td><span className="gc-unit-display">{l.unit || 'g'}</span></td>
+                        <td>{l.unit || 'g'}</td>
                         <td>{c ? fmtQty(c.gross) : '—'}</td>
                         <td>{c ? `${c.yieldPct.toFixed(1)}%` : '—'}</td>
                         <td>{l.notes || '—'}</td>
