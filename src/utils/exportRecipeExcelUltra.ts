@@ -87,76 +87,6 @@ function moneyFmt(currency: string, decimals = 2): string {
   return `"${currency}" #,##0${decimals > 0 ? '.' + zeros : ''}`
 }
 
-function safeMerge(sheet: ExcelJS.Worksheet, range: string) {
-  try {
-    const merges = (sheet as any)?._merges
-    if (!merges) {
-      sheet.mergeCells(range)
-      return
-    }
-
-    const wanted = range.toUpperCase()
-    const wantedRange = new ExcelJS.Workbook().addWorksheet('tmp').getCell('A1')
-    void wantedRange
-
-    const [startRef, endRef = startRef] = wanted.split(':')
-    const decode = (ref: string) => {
-      const match = ref.match(/^([A-Z]+)(\d+)$/)
-      if (!match) return null
-      const [, colLetters, rowStr] = match
-      let col = 0
-      for (let i = 0; i < colLetters.length; i++) {
-        col = col * 26 + (colLetters.charCodeAt(i) - 64)
-      }
-      return { col, row: Number(rowStr) }
-    }
-
-    const a = decode(startRef)
-    const b = decode(endRef)
-    if (!a || !b) {
-      sheet.mergeCells(range)
-      return
-    }
-
-    const wantedBox = {
-      left: Math.min(a.col, b.col),
-      right: Math.max(a.col, b.col),
-      top: Math.min(a.row, b.row),
-      bottom: Math.max(a.row, b.row),
-    }
-
-    const existingRanges = Object.keys(merges)
-    const overlaps = existingRanges.some((existing) => {
-      const parts = existing.toUpperCase().split(':')
-      const ea = decode(parts[0])
-      const eb = decode(parts[1] || parts[0])
-      if (!ea || !eb) return false
-      const box = {
-        left: Math.min(ea.col, eb.col),
-        right: Math.max(ea.col, eb.col),
-        top: Math.min(ea.row, eb.row),
-        bottom: Math.max(ea.row, eb.row),
-      }
-      const noOverlap =
-        wantedBox.right < box.left ||
-        wantedBox.left > box.right ||
-        wantedBox.bottom < box.top ||
-        wantedBox.top > box.bottom
-      return !noOverlap
-    })
-
-    if (!overlaps) {
-      sheet.mergeCells(range)
-    }
-  } catch {
-    try {
-      sheet.mergeCells(range)
-    } catch {
-      // ignore duplicate/overlap merge errors
-    }
-  }
-}
-
 // ================= Colors =================
 const COLORS = {
   primary: 'FF0F766E',
@@ -311,9 +241,9 @@ async function createPhotoCard(
   imageUrl: string | null
 ) {
   const colLetter = String.fromCharCode(65 + (colIndex * 2)) // A=0, C=2, E=4
-
+  
   // Card container with border (16 rows total per card)
-  safeMerge(sheet, `${colLetter}${startRow}:${colLetter}${startRow + 15}`)
+  sheet.mergeCells(`${colLetter}${startRow}:${colLetter}${startRow + 15}`)
   const cardCell = sheet.getCell(`${colLetter}${startRow}`)
   fill(cardCell, COLORS.white)
   cardCell.border = {
@@ -349,7 +279,7 @@ async function createPhotoCard(
 
   // Description Area (rows 12-15, light gray background)
   const descRow = startRow + 12
-  safeMerge(sheet, `${colLetter}${descRow}:${colLetter}${startRow + 15}`)
+  sheet.mergeCells(`${colLetter}${descRow}:${colLetter}${startRow + 15}`)
   const descCell = sheet.getCell(`${colLetter}${descRow}`)
   descCell.value = description || 'No description'
   descCell.font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
@@ -370,8 +300,8 @@ export async function exportRecipeExcelUltra(args: {
   const yieldQty = safeNum(meta.yield_qty, 0) || null
   const yieldUnit = (meta.yield_unit || '').trim() || null
   const sellingPrice = safeNum(meta.selling_price, 0)
-  const targetFc = meta.target_food_cost_pct != null
-    ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100)
+  const targetFc = meta.target_food_cost_pct != null 
+    ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100) 
     : null
   const cleanSteps = (meta.steps || []).map((s) => (s || '').trim()).filter(Boolean)
   const stepPhotos = normalizeStepPhotos(cleanSteps, meta.step_photos)
@@ -385,20 +315,16 @@ export async function exportRecipeExcelUltra(args: {
   workbook.title = `${name} — Professional Recipe Export`
 
   const now = new Date()
-  const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+  const reportId = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`
   const recipeId = meta.id || ''
   const recipeCode = meta.code || ''
   const kitchenRef = meta.kitchen_id || ''
-  void reportId
-  void kitchenRef
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const qrPayload = recipeId && baseUrl ? `${baseUrl}/#/recipe?id=${encodeURIComponent(recipeId)}` : `Recipe: ${name}`
 
   const ingredientCost = lines.filter(l => l.type === 'ingredient').reduce((a, l) => a + safeNum(l.line_cost), 0)
   const subrecipeCost = lines.filter(l => l.type === 'subrecipe').reduce((a, l) => a + safeNum(l.line_cost), 0)
-  void ingredientCost
-  void subrecipeCost
 
   // ===== 1. SUMMARY SHEET =====
   const summary = workbook.addWorksheet('Summary', {
@@ -410,12 +336,12 @@ export async function exportRecipeExcelUltra(args: {
   await addLogo(workbook, summary)
   await addQRCode(workbook, summary, qrPayload)
 
-  safeMerge(summary, 'A3:D3')
+  summary.mergeCells('A3:D3')
   summary.getCell('A3').value = 'GastroChef'
   summary.getCell('A3').font = { name: 'Calibri', size: 20, bold: true }
   summary.getCell('A3').alignment = { vertical: 'middle', horizontal: 'center' }
 
-  safeMerge(summary, 'A7:D7')
+  summary.mergeCells('A7:D7')
   summary.getCell('A7').value = name
   summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true }
 
@@ -424,7 +350,7 @@ export async function exportRecipeExcelUltra(args: {
     summary.getCell(`A${r}`).value = label
     summary.getCell(`A${r}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
     summary.getCell(`B${r}`).value = value ?? ''
-    safeMerge(summary, `B${r}:D${r}`)
+    summary.mergeCells(`B${r}:D${r}`)
     r++
   }
   kv('Code', recipeCode)
@@ -437,7 +363,7 @@ export async function exportRecipeExcelUltra(args: {
 
   const kpiRow = r + 1
   const makeCard = (row: number, col: 'A' | 'C', title: string, value: any, accent = false) => {
-    safeMerge(summary, `${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
+    summary.mergeCells(`${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
     const cell = summary.getCell(`${col}${row}`)
     fill(cell, accent ? COLORS.primary : COLORS.bgSoft)
     thinBorder(cell)
@@ -472,7 +398,7 @@ export async function exportRecipeExcelUltra(args: {
     { header: 'Notes', key: 'notes', width: 20 },
   ]
 
-  safeMerge(ingredients, 'A1:J1')
+  ingredients.mergeCells('A1:J1')
   ingredients.getCell('A1').value = `${name} — Ingredients`
   ingredients.getCell('A1').font = { name: 'Calibri', size: 14, bold: true }
 
@@ -519,13 +445,13 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.columns = [{ width: 28 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
   scaleLab.getCell('A1').value = `${name} — Scaling Lab`
   scaleLab.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  safeMerge(scaleLab, 'A1:F1')
+  scaleLab.mergeCells('A1:F1')
 
   scaleLab.getCell('A2').value = 'Base Portions'; scaleLab.getCell('B2').value = portions
   scaleLab.getCell('D2').value = 'Target Portions'; scaleLab.getCell('E2').value = portions
   scaleLab.getCell('A3').value = 'Scale Factor'; scaleLab.getCell('B3').value = { formula: 'IFERROR(E2/B2,1)' }
   scaleLab.getCell('B3').numFmt = '0.00x'
-  ;['A2', 'B2', 'D2', 'E2', 'A3', 'B3'].forEach(ref => { thinBorder(scaleLab.getCell(ref)); fill(scaleLab.getCell(ref), COLORS.bgSoft) })
+  ;['A2','B2','D2','E2','A3','B3'].forEach(ref => { thinBorder(scaleLab.getCell(ref)); fill(scaleLab.getCell(ref), COLORS.bgSoft) })
   scaleLab.getCell('E2').protection = { locked: false }
 
   scaleLab.getRow(5).values = ['Item', 'Net', 'Unit', 'Scaled Net', 'Scaled Gross', 'Scaled Cost']
@@ -540,9 +466,9 @@ export async function exportRecipeExcelUltra(args: {
     scaleLab.getCell(`D${sr}`).value = { formula: `B${sr}*$B$3` }
     scaleLab.getCell(`E${sr}`).value = { formula: `${safeNum(line.gross_qty)}*$B$3` }
     scaleLab.getCell(`F${sr}`).value = { formula: `${safeNum(line.line_cost)}*$B$3` }
-    ;['B', 'D', 'E'].forEach(c => scaleLab.getCell(`${c}${sr}`).numFmt = '#,##0.000')
+    ;['B','D','E'].forEach(c => scaleLab.getCell(`${c}${sr}`).numFmt = '#,##0.000')
     scaleLab.getCell(`F${sr}`).numFmt = moneyFmt(currency, 2)
-    ;['A', 'B', 'C', 'D', 'E', 'F'].forEach(c => thinBorder(scaleLab.getCell(`${c}${sr}`)))
+    ;['A','B','C','D','E','F'].forEach(c => thinBorder(scaleLab.getCell(`${c}${sr}`)))
     sr++
   }
   autosizeColumns(scaleLab)
@@ -552,9 +478,9 @@ export async function exportRecipeExcelUltra(args: {
   const method = workbook.addWorksheet('Method', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   method.columns = [{ width: 6 }, { width: 76 }]
   method.getCell('A1').value = name; method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  safeMerge(method, 'A1:B1')
+  method.mergeCells('A1:B1')
   method.getCell('A3').value = 'Preparation Method'; method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
-  safeMerge(method, 'A3:B3')
+  method.mergeCells('A3:B3')
 
   let mr = 5
   if (cleanSteps.length) {
@@ -577,7 +503,7 @@ export async function exportRecipeExcelUltra(args: {
   const nutrition = workbook.addWorksheet('Nutrition', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   nutrition.columns = [{ width: 26 }, { width: 20 }]
   nutrition.getCell('A1').value = `${name} — Nutrition`; nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  safeMerge(nutrition, 'A1:B1')
+  nutrition.mergeCells('A1:B1')
   const nkv = (row: number, label: string, value: any) => {
     nutrition.getCell(`A${row}`).value = label
     nutrition.getCell(`A${row}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
@@ -603,12 +529,12 @@ export async function exportRecipeExcelUltra(args: {
   ]
 
   // Title
-  safeMerge(gallery, 'A1:F1')
+  gallery.mergeCells('A1:F1')
   gallery.getCell('A1').value = `${name} — Photo Gallery`
   gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
   gallery.getCell('A1').alignment = { horizontal: 'center', vertical: 'bottom' }
 
-  safeMerge(gallery, 'A2:F2')
+  gallery.mergeCells('A2:F2')
   gallery.getCell('A2').value = 'Step-by-step visual preparation guide'
   gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   gallery.getCell('A2').alignment = { horizontal: 'center', vertical: 'top' }
@@ -617,12 +543,12 @@ export async function exportRecipeExcelUltra(args: {
 
   // Main Recipe Photo (Full Width)
   if (meta.photo_url) {
-    safeMerge(gallery, `A${currentRow}:F${currentRow}`)
+    gallery.mergeCells(`A${currentRow}:F${currentRow}`)
     gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
     gallery.getCell(`A${currentRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
     currentRow++
 
-    safeMerge(gallery, `A${currentRow}:F${currentRow + 10}`)
+    gallery.mergeCells(`A${currentRow}:F${currentRow + 10}`)
     const mainCell = gallery.getCell(`A${currentRow}`)
     mainCell.border = {
       top: { style: 'medium', color: { argb: COLORS.border } },
