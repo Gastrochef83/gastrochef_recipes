@@ -229,7 +229,6 @@ const k = useKitchen()
   // Steps
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
-  const [newStepImage, setNewStepImage] = useState<File | null>(null)
   const [methodLegacy, setMethodLegacy] = useState('')
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
 
@@ -334,7 +333,6 @@ useEffect(() => {
   const [addUnit, setAddUnit] = useState('g')
   const [addYield, setAddYield] = useState('100')
   const [addGross, setAddGross] = useState('') // optional gross override
-  const [addNote, setAddNote] = useState('')
   const [flashLineId, setFlashLineId] = useState<string | null>(null)
 
     useEffect(() => {
@@ -628,7 +626,7 @@ useEffect(() => {
       }
 
       // 2) split draft vs persisted
-      const cur = normalizeLinePositions((((override ?? linesRef.current) || []) as Line[]))
+      const cur = ((override ?? linesRef.current) || []) as Line[]
       const drafts = cur.filter(isDraftLine)
       const persisted = cur.filter((l) => !isDraftLine(l))
       const needsReload = drafts.length > 0 || delIds.length > 0
@@ -746,7 +744,7 @@ useEffect(() => {
         // keep ingredient/subrecipe ids, qty/unit/yield/notes/gross override, type
       }
 
-      const next = normalizeLinePositions([...cur, copy])
+      const next = [...cur, copy].sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0))
       linesRef.current = next
       setLinesSafe(next)
       // Persist immediately so Cook Mode sees it and it won't disappear.
@@ -760,7 +758,7 @@ const deleteLineLocal = useCallback(
       if (!lineId) return
 
       const cur = (linesRef.current || []) as Line[]
-      const next = normalizeLinePositions(cur.filter((x) => x.id !== lineId))
+      const next = cur.filter((x) => x.id !== lineId)
 
       // mark for DB delete if needed (avoid duplicates)
       if (!lineId.startsWith('tmp_') && !deletedLineIdsRef.current.includes(lineId)) {
@@ -907,17 +905,16 @@ const addLineLocal = useCallback(async () => {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: addNote.trim() || null,
+        notes: null,
         gross_qty_override: gross,
         line_type: 'ingredient',
         group_title: null,
       }
       setErr(null)
-      const next = normalizeLinePositions([...(linesRef.current || []), newL])
+      const next = [...(linesRef.current || []), newL]
       linesRef.current = next
       setLinesSafe(next)
       setFlashLineId(newL.id)
-      setAddNote('')
       const ok = await saveLinesNow(next)
       if (ok) {
         showToast('Line added & saved.')
@@ -942,17 +939,16 @@ const addLineLocal = useCallback(async () => {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: addNote.trim() || null,
+        notes: null,
         gross_qty_override: gross,
         line_type: 'subrecipe',
         group_title: null,
       }
       setErr(null)
-      const next = normalizeLinePositions([...(linesRef.current || []), newL])
+      const next = [...(linesRef.current || []), newL]
       linesRef.current = next
       setLinesSafe(next)
       setFlashLineId(newL.id)
-      setAddNote('')
       const ok = await saveLinesNow(next)
       showToast(ok ? 'Subrecipe line added & saved.' : 'Subrecipe line added — saved locally (syncing...).')
       if (!ok) scheduleLinesSave()
@@ -997,7 +993,6 @@ const addLineLocal = useCallback(async () => {
     addUnit,
     addYield,
     addGross,
-    addNote,
     setLinesSafe,
     saveLinesNow,
     scheduleLinesSave,
@@ -1061,7 +1056,7 @@ const addLineLocal = useCallback(async () => {
   // ---------- Reorder ----------
   const moveLine = useCallback(
     (lineId: string, dir: -1 | 1) => {
-      const arr = normalizeLinePositions([...linesRef.current])
+      const arr = [...linesRef.current].sort((a, b) => (a.position ?? 0) - (b.position ?? 0))
       const idx = arr.findIndex((x) => x.id === lineId)
       if (idx < 0) return
       const j = idx + dir
@@ -1069,12 +1064,9 @@ const addLineLocal = useCallback(async () => {
       const tmp = arr[idx]
       arr[idx] = arr[j]
       arr[j] = tmp
-      const next = normalizeLinePositions(arr)
-      linesRef.current = next
-      setLinesSafe(next)
-      saveLinesNow(next).then(() => {}).catch(() => {})
+      setLinesSafe(arr)
     },
-    [saveLinesNow, setLinesSafe]
+    [setLinesSafe]
   )
 
   // ---------- Photo upload ----------
@@ -1145,29 +1137,15 @@ const addLineLocal = useCallback(async () => {
   )
 
   // ---------- Steps ----------
-  const addStep = useCallback(async () => {
+  const addStep = useCallback(() => {
     const s = (newStep || '').trim()
     if (!s) return
-
-    const stepIndex = steps.length
-    const file = newStepImage
-
     setSteps((prev) => [...prev, s])
     setStepPhotos((prev) => [...prev, ''])
     setNewStep('')
-    setNewStepImage(null)
-
     // Persist steps/step photos via meta autosave
     scheduleMetaSave()
-
-    if (file) {
-      try {
-        await uploadStepPhoto(file, stepIndex)
-      } catch {
-        // uploadStepPhoto already handles toast/error state
-      }
-    }
-  }, [newStep, newStepImage, scheduleMetaSave, steps.length, uploadStepPhoto])
+  }, [newStep, scheduleMetaSave])
 
   const removeStep = useCallback(
     (idx: number) => {
@@ -1245,62 +1223,58 @@ const addLineLocal = useCallback(async () => {
         portions: Math.max(1, Math.floor(Number(portions || 1))),
         yield_qty: yieldQty ? Number(yieldQty) : null,
         yield_unit: yieldUnit || null,
-        currency: (currency || 'USD').toUpperCase(),
+        currency: currency || 'USD',
         selling_price: sellingPrice ? Number(sellingPrice) : null,
         target_food_cost_pct: targetFC ? Number(targetFC) : null,
         photo_url: recipe?.photo_url || null,
-        step_photos: Array.isArray(stepPhotos) ? stepPhotos.filter(Boolean) : [],
+        step_photos: stepPhotos,
         description: description || '',
-        steps: Array.isArray(steps) ? steps.filter(Boolean) : [],
+        steps: (steps || []).filter(Boolean),
         calories: calories ? Number(calories) : null,
         protein_g: protein ? Number(protein) : null,
         carbs_g: carbs ? Number(carbs) : null,
         fat_g: fat ? Number(fat) : null,
       }
 
-      const rows = (lines || [])
+      const rows = lines
         .filter((l) => l.line_type !== 'group')
         .map((l) => {
           const c = lineComputed.get(l.id)
-          const subRecipe = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
-          const ingredient = l.ingredient_id ? ingById.get(l.ingredient_id) : null
-
-          return {
+          const base = {
             type: l.line_type === 'subrecipe' ? 'subrecipe' : 'ingredient',
-            code: l.line_type === 'ingredient' ? (ingredient?.code || '') : (subRecipe?.code || ''),
-            name: l.line_type === 'ingredient' ? (ingredient?.name || 'Ingredient') : (subRecipe?.name || 'Subrecipe'),
-            net_qty: Number(c?.net ?? 0),
+            code:
+              l.line_type === 'ingredient'
+                ? (l.ingredient_id ? (ingById.get(l.ingredient_id) as any)?.code : null) || ''
+                : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.code || ''),
+            name:
+              l.line_type === 'ingredient'
+                ? (l.ingredient_id ? ingById.get(l.ingredient_id)?.name : null) || 'Ingredient'
+                : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.name || 'Subrecipe'),
+            net_qty: c?.net ?? 0,
             unit: l.unit || '',
-            yield_percent: Number(c?.yieldPct ?? 100),
-            gross_qty: Number(c?.gross ?? 0),
-            unit_cost: Number(c?.unitCost ?? 0),
-            line_cost: Number(c?.lineCost ?? 0),
-            notes: (l as any).notes ?? (l as any).note ?? '',
-            warnings: Array.isArray(c?.warnings) ? c!.warnings : [],
+            yield_percent: c?.yieldPct ?? 100,
+            gross_qty: c?.gross ?? 0,
+            unit_cost: c?.unitCost ?? 0,
+            line_cost: c?.lineCost ?? 0,
+            notes: l.notes || '',
+            warnings: c?.warnings || [],
           }
+          return base
         })
 
       await exportRecipeExcelUltra({
         meta,
-        totals: {
-          totalCost: Number(totals.totalCost || 0),
-          cpp: Number(totals.cpp || 0),
-          fcPct: totals.fcPct == null ? null : Number(totals.fcPct),
-          margin: Number(totals.margin || 0),
-          marginPct: totals.marginPct == null ? null : Number(totals.marginPct),
-        },
+        totals: { totalCost: totals.totalCost, cpp: totals.cpp, fcPct: totals.fcPct, margin: totals.margin, marginPct: totals.marginPct },
         lines: rows as any,
       })
 
       showToast('Excel exported.')
     } catch (e: any) {
-      console.error('Excel export failed in RecipeEditor:', e)
-      setErr(e?.message || 'Excel export failed.')
+      console.error(e)
       showToast('Excel export failed.')
     }
   }, [
     id,
-    code,
     name,
     category,
     portions,
@@ -1309,7 +1283,6 @@ const addLineLocal = useCallback(async () => {
     currency,
     sellingPrice,
     targetFC,
-    recipe,
     description,
     steps,
     stepPhotos,
@@ -1320,7 +1293,7 @@ const addLineLocal = useCallback(async () => {
     lines,
     lineComputed,
     ingById,
-    recipeById,
+    allRecipes,
     totals.totalCost,
     totals.cpp,
     totals.fcPct,
@@ -1518,38 +1491,6 @@ const addLineLocal = useCallback(async () => {
           0 8px 24px rgba(38,46,31,.04),
           inset 0 1px 0 rgba(255,255,255,.8);
       }
-      .gc-recipe-pro .gc-card-body{
-        padding: 16px 18px;
-      }
-      .gc-recipe-pro .gc-section{
-        padding: 16px 18px;
-      }
-      .gc-recipe-pro .gc-input,
-      .gc-recipe-pro .gc-select{
-        height: 40px;
-        min-height: 40px;
-        padding: 0 12px;
-        border-radius: 10px;
-      }
-      .gc-recipe-pro textarea.gc-input{
-        min-height: 96px;
-        height: auto;
-        padding: 10px 12px;
-      }
-      .gc-recipe-pro .gc-card-head .gc-label{
-        display: inline-block;
-        padding-bottom: 6px;
-        border-bottom: 1px solid rgba(118,128,108,.18);
-      }
-      .gc-recipe-pro .gc-btn-primary{
-        border-radius: 10px;
-        box-shadow: 0 8px 18px rgba(74,111,42,.14);
-      }
-      .gc-recipe-pro .gc-btn-secondary,
-      .gc-recipe-pro .gc-btn-ghost,
-      .gc-recipe-pro .gc-btn-soft{
-        border-radius: 10px;
-      }
       .gc-recipe-pro .gc-kpi-card{
         border-radius: 20px;
         border: 1px solid rgba(118,128,108,.12);
@@ -1643,24 +1584,8 @@ const addLineLocal = useCallback(async () => {
       .gc-recipe-pro .gc-kitopi-table tbody td{
         border-bottom: 1px solid rgba(15, 23, 42, .06);
       }
-      .gc-recipe-pro .gc-kitopi-table tbody tr:nth-child(even){
-        background: rgba(15, 23, 42, .025);
-      }
       .gc-recipe-pro .gc-kitopi-table tbody tr:hover{
         background: rgba(116,141,63,.06);
-      }
-      .gc-recipe-pro .gc-add-line-grid{
-        display:grid;
-        grid-template-columns: repeat(12, minmax(0, 1fr));
-        gap: 12px;
-        align-items: end;
-      }
-      .gc-recipe-pro .gc-add-line-grid > .gc-col-12{ grid-column: span 12; }
-      .gc-recipe-pro .gc-add-line-grid > .gc-col-9{ grid-column: span 9; }
-      .gc-recipe-pro .gc-add-line-grid > .gc-col-6{ grid-column: span 6; }
-      .gc-recipe-pro .gc-add-line-grid > .gc-col-3{ grid-column: span 3; }
-      .gc-recipe-pro .gc-add-line-note .gc-input{
-        min-width: 240px;
       }
       .gc-recipe-pro .gc-kitopi-group{
         background: rgba(15, 23, 42, .04) !important;
@@ -1676,19 +1601,8 @@ const addLineLocal = useCallback(async () => {
         .gc-recipe-pro .gc-pricing-grid{
           grid-template-columns: 1fr;
         }
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-9,
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-6,
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-3{
-          grid-column: span 6;
-        }
       }
       @media (max-width: 760px){
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-9,
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-6,
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-3,
-        .gc-recipe-pro .gc-add-line-grid > .gc-col-12{
-          grid-column: span 12;
-        }
         .gc-recipe-pro-head-left{
           min-width: 100%;
         }
@@ -1943,7 +1857,7 @@ const addLineLocal = useCallback(async () => {
             </div>
 
             <div className="gc-card-body">
-              <div className="gc-field-row gc-add-line-grid">
+              <div className="gc-field-row">
                 <div className="gc-col-6">
                   <div className="gc-field">
                     <div className="gc-label">CODE</div>
@@ -2181,7 +2095,7 @@ const addLineLocal = useCallback(async () => {
                       </div>
                     </div>
 
-                    <div className="gc-col-3" style={{ maxWidth: 120 }}>
+                    <div className="gc-col-3">
                       <div className="gc-field">
                         <div className="gc-label">UNIT</div>
                         <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
@@ -2199,18 +2113,6 @@ const addLineLocal = useCallback(async () => {
                       <div className="gc-field">
                         <div className="gc-label">GROSS (optional)</div>
                         <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="leave empty to auto" />
-                      </div>
-                    </div>
-
-                    <div className="gc-col-12 gc-add-line-note">
-                      <div className="gc-field">
-                        <div className="gc-label">NOTE</div>
-                        <input
-                          className="gc-input"
-                          value={addNote}
-                          onChange={(e) => setAddNote(e.target.value)}
-                          placeholder="Optional note for this ingredient line"
-                        />
                       </div>
                     </div>
                   </>
@@ -2442,21 +2344,10 @@ const addLineLocal = useCallback(async () => {
                 <div className="gc-label">NEW STEP</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
-                  <input
-                    className="gc-input"
-                    type="file"
-                    accept="image/*"
-                    disabled={stepUploading}
-                    onChange={(e) => {
-                      const f = e.target.files?.[0] || null
-                      setNewStepImage(f)
-                    }}
-                  />
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={() => { addStep().catch(() => {}) }} disabled={!newStep.trim() || stepUploading}>
-                    {stepUploading ? 'Uploading…' : 'Add step'}
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
+                    Add step
                   </button>
                 </div>
-                {newStepImage ? <div className="gc-hint" style={{ marginTop: 8 }}>Selected image: {newStepImage.name}</div> : null}
               </div>
 
               {steps.length ? (
