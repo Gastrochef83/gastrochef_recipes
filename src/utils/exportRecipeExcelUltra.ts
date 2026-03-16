@@ -87,6 +87,76 @@ function moneyFmt(currency: string, decimals = 2): string {
   return `"${currency}" #,##0${decimals > 0 ? '.' + zeros : ''}`
 }
 
+function safeMerge(sheet: ExcelJS.Worksheet, range: string) {
+  try {
+    const merges = (sheet as any)?._merges
+    if (!merges) {
+      sheet.mergeCells(range)
+      return
+    }
+
+    const wanted = range.toUpperCase()
+    const wantedRange = new ExcelJS.Workbook().addWorksheet('tmp').getCell('A1')
+    void wantedRange
+
+    const [startRef, endRef = startRef] = wanted.split(':')
+    const decode = (ref: string) => {
+      const match = ref.match(/^([A-Z]+)(\d+)$/)
+      if (!match) return null
+      const [, colLetters, rowStr] = match
+      let col = 0
+      for (let i = 0; i < colLetters.length; i++) {
+        col = col * 26 + (colLetters.charCodeAt(i) - 64)
+      }
+      return { col, row: Number(rowStr) }
+    }
+
+    const a = decode(startRef)
+    const b = decode(endRef)
+    if (!a || !b) {
+      sheet.mergeCells(range)
+      return
+    }
+
+    const wantedBox = {
+      left: Math.min(a.col, b.col),
+      right: Math.max(a.col, b.col),
+      top: Math.min(a.row, b.row),
+      bottom: Math.max(a.row, b.row),
+    }
+
+    const existingRanges = Object.keys(merges)
+    const overlaps = existingRanges.some((existing) => {
+      const parts = existing.toUpperCase().split(':')
+      const ea = decode(parts[0])
+      const eb = decode(parts[1] || parts[0])
+      if (!ea || !eb) return false
+      const box = {
+        left: Math.min(ea.col, eb.col),
+        right: Math.max(ea.col, eb.col),
+        top: Math.min(ea.row, eb.row),
+        bottom: Math.max(ea.row, eb.row),
+      }
+      const noOverlap =
+        wantedBox.right < box.left ||
+        wantedBox.left > box.right ||
+        wantedBox.bottom < box.top ||
+        wantedBox.top > box.bottom
+      return !noOverlap
+    })
+
+    if (!overlaps) {
+      sheet.mergeCells(range)
+    }
+  } catch {
+    try {
+      sheet.mergeCells(range)
+    } catch {
+      // ignore duplicate/overlap merge errors
+    }
+  }
+}
+
 // ================= Colors =================
 const COLORS = {
   primary: 'FF0F766E',
@@ -127,15 +197,18 @@ async function fetchImageForExcel(url: string | null | undefined): Promise<{ bas
     const cleanUrl = url.trim()
     if (!cleanUrl) return null
 
+    // Handle data URLs
     if (cleanUrl.startsWith('data:image/')) {
       return parseDataUrl(cleanUrl)
     }
 
+    // Handle relative URLs
     let fetchUrl = cleanUrl
     if (cleanUrl.startsWith('/')) {
       fetchUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${cleanUrl}`
     }
 
+    // Fetch with CORS
     const response = await fetch(fetchUrl, {
       method: 'GET',
       mode: 'cors',
@@ -179,7 +252,6 @@ async function addImageToSheet(
       ext: { width: options.width, height: options.height },
       editAs: 'oneCell',
     })
-
     return true
   } catch {
     return false
@@ -191,10 +263,7 @@ async function addLogo(workbook: ExcelJS.Workbook, sheet: ExcelJS.Worksheet) {
     const candidates = ['/gastrochef-logo.png', '/logo.png']
     for (const url of candidates) {
       const ok = await addImageToSheet(workbook, sheet, url, {
-        col: 0.2,
-        row: 0.2,
-        width: 60,
-        height: 60,
+        col: 0.2, row: 0.2, width: 60, height: 60,
       })
       if (ok) return
     }
@@ -216,10 +285,9 @@ function autosizeColumns(sheet: ExcelJS.Worksheet, min = 10, max = 45) {
     let longest = min
     col.eachCell?.({ includeEmpty: true }, (cell) => {
       const val = cell.value
-      const text =
-        typeof val === 'object' && val && 'richText' in val
-          ? (val as any).richText?.map((x: any) => x.text).join('') || ''
-          : String(val ?? '')
+      const text = typeof val === 'object' && val && 'richText' in val
+        ? (val as any).richText?.map((x: any) => x.text).join('') || ''
+        : String(val ?? '')
       const len = text.split('\n').reduce((a, l) => Math.max(a, l.length), 0)
       longest = Math.max(longest, Math.min(max, len + 2))
     })
@@ -232,7 +300,7 @@ function normalizeStepPhotos(steps: string[], photos: string[] | null | undefine
   return steps.map((_, i) => clean[i] || '')
 }
 
-// ================= Photo Card Builder (FIXED ONLY) =================
+// ================= Photo Card Builder (MATCHING REFERENCE) =================
 async function createPhotoCard(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
@@ -243,66 +311,50 @@ async function createPhotoCard(
   imageUrl: string | null
 ) {
   const colLetter = String.fromCharCode(65 + (colIndex * 2)) // A=0, C=2, E=4
-  const baseCol = colIndex * 2
 
-  // IMPORTANT:
-  // Do NOT merge the whole card, because later the description block is merged,
-  // and that causes: Cannot merge already merged cells
-  for (let r = startRow; r <= startRow + 15; r++) {
-    const cell = sheet.getCell(`${colLetter}${r}`)
-    fill(cell, COLORS.white)
-    cell.border = {
-      top: { style: r === startRow ? 'thin' : undefined, color: { argb: COLORS.border } },
-      left: { style: 'thin', color: { argb: COLORS.border } },
-      bottom: { style: r === startRow + 15 ? 'thin' : undefined, color: { argb: COLORS.border } },
-      right: { style: 'thin', color: { argb: COLORS.border } },
-    }
+  // Card container with border (16 rows total per card)
+  safeMerge(sheet, `${colLetter}${startRow}:${colLetter}${startRow + 15}`)
+  const cardCell = sheet.getCell(`${colLetter}${startRow}`)
+  fill(cardCell, COLORS.white)
+  cardCell.border = {
+    top: { style: 'thin', color: { argb: COLORS.border } },
+    left: { style: 'thin', color: { argb: COLORS.border } },
+    bottom: { style: 'thin', color: { argb: COLORS.border } },
+    right: { style: 'thin', color: { argb: COLORS.border } },
   }
 
-  // Step Number Badge
+  // Step Number Badge (top-left, green like reference)
   const badgeCell = sheet.getCell(`${colLetter}${startRow}`)
   badgeCell.value = `${stepNumber}`
   badgeCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.white } }
   badgeCell.alignment = { horizontal: 'center', vertical: 'middle' }
   fill(badgeCell, COLORS.primary)
 
-  // Photo Area
+  // Photo Area (rows 2-11, ~240px height)
   const photoRow = startRow + 1
   if (imageUrl) {
     const added = await addImageToSheet(workbook, sheet, imageUrl, {
-      col: baseCol + 0.15,
+      col: (colIndex * 2) + 0.15,
       row: photoRow + 0.15,
       width: 380,
       height: 240,
     })
-
     if (!added) {
       const placeholderCell = sheet.getCell(`${colLetter}${photoRow + 3}`)
       placeholderCell.value = '📷\nPhoto not available'
       placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
     }
-  } else {
-    const placeholderCell = sheet.getCell(`${colLetter}${photoRow + 3}`)
-    placeholderCell.value = '📷\nPhoto not available'
-    placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-    placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
   }
 
-  // Description Area
+  // Description Area (rows 12-15, light gray background)
   const descRow = startRow + 12
-  sheet.mergeCells(`${colLetter}${descRow}:${colLetter}${startRow + 15}`)
+  safeMerge(sheet, `${colLetter}${descRow}:${colLetter}${startRow + 15}`)
   const descCell = sheet.getCell(`${colLetter}${descRow}`)
   descCell.value = description || 'No description'
   descCell.font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
   descCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true }
   fill(descCell, COLORS.bgSoft)
-  descCell.border = {
-    top: { style: 'thin', color: { argb: COLORS.border } },
-    left: { style: 'thin', color: { argb: COLORS.border } },
-    bottom: { style: 'thin', color: { argb: COLORS.border } },
-    right: { style: 'thin', color: { argb: COLORS.border } },
-  }
 }
 
 // ================= Main Export Function =================
@@ -318,11 +370,13 @@ export async function exportRecipeExcelUltra(args: {
   const yieldQty = safeNum(meta.yield_qty, 0) || null
   const yieldUnit = (meta.yield_unit || '').trim() || null
   const sellingPrice = safeNum(meta.selling_price, 0)
-  const targetFc =
-    meta.target_food_cost_pct != null ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100) : null
+  const targetFc = meta.target_food_cost_pct != null
+    ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100)
+    : null
   const cleanSteps = (meta.steps || []).map((s) => (s || '').trim()).filter(Boolean)
   const stepPhotos = normalizeStepPhotos(cleanSteps, meta.step_photos)
 
+  // ===== Workbook Setup =====
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'GastroChef'
   workbook.created = new Date()
@@ -331,19 +385,20 @@ export async function exportRecipeExcelUltra(args: {
   workbook.title = `${name} — Professional Recipe Export`
 
   const now = new Date()
-  const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(
-    2,
-    '0'
-  )}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+  const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
   const recipeId = meta.id || ''
   const recipeCode = meta.code || ''
   const kitchenRef = meta.kitchen_id || ''
+  void reportId
+  void kitchenRef
 
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const qrPayload = recipeId && baseUrl ? `${baseUrl}/#/recipe?id=${encodeURIComponent(recipeId)}` : `Recipe: ${name}`
 
-  const ingredientCost = lines.filter((l) => l.type === 'ingredient').reduce((a, l) => a + safeNum(l.line_cost), 0)
-  const subrecipeCost = lines.filter((l) => l.type === 'subrecipe').reduce((a, l) => a + safeNum(l.line_cost), 0)
+  const ingredientCost = lines.filter(l => l.type === 'ingredient').reduce((a, l) => a + safeNum(l.line_cost), 0)
+  const subrecipeCost = lines.filter(l => l.type === 'subrecipe').reduce((a, l) => a + safeNum(l.line_cost), 0)
+  void ingredientCost
+  void subrecipeCost
 
   // ===== 1. SUMMARY SHEET =====
   const summary = workbook.addWorksheet('Summary', {
@@ -355,12 +410,12 @@ export async function exportRecipeExcelUltra(args: {
   await addLogo(workbook, summary)
   await addQRCode(workbook, summary, qrPayload)
 
-  summary.mergeCells('A3:D3')
+  safeMerge(summary, 'A3:D3')
   summary.getCell('A3').value = 'GastroChef'
   summary.getCell('A3').font = { name: 'Calibri', size: 20, bold: true }
   summary.getCell('A3').alignment = { vertical: 'middle', horizontal: 'center' }
 
-  summary.mergeCells('A7:D7')
+  safeMerge(summary, 'A7:D7')
   summary.getCell('A7').value = name
   summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true }
 
@@ -369,10 +424,9 @@ export async function exportRecipeExcelUltra(args: {
     summary.getCell(`A${r}`).value = label
     summary.getCell(`A${r}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
     summary.getCell(`B${r}`).value = value ?? ''
-    summary.mergeCells(`B${r}:D${r}`)
+    safeMerge(summary, `B${r}:D${r}`)
     r++
   }
-
   kv('Code', recipeCode)
   kv('Category', meta.category)
   kv('Portions', portions)
@@ -380,42 +434,23 @@ export async function exportRecipeExcelUltra(args: {
   kv('Currency', currency)
   kv('Selling Price', sellingPrice > 0 ? sellingPrice : '')
   kv('Target FC%', targetFc != null ? fmtPercent(targetFc) : '')
-  kv('Report ID', reportId)
-  kv('Kitchen Ref', kitchenRef)
 
   const kpiRow = r + 1
   const makeCard = (row: number, col: 'A' | 'C', title: string, value: any, accent = false) => {
-    summary.mergeCells(`${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
+    safeMerge(summary, `${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
     const cell = summary.getCell(`${col}${row}`)
     fill(cell, accent ? COLORS.primary : COLORS.bgSoft)
     thinBorder(cell)
     cell.value = title
     cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: accent ? COLORS.white : COLORS.text } }
-
     summary.getCell(`${col}${row + 1}`).value = value ?? ''
-    summary.getCell(`${col}${row + 1}`).font = {
-      name: 'Calibri',
-      size: 15,
-      bold: true,
-      color: { argb: accent ? COLORS.white : COLORS.text },
-    }
-    summary.getCell(`${col}${row + 1}`).numFmt =
-      typeof value === 'number' && title.includes('%') ? '0.0%' : moneyFmt(currency, 2)
+    summary.getCell(`${col}${row + 1}`).font = { name: 'Calibri', size: 15, bold: true, color: { argb: accent ? COLORS.white : COLORS.text } }
+    summary.getCell(`${col}${row + 1}`).numFmt = typeof value === 'number' && title.includes('%') ? '0.0%' : moneyFmt(currency, 2)
   }
-
   makeCard(kpiRow, 'A', 'Total Cost', totals.totalCost, true)
   makeCard(kpiRow, 'C', 'Cost/Portion', totals.cpp)
   makeCard(kpiRow + 3, 'A', 'Food Cost %', totals.fcPct != null ? totals.fcPct / 100 : null)
   makeCard(kpiRow + 3, 'C', 'Margin', totals.margin)
-
-  const costRow = kpiRow + 7
-  summary.getCell(`A${costRow}`).value = 'Ingredient Cost'
-  summary.getCell(`B${costRow}`).value = ingredientCost
-  summary.getCell(`C${costRow}`).value = 'Subrecipe Cost'
-  summary.getCell(`D${costRow}`).value = subrecipeCost
-  ;[`A${costRow}`, `B${costRow}`, `C${costRow}`, `D${costRow}`].forEach((ref) => thinBorder(summary.getCell(ref)))
-  summary.getCell(`B${costRow}`).numFmt = moneyFmt(currency, 2)
-  summary.getCell(`D${costRow}`).numFmt = moneyFmt(currency, 2)
 
   await summary.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
@@ -424,7 +459,6 @@ export async function exportRecipeExcelUltra(args: {
     views: [{ state: 'frozen', ySplit: 2 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true },
   })
-
   ingredients.columns = [
     { header: 'Type', key: 'type', width: 12 },
     { header: 'Code', key: 'code', width: 14 },
@@ -438,14 +472,14 @@ export async function exportRecipeExcelUltra(args: {
     { header: 'Notes', key: 'notes', width: 20 },
   ]
 
-  ingredients.mergeCells('A1:J1')
+  safeMerge(ingredients, 'A1:J1')
   ingredients.getCell('A1').value = `${name} — Ingredients`
   ingredients.getCell('A1').font = { name: 'Calibri', size: 14, bold: true }
 
   const headerRow = ingredients.getRow(2)
-  headerRow.values = ingredients.columns.map((c) => c.header)
+  headerRow.values = ingredients.columns.map(c => c.header)
   headerRow.font = { name: 'Calibri', size: 10, bold: true }
-  headerRow.eachCell((c) => applyHeaderStyle(c))
+  headerRow.eachCell(c => applyHeaderStyle(c))
 
   for (const line of lines) {
     const row = ingredients.addRow({
@@ -460,37 +494,23 @@ export async function exportRecipeExcelUltra(args: {
       lCost: line.line_cost,
       notes: line.notes || '',
     })
-
-    row.eachCell((c) => {
-      thinBorder(c)
-      c.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true }
-    })
-
+    row.eachCell(c => { thinBorder(c); c.alignment = { vertical: 'middle', horizontal: 'left', wrapText: true } })
     row.getCell('yield').numFmt = '0.0%'
     row.getCell('net').numFmt = '#,##0.000'
     row.getCell('gross').numFmt = '#,##0.000'
     row.getCell('uCost').numFmt = moneyFmt(currency, 3)
     row.getCell('lCost').numFmt = moneyFmt(currency, 3)
-
     if (line.type === 'subrecipe') fill(row.getCell('A'), COLORS.primaryLight)
   }
 
   const footer = ingredients.addRow({ name: 'TOTAL', lCost: totals.totalCost })
   footer.font = { name: 'Calibri', size: 11, bold: true }
   footer.getCell('lCost').numFmt = moneyFmt(currency, 2)
-  footer.eachCell((c) => {
-    thinBorder(c)
-    fill(c, COLORS.bgSoft)
-  })
+  footer.eachCell(c => { thinBorder(c); fill(c, COLORS.bgSoft) })
 
   ingredients.autoFilter = 'A2:J2'
   autosizeColumns(ingredients)
-  await ingredients.protect('GastroChef2024', {
-    selectLockedCells: true,
-    selectUnlockedCells: true,
-    sort: true,
-    autoFilter: true,
-  })
+  await ingredients.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: true, sort: true, autoFilter: true })
 
   // ===== 3. SCALE LAB SHEET =====
   const scaleLab = workbook.addWorksheet('Scale Lab', {
@@ -499,25 +519,18 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.columns = [{ width: 28 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
   scaleLab.getCell('A1').value = `${name} — Scaling Lab`
   scaleLab.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  scaleLab.mergeCells('A1:F1')
+  safeMerge(scaleLab, 'A1:F1')
 
-  scaleLab.getCell('A2').value = 'Base Portions'
-  scaleLab.getCell('B2').value = portions
-  scaleLab.getCell('D2').value = 'Target Portions'
-  scaleLab.getCell('E2').value = portions
-  scaleLab.getCell('A3').value = 'Scale Factor'
-  scaleLab.getCell('B3').value = { formula: 'IFERROR(E2/B2,1)' }
+  scaleLab.getCell('A2').value = 'Base Portions'; scaleLab.getCell('B2').value = portions
+  scaleLab.getCell('D2').value = 'Target Portions'; scaleLab.getCell('E2').value = portions
+  scaleLab.getCell('A3').value = 'Scale Factor'; scaleLab.getCell('B3').value = { formula: 'IFERROR(E2/B2,1)' }
   scaleLab.getCell('B3').numFmt = '0.00x'
-
-  ;['A2', 'B2', 'D2', 'E2', 'A3', 'B3'].forEach((ref) => {
-    thinBorder(scaleLab.getCell(ref))
-    fill(scaleLab.getCell(ref), COLORS.bgSoft)
-  })
+  ;['A2', 'B2', 'D2', 'E2', 'A3', 'B3'].forEach(ref => { thinBorder(scaleLab.getCell(ref)); fill(scaleLab.getCell(ref), COLORS.bgSoft) })
   scaleLab.getCell('E2').protection = { locked: false }
 
   scaleLab.getRow(5).values = ['Item', 'Net', 'Unit', 'Scaled Net', 'Scaled Gross', 'Scaled Cost']
   scaleLab.getRow(5).font = { name: 'Calibri', size: 10, bold: true }
-  scaleLab.getRow(5).eachCell((c) => applyHeaderStyle(c))
+  scaleLab.getRow(5).eachCell(c => applyHeaderStyle(c))
 
   let sr = 6
   for (const line of lines) {
@@ -527,33 +540,21 @@ export async function exportRecipeExcelUltra(args: {
     scaleLab.getCell(`D${sr}`).value = { formula: `B${sr}*$B$3` }
     scaleLab.getCell(`E${sr}`).value = { formula: `${safeNum(line.gross_qty)}*$B$3` }
     scaleLab.getCell(`F${sr}`).value = { formula: `${safeNum(line.line_cost)}*$B$3` }
-
-    ;['B', 'D', 'E'].forEach((c) => {
-      scaleLab.getCell(`${c}${sr}`).numFmt = '#,##0.000'
-    })
+    ;['B', 'D', 'E'].forEach(c => scaleLab.getCell(`${c}${sr}`).numFmt = '#,##0.000')
     scaleLab.getCell(`F${sr}`).numFmt = moneyFmt(currency, 2)
-
-    ;['A', 'B', 'C', 'D', 'E', 'F'].forEach((c) => {
-      thinBorder(scaleLab.getCell(`${c}${sr}`))
-    })
-
+    ;['A', 'B', 'C', 'D', 'E', 'F'].forEach(c => thinBorder(scaleLab.getCell(`${c}${sr}`)))
     sr++
   }
-
   autosizeColumns(scaleLab)
   await scaleLab.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: true })
 
   // ===== 4. METHOD SHEET =====
-  const method = workbook.addWorksheet('Method', {
-    pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true },
-  })
+  const method = workbook.addWorksheet('Method', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   method.columns = [{ width: 6 }, { width: 76 }]
-  method.getCell('A1').value = name
-  method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  method.mergeCells('A1:B1')
-  method.getCell('A3').value = 'Preparation Method'
-  method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
-  method.mergeCells('A3:B3')
+  method.getCell('A1').value = name; method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
+  safeMerge(method, 'A1:B1')
+  method.getCell('A3').value = 'Preparation Method'; method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
+  safeMerge(method, 'A3:B3')
 
   let mr = 5
   if (cleanSteps.length) {
@@ -561,85 +562,67 @@ export async function exportRecipeExcelUltra(args: {
       method.getCell(`A${mr}`).value = `${i + 1}.`
       method.getCell(`A${mr}`).alignment = { vertical: 'top', horizontal: 'right' }
       method.getCell(`A${mr}`).font = { name: 'Calibri', size: 10, bold: true }
-
       method.getCell(`B${mr}`).value = cleanSteps[i]
       method.getCell(`B${mr}`).alignment = { vertical: 'top', horizontal: 'left', wrapText: true }
-
-      thinBorder(method.getCell(`A${mr}`))
-      thinBorder(method.getCell(`B${mr}`))
+      thinBorder(method.getCell(`A${mr}`)); thinBorder(method.getCell(`B${mr}`))
       method.getRow(mr).height = Math.max(20, Math.ceil(cleanSteps[i].length / 80) * 15)
       mr++
     }
   } else {
-    method.getCell('A5').value = '—'
-    method.getCell('B5').value = 'No steps provided.'
+    method.getCell('A5').value = '—'; method.getCell('B5').value = 'No steps provided.'
   }
-
   await method.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
   // ===== 5. NUTRITION SHEET =====
-  const nutrition = workbook.addWorksheet('Nutrition', {
-    pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true },
-  })
+  const nutrition = workbook.addWorksheet('Nutrition', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   nutrition.columns = [{ width: 26 }, { width: 20 }]
-  nutrition.getCell('A1').value = `${name} — Nutrition`
-  nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  nutrition.mergeCells('A1:B1')
-
+  nutrition.getCell('A1').value = `${name} — Nutrition`; nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
+  safeMerge(nutrition, 'A1:B1')
   const nkv = (row: number, label: string, value: any) => {
     nutrition.getCell(`A${row}`).value = label
     nutrition.getCell(`A${row}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
     nutrition.getCell(`B${row}`).value = value ?? ''
-    thinBorder(nutrition.getCell(`A${row}`))
-    thinBorder(nutrition.getCell(`B${row}`))
+    thinBorder(nutrition.getCell(`A${row}`)); thinBorder(nutrition.getCell(`B${row}`))
   }
-
-  nkv(3, 'Calories', meta.calories)
-  nkv(4, 'Protein (g)', meta.protein_g)
-  nkv(5, 'Carbs (g)', meta.carbs_g)
-  nkv(6, 'Fat (g)', meta.fat_g)
-  nkv(7, 'Portions', portions)
-  nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
-
+  nkv(3, 'Calories', meta.calories); nkv(4, 'Protein (g)', meta.protein_g)
+  nkv(5, 'Carbs (g)', meta.carbs_g); nkv(6, 'Fat (g)', meta.fat_g)
+  nkv(7, 'Portions', portions); nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
   await nutrition.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
-  // ===== 6. PHOTOS SHEET =====
+  // ===== 6. PHOTOS SHEET (PROFESSIONAL GALLERY - MATCHING REFERENCE) =====
   const gallery = workbook.addWorksheet('Photos', {
     views: [{ showGridLines: false, zoom: 90 }],
-    pageSetup: {
-      orientation: 'landscape',
-      paperSize: 9,
-      fitToPage: true,
-      margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5 },
-    },
+    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5 } },
   })
 
-  gallery.columns = [{ width: 42 }, { width: 2 }, { width: 42 }, { width: 2 }, { width: 42 }]
+  // 3 columns for cards + spacing columns
+  gallery.columns = [
+    { width: 42 }, { width: 2 },  // Card 1 + spacing
+    { width: 42 }, { width: 2 },  // Card 2 + spacing
+    { width: 42 },                // Card 3
+  ]
 
-  gallery.mergeCells('A1:F1')
+  // Title
+  safeMerge(gallery, 'A1:F1')
   gallery.getCell('A1').value = `${name} — Photo Gallery`
   gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
   gallery.getCell('A1').alignment = { horizontal: 'center', vertical: 'bottom' }
 
-  gallery.mergeCells('A2:F2')
+  safeMerge(gallery, 'A2:F2')
   gallery.getCell('A2').value = 'Step-by-step visual preparation guide'
   gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   gallery.getCell('A2').alignment = { horizontal: 'center', vertical: 'top' }
 
   let currentRow = 4
 
+  // Main Recipe Photo (Full Width)
   if (meta.photo_url) {
-    gallery.mergeCells(`A${currentRow}:F${currentRow}`)
+    safeMerge(gallery, `A${currentRow}:F${currentRow}`)
     gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
-    gallery.getCell(`A${currentRow}`).font = {
-      name: 'Calibri',
-      size: 11,
-      bold: true,
-      color: { argb: COLORS.primary },
-    }
+    gallery.getCell(`A${currentRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
     currentRow++
 
-    gallery.mergeCells(`A${currentRow}:F${currentRow + 10}`)
+    safeMerge(gallery, `A${currentRow}:F${currentRow + 10}`)
     const mainCell = gallery.getCell(`A${currentRow}`)
     mainCell.border = {
       top: { style: 'medium', color: { argb: COLORS.border } },
@@ -661,22 +644,31 @@ export async function exportRecipeExcelUltra(args: {
       gallery.getCell(`A${currentRow}`).alignment = { vertical: 'middle', horizontal: 'center' }
       gallery.getCell(`A${currentRow}`).font = { color: { argb: COLORS.textMuted } }
     }
-
     currentRow += 12
   }
 
+  // Step Photos Grid (3 cards per row)
   const cardsPerRow = 3
   const cardHeight = 16
 
   for (let i = 0; i < cleanSteps.length; i++) {
     const colIndex = i % cardsPerRow
     const rowIndex = Math.floor(i / cardsPerRow)
-    const startRow = currentRow + rowIndex * cardHeight
+    const startRow = currentRow + (rowIndex * cardHeight)
 
-    await createPhotoCard(workbook, gallery, startRow, colIndex, i + 1, cleanSteps[i], stepPhotos[i] || null)
+    await createPhotoCard(
+      workbook,
+      gallery,
+      startRow,
+      colIndex,
+      i + 1,
+      cleanSteps[i],
+      stepPhotos[i] || null
+    )
   }
 
-  const totalRows = currentRow + Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight
+  // Set row heights
+  const totalRows = currentRow + (Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight)
   for (let ri = currentRow; ri < totalRows; ri++) {
     gallery.getRow(ri).height = 12
   }
@@ -686,9 +678,7 @@ export async function exportRecipeExcelUltra(args: {
   // ===== SAVE FILE =====
   try {
     const buffer = await workbook.xlsx.writeBuffer()
-    const blob = new Blob([buffer], {
-      type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-    })
+    const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     saveAs(blob, `${safeFileName(name)} - Ultra Export.xlsx`)
   } catch (error) {
     console.error('Excel export failed:', error)
