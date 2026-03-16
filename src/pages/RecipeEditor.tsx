@@ -159,7 +159,7 @@ export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
   const showCost = isMgmt
   const tableColSpan = 9 + (showCost ? 1 : 0)
-const k = useKitchen()
+  const k = useKitchen()
   const canEditCodes = k.isOwner
   const navigate = useNavigate()
   const [sp] = useSearchParams()
@@ -1375,311 +1375,668 @@ const addLineLocal = useCallback(async () => {
       ) : null}
     </div>
   )
-  // Screen-only scoped CSS (safe: does not touch globals.css)
+
+  // ===== تحسينات CSS =====
   const ScreenCss = (
     <style>{`
-      .gc-recipe-pro{
+      /* ===== المتغيرات الأساسية ===== */
+      .gc-recipe-pro {
+        --primary: #2E7D78;
+        --primary-light: #E8F3F2;
+        --primary-dark: #1E5A56;
+        --secondary: #C17B4A;
+        --accent: #D94E4E;
+        --text: #1E2A3A;
+        --text-light: #64748B;
+        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+        --card-shadow: 0 20px 40px -12px rgba(0,32,64,0.12), 0 8px 24px -8px rgba(0,0,0,0.08);
+        --hover-shadow: 0 24px 48px -12px rgba(46,125,120,0.18);
         position: relative;
       }
-      .gc-recipe-pro .gc-card-head{
+
+      /* ===== الهيدر المحسن ===== */
+      .gc-recipe-pro .gc-card-head {
         align-items: center;
-        padding: 14px 16px;
-        border-radius: 22px;
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.94), rgba(247,248,244,.94));
-        border: 1px solid rgba(118,128,108,.12);
-        box-shadow:
-          0 10px 24px rgba(38,46,31,.05),
-          inset 0 1px 0 rgba(255,255,255,.82);
+        padding: 18px 24px;
+        border-radius: 28px;
+        background: rgba(255,255,255,0.92);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(46,125,120,0.15);
+        box-shadow: 0 12px 28px -8px rgba(0,32,64,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
       }
-      .gc-recipe-pro-head{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:14px;
-        flex-wrap:wrap;
+
+      .gc-recipe-pro-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        flex-wrap: wrap;
       }
-      .gc-recipe-pro-head-left{
-        display:flex;
-        align-items:center;
-        gap:12px;
-        min-width: 280px;
+
+      /* ===== القسم الأيسر من الهيدر ===== */
+      .gc-recipe-pro-head-left {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+        min-width: 320px;
       }
-      .gc-recipe-pro-titleWrap{
-        min-width: 0;
-        display:flex;
-        align-items:center;
-        gap:12px;
-      }
-      .gc-recipe-pro-titleIcon{
-        width: 52px;
-        height: 52px;
-        flex: 0 0 52px;
-        border-radius: 18px;
-        display:grid;
-        place-items:center;
-        font-size: 24px;
-        background:
-          radial-gradient(circle at top left, rgba(255,255,255,.96), rgba(242,245,238,.94));
-        border: 1px solid rgba(118,128,108,.14);
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,.88),
-          0 8px 20px rgba(45,56,36,.06);
-      }
-      .gc-recipe-pro-titleBlock{
+
+      .gc-recipe-pro-titleWrap {
+        display: flex;
+        align-items: center;
+        gap: 16px;
         min-width: 0;
       }
-      .gc-recipe-pro-title{
-        margin-top: 2px;
-        font-weight: 950;
-        font-size: 1.22rem;
-        line-height: 1.08;
+
+      .gc-recipe-pro-titleIcon {
+        width: 60px;
+        height: 60px;
+        flex: 0 0 60px;
+        border-radius: 20px;
+        display: grid;
+        place-items: center;
+        font-size: 28px;
+        background: linear-gradient(145deg, var(--primary-light), #ffffff);
+        border: 2px solid rgba(46,125,120,0.2);
+        box-shadow: 0 8px 16px -4px rgba(46,125,120,0.15);
+        transition: all 0.2s ease;
+      }
+
+      .gc-recipe-pro-titleIcon:hover {
+        transform: scale(1.02);
+        border-color: var(--primary);
+        box-shadow: 0 12px 24px -6px rgba(46,125,120,0.25);
+      }
+
+      .gc-recipe-pro-titleBlock {
+        min-width: 0;
+      }
+
+      .gc-recipe-pro-title {
+        font-weight: 900;
+        font-size: 1.5rem;
+        line-height: 1.2;
         letter-spacing: -0.02em;
-        color: #18210f;
+        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        margin-top: 4px;
         word-break: break-word;
       }
-      .gc-recipe-pro-subline{
-        margin-top: 6px;
-        display:flex;
-        align-items:center;
-        gap:8px;
-        flex-wrap:wrap;
+
+      .gc-recipe-pro-subline {
+        margin-top: 8px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
       }
-      .gc-recipe-pro-statusDot{
-        width: 9px;
-        height: 9px;
+
+      .gc-recipe-pro-statusDot {
+        width: 10px;
+        height: 10px;
         border-radius: 999px;
-        background: linear-gradient(180deg, #7aa14b 0%, #4b8f52 100%);
-        box-shadow: 0 0 0 4px rgba(122,161,75,.12);
-        flex: 0 0 9px;
+        background: linear-gradient(135deg, #4CAF50, #2E7D78);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.15);
+        animation: pulse 2s infinite;
       }
-      .gc-recipe-pro-head-right{
-        display:flex;
-        align-items:center;
-        gap:8px;
-        justify-content:flex-end;
-        flex:1 1 auto;
-        min-width: 280px;
-        overflow-x:auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-        padding-bottom: 2px;
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50% { opacity: 0.8; transform: scale(1.1); }
+      }
+
+      /* ===== القسم الأيمن من الهيدر ===== */
+      .gc-recipe-pro-head-right {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        justify-content: flex-end;
+        flex: 1 1 auto;
+        min-width: 320px;
+        overflow-x: auto;
+        padding-bottom: 4px;
         white-space: nowrap;
+        scrollbar-width: thin;
       }
-      .gc-recipe-pro-head-right > *{
-        flex: 0 0 auto;
+
+      /* ===== أزرار محسنة ===== */
+      .gc-recipe-pro .gc-btn-soft {
+        padding: 10px 18px;
+        border-radius: 40px;
+        border: 1px solid rgba(46,125,120,0.15);
+        background: rgba(255,255,255,0.85);
+        backdrop-filter: blur(4px);
+        font-weight: 600;
+        font-size: 0.9rem;
+        color: var(--text);
+        transition: all 0.15s ease;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
       }
-      .gc-recipe-pro .gc-btn-soft{
-        border-radius: 999px;
-        border: 1px solid rgba(118,128,108,.12);
-        background: rgba(255,255,255,.82);
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.9);
+
+      .gc-recipe-pro .gc-btn-soft:hover {
+        background: white;
+        border-color: var(--primary);
+        box-shadow: 0 8px 16px -6px rgba(46,125,120,0.2);
+        transform: translateY(-1px);
       }
-      .gc-recipe-pro .gc-btn-soft.is-active{
-        box-shadow:
-          inset 0 0 0 1px rgba(116,141,63,.28),
-          0 4px 14px rgba(116,141,63,.10);
-        background: rgba(116,141,63,.10);
+
+      .gc-recipe-pro .gc-btn-soft.is-active {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary-dark);
+        font-weight: 700;
+        box-shadow: inset 0 2px 4px rgba(46,125,120,0.05), 0 4px 12px rgba(46,125,120,0.15);
       }
-      .gc-recipe-pro .gc-card-soft,
-      .gc-recipe-pro .gc-card{
-        border-radius: 22px;
-        border: 1px solid rgba(118,128,108,.11);
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.96), rgba(248,248,245,.95));
-        box-shadow:
-          0 8px 24px rgba(38,46,31,.04),
-          inset 0 1px 0 rgba(255,255,255,.8);
+
+      /* ===== البطاقات المحسنة ===== */
+      .gc-recipe-pro .gc-card,
+      .gc-recipe-pro .gc-card-soft {
+        border-radius: 28px;
+        border: 1px solid rgba(46,125,120,0.1);
+        background: white;
+        box-shadow: var(--card-shadow);
+        transition: all 0.2s ease;
+        margin-bottom: 20px;
+        overflow: hidden;
       }
-      .gc-recipe-pro .gc-kpi-card{
-        border-radius: 20px;
-        border: 1px solid rgba(118,128,108,.12);
-        background:
-          linear-gradient(180deg, rgba(255,255,255,.96), rgba(244,246,241,.94));
-        box-shadow: inset 0 1px 0 rgba(255,255,255,.86);
-        padding: 14px 14px 12px;
+
+      .gc-recipe-pro .gc-card:hover,
+      .gc-recipe-pro .gc-card-soft:hover {
+        box-shadow: var(--hover-shadow);
+        border-color: rgba(46,125,120,0.2);
       }
-      .gc-recipe-pro .gc-kpi-label{
-        font-size: .77rem;
-        line-height: 1;
-        letter-spacing: .1em;
-        font-weight: 900;
-        color: #72806b;
+
+      .gc-recipe-pro .gc-card-head {
+        padding: 20px 24px;
+        border-bottom: 1px solid rgba(46,125,120,0.1);
+        background: linear-gradient(to right, rgba(46,125,120,0.02), transparent);
+      }
+
+      .gc-recipe-pro .gc-card-body {
+        padding: 24px;
+      }
+
+      /* ===== KPI Cards محسنة ===== */
+      .gc-recipe-pro .gc-kpi-card {
+        border-radius: 24px;
+        border: 1px solid rgba(46,125,120,0.15);
+        background: linear-gradient(145deg, white, #fafcfc);
+        box-shadow: 0 8px 20px -8px rgba(0,0,0,0.08);
+        padding: 20px 18px 16px;
+        transition: all 0.2s ease;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .gc-recipe-pro .gc-kpi-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, var(--primary), var(--secondary));
+        opacity: 0.6;
+      }
+
+      .gc-recipe-pro .gc-kpi-card:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 20px 32px -12px rgba(46,125,120,0.25);
+      }
+
+      .gc-recipe-pro .gc-kpi-label {
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        font-weight: 800;
+        color: var(--text-light);
         margin-bottom: 12px;
+        text-transform: uppercase;
       }
-      .gc-recipe-pro .gc-kpi-value{
-        font-size: 1.75rem;
-        line-height: 1;
-        letter-spacing: -0.03em;
-        font-weight: 950;
-        color: #15200e;
-      }
-      .gc-recipe-pro .gc-pricing-grid{
-        display:grid;
-        grid-template-columns: repeat(3, minmax(0, 1fr));
-        gap: 12px;
-        margin-top: 12px;
-      }
-      .gc-recipe-pro .gc-pricing-field{
-        border-radius: 18px;
-        border: 1px solid rgba(118,128,108,.11);
-        background: rgba(255,255,255,.64);
-        padding: 12px;
-      }
-      .gc-recipe-pro .gc-warning-banner{
-        margin-top: 12px;
-        padding: 12px 14px;
-        border-radius: 16px;
-        border: 1px solid rgba(236,164,30,.28);
-        background: rgba(255,191,64,.09);
-        display:flex;
-        align-items:flex-start;
-        gap:10px;
-      }
-      .gc-recipe-pro .gc-warning-icon{
-        width: 28px;
-        height: 28px;
-        flex: 0 0 28px;
-        border-radius: 999px;
-        display:grid;
-        place-items:center;
-        font-size: 14px;
-        background: rgba(255,255,255,.78);
-        border: 1px solid rgba(236,164,30,.22);
-      }
-      .gc-recipe-pro .gc-warning-title{
-        font-size: .78rem;
-        line-height: 1;
-        letter-spacing: .1em;
+
+      .gc-recipe-pro .gc-kpi-value {
+        font-size: 2rem;
+        line-height: 1.2;
         font-weight: 900;
-        color: #9a5a00;
+        color: var(--primary-dark);
+        letter-spacing: -0.03em;
+      }
+
+      /* ===== Grid محسن ===== */
+      .gc-recipe-pro .gc-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 20px;
+      }
+
+      /* ===== Pricing Grid محسن ===== */
+      .gc-recipe-pro .gc-pricing-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .gc-recipe-pro .gc-pricing-field {
+        border-radius: 20px;
+        border: 1px solid rgba(46,125,120,0.12);
+        background: rgba(255,255,255,0.7);
+        backdrop-filter: blur(4px);
+        padding: 16px;
+        transition: all 0.15s ease;
+      }
+
+      .gc-pricing-field:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(46,125,120,0.1);
+      }
+
+      /* ===== Warning Banner محسن ===== */
+      .gc-recipe-pro .gc-warning-banner {
+        margin-top: 16px;
+        padding: 16px 20px;
+        border-radius: 20px;
+        border: 1px solid rgba(217,78,78,0.2);
+        background: rgba(217,78,78,0.03);
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        animation: slideIn 0.3s ease;
+      }
+
+      @keyframes slideIn {
+        from { opacity: 0; transform: translateY(-10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+
+      .gc-recipe-pro .gc-warning-icon {
+        width: 32px;
+        height: 32px;
+        flex: 0 0 32px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        font-size: 16px;
+        background: rgba(217,78,78,0.1);
+        border: 1px solid rgba(217,78,78,0.2);
+      }
+
+      .gc-warning-title {
+        font-size: 0.8rem;
+        letter-spacing: 0.1em;
+        font-weight: 900;
+        color: var(--accent);
         margin-bottom: 6px;
       }
-      .gc-recipe-pro .gc-highlight-head{
-        display:flex;
-        align-items:center;
-        justify-content:space-between;
-        gap:12px;
-        flex-wrap:wrap;
+
+      /* ===== الجدول المحسن ===== */
+      .gc-recipe-pro .gc-kitopi-table-wrap {
+        overflow: auto;
+        border-radius: 24px;
+        border: 1px solid rgba(46,125,120,0.1);
+        background: white;
+        box-shadow: 0 8px 20px -8px rgba(0,0,0,0.05);
       }
-      .gc-recipe-pro .gc-kitopi-table-wrap{
-        overflow:auto;
-        border-radius: 18px;
-        border: 1px solid rgba(15, 23, 42, .08);
-        background: rgba(255,255,255,.68);
-      }
-      .gc-recipe-pro .gc-kitopi-table{
-        width:100%;
+
+      .gc-recipe-pro .gc-kitopi-table {
+        width: 100%;
         border-collapse: separate;
         border-spacing: 0;
       }
-      .gc-recipe-pro .gc-kitopi-table thead th{
-        background: rgba(248, 250, 252, .92);
-        backdrop-filter: blur(6px);
-        border-bottom: 1px solid rgba(15, 23, 42, .08);
-        font-size: 12px;
-        letter-spacing: .08em;
+
+      .gc-recipe-pro .gc-kitopi-table thead th {
+        background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+        border-bottom: 2px solid rgba(46,125,120,0.15);
+        font-size: 0.8rem;
+        font-weight: 800;
+        letter-spacing: 0.08em;
         text-transform: uppercase;
+        color: var(--text-light);
+        padding: 16px 12px;
       }
-      .gc-recipe-pro .gc-kitopi-table tbody td{
-        border-bottom: 1px solid rgba(15, 23, 42, .06);
+
+      .gc-recipe-pro .gc-kitopi-table tbody td {
+        padding: 14px 12px;
+        border-bottom: 1px solid rgba(46,125,120,0.08);
+        color: var(--text);
+        transition: background 0.15s ease;
       }
-      .gc-recipe-pro .gc-kitopi-table tbody tr:hover{
-        background: rgba(116,141,63,.06);
+
+      .gc-recipe-pro .gc-kitopi-table tbody tr:hover td {
+        background: rgba(46,125,120,0.03);
       }
-      .gc-recipe-pro .gc-kitopi-group{
-        background: rgba(15, 23, 42, .04) !important;
+
+      .gc-recipe-pro .gc-kitopi-group {
+        background: linear-gradient(to right, rgba(46,125,120,0.04), rgba(193,123,74,0.04)) !important;
         font-weight: 800;
       }
-      .gc-recipe-pro .gc-col-net,
-      .gc-recipe-pro .gc-col-gross,
-      .gc-recipe-pro .gc-col-yield,
-      .gc-recipe-pro .gc-col-cost{
-        text-align: right;
+
+      .gc-kitopi-group-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
       }
-      @media (max-width: 980px){
-        .gc-recipe-pro .gc-pricing-grid{
+
+      .gc-kitopi-group-title {
+        font-size: 1rem;
+        color: var(--primary-dark);
+        font-weight: 900;
+        letter-spacing: -0.02em;
+      }
+
+      .gc-kitopi-group-actions {
+        display: flex;
+        gap: 10px;
+      }
+
+      /* ===== الأزرار الأيقونية ===== */
+      .gc-recipe-pro .gc-icon-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        border: 1px solid rgba(46,125,120,0.15);
+        background: white;
+        color: var(--text-light);
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: all 0.15s ease;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gc-icon-btn:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary-dark);
+        transform: scale(1.05);
+      }
+
+      .gc-icon-btn-danger:hover {
+        background: rgba(217,78,78,0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* ===== حقول الإدخال المحسنة ===== */
+      .gc-recipe-pro .gc-input,
+      .gc-recipe-pro .gc-select,
+      .gc-recipe-pro .gc-textarea {
+        border-radius: 16px;
+        border: 1.5px solid rgba(46,125,120,0.12);
+        background: white;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        transition: all 0.15s ease;
+        width: 100%;
+      }
+
+      .gc-recipe-pro .gc-input:focus,
+      .gc-recipe-pro .gc-select:focus,
+      .gc-recipe-pro .gc-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-input-compact {
+        padding: 10px 12px;
+        border-radius: 14px;
+      }
+
+      /* ===== الأقسام ===== */
+      .gc-recipe-pro .gc-section {
+        margin-bottom: 24px;
+      }
+
+      .gc-recipe-pro .gc-label {
+        font-size: 0.75rem;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-light);
+        margin-bottom: 8px;
+      }
+
+      .gc-recipe-pro .gc-hint {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        line-height: 1.5;
+      }
+
+      .gc-recipe-pro .gc-highlight-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      /* ===== تنسيقات متجاوبة ===== */
+      @media (max-width: 1024px) {
+        .gc-recipe-pro .gc-grid-4 {
+          grid-template-columns: repeat(2, 1fr);
+        }
+        
+        .gc-recipe-pro .gc-pricing-grid {
           grid-template-columns: 1fr;
         }
       }
-      @media (max-width: 760px){
-        .gc-recipe-pro-head-left{
+
+      @media (max-width: 768px) {
+        .gc-recipe-pro-head-left {
           min-width: 100%;
         }
-        .gc-recipe-pro-titleIcon{
-          width: 46px;
-          height: 46px;
-          flex-basis: 46px;
-          border-radius: 14px;
-          font-size: 20px;
+        
+        .gc-recipe-pro-titleIcon {
+          width: 48px;
+          height: 48px;
+          flex-basis: 48px;
+          font-size: 22px;
         }
-        .gc-recipe-pro-title{
-          font-size: 1.06rem;
+        
+        .gc-recipe-pro-title {
+          font-size: 1.2rem;
         }
+        
+        .gc-recipe-pro .gc-card-head {
+          padding: 14px 18px;
+        }
+        
+        .gc-recipe-pro .gc-card-body {
+          padding: 18px;
+        }
+      }
+
+      /* ===== تأثيرات حركية ===== */
+      .gc-flash-row {
+        animation: flash 0.5s ease;
+      }
+
+      @keyframes flash {
+        0%, 100% { background: transparent; }
+        50% { background: rgba(46,125,120,0.1); }
+      }
+
+      .gc-btn-hero {
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
+        color: white !important;
+        border: none !important;
+        padding: 14px 28px !important;
+        border-radius: 40px !important;
+        font-weight: 800 !important;
+        letter-spacing: 0.02em !important;
+        box-shadow: 0 12px 24px -8px rgba(46,125,120,0.4) !important;
+        transition: all 0.2s ease !important;
+      }
+
+      .gc-btn-hero:hover {
+        transform: translateY(-2px) scale(1.02);
+        box-shadow: 0 20px 32px -8px rgba(46,125,120,0.5) !important;
+      }
+
+      /* ===== شريط التبويبات ===== */
+      .gc-tabs {
+        display: flex;
+        gap: 6px;
+        background: rgba(46,125,120,0.04);
+        padding: 6px;
+        border-radius: 60px;
+        backdrop-filter: blur(4px);
+      }
+
+      .gc-chip {
+        padding: 8px 16px;
+        border-radius: 40px;
+        font-size: 0.85rem;
+        font-weight: 700;
+        background: white;
+        border: 1px solid rgba(46,125,120,0.1);
+        color: var(--text);
+      }
+
+      .gc-chip-active {
+        background: var(--primary);
+        color: white;
+        border-color: var(--primary-dark);
       }
     `}</style>
   )
 
-
-  // Print-only CSS injected here (so print works even if global CSS changes)
+  // Print CSS محسّن
   const PrintCss = (
     <style>{`
-      @media print{
-        .gc-shell, .gc-side, .gc-topbar-card, .gc-screen-only, nav, header, aside { display:none !important; }
-        .gc-print-only{ display:block !important; }
-        body{ background:#fff !important; }
+      @media print {
+        .gc-shell, .gc-side, .gc-topbar-card, .gc-screen-only, nav, header, aside {
+          display: none !important;
+        }
+        .gc-print-only {
+          display: block !important;
+        }
+        body {
+          background: white !important;
+          padding: 0 !important;
+          margin: 0 !important;
+        }
+        
+        .gc-print-page {
+          width: 210mm;
+          min-height: 297mm;
+          padding: 15mm;
+          box-sizing: border-box;
+          font-family: -apple-system, system-ui, 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+          color: #1E2A3A;
+          background: white;
+        }
+
+        .gc-print-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          gap: 15mm;
+          border-bottom: 2px solid #2E7D78;
+          padding-bottom: 8mm;
+          margin-bottom: 8mm;
+        }
+
+        .gc-print-name {
+          font-size: 28pt;
+          font-weight: 900;
+          color: #1E5A56;
+          letter-spacing: -0.02em;
+          line-height: 1.2;
+        }
+
+        .gc-print-sub {
+          font-size: 12pt;
+          color: #64748B;
+          margin-top: 4mm;
+        }
+
+        .gc-print-photo {
+          width: 70mm;
+          height: 50mm;
+          border: 2px solid #2E7D78;
+          border-radius: 8mm;
+          overflow: hidden;
+          background: #f8fafc;
+          box-shadow: 0 8px 16px rgba(0,0,0,0.05);
+        }
+
+        .gc-print-photo img {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          display: block;
+        }
+
+        .gc-print-section {
+          margin-top: 8mm;
+        }
+
+        .gc-print-title {
+          font-size: 14pt;
+          font-weight: 900;
+          color: #2E7D78;
+          text-transform: uppercase;
+          letter-spacing: 0.1em;
+          margin-bottom: 4mm;
+          border-bottom: 1px solid rgba(46,125,120,0.2);
+          padding-bottom: 2mm;
+        }
+
+        .gc-print-text {
+          font-size: 11pt;
+          line-height: 1.6;
+          color: #1E2A3A;
+          white-space: pre-wrap;
+        }
+
+        .gc-print-table {
+          width: 100%;
+          border-collapse: collapse;
+          margin-top: 4mm;
+          font-size: 10pt;
+        }
+
+        .gc-print-table th {
+          text-align: left;
+          padding: 3mm 2mm;
+          background: #f8fafc;
+          font-weight: 800;
+          color: #2E7D78;
+          border-bottom: 2px solid #2E7D78;
+        }
+
+        .gc-print-table td {
+          padding: 2.5mm 2mm;
+          border-bottom: 1px solid rgba(46,125,120,0.15);
+        }
+
+        .gc-print-kpis {
+          display: flex;
+          gap: 4mm;
+          flex-wrap: wrap;
+          margin-top: 4mm;
+        }
+
+        .gc-print-chip {
+          border: 1px solid #2E7D78;
+          border-radius: 40px;
+          padding: 2mm 4mm;
+          font-size: 10pt;
+          font-weight: 700;
+          color: #2E7D78;
+          background: white;
+        }
       }
-      .gc-print-only{ display:none; }
-      .gc-print-page{
-        width: 210mm;
-        min-height: 297mm;
-        padding: 16mm;
-        box-sizing: border-box;
-        font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial;
-        color: #0f172a;
-      }
-      .gc-print-header{
-        display:flex;
-        align-items:flex-start;
-        justify-content:space-between;
-        gap: 12mm;
-        border-bottom: 1px solid rgba(15,23,42,.18);
-        padding-bottom: 6mm;
-        margin-bottom: 6mm;
-      }
-      .gc-print-name{ font-size: 20pt; font-weight: 900; }
-      .gc-print-sub{ font-size: 10pt; color:#334155; margin-top: 2mm; }
-      .gc-print-photo{
-        width: 60mm;
-        height: 40mm;
-        border: 1px solid rgba(15,23,42,.18);
-        border-radius: 6mm;
-        overflow:hidden;
-        background:#f1f5f9;
-      }
-      .gc-print-photo img{ width:100%; height:100%; object-fit:cover; display:block; }
-      .gc-print-section{ margin-top: 6mm; }
-      .gc-print-title{ font-size: 11pt; letter-spacing: .12em; font-weight: 900; color:#475569; text-transform: uppercase; }
-      .gc-print-text{ margin-top: 2mm; font-size: 10.5pt; line-height: 1.35; white-space: pre-wrap; }
-      .gc-print-table{
-        width:100%;
-        border-collapse: collapse;
-        margin-top: 3mm;
-        font-size: 10pt;
-      }
-      .gc-print-table th, .gc-print-table td{
-        border-bottom: 1px solid rgba(15,23,42,.14);
-        padding: 2.5mm 2mm;
-        text-align: left;
-        vertical-align: top;
-      }
-      .gc-print-table th{ font-size: 9.5pt; color:#475569; letter-spacing:.08em; text-transform:uppercase; }
-      .gc-print-kpis{ display:flex; gap: 4mm; flex-wrap: wrap; margin-top: 3mm; }
-      .gc-print-chip{
-        border: 1px solid rgba(15,23,42,.18);
-        border-radius: 4mm;
-        padding: 2mm 3mm;
-        font-size: 10pt;
+
+      .gc-print-only {
+        display: none;
       }
     `}</style>
   )
