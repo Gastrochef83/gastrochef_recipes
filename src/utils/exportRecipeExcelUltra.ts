@@ -127,18 +127,15 @@ async function fetchImageForExcel(url: string | null | undefined): Promise<{ bas
     const cleanUrl = url.trim()
     if (!cleanUrl) return null
 
-    // Handle data URLs
     if (cleanUrl.startsWith('data:image/')) {
       return parseDataUrl(cleanUrl)
     }
 
-    // Handle relative URLs
     let fetchUrl = cleanUrl
     if (cleanUrl.startsWith('/')) {
       fetchUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${cleanUrl}`
     }
 
-    // Fetch with CORS
     const response = await fetch(fetchUrl, {
       method: 'GET',
       mode: 'cors',
@@ -182,6 +179,7 @@ async function addImageToSheet(
       ext: { width: options.width, height: options.height },
       editAs: 'oneCell',
     })
+
     return true
   } catch {
     return false
@@ -193,7 +191,10 @@ async function addLogo(workbook: ExcelJS.Workbook, sheet: ExcelJS.Worksheet) {
     const candidates = ['/gastrochef-logo.png', '/logo.png']
     for (const url of candidates) {
       const ok = await addImageToSheet(workbook, sheet, url, {
-        col: 0.2, row: 0.2, width: 60, height: 60,
+        col: 0.2,
+        row: 0.2,
+        width: 60,
+        height: 60,
       })
       if (ok) return
     }
@@ -215,9 +216,10 @@ function autosizeColumns(sheet: ExcelJS.Worksheet, min = 10, max = 45) {
     let longest = min
     col.eachCell?.({ includeEmpty: true }, (cell) => {
       const val = cell.value
-      const text = typeof val === 'object' && val && 'richText' in val
-        ? (val as any).richText?.map((x: any) => x.text).join('') || ''
-        : String(val ?? '')
+      const text =
+        typeof val === 'object' && val && 'richText' in val
+          ? (val as any).richText?.map((x: any) => x.text).join('') || ''
+          : String(val ?? '')
       const len = text.split('\n').reduce((a, l) => Math.max(a, l.length), 0)
       longest = Math.max(longest, Math.min(max, len + 2))
     })
@@ -230,7 +232,7 @@ function normalizeStepPhotos(steps: string[], photos: string[] | null | undefine
   return steps.map((_, i) => clean[i] || '')
 }
 
-// ================= Photo Card Builder (FIXED - NO NESTED MERGES) =================
+// ================= Photo Card Builder (FIXED ONLY) =================
 async function createPhotoCard(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
@@ -240,15 +242,15 @@ async function createPhotoCard(
   description: string,
   imageUrl: string | null
 ) {
-  const baseCol = colIndex * 2 // 0, 2, 4
-  const colLetter = String.fromCharCode(65 + baseCol) // A, C, E
+  const colLetter = String.fromCharCode(65 + (colIndex * 2)) // A=0, C=2, E=4
+  const baseCol = colIndex * 2
 
-  // Build card area WITHOUT merging the full card.
-  // This avoids "Cannot merge already merged cells" when merging the description block later.
+  // IMPORTANT:
+  // Do NOT merge the whole card, because later the description block is merged,
+  // and that causes: Cannot merge already merged cells
   for (let r = startRow; r <= startRow + 15; r++) {
     const cell = sheet.getCell(`${colLetter}${r}`)
     fill(cell, COLORS.white)
-
     cell.border = {
       top: { style: r === startRow ? 'thin' : undefined, color: { argb: COLORS.border } },
       left: { style: 'thin', color: { argb: COLORS.border } },
@@ -316,13 +318,11 @@ export async function exportRecipeExcelUltra(args: {
   const yieldQty = safeNum(meta.yield_qty, 0) || null
   const yieldUnit = (meta.yield_unit || '').trim() || null
   const sellingPrice = safeNum(meta.selling_price, 0)
-  const targetFc = meta.target_food_cost_pct != null
-    ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100)
-    : null
+  const targetFc =
+    meta.target_food_cost_pct != null ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100) : null
   const cleanSteps = (meta.steps || []).map((s) => (s || '').trim()).filter(Boolean)
   const stepPhotos = normalizeStepPhotos(cleanSteps, meta.step_photos)
 
-  // ===== Workbook Setup =====
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'GastroChef'
   workbook.created = new Date()
@@ -331,7 +331,10 @@ export async function exportRecipeExcelUltra(args: {
   workbook.title = `${name} — Professional Recipe Export`
 
   const now = new Date()
-  const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
+  const reportId = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(
+    2,
+    '0'
+  )}-${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`
   const recipeId = meta.id || ''
   const recipeCode = meta.code || ''
   const kitchenRef = meta.kitchen_id || ''
@@ -369,6 +372,7 @@ export async function exportRecipeExcelUltra(args: {
     summary.mergeCells(`B${r}:D${r}`)
     r++
   }
+
   kv('Code', recipeCode)
   kv('Category', meta.category)
   kv('Portions', portions)
@@ -420,6 +424,7 @@ export async function exportRecipeExcelUltra(args: {
     views: [{ state: 'frozen', ySplit: 2 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true },
   })
+
   ingredients.columns = [
     { header: 'Type', key: 'type', width: 12 },
     { header: 'Code', key: 'code', width: 14 },
@@ -531,6 +536,7 @@ export async function exportRecipeExcelUltra(args: {
     ;['A', 'B', 'C', 'D', 'E', 'F'].forEach((c) => {
       thinBorder(scaleLab.getCell(`${c}${sr}`))
     })
+
     sr++
   }
 
@@ -608,11 +614,7 @@ export async function exportRecipeExcelUltra(args: {
     },
   })
 
-  gallery.columns = [
-    { width: 42 }, { width: 2 },
-    { width: 42 }, { width: 2 },
-    { width: 42 },
-  ]
+  gallery.columns = [{ width: 42 }, { width: 2 }, { width: 42 }, { width: 2 }, { width: 42 }]
 
   gallery.mergeCells('A1:F1')
   gallery.getCell('A1').value = `${name} — Photo Gallery`
@@ -626,7 +628,6 @@ export async function exportRecipeExcelUltra(args: {
 
   let currentRow = 4
 
-  // Main Recipe Photo
   if (meta.photo_url) {
     gallery.mergeCells(`A${currentRow}:F${currentRow}`)
     gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
@@ -660,30 +661,22 @@ export async function exportRecipeExcelUltra(args: {
       gallery.getCell(`A${currentRow}`).alignment = { vertical: 'middle', horizontal: 'center' }
       gallery.getCell(`A${currentRow}`).font = { color: { argb: COLORS.textMuted } }
     }
+
     currentRow += 12
   }
 
-  // Step Photos Grid
   const cardsPerRow = 3
   const cardHeight = 16
 
   for (let i = 0; i < cleanSteps.length; i++) {
     const colIndex = i % cardsPerRow
     const rowIndex = Math.floor(i / cardsPerRow)
-    const startRow = currentRow + (rowIndex * cardHeight)
+    const startRow = currentRow + rowIndex * cardHeight
 
-    await createPhotoCard(
-      workbook,
-      gallery,
-      startRow,
-      colIndex,
-      i + 1,
-      cleanSteps[i],
-      stepPhotos[i] || null
-    )
+    await createPhotoCard(workbook, gallery, startRow, colIndex, i + 1, cleanSteps[i], stepPhotos[i] || null)
   }
 
-  const totalRows = currentRow + (Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight)
+  const totalRows = currentRow + Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight
   for (let ri = currentRow; ri < totalRows; ri++) {
     gallery.getRow(ri).height = 12
   }
