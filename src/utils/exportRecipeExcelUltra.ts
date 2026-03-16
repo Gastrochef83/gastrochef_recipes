@@ -120,24 +120,7 @@ function applyHeaderStyle(cell: ExcelJS.Cell) {
   cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
 }
 
-function paintRange(
-  sheet: ExcelJS.Worksheet,
-  startCol: number,
-  startRow: number,
-  endCol: number,
-  endRow: number,
-  options?: { fillArgb?: string; borderColor?: string }
-) {
-  for (let row = startRow; row <= endRow; row++) {
-    for (let col = startCol; col <= endCol; col++) {
-      const cell = sheet.getCell(row, col)
-      if (options?.fillArgb) fill(cell, options.fillArgb)
-      thinBorder(cell, options?.borderColor ?? COLORS.border)
-    }
-  }
-}
-
-// ================= Image Handling (ROBUST) =================
+// ================= Image Handling =================
 async function fetchImageForExcel(url: string | null | undefined): Promise<{ base64: string; extension: 'png' | 'jpeg' } | null> {
   try {
     if (!url || typeof url !== 'string') return null
@@ -207,7 +190,10 @@ async function addLogo(workbook: ExcelJS.Workbook, sheet: ExcelJS.Worksheet) {
     const candidates = ['/gastrochef-logo.png', '/logo.png']
     for (const url of candidates) {
       const ok = await addImageToSheet(workbook, sheet, url, {
-        col: 0.2, row: 0.2, width: 60, height: 60,
+        col: 0.2,
+        row: 0.2,
+        width: 60,
+        height: 60,
       })
       if (ok) return
     }
@@ -244,64 +230,63 @@ function normalizeStepPhotos(steps: string[], photos: string[] | null | undefine
   return steps.map((_, i) => clean[i] || '')
 }
 
-// ================= Photo Card Builder (FIXED) =================
-async function createPhotoCard(
+function setRowBorder(sheet: ExcelJS.Worksheet, row: number, fromCol: number, toCol: number, fillArgb?: string) {
+  for (let c = fromCol; c <= toCol; c++) {
+    const cell = sheet.getCell(row, c)
+    thinBorder(cell)
+    if (fillArgb) fill(cell, fillArgb)
+  }
+}
+
+async function addLinearPhotoBlock(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
   startRow: number,
-  colIndex: number,
-  stepNumber: number,
+  title: string,
   description: string,
-  imageUrl: string | null
-) {
-  const startCol = (colIndex * 2) + 1 // A, C, E in 1-based column indexes
-  const endCol = startCol
-  const endRow = startRow + 15
-  const photoRow = startRow + 1
-  const photoEndRow = startRow + 11
-  const descRow = startRow + 12
+  imageUrl: string | null | undefined,
+  imageHeightRows = 16,
+): Promise<number> {
+  sheet.mergeCells(`A${startRow}:F${startRow}`)
+  const titleCell = sheet.getCell(`A${startRow}`)
+  titleCell.value = title
+  titleCell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
+  titleCell.alignment = { horizontal: 'left', vertical: 'middle' }
 
-  // Paint the full card as plain cells first. This avoids overlapping merges.
-  paintRange(sheet, startCol, startRow, endCol, endRow, { fillArgb: COLORS.white })
+  const imageStart = startRow + 1
+  const imageEnd = imageStart + imageHeightRows - 1
+  sheet.mergeCells(`A${imageStart}:F${imageEnd}`)
+  const imageCell = sheet.getCell(`A${imageStart}`)
+  thinBorder(imageCell)
+  fill(imageCell, COLORS.bgSoft)
+  imageCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
 
-  // Step number badge
-  const badgeCell = sheet.getCell(startRow, startCol)
-  badgeCell.value = `${stepNumber}`
-  badgeCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.white } }
-  badgeCell.alignment = { horizontal: 'center', vertical: 'middle' }
-  fill(badgeCell, COLORS.primary)
+  const added = await addImageToSheet(workbook, sheet, imageUrl, {
+    col: 0.3,
+    row: imageStart + 0.25,
+    width: 680,
+    height: imageHeightRows * 20,
+  })
 
-  // Photo area placeholder styling
-  paintRange(sheet, startCol, photoRow, endCol, photoEndRow, { fillArgb: COLORS.white })
-
-  if (imageUrl) {
-    const added = await addImageToSheet(workbook, sheet, imageUrl, {
-      col: (colIndex * 2) + 0.15,
-      row: photoRow + 0.15,
-      width: 380,
-      height: 240,
-    })
-    if (!added) {
-      const placeholderCell = sheet.getCell(photoRow + 3, startCol)
-      placeholderCell.value = '📷\nPhoto not available'
-      placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-      placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
-    }
-  } else {
-    const placeholderCell = sheet.getCell(photoRow + 3, startCol)
-    placeholderCell.value = '📷\nNo photo'
-    placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
-    placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
+  if (!added) {
+    imageCell.value = imageUrl ? 'Photo not available' : 'No photo'
+    imageCell.font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   }
 
-  // Description area can be safely merged now because it doesn't overlap any existing merge.
-  sheet.mergeCells(descRow, startCol, endRow, endCol)
-  const descCell = sheet.getCell(descRow, startCol)
+  const descRow = imageEnd + 1
+  sheet.mergeCells(`A${descRow}:F${descRow + 2}`)
+  const descCell = sheet.getCell(`A${descRow}`)
   descCell.value = description || 'No description'
-  descCell.font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
+  descCell.font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   descCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true }
-  fill(descCell, COLORS.bgSoft)
   thinBorder(descCell)
+  fill(descCell, COLORS.white)
+
+  for (let r = startRow; r <= descRow + 2; r++) {
+    sheet.getRow(r).height = r >= imageStart && r <= imageEnd ? 18 : 16
+  }
+
+  return descRow + 4
 }
 
 // ================= Main Export Function =================
@@ -330,7 +315,6 @@ export async function exportRecipeExcelUltra(args: {
   workbook.company = 'GastroChef'
   workbook.title = `${name} — Professional Recipe Export`
 
-  const now = new Date()
   const recipeId = meta.id || ''
   const recipeCode = meta.code || ''
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
@@ -354,6 +338,7 @@ export async function exportRecipeExcelUltra(args: {
   summary.mergeCells('A7:D7')
   summary.getCell('A7').value = name
   summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true }
+  summary.getCell('A7').alignment = { vertical: 'middle', horizontal: 'center' }
 
   let r = 9
   const kv = (label: string, value: any) => {
@@ -361,8 +346,10 @@ export async function exportRecipeExcelUltra(args: {
     summary.getCell(`A${r}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
     summary.mergeCells(`B${r}:D${r}`)
     summary.getCell(`B${r}`).value = value ?? ''
+    summary.getCell(`B${r}`).alignment = { vertical: 'middle', horizontal: 'left' }
     r++
   }
+
   kv('Code', recipeCode)
   kv('Category', meta.category)
   kv('Portions', portions)
@@ -370,6 +357,7 @@ export async function exportRecipeExcelUltra(args: {
   kv('Currency', currency)
   kv('Selling Price', sellingPrice > 0 ? sellingPrice : '')
   kv('Target FC%', targetFc != null ? fmtPercent(targetFc) : '')
+  kv('Description', meta.description || '')
 
   const kpiRow = r + 1
   const makeCard = (row: number, col: 'A' | 'C', title: string, value: any, accent = false) => {
@@ -394,10 +382,35 @@ export async function exportRecipeExcelUltra(args: {
     valueCell.alignment = { vertical: 'middle', horizontal: 'center' }
     valueCell.numFmt = typeof value === 'number' && title.includes('%') ? '0.0%' : moneyFmt(currency, 2)
   }
+
   makeCard(kpiRow, 'A', 'Total Cost', totals.totalCost, true)
   makeCard(kpiRow, 'C', 'Cost/Portion', totals.cpp)
   makeCard(kpiRow + 3, 'A', 'Food Cost %', totals.fcPct != null ? totals.fcPct / 100 : null)
   makeCard(kpiRow + 3, 'C', 'Margin', totals.margin)
+
+  if (meta.photo_url) {
+    const photoTitleRow = kpiRow + 7
+    summary.mergeCells(`A${photoTitleRow}:D${photoTitleRow}`)
+    const photoTitle = summary.getCell(`A${photoTitleRow}`)
+    photoTitle.value = 'Recipe Photo'
+    photoTitle.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
+
+    summary.mergeCells(`A${photoTitleRow + 1}:D${photoTitleRow + 10}`)
+    const photoCell = summary.getCell(`A${photoTitleRow + 1}`)
+    thinBorder(photoCell)
+    fill(photoCell, COLORS.bgSoft)
+    const ok = await addImageToSheet(workbook, summary, meta.photo_url, {
+      col: 0.25,
+      row: photoTitleRow + 0.25,
+      width: 500,
+      height: 220,
+    })
+    if (!ok) {
+      photoCell.value = 'Photo not available'
+      photoCell.alignment = { vertical: 'middle', horizontal: 'center' }
+      photoCell.font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
+    }
+  }
 
   await summary.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
@@ -472,7 +485,7 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.getCell('D2').value = 'Target Portions'; scaleLab.getCell('E2').value = portions
   scaleLab.getCell('A3').value = 'Scale Factor'; scaleLab.getCell('B3').value = { formula: 'IFERROR(E2/B2,1)' }
   scaleLab.getCell('B3').numFmt = '0.00x'
-  ;['A2','B2','D2','E2','A3','B3'].forEach(ref => { thinBorder(scaleLab.getCell(ref)); fill(scaleLab.getCell(ref), COLORS.bgSoft) })
+  ;['A2', 'B2', 'D2', 'E2', 'A3', 'B3'].forEach(ref => { thinBorder(scaleLab.getCell(ref)); fill(scaleLab.getCell(ref), COLORS.bgSoft) })
   scaleLab.getCell('E2').protection = { locked: false }
 
   scaleLab.getRow(5).values = ['Item', 'Net', 'Unit', 'Scaled Net', 'Scaled Gross', 'Scaled Cost']
@@ -487,9 +500,9 @@ export async function exportRecipeExcelUltra(args: {
     scaleLab.getCell(`D${sr}`).value = { formula: `B${sr}*$B$3` }
     scaleLab.getCell(`E${sr}`).value = { formula: `${safeNum(line.gross_qty)}*$B$3` }
     scaleLab.getCell(`F${sr}`).value = { formula: `${safeNum(line.line_cost)}*$B$3` }
-    ;['B','D','E'].forEach(c => scaleLab.getCell(`${c}${sr}`).numFmt = '#,##0.000')
+    ;['B', 'D', 'E'].forEach(c => scaleLab.getCell(`${c}${sr}`).numFmt = '#,##0.000')
     scaleLab.getCell(`F${sr}`).numFmt = moneyFmt(currency, 2)
-    ;['A','B','C','D','E','F'].forEach(c => thinBorder(scaleLab.getCell(`${c}${sr}`)))
+    ;['A', 'B', 'C', 'D', 'E', 'F'].forEach(c => thinBorder(scaleLab.getCell(`${c}${sr}`)))
     sr++
   }
   autosizeColumns(scaleLab)
@@ -498,9 +511,11 @@ export async function exportRecipeExcelUltra(args: {
   // ===== 4. METHOD SHEET =====
   const method = workbook.addWorksheet('Method', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   method.columns = [{ width: 6 }, { width: 76 }]
-  method.getCell('A1').value = name; method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
+  method.getCell('A1').value = name
+  method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
   method.mergeCells('A1:B1')
-  method.getCell('A3').value = 'Preparation Method'; method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
+  method.getCell('A3').value = 'Preparation Method'
+  method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
   method.mergeCells('A3:B3')
 
   let mr = 5
@@ -511,108 +526,107 @@ export async function exportRecipeExcelUltra(args: {
       method.getCell(`A${mr}`).font = { name: 'Calibri', size: 10, bold: true }
       method.getCell(`B${mr}`).value = cleanSteps[i]
       method.getCell(`B${mr}`).alignment = { vertical: 'top', horizontal: 'left', wrapText: true }
-      thinBorder(method.getCell(`A${mr}`)); thinBorder(method.getCell(`B${mr}`))
+      thinBorder(method.getCell(`A${mr}`))
+      thinBorder(method.getCell(`B${mr}`))
       method.getRow(mr).height = Math.max(20, Math.ceil(cleanSteps[i].length / 80) * 15)
       mr++
     }
   } else {
-    method.getCell('A5').value = '—'; method.getCell('B5').value = 'No steps provided.'
+    method.getCell('A5').value = '—'
+    method.getCell('B5').value = 'No steps provided.'
   }
   await method.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
   // ===== 5. NUTRITION SHEET =====
   const nutrition = workbook.addWorksheet('Nutrition', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   nutrition.columns = [{ width: 26 }, { width: 20 }]
-  nutrition.getCell('A1').value = `${name} — Nutrition`; nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
+  nutrition.getCell('A1').value = `${name} — Nutrition`
+  nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
   nutrition.mergeCells('A1:B1')
+
   const nkv = (row: number, label: string, value: any) => {
     nutrition.getCell(`A${row}`).value = label
     nutrition.getCell(`A${row}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
     nutrition.getCell(`B${row}`).value = value ?? ''
-    thinBorder(nutrition.getCell(`A${row}`)); thinBorder(nutrition.getCell(`B${row}`))
+    thinBorder(nutrition.getCell(`A${row}`))
+    thinBorder(nutrition.getCell(`B${row}`))
   }
-  nkv(3, 'Calories', meta.calories); nkv(4, 'Protein (g)', meta.protein_g)
-  nkv(5, 'Carbs (g)', meta.carbs_g); nkv(6, 'Fat (g)', meta.fat_g)
-  nkv(7, 'Portions', portions); nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
+  nkv(3, 'Calories', meta.calories)
+  nkv(4, 'Protein (g)', meta.protein_g)
+  nkv(5, 'Carbs (g)', meta.carbs_g)
+  nkv(6, 'Fat (g)', meta.fat_g)
+  nkv(7, 'Portions', portions)
+  nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
   await nutrition.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
   // ===== 6. PHOTOS SHEET =====
   const gallery = workbook.addWorksheet('Photos', {
     views: [{ showGridLines: false, zoom: 90 }],
-    pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5 } },
+    pageSetup: {
+      orientation: 'portrait',
+      paperSize: 9,
+      fitToPage: true,
+      margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5 },
+    },
   })
 
   gallery.columns = [
-    { width: 42 }, { width: 2 },
-    { width: 42 }, { width: 2 },
-    { width: 42 },
+    { width: 18 },
+    { width: 18 },
+    { width: 18 },
+    { width: 18 },
+    { width: 18 },
+    { width: 18 },
   ]
 
   gallery.mergeCells('A1:F1')
-  gallery.getCell('A1').value = `${name} — Photo Gallery`
+  gallery.getCell('A1').value = `${name} — Photos`
   gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
-  gallery.getCell('A1').alignment = { horizontal: 'center', vertical: 'bottom' }
+  gallery.getCell('A1').alignment = { horizontal: 'center', vertical: 'middle' }
 
   gallery.mergeCells('A2:F2')
   gallery.getCell('A2').value = 'Step-by-step visual preparation guide'
   gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
-  gallery.getCell('A2').alignment = { horizontal: 'center', vertical: 'top' }
+  gallery.getCell('A2').alignment = { horizontal: 'center', vertical: 'middle' }
 
   let currentRow = 4
 
   if (meta.photo_url) {
-    gallery.mergeCells(`A${currentRow}:F${currentRow}`)
-    gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
-    gallery.getCell(`A${currentRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
-    currentRow++
-
-    gallery.mergeCells(`A${currentRow}:F${currentRow + 10}`)
-    const mainCell = gallery.getCell(`A${currentRow}`)
-    mainCell.border = {
-      top: { style: 'medium', color: { argb: COLORS.border } },
-      left: { style: 'medium', color: { argb: COLORS.border } },
-      bottom: { style: 'medium', color: { argb: COLORS.border } },
-      right: { style: 'medium', color: { argb: COLORS.border } },
-    }
-    fill(mainCell, COLORS.bgSoft)
-
-    const mainPhotoAdded = await addImageToSheet(workbook, gallery, meta.photo_url, {
-      col: 0.3,
-      row: currentRow + 0.3,
-      width: 680,
-      height: 340,
-    })
-
-    if (!mainPhotoAdded) {
-      mainCell.value = 'Photo not available'
-      mainCell.alignment = { vertical: 'middle', horizontal: 'center' }
-      mainCell.font = { color: { argb: COLORS.textMuted } }
-    }
-    currentRow += 12
-  }
-
-  const cardsPerRow = 3
-  const cardHeight = 16
-
-  for (let i = 0; i < cleanSteps.length; i++) {
-    const colIndex = i % cardsPerRow
-    const rowIndex = Math.floor(i / cardsPerRow)
-    const startRow = currentRow + (rowIndex * cardHeight)
-
-    await createPhotoCard(
+    currentRow = await addLinearPhotoBlock(
       workbook,
       gallery,
-      startRow,
-      colIndex,
-      i + 1,
-      cleanSteps[i],
-      stepPhotos[i] || null
+      currentRow,
+      'RECIPE PHOTO',
+      meta.description || '',
+      meta.photo_url,
+      18,
     )
   }
 
-  const totalRows = currentRow + (Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight)
-  for (let ri = currentRow; ri < totalRows; ri++) {
-    gallery.getRow(ri).height = 12
+  if (cleanSteps.length) {
+    for (let i = 0; i < cleanSteps.length; i++) {
+      currentRow = await addLinearPhotoBlock(
+        workbook,
+        gallery,
+        currentRow,
+        `STEP ${i + 1}`,
+        cleanSteps[i],
+        stepPhotos[i] || null,
+        14,
+      )
+    }
+  } else if (!meta.photo_url) {
+    gallery.mergeCells('A4:F8')
+    const emptyCell = gallery.getCell('A4')
+    emptyCell.value = 'No recipe photo or step photos available.'
+    emptyCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    emptyCell.font = { name: 'Calibri', size: 11, color: { argb: COLORS.textMuted } }
+    thinBorder(emptyCell)
+    fill(emptyCell, COLORS.bgSoft)
+  }
+
+  for (let rr = 1; rr <= Math.max(currentRow, 8); rr++) {
+    setRowBorder(gallery, rr, 1, 6)
   }
 
   await gallery.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
