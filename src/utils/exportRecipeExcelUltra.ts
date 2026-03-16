@@ -120,6 +120,23 @@ function applyHeaderStyle(cell: ExcelJS.Cell) {
   cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
 }
 
+function paintRange(
+  sheet: ExcelJS.Worksheet,
+  startCol: number,
+  startRow: number,
+  endCol: number,
+  endRow: number,
+  options?: { fillArgb?: string; borderColor?: string }
+) {
+  for (let row = startRow; row <= endRow; row++) {
+    for (let col = startCol; col <= endCol; col++) {
+      const cell = sheet.getCell(row, col)
+      if (options?.fillArgb) fill(cell, options.fillArgb)
+      thinBorder(cell, options?.borderColor ?? COLORS.border)
+    }
+  }
+}
+
 // ================= Image Handling (ROBUST) =================
 async function fetchImageForExcel(url: string | null | undefined): Promise<{ base64: string; extension: 'png' | 'jpeg' } | null> {
   try {
@@ -127,18 +144,15 @@ async function fetchImageForExcel(url: string | null | undefined): Promise<{ bas
     const cleanUrl = url.trim()
     if (!cleanUrl) return null
 
-    // Handle data URLs
     if (cleanUrl.startsWith('data:image/')) {
       return parseDataUrl(cleanUrl)
     }
 
-    // Handle relative URLs
     let fetchUrl = cleanUrl
     if (cleanUrl.startsWith('/')) {
       fetchUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${cleanUrl}`
     }
 
-    // Fetch with CORS
     const response = await fetch(fetchUrl, {
       method: 'GET',
       mode: 'cors',
@@ -230,7 +244,7 @@ function normalizeStepPhotos(steps: string[], photos: string[] | null | undefine
   return steps.map((_, i) => clean[i] || '')
 }
 
-// ================= Photo Card Builder (MATCHING REFERENCE) =================
+// ================= Photo Card Builder (FIXED) =================
 async function createPhotoCard(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
@@ -240,28 +254,26 @@ async function createPhotoCard(
   description: string,
   imageUrl: string | null
 ) {
-  const colLetter = String.fromCharCode(65 + (colIndex * 2)) // A=0, C=2, E=4
-  
-  // Card container with border (16 rows total per card)
-  sheet.mergeCells(`${colLetter}${startRow}:${colLetter}${startRow + 15}`)
-  const cardCell = sheet.getCell(`${colLetter}${startRow}`)
-  fill(cardCell, COLORS.white)
-  cardCell.border = {
-    top: { style: 'thin', color: { argb: COLORS.border } },
-    left: { style: 'thin', color: { argb: COLORS.border } },
-    bottom: { style: 'thin', color: { argb: COLORS.border } },
-    right: { style: 'thin', color: { argb: COLORS.border } },
-  }
+  const startCol = (colIndex * 2) + 1 // A, C, E in 1-based column indexes
+  const endCol = startCol
+  const endRow = startRow + 15
+  const photoRow = startRow + 1
+  const photoEndRow = startRow + 11
+  const descRow = startRow + 12
 
-  // Step Number Badge (top-left, green like reference)
-  const badgeCell = sheet.getCell(`${colLetter}${startRow}`)
+  // Paint the full card as plain cells first. This avoids overlapping merges.
+  paintRange(sheet, startCol, startRow, endCol, endRow, { fillArgb: COLORS.white })
+
+  // Step number badge
+  const badgeCell = sheet.getCell(startRow, startCol)
   badgeCell.value = `${stepNumber}`
   badgeCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.white } }
   badgeCell.alignment = { horizontal: 'center', vertical: 'middle' }
   fill(badgeCell, COLORS.primary)
 
-  // Photo Area (rows 2-11, ~240px height)
-  const photoRow = startRow + 1
+  // Photo area placeholder styling
+  paintRange(sheet, startCol, photoRow, endCol, photoEndRow, { fillArgb: COLORS.white })
+
   if (imageUrl) {
     const added = await addImageToSheet(workbook, sheet, imageUrl, {
       col: (colIndex * 2) + 0.15,
@@ -270,21 +282,26 @@ async function createPhotoCard(
       height: 240,
     })
     if (!added) {
-      const placeholderCell = sheet.getCell(`${colLetter}${photoRow + 3}`)
+      const placeholderCell = sheet.getCell(photoRow + 3, startCol)
       placeholderCell.value = '📷\nPhoto not available'
       placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
       placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
     }
+  } else {
+    const placeholderCell = sheet.getCell(photoRow + 3, startCol)
+    placeholderCell.value = '📷\nNo photo'
+    placeholderCell.alignment = { horizontal: 'center', vertical: 'middle', wrapText: true }
+    placeholderCell.font = { color: { argb: COLORS.textMuted }, size: 10 }
   }
 
-  // Description Area (rows 12-15, light gray background)
-  const descRow = startRow + 12
-  sheet.mergeCells(`${colLetter}${descRow}:${colLetter}${startRow + 15}`)
-  const descCell = sheet.getCell(`${colLetter}${descRow}`)
+  // Description area can be safely merged now because it doesn't overlap any existing merge.
+  sheet.mergeCells(descRow, startCol, endRow, endCol)
+  const descCell = sheet.getCell(descRow, startCol)
   descCell.value = description || 'No description'
   descCell.font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
   descCell.alignment = { horizontal: 'left', vertical: 'top', wrapText: true }
   fill(descCell, COLORS.bgSoft)
+  thinBorder(descCell)
 }
 
 // ================= Main Export Function =================
@@ -300,13 +317,12 @@ export async function exportRecipeExcelUltra(args: {
   const yieldQty = safeNum(meta.yield_qty, 0) || null
   const yieldUnit = (meta.yield_unit || '').trim() || null
   const sellingPrice = safeNum(meta.selling_price, 0)
-  const targetFc = meta.target_food_cost_pct != null 
-    ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100) 
+  const targetFc = meta.target_food_cost_pct != null
+    ? clamp(safeNum(meta.target_food_cost_pct, 0), 0, 100)
     : null
   const cleanSteps = (meta.steps || []).map((s) => (s || '').trim()).filter(Boolean)
   const stepPhotos = normalizeStepPhotos(cleanSteps, meta.step_photos)
 
-  // ===== Workbook Setup =====
   const workbook = new ExcelJS.Workbook()
   workbook.creator = 'GastroChef'
   workbook.created = new Date()
@@ -315,16 +331,10 @@ export async function exportRecipeExcelUltra(args: {
   workbook.title = `${name} — Professional Recipe Export`
 
   const now = new Date()
-  const reportId = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`
   const recipeId = meta.id || ''
   const recipeCode = meta.code || ''
-  const kitchenRef = meta.kitchen_id || ''
-
   const baseUrl = typeof window !== 'undefined' ? window.location.origin : ''
   const qrPayload = recipeId && baseUrl ? `${baseUrl}/#/recipe?id=${encodeURIComponent(recipeId)}` : `Recipe: ${name}`
-
-  const ingredientCost = lines.filter(l => l.type === 'ingredient').reduce((a, l) => a + safeNum(l.line_cost), 0)
-  const subrecipeCost = lines.filter(l => l.type === 'subrecipe').reduce((a, l) => a + safeNum(l.line_cost), 0)
 
   // ===== 1. SUMMARY SHEET =====
   const summary = workbook.addWorksheet('Summary', {
@@ -349,8 +359,8 @@ export async function exportRecipeExcelUltra(args: {
   const kv = (label: string, value: any) => {
     summary.getCell(`A${r}`).value = label
     summary.getCell(`A${r}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
-    summary.getCell(`B${r}`).value = value ?? ''
     summary.mergeCells(`B${r}:D${r}`)
+    summary.getCell(`B${r}`).value = value ?? ''
     r++
   }
   kv('Code', recipeCode)
@@ -363,15 +373,26 @@ export async function exportRecipeExcelUltra(args: {
 
   const kpiRow = r + 1
   const makeCard = (row: number, col: 'A' | 'C', title: string, value: any, accent = false) => {
-    summary.mergeCells(`${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
-    const cell = summary.getCell(`${col}${row}`)
-    fill(cell, accent ? COLORS.primary : COLORS.bgSoft)
-    thinBorder(cell)
-    cell.value = title
-    cell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: accent ? COLORS.white : COLORS.text } }
-    summary.getCell(`${col}${row + 1}`).value = value ?? ''
-    summary.getCell(`${col}${row + 1}`).font = { name: 'Calibri', size: 15, bold: true, color: { argb: accent ? COLORS.white : COLORS.text } }
-    summary.getCell(`${col}${row + 1}`).numFmt = typeof value === 'number' && title.includes('%') ? '0.0%' : moneyFmt(currency, 2)
+    const endCol = col === 'A' ? 'B' : 'D'
+    summary.mergeCells(`${col}${row}:${endCol}${row}`)
+    summary.mergeCells(`${col}${row + 1}:${endCol}${row + 2}`)
+
+    const titleCell = summary.getCell(`${col}${row}`)
+    const valueCell = summary.getCell(`${col}${row + 1}`)
+
+    fill(titleCell, accent ? COLORS.primary : COLORS.bgSoft)
+    fill(valueCell, accent ? COLORS.primary : COLORS.bgSoft)
+    thinBorder(titleCell)
+    thinBorder(valueCell)
+
+    titleCell.value = title
+    titleCell.font = { name: 'Calibri', size: 10, bold: true, color: { argb: accent ? COLORS.white : COLORS.text } }
+    titleCell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
+
+    valueCell.value = value ?? ''
+    valueCell.font = { name: 'Calibri', size: 15, bold: true, color: { argb: accent ? COLORS.white : COLORS.text } }
+    valueCell.alignment = { vertical: 'middle', horizontal: 'center' }
+    valueCell.numFmt = typeof value === 'number' && title.includes('%') ? '0.0%' : moneyFmt(currency, 2)
   }
   makeCard(kpiRow, 'A', 'Total Cost', totals.totalCost, true)
   makeCard(kpiRow, 'C', 'Cost/Portion', totals.cpp)
@@ -515,20 +536,18 @@ export async function exportRecipeExcelUltra(args: {
   nkv(7, 'Portions', portions); nkv(8, 'Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '')
   await nutrition.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
-  // ===== 6. PHOTOS SHEET (PROFESSIONAL GALLERY - MATCHING REFERENCE) =====
+  // ===== 6. PHOTOS SHEET =====
   const gallery = workbook.addWorksheet('Photos', {
     views: [{ showGridLines: false, zoom: 90 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true, margins: { left: 0.4, right: 0.4, top: 0.5, bottom: 0.5 } },
   })
 
-  // 3 columns for cards + spacing columns
   gallery.columns = [
-    { width: 42 }, { width: 2 },  // Card 1 + spacing
-    { width: 42 }, { width: 2 },  // Card 2 + spacing
-    { width: 42 },                // Card 3
+    { width: 42 }, { width: 2 },
+    { width: 42 }, { width: 2 },
+    { width: 42 },
   ]
 
-  // Title
   gallery.mergeCells('A1:F1')
   gallery.getCell('A1').value = `${name} — Photo Gallery`
   gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
@@ -541,7 +560,6 @@ export async function exportRecipeExcelUltra(args: {
 
   let currentRow = 4
 
-  // Main Recipe Photo (Full Width)
   if (meta.photo_url) {
     gallery.mergeCells(`A${currentRow}:F${currentRow}`)
     gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
@@ -566,14 +584,13 @@ export async function exportRecipeExcelUltra(args: {
     })
 
     if (!mainPhotoAdded) {
-      gallery.getCell(`A${currentRow}`).value = 'Photo not available'
-      gallery.getCell(`A${currentRow}`).alignment = { vertical: 'middle', horizontal: 'center' }
-      gallery.getCell(`A${currentRow}`).font = { color: { argb: COLORS.textMuted } }
+      mainCell.value = 'Photo not available'
+      mainCell.alignment = { vertical: 'middle', horizontal: 'center' }
+      mainCell.font = { color: { argb: COLORS.textMuted } }
     }
     currentRow += 12
   }
 
-  // Step Photos Grid (3 cards per row)
   const cardsPerRow = 3
   const cardHeight = 16
 
@@ -593,7 +610,6 @@ export async function exportRecipeExcelUltra(args: {
     )
   }
 
-  // Set row heights
   const totalRows = currentRow + (Math.ceil(cleanSteps.length / cardsPerRow) * cardHeight)
   for (let ri = currentRow; ri < totalRows; ri++) {
     gallery.getRow(ri).height = 12
@@ -601,7 +617,6 @@ export async function exportRecipeExcelUltra(args: {
 
   await gallery.protect('GastroChef2024', { selectLockedCells: true, selectUnlockedCells: false })
 
-  // ===== SAVE FILE =====
   try {
     const buffer = await workbook.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
