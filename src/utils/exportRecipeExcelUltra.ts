@@ -82,6 +82,17 @@ function safeFileName(name: string): string {
   return name.replace(/[\\/:*?"<>|]+/g, '_').trim() || 'recipe'
 }
 
+
+function safeMerge(sheet: ExcelJS.Worksheet, range: string) {
+  try {
+    const merges = ((sheet as any)?._merges || {}) as Record<string, unknown>
+    if (merges[range]) return
+    sheet.mergeCells(range)
+  } catch {
+    // Prevent ExcelJS from crashing the export when a range is already merged.
+  }
+}
+
 function moneyFmt(currency: string, decimals = 2): string {
   const zeros = '0'.repeat(Math.max(0, decimals))
   return `"${currency}" #,##0${decimals > 0 ? '.' + zeros : ''}`
@@ -243,14 +254,18 @@ async function createPhotoCard(
   const colLetter = String.fromCharCode(65 + (colIndex * 2)) // A=0, C=2, E=4
   
   // Card container with border (16 rows total per card)
-  sheet.mergeCells(`${colLetter}${startRow}:${colLetter}${startRow + 15}`)
-  const cardCell = sheet.getCell(`${colLetter}${startRow}`)
-  fill(cardCell, COLORS.white)
-  cardCell.border = {
-    top: { style: 'thin', color: { argb: COLORS.border } },
-    left: { style: 'thin', color: { argb: COLORS.border } },
-    bottom: { style: 'thin', color: { argb: COLORS.border } },
-    right: { style: 'thin', color: { argb: COLORS.border } },
+  // IMPORTANT: do not merge the whole card column, because the description area
+  // below needs its own merge range. Overlapping merges cause ExcelJS to throw:
+  // "Cannot merge already merged cells".
+  for (let row = startRow; row <= startRow + 15; row++) {
+    const cell = sheet.getCell(`${colLetter}${row}`)
+    fill(cell, COLORS.white)
+    cell.border = {
+      top: row === startRow ? { style: 'thin', color: { argb: COLORS.border } } : undefined,
+      left: { style: 'thin', color: { argb: COLORS.border } },
+      bottom: row === startRow + 15 ? { style: 'thin', color: { argb: COLORS.border } } : undefined,
+      right: { style: 'thin', color: { argb: COLORS.border } },
+    }
   }
 
   // Step Number Badge (top-left, green like reference)
@@ -279,7 +294,7 @@ async function createPhotoCard(
 
   // Description Area (rows 12-15, light gray background)
   const descRow = startRow + 12
-  sheet.mergeCells(`${colLetter}${descRow}:${colLetter}${startRow + 15}`)
+  safeMerge(sheet, `${colLetter}${descRow}:${colLetter}${startRow + 15}`)
   const descCell = sheet.getCell(`${colLetter}${descRow}`)
   descCell.value = description || 'No description'
   descCell.font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
@@ -336,12 +351,12 @@ export async function exportRecipeExcelUltra(args: {
   await addLogo(workbook, summary)
   await addQRCode(workbook, summary, qrPayload)
 
-  summary.mergeCells('A3:D3')
+  safeMerge(summary, 'A3:D3')
   summary.getCell('A3').value = 'GastroChef'
   summary.getCell('A3').font = { name: 'Calibri', size: 20, bold: true }
   summary.getCell('A3').alignment = { vertical: 'middle', horizontal: 'center' }
 
-  summary.mergeCells('A7:D7')
+  safeMerge(summary, 'A7:D7')
   summary.getCell('A7').value = name
   summary.getCell('A7').font = { name: 'Calibri', size: 22, bold: true }
 
@@ -350,7 +365,7 @@ export async function exportRecipeExcelUltra(args: {
     summary.getCell(`A${r}`).value = label
     summary.getCell(`A${r}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
     summary.getCell(`B${r}`).value = value ?? ''
-    summary.mergeCells(`B${r}:D${r}`)
+    safeMerge(summary, `B${r}:D${r}`)
     r++
   }
   kv('Code', recipeCode)
@@ -363,7 +378,7 @@ export async function exportRecipeExcelUltra(args: {
 
   const kpiRow = r + 1
   const makeCard = (row: number, col: 'A' | 'C', title: string, value: any, accent = false) => {
-    summary.mergeCells(`${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
+    safeMerge(summary, `${col}${row}:${col === 'A' ? 'B' : 'D'}${row + 2}`)
     const cell = summary.getCell(`${col}${row}`)
     fill(cell, accent ? COLORS.primary : COLORS.bgSoft)
     thinBorder(cell)
@@ -398,7 +413,7 @@ export async function exportRecipeExcelUltra(args: {
     { header: 'Notes', key: 'notes', width: 20 },
   ]
 
-  ingredients.mergeCells('A1:J1')
+  safeMerge(ingredients, 'A1:J1')
   ingredients.getCell('A1').value = `${name} — Ingredients`
   ingredients.getCell('A1').font = { name: 'Calibri', size: 14, bold: true }
 
@@ -445,7 +460,7 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.columns = [{ width: 28 }, { width: 14 }, { width: 10 }, { width: 14 }, { width: 14 }, { width: 14 }]
   scaleLab.getCell('A1').value = `${name} — Scaling Lab`
   scaleLab.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  scaleLab.mergeCells('A1:F1')
+  safeMerge(scaleLab, 'A1:F1')
 
   scaleLab.getCell('A2').value = 'Base Portions'; scaleLab.getCell('B2').value = portions
   scaleLab.getCell('D2').value = 'Target Portions'; scaleLab.getCell('E2').value = portions
@@ -478,9 +493,9 @@ export async function exportRecipeExcelUltra(args: {
   const method = workbook.addWorksheet('Method', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   method.columns = [{ width: 6 }, { width: 76 }]
   method.getCell('A1').value = name; method.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  method.mergeCells('A1:B1')
+  safeMerge(method, 'A1:B1')
   method.getCell('A3').value = 'Preparation Method'; method.getCell('A3').font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textMuted } }
-  method.mergeCells('A3:B3')
+  safeMerge(method, 'A3:B3')
 
   let mr = 5
   if (cleanSteps.length) {
@@ -503,7 +518,7 @@ export async function exportRecipeExcelUltra(args: {
   const nutrition = workbook.addWorksheet('Nutrition', { pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true } })
   nutrition.columns = [{ width: 26 }, { width: 20 }]
   nutrition.getCell('A1').value = `${name} — Nutrition`; nutrition.getCell('A1').font = { name: 'Calibri', size: 16, bold: true }
-  nutrition.mergeCells('A1:B1')
+  safeMerge(nutrition, 'A1:B1')
   const nkv = (row: number, label: string, value: any) => {
     nutrition.getCell(`A${row}`).value = label
     nutrition.getCell(`A${row}`).font = { name: 'Calibri', size: 10, bold: true, color: { argb: COLORS.textMuted } }
@@ -529,12 +544,12 @@ export async function exportRecipeExcelUltra(args: {
   ]
 
   // Title
-  gallery.mergeCells('A1:F1')
+  safeMerge(gallery, 'A1:F1')
   gallery.getCell('A1').value = `${name} — Photo Gallery`
   gallery.getCell('A1').font = { name: 'Calibri', size: 18, bold: true, color: { argb: COLORS.text } }
   gallery.getCell('A1').alignment = { horizontal: 'center', vertical: 'bottom' }
 
-  gallery.mergeCells('A2:F2')
+  safeMerge(gallery, 'A2:F2')
   gallery.getCell('A2').value = 'Step-by-step visual preparation guide'
   gallery.getCell('A2').font = { name: 'Calibri', size: 10, color: { argb: COLORS.textMuted } }
   gallery.getCell('A2').alignment = { horizontal: 'center', vertical: 'top' }
@@ -543,12 +558,12 @@ export async function exportRecipeExcelUltra(args: {
 
   // Main Recipe Photo (Full Width)
   if (meta.photo_url) {
-    gallery.mergeCells(`A${currentRow}:F${currentRow}`)
+    safeMerge(gallery, `A${currentRow}:F${currentRow}`)
     gallery.getCell(`A${currentRow}`).value = 'RECIPE PHOTO'
     gallery.getCell(`A${currentRow}`).font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
     currentRow++
 
-    gallery.mergeCells(`A${currentRow}:F${currentRow + 10}`)
+    safeMerge(gallery, `A${currentRow}:F${currentRow + 10}`)
     const mainCell = gallery.getCell(`A${currentRow}`)
     mainCell.border = {
       top: { style: 'medium', color: { argb: COLORS.border } },
