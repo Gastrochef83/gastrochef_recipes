@@ -1245,58 +1245,62 @@ const addLineLocal = useCallback(async () => {
         portions: Math.max(1, Math.floor(Number(portions || 1))),
         yield_qty: yieldQty ? Number(yieldQty) : null,
         yield_unit: yieldUnit || null,
-        currency: currency || 'USD',
+        currency: (currency || 'USD').toUpperCase(),
         selling_price: sellingPrice ? Number(sellingPrice) : null,
         target_food_cost_pct: targetFC ? Number(targetFC) : null,
         photo_url: recipe?.photo_url || null,
-        step_photos: stepPhotos,
+        step_photos: Array.isArray(stepPhotos) ? stepPhotos.filter(Boolean) : [],
         description: description || '',
-        steps: (steps || []).filter(Boolean),
+        steps: Array.isArray(steps) ? steps.filter(Boolean) : [],
         calories: calories ? Number(calories) : null,
         protein_g: protein ? Number(protein) : null,
         carbs_g: carbs ? Number(carbs) : null,
         fat_g: fat ? Number(fat) : null,
       }
 
-      const rows = lines
+      const rows = (lines || [])
         .filter((l) => l.line_type !== 'group')
         .map((l) => {
           const c = lineComputed.get(l.id)
-          const base = {
+          const subRecipe = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
+          const ingredient = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+
+          return {
             type: l.line_type === 'subrecipe' ? 'subrecipe' : 'ingredient',
-            code:
-              l.line_type === 'ingredient'
-                ? (l.ingredient_id ? (ingById.get(l.ingredient_id) as any)?.code : null) || ''
-                : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.code || ''),
-            name:
-              l.line_type === 'ingredient'
-                ? (l.ingredient_id ? ingById.get(l.ingredient_id)?.name : null) || 'Ingredient'
-                : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.name || 'Subrecipe'),
-            net_qty: c?.net ?? 0,
+            code: l.line_type === 'ingredient' ? (ingredient?.code || '') : (subRecipe?.code || ''),
+            name: l.line_type === 'ingredient' ? (ingredient?.name || 'Ingredient') : (subRecipe?.name || 'Subrecipe'),
+            net_qty: Number(c?.net ?? 0),
             unit: l.unit || '',
-            yield_percent: c?.yieldPct ?? 100,
-            gross_qty: c?.gross ?? 0,
-            unit_cost: c?.unitCost ?? 0,
-            line_cost: c?.lineCost ?? 0,
-            notes: l.notes || '',
-            warnings: c?.warnings || [],
+            yield_percent: Number(c?.yieldPct ?? 100),
+            gross_qty: Number(c?.gross ?? 0),
+            unit_cost: Number(c?.unitCost ?? 0),
+            line_cost: Number(c?.lineCost ?? 0),
+            notes: (l as any).notes ?? (l as any).note ?? '',
+            warnings: Array.isArray(c?.warnings) ? c!.warnings : [],
           }
-          return base
         })
 
       await exportRecipeExcelUltra({
         meta,
-        totals: { totalCost: totals.totalCost, cpp: totals.cpp, fcPct: totals.fcPct, margin: totals.margin, marginPct: totals.marginPct },
+        totals: {
+          totalCost: Number(totals.totalCost || 0),
+          cpp: Number(totals.cpp || 0),
+          fcPct: totals.fcPct == null ? null : Number(totals.fcPct),
+          margin: Number(totals.margin || 0),
+          marginPct: totals.marginPct == null ? null : Number(totals.marginPct),
+        },
         lines: rows as any,
       })
 
       showToast('Excel exported.')
     } catch (e: any) {
-      console.error(e)
+      console.error('Excel export failed in RecipeEditor:', e)
+      setErr(e?.message || 'Excel export failed.')
       showToast('Excel export failed.')
     }
   }, [
     id,
+    code,
     name,
     category,
     portions,
@@ -1305,6 +1309,7 @@ const addLineLocal = useCallback(async () => {
     currency,
     sellingPrice,
     targetFC,
+    recipe,
     description,
     steps,
     stepPhotos,
@@ -1315,7 +1320,7 @@ const addLineLocal = useCallback(async () => {
     lines,
     lineComputed,
     ingById,
-    allRecipes,
+    recipeById,
     totals.totalCost,
     totals.cpp,
     totals.fcPct,
