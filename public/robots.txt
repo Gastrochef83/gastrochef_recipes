@@ -1,1 +1,0 @@
-site:gastrochef-v4-mvp.vercel.app

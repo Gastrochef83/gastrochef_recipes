@@ -1,6 +1,0 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
-
-/* Tailwind entry only.
-   GastroChef design system lives in src/styles/tokens.css + src/styles/globals.css */
