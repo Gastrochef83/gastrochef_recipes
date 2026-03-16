@@ -70,10 +70,6 @@ const COLORS = {
   bgSuccess: 'FF27AE60',     // أخضر للنجاح
   bgWarning: 'FFFCF3E2',     // أصفر فاتح للتحذيرات
   bgGold: 'FFF1C40F',        // ذهبي للتمييز
-  
-  // Gradients (للخلايا المهمة)
-  gradientStart: 'FF3498DB',
-  gradientEnd: 'FF2980B9',
 }
 
 // ================= Enhanced Styling Functions =================
@@ -99,15 +95,6 @@ function thinBorder(cell: ExcelJS.Cell, color = COLORS.border, style: 'thin' | '
     left: { style, color: { argb: color } },
     bottom: { style, color: { argb: color } },
     right: { style, color: { argb: color } },
-  }
-}
-
-function noBorder(cell: ExcelJS.Cell) {
-  cell.border = {
-    top: { style: 'none' },
-    left: { style: 'none' },
-    bottom: { style: 'none' },
-    right: { style: 'none' },
   }
 }
 
@@ -139,18 +126,6 @@ function applyHeaderStyle(cell: ExcelJS.Cell, variant: 'primary' | 'secondary' |
   cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
 }
 
-function applyKPICardStyle(cell: ExcelJS.Cell, isPrimary = false) {
-  if (isPrimary) {
-    gradientFill(cell, COLORS.primary, COLORS.header1, 135)
-    cell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.textWhite } }
-  } else {
-    fill(cell, COLORS.bgWhite)
-    thinBorder(cell, COLORS.border, 'medium')
-    cell.font = { name: 'Calibri', size: 11, color: { argb: COLORS.text } }
-  }
-  cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
-}
-
 function applyCellStyle(cell: ExcelJS.Cell, options: {
   bold?: boolean
   italic?: boolean
@@ -178,7 +153,7 @@ function applyCellStyle(cell: ExcelJS.Cell, options: {
   }
 }
 
-// ================= Rest of helpers (same as before) =================
+// ================= Helpers =================
 function safeNum(x: any, fallback = 0): number {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
@@ -320,7 +295,7 @@ function autosizeColumns(sheet: ExcelJS.Worksheet, min = 12, max = 50) {
   })
 }
 
-// ================= Enhanced Main Export Function =================
+// ================= Main Export Function =================
 export async function exportRecipeExcelUltra(args: {
   meta: ExcelRecipeMeta
   totals: { totalCost: number; cpp: number; fcPct: number | null; margin: number; marginPct: number | null }
@@ -358,7 +333,7 @@ export async function exportRecipeExcelUltra(args: {
   const ingredientCost = lines.filter(l => l.type === 'ingredient').reduce((a, l) => a + safeNum(l.line_cost), 0)
   const subrecipeCost = lines.filter(l => l.type === 'subrecipe').reduce((a, l) => a + safeNum(l.line_cost), 0)
 
-  // ===== 1. SUMMARY SHEET (Enhanced) =====
+  // ===== 1. SUMMARY SHEET =====
   const summary = workbook.addWorksheet('Summary', {
     pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true },
     properties: { tabColor: { argb: COLORS.primary } }
@@ -367,7 +342,7 @@ export async function exportRecipeExcelUltra(args: {
 
   await addQRCode(workbook, summary, qrPayload)
 
-  // Enhanced Title Section with Gradient
+  // Title Section
   summary.mergeCells('A2:D2')
   const titleCell = summary.getCell('A2')
   gradientFill(titleCell, COLORS.primary, COLORS.header1, 135)
@@ -389,14 +364,14 @@ export async function exportRecipeExcelUltra(args: {
   intelligenceCell.value = 'Kitchen Intelligence — Costing, Nutrition, Method & Images'
   applyCellStyle(intelligenceCell, { align: 'center', italic: true, fontSize: 11, color: COLORS.textLight })
 
-  // Report ID and Recipe ID with Background
+  // Report ID and Recipe ID
   summary.mergeCells('A6:D6')
   const idCell = summary.getCell('A6')
   fill(idCell, COLORS.bgSoft)
   idCell.value = `📋 Report ID: ${reportId}   |   🔖 Recipe ID: ${recipeId}`
   applyCellStyle(idCell, { align: 'center', fontSize: 9, color: COLORS.textLight, bgColor: COLORS.bgSoft })
 
-  // Recipe Name with Stylish Border
+  // Recipe Name
   summary.mergeCells('A8:D8')
   const nameCell = summary.getCell('A8')
   nameCell.value = name
@@ -407,7 +382,7 @@ export async function exportRecipeExcelUltra(args: {
     top: { style: 'thin', color: { argb: COLORS.border } }
   }
 
-  // Metadata Section with alternating background
+  // Metadata Section
   let r = 10
   const addMetadataRow = (label: string, value: any, isAlternate = false) => {
     summary.getCell(`A${r}`).value = label
@@ -438,7 +413,7 @@ export async function exportRecipeExcelUltra(args: {
 
   r += 2
 
-  // Enhanced KPI Cards
+  // KPI Cards
   const addKPICard = (row: number, col: 'A' | 'C', title: string, value: any, format: 'number' | 'percent' | 'currency' = 'currency', isPrimary = false) => {
     const startCol = col
     const endCol = col === 'A' ? 'B' : 'D'
@@ -446,17 +421,14 @@ export async function exportRecipeExcelUltra(args: {
     summary.mergeCells(`${startCol}${row}:${endCol}${row + 2}`)
     const cell = summary.getCell(`${startCol}${row}`)
     
-    // Card background
     if (isPrimary) {
       gradientFill(cell, COLORS.primary, COLORS.header1, 135)
     } else {
       fill(cell, COLORS.bgWhite)
     }
     
-    // Border
     thinBorder(cell, isPrimary ? COLORS.primary : COLORS.border, 'medium')
     
-    // Title
     cell.value = title
     cell.font = {
       name: 'Calibri',
@@ -466,7 +438,6 @@ export async function exportRecipeExcelUltra(args: {
     }
     cell.alignment = { vertical: 'top', horizontal: 'center' }
     
-    // Value
     const valueCell = summary.getCell(`${startCol}${row + 1}`)
     valueCell.value = value ?? 0
     valueCell.font = {
@@ -477,7 +448,6 @@ export async function exportRecipeExcelUltra(args: {
     }
     valueCell.alignment = { vertical: 'center', horizontal: 'center' }
     
-    // Format
     if (format === 'percent') {
       valueCell.numFmt = '0.0%'
     } else if (format === 'currency') {
@@ -493,7 +463,7 @@ export async function exportRecipeExcelUltra(args: {
 
   r += 7
 
-  // Enhanced Financial Summary
+  // Financial Summary
   summary.getCell(`A${r}`).value = '📊 FINANCIAL SUMMARY'
   applyCellStyle(summary.getCell(`A${r}`), { bold: true, fontSize: 14, color: COLORS.primary, bgColor: COLORS.bgSoft })
   summary.mergeCells(`A${r}:D${r}`)
@@ -539,7 +509,7 @@ export async function exportRecipeExcelUltra(args: {
   summary.getCell(`D${r}`).value = `📅 ${now.toLocaleDateString('en-US', { month: '2-digit', day: '2-digit', year: 'numeric' })}`
   applyCellStyle(summary.getCell(`D${r}`), { align: 'right' })
 
-  // ===== 2. INGREDIENTS SHEET (Enhanced) =====
+  // ===== 2. INGREDIENTS SHEET =====
   const ingredients = workbook.addWorksheet('Ingredients', {
     views: [{ state: 'frozen', ySplit: 4, xSplit: 0 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true },
@@ -560,7 +530,7 @@ export async function exportRecipeExcelUltra(args: {
     { header: 'Warnings', key: 'warnings', width: 25 }
   ]
 
-  // Enhanced Title
+  // Title
   ingredients.mergeCells('A1:K2')
   const ingTitleCell = ingredients.getCell('A1')
   gradientFill(ingTitleCell, COLORS.secondary, COLORS.header1, 135)
@@ -577,7 +547,7 @@ export async function exportRecipeExcelUltra(args: {
   ingSubCell.font = { name: 'Calibri', size: 10, color: { argb: COLORS.text } }
   ingSubCell.alignment = { horizontal: 'center' }
 
-  // Enhanced Header
+  // Header
   const headerRow = ingredients.getRow(4)
   headerRow.values = ingredients.columns.map(c => c.header)
   headerRow.eachCell((cell, colNumber) => {
@@ -586,7 +556,7 @@ export async function exportRecipeExcelUltra(args: {
     }
   })
 
-  // Data rows with alternating colors
+  // Data rows
   lines.forEach((line, index) => {
     const warningsText = line.warnings?.join(', ') || (line.unit_cost === 0 ? '⚠️ Ingredient without price' : '')
     const bgColor = index % 2 === 0 ? COLORS.bgWhite : COLORS.bgAlternate
@@ -609,12 +579,10 @@ export async function exportRecipeExcelUltra(args: {
       if (colNumber <= 11) {
         applyCellStyle(cell, { bgColor })
         
-        // Special formatting for warnings
         if (colNumber === 11 && line.unit_cost === 0) {
           cell.font = { color: { argb: COLORS.textWarning }, bold: true }
         }
         
-        // Special formatting for subrecipes
         if (colNumber === 1 && line.type === 'subrecipe') {
           cell.font = { bold: true, color: { argb: COLORS.secondary } }
         }
@@ -628,14 +596,14 @@ export async function exportRecipeExcelUltra(args: {
     row.getCell('lCost').numFmt = moneyFmt(currency, 3)
   })
 
-  // Enhanced Footer
+  // Footer
   const footer = ingredients.addRow({ name: 'TOTAL', lCost: totals.totalCost })
   footer.eachCell((cell, colNumber) => {
     if (colNumber <= 11) {
-      if (colNumber === 3) { // Name column
+      if (colNumber === 3) {
         cell.value = '🔰 GRAND TOTAL'
       }
-      if (colNumber === 9) { // Line Cost column
+      if (colNumber === 9) {
         cell.numFmt = moneyFmt(currency, 2)
       }
       applyCellStyle(cell, { bold: true, bgColor: COLORS.bgSoft })
@@ -644,7 +612,7 @@ export async function exportRecipeExcelUltra(args: {
 
   ingredients.autoFilter = 'A4:K4'
 
-  // ===== 3. SCALE LAB SHEET (Enhanced) =====
+  // ===== 3. SCALE LAB SHEET =====
   const scaleLab = workbook.addWorksheet('Scale Lab', {
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true },
     properties: { tabColor: { argb: COLORS.accent } }
@@ -659,7 +627,7 @@ export async function exportRecipeExcelUltra(args: {
     { width: 18 }  // Scaled Cost
   ]
 
-  // Title with gradient
+  // Title
   scaleLab.mergeCells('A1:F2')
   const scaleTitleCell = scaleLab.getCell('A1')
   gradientFill(scaleTitleCell, COLORS.accent, COLORS.header1, 135)
@@ -689,7 +657,7 @@ export async function exportRecipeExcelUltra(args: {
   scaleLab.getRow(6).values = ['🧪 Ingredient / Sub-Recipe', '📦 Base Net', '📏 Unit', '⚖️ Scaled Net', '📦 Scaled Gross', '💰 Scaled Cost']
   scaleLab.getRow(6).eachCell(c => applyHeaderStyle(c, 'primary'))
 
-  // Data rows with alternating colors
+  // Data rows
   lines.forEach((line, index) => {
     const rowNum = 7 + index
     const bgColor = index % 2 === 0 ? COLORS.bgWhite : COLORS.bgAlternate
@@ -719,7 +687,7 @@ export async function exportRecipeExcelUltra(args: {
 
   autosizeColumns(scaleLab)
 
-  // ===== 4. METHOD SHEET (Enhanced) =====
+  // ===== 4. METHOD SHEET =====
   const method = workbook.addWorksheet('Method', {
     pageSetup: { orientation: 'portrait', paperSize: 9, fitToPage: true },
     properties: { tabColor: { argb: COLORS.primary } }
@@ -741,11 +709,10 @@ export async function exportRecipeExcelUltra(args: {
   applyCellStyle(method.getCell('A4'), { bold: true, fontSize: 12, color: COLORS.primary, bgColor: COLORS.bgSoft })
   method.mergeCells('A4:B4')
 
-  // Steps with numbers
+  // Steps
   let mr = 6
   if (cleanSteps.length) {
     for (let i = 0; i < cleanSteps.length; i++) {
-      // Step number with circle background
       method.getCell(`A${mr}`).value = i + 1
       const numCell = method.getCell(`A${mr}`)
       fill(numCell, COLORS.primary)
@@ -753,7 +720,6 @@ export async function exportRecipeExcelUltra(args: {
       numCell.alignment = { vertical: 'top', horizontal: 'center' }
       thinBorder(numCell, COLORS.borderDark, 'thin')
       
-      // Step description
       method.getCell(`B${mr}`).value = cleanSteps[i]
       const descCell = method.getCell(`B${mr}`)
       applyCellStyle(descCell, { bgColor: i % 2 === 0 ? COLORS.bgWhite : COLORS.bgAlternate })
@@ -768,140 +734,130 @@ export async function exportRecipeExcelUltra(args: {
     method.getCell('B6').value = 'No steps provided.'
   }
 
-  // ===== 5. PHOTOS SHEET (Enhanced Gallery Style) =====
+  // ===== 5. PHOTOS SHEET (مبسطة مثل الصورة) =====
   const photos = workbook.addWorksheet('Photos', {
-    views: [{ showGridLines: false, zoom: 70 }],
+    views: [{ showGridLines: false, zoom: 80 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true },
-    properties: { tabColor: { argb: COLORS.secondary } }
+    properties: { tabColor: { argb: COLORS.primary } }
   })
 
-  // Set column widths for gallery layout
+  // تعيين عرض الأعمدة - 3 أعمدة للصور
   photos.columns = [
-    { width: 35 }, // Card 1
-    { width: 2 },  // Spacer
-    { width: 35 }, // Card 2
-    { width: 2 },  // Spacer
-    { width: 35 }, // Card 3
-    { width: 2 },  // Spacer
-    { width: 35 }  // Card 4 (if needed)
+    { width: 35 }, // عمود الصورة 1
+    { width: 5 },  // مسافة فاصلة
+    { width: 35 }, // عمود الصورة 2
+    { width: 5 },  // مسافة فاصلة
+    { width: 35 }, // عمود الصورة 3
   ]
 
-  // Gallery Title
-  photos.mergeCells('A1:G2')
-  const galleryTitleCell = photos.getCell('A1')
-  gradientFill(galleryTitleCell, COLORS.secondary, COLORS.primary, 135)
-  galleryTitleCell.value = `${name} — PHOTO GALLERY`
-  galleryTitleCell.font = { name: 'Calibri', size: 24, bold: true, color: { argb: COLORS.textWhite } }
-  galleryTitleCell.alignment = { horizontal: 'center', vertical: 'center' }
-  thinBorder(galleryTitleCell, COLORS.borderDark, 'medium')
+  // العنوان الرئيسي
+  photos.mergeCells('A1:E1')
+  const photoTitleCell = photos.getCell('A1')
+  photoTitleCell.value = `${name} — PHOTO GALLERY`
+  photoTitleCell.font = { name: 'Calibri', size: 20, bold: true, color: { argb: COLORS.primary } }
+  photoTitleCell.alignment = { horizontal: 'center', vertical: 'bottom' }
 
-  // Subtitle
-  photos.mergeCells('A3:G3')
-  const gallerySubCell = photos.getCell('A3')
-  gallerySubCell.value = '✨ Step-by-step visual preparation guide ✨'
-  gallerySubCell.font = { name: 'Calibri', size: 12, italic: true, color: { argb: COLORS.textLight } }
-  gallerySubCell.alignment = { horizontal: 'center' }
+  // السطر الوصفي
+  photos.mergeCells('A2:E2')
+  const photoDescCell = photos.getCell('A2')
+  photoDescCell.value = 'Step-by-step visual preparation guide'
+  photoDescCell.font = { name: 'Calibri', size: 11, italic: true, color: { argb: COLORS.textLight } }
+  photoDescCell.alignment = { horizontal: 'center', vertical: 'top' }
 
-  let currentRow = 5
+  let currentRow = 4
 
-  // Main Recipe Photo Card
-  if (meta.photo_url) {
-    photos.mergeCells(`A${currentRow}:G${currentRow}`)
-    const mainTitleCell = photos.getCell(`A${currentRow}`)
-    mainTitleCell.value = '📌 MAIN RECIPE PHOTO'
-    mainTitleCell.font = { name: 'Calibri', size: 14, bold: true, color: { argb: COLORS.primary } }
-    mainTitleCell.alignment = { horizontal: 'center' }
-    currentRow++
-
-    photos.mergeCells(`A${currentRow}:G${currentRow + 10}`)
-    const mainPhotoCell = photos.getCell(`A${currentRow}`)
-    fill(mainPhotoCell, COLORS.bgWhite)
-    thinBorder(mainPhotoCell, COLORS.primary, 'medium')
-
-    const imageAdded = await addImageToSheet(workbook, photos, meta.photo_url, {
-      col: 0,
-      row: currentRow,
-      width: 1000,
-      height: 400,
-      colOffset: 0.5,
-      rowOffset: 0.5
-    })
-
-    if (!imageAdded) {
-      photos.getCell(`A${currentRow + 5}`).value = '🖼️ Image Preview Not Available'
-      photos.getCell(`A${currentRow + 5}`).font = { size: 14, color: { argb: COLORS.textLight } }
-      photos.getCell(`A${currentRow + 5}`).alignment = { horizontal: 'center' }
-    }
+  // دالة مساعدة لإضافة صف من الصور (3 صور في كل صف)
+  const addPhotoRow = async (startIndex: number) => {
+    const photoRow = currentRow
+    const descRow = currentRow + 10
     
-    currentRow += 12
-  }
-
-  // Helper function for step cards
-  const addStepCard = async (startRow: number, stepNumber: number, description: string, photoUrl: string | null, colIndex: number) => {
-    const col = colIndex * 3 // A=0, D=3, G=6
-    const cardCol = col
-    const cardWidth = 35
-    
-    // Card container
-    photos.mergeCells(startRow, 1 + cardCol, startRow + 14, 1 + cardCol)
-    const cardCell = photos.getCell(startRow, 1 + cardCol)
-    fill(cardCell, COLORS.bgWhite)
-    thinBorder(cardCell, COLORS.border, 'medium')
-    
-    // Step number badge
-    const badgeCell = photos.getCell(startRow, 1 + cardCol)
-    badgeCell.value = `STEP ${stepNumber}`
-    badgeCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.textWhite } }
-    badgeCell.alignment = { horizontal: 'center', vertical: 'top' }
-    fill(badgeCell, COLORS.primary)
-    
-    // Photo area
-    if (photoUrl) {
-      const imageAdded = await addImageToSheet(workbook, photos, photoUrl, {
-        col: cardCol,
-        row: startRow + 1,
-        width: 280,
-        height: 180,
-        colOffset: 0.3,
-        rowOffset: 0.3
-      })
+    // إضافة الصور (3 صور كحد أقصى)
+    for (let i = 0; i < 3; i++) {
+      const stepIndex = startIndex + i
+      if (stepIndex >= cleanSteps.length) break
       
-      if (!imageAdded) {
-        const noImageCell = photos.getCell(startRow + 6, 1 + cardCol)
-        noImageCell.value = '📷 No Image'
-        noImageCell.font = { color: { argb: COLORS.textLight }, size: 10 }
-        noImageCell.alignment = { horizontal: 'center' }
+      const col = i * 2 // A, C, E (مع ترك عمود فاصل)
+      
+      // عنوان الصورة (Step X)
+      const stepCell = photos.getCell(photoRow, 1 + col)
+      stepCell.value = `Step ${stepIndex + 1}`
+      stepCell.font = { name: 'Calibri', size: 11, bold: true, color: { argb: COLORS.primary } }
+      stepCell.alignment = { horizontal: 'center' }
+      
+      // مساحة الصورة
+      photos.mergeCells(photoRow + 1, 1 + col, photoRow + 8, 1 + col)
+      const imageCell = photos.getCell(photoRow + 1, 1 + col)
+      
+      // إطار بسيط للصورة
+      imageCell.border = {
+        top: { style: 'thin', color: { argb: COLORS.border } },
+        left: { style: 'thin', color: { argb: COLORS.border } },
+        bottom: { style: 'thin', color: { argb: COLORS.border } },
+        right: { style: 'thin', color: { argb: COLORS.border } }
       }
-    } else {
-      const noImageCell = photos.getCell(startRow + 6, 1 + cardCol)
-      noImageCell.value = '📷 No Image Available'
-      noImageCell.font = { color: { argb: COLORS.textLight }, size: 10 }
-      noImageCell.alignment = { horizontal: 'center' }
+      imageCell.alignment = { horizontal: 'center', vertical: 'center' }
+      
+      // محاولة إضافة الصورة
+      if (stepPhotos[stepIndex]) {
+        const imageAdded = await addImageToSheet(workbook, photos, stepPhotos[stepIndex], {
+          col: col,
+          row: photoRow,
+          width: 280,
+          height: 180,
+          colOffset: 0.2,
+          rowOffset: 1.2
+        })
+        
+        if (!imageAdded) {
+          imageCell.value = '📷'
+          imageCell.font = { size: 24 }
+        }
+      } else {
+        imageCell.value = '📷'
+        imageCell.font = { size: 24, color: { argb: COLORS.textLight } }
+      }
+      
+      // وصف الخطوة
+      const descriptionCell = photos.getCell(descRow, 1 + col)
+      descriptionCell.value = cleanSteps[stepIndex]
+      descriptionCell.font = { name: 'Calibri', size: 9 }
+      descriptionCell.alignment = { wrapText: true, vertical: 'top' }
     }
     
-    // Description
-    const descCell = photos.getCell(startRow + 11, 1 + cardCol)
-    descCell.value = description
-    descCell.font = { name: 'Calibri', size: 9 }
-    descCell.alignment = { wrapText: true, vertical: 'top' }
-    fill(descCell, COLORS.bgSoft)
+    currentRow = descRow + 2
   }
 
-  // Create step cards in rows of 3
-  for (let i = 0; i < cleanSteps.length; i += 3) {
-    for (let j = 0; j < 3; j++) {
-      const stepIndex = i + j
-      if (stepIndex < cleanSteps.length) {
-        await addStepCard(
-          currentRow,
-          stepIndex + 1,
-          cleanSteps[stepIndex],
-          stepPhotos[stepIndex] || null,
-          j
-        )
-      }
+  // إذا كان هناك صورة رئيسية، نضيفها في الأعلى
+  if (meta.photo_url) {
+    photos.mergeCells('A4:E4')
+    const mainTitleCell = photos.getCell('A4')
+    mainTitleCell.value = 'Main Recipe Photo'
+    mainTitleCell.font = { name: 'Calibri', size: 12, bold: true, color: { argb: COLORS.primary } }
+    
+    photos.mergeCells('A5:E13')
+    const mainImageCell = photos.getCell('A5')
+    mainImageCell.border = {
+      top: { style: 'thin', color: { argb: COLORS.border } },
+      left: { style: 'thin', color: { argb: COLORS.border } },
+      bottom: { style: 'thin', color: { argb: COLORS.border } },
+      right: { style: 'thin', color: { argb: COLORS.border } }
     }
-    currentRow += 16
+    
+    await addImageToSheet(workbook, photos, meta.photo_url, {
+      col: 0,
+      row: 4,
+      width: 800,
+      height: 300,
+      colOffset: 0.5,
+      rowOffset: 1.2
+    })
+    
+    currentRow = 16
+  }
+
+  // إضافة الصور في مجموعات من 3
+  for (let i = 0; i < cleanSteps.length; i += 3) {
+    await addPhotoRow(i)
   }
 
   // ===== SAVE FILE =====
@@ -909,7 +865,7 @@ export async function exportRecipeExcelUltra(args: {
     const buffer = await workbook.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     saveAs(blob, `${safeFileName(name)} - GastroChef Export.xlsx`)
-    console.log('✅ Excel file exported successfully with enhanced styling')
+    console.log('✅ Excel file exported successfully')
   } catch (error) {
     console.error('❌ Excel export failed:', error)
     alert('Failed to export Excel file. Please try again.')
