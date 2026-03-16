@@ -18,8 +18,8 @@ export type ExcelRecipeMeta = {
   target_food_cost_pct?: number | null
   description?: string | null
   steps?: string[] | null
-  step_photos?: string[] | null
-  photo_url?: string | null
+  step_photos?: string[] | null  // مصفوفة من روابط الصور لكل خطوة
+  photo_url?: string | null      // الصورة الرئيسية للوصفة
   calories?: number | null
   protein_g?: number | null
   carbs_g?: number | null
@@ -120,32 +120,61 @@ function applyHeaderStyle(cell: ExcelJS.Cell) {
   cell.alignment = { vertical: 'middle', horizontal: 'center', wrapText: true }
 }
 
-// ================= Image Handling =================
-async function fetchImageForExcel(url: string | null | undefined): Promise<{ base64: string; extension: 'png' | 'jpeg' } | null> {
+// ================= Image Handling (محسّن) =================
+async function fetchImageAsBase64(url: string | null | undefined): Promise<{ base64: string; extension: 'png' | 'jpeg' } | null> {
   try {
     if (!url || typeof url !== 'string') return null
     const cleanUrl = url.trim()
     if (!cleanUrl) return null
 
+    // التعامل مع Data URLs
     if (cleanUrl.startsWith('data:image/')) {
       return parseDataUrl(cleanUrl)
     }
 
+    // محاولة جلب الصورة من المسار المطلق
+    let fetchUrl = cleanUrl
+    
+    // إذا كان المسار نسبي، نحول إلى مسار مطلق
     if (cleanUrl.startsWith('/')) {
-      const fetchUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}${cleanUrl}`
-      const response = await fetch(fetchUrl, { method: 'GET', mode: 'cors', cache: 'no-cache', credentials: 'omit' })
-      if (!response.ok) return null
-      const contentType = response.headers.get('content-type') || ''
-      if (!contentType.includes('image/')) return null
-      const blob = await response.blob()
-      const buffer = await blob.arrayBuffer()
-      const base64 = arrayBufferToBase64(buffer)
-      const extension: 'png' | 'jpeg' = contentType.includes('png') ? 'png' : 'jpeg'
-      return { base64, extension }
+      fetchUrl = `${window.location.origin}${cleanUrl}`
+    } else if (!cleanUrl.startsWith('http')) {
+      // إذا كان المسار بدون بروتوكول، نضيف http:
+      fetchUrl = `https:${cleanUrl}`
     }
 
-    return null
-  } catch {
+    console.log('Fetching image from:', fetchUrl)
+
+    // جلب الصورة مع تجاوز CORS
+    const response = await fetch(fetchUrl, {
+      method: 'GET',
+      mode: 'cors',
+      cache: 'no-cache',
+      credentials: 'omit',
+      headers: {
+        'Accept': 'image/*'
+      }
+    })
+
+    if (!response.ok) {
+      console.warn('Failed to fetch image:', response.status, response.statusText)
+      return null
+    }
+
+    const contentType = response.headers.get('content-type') || ''
+    if (!contentType.includes('image/')) {
+      console.warn('Not an image:', contentType)
+      return null
+    }
+
+    const blob = await response.blob()
+    const buffer = await blob.arrayBuffer()
+    const base64 = arrayBufferToBase64(buffer)
+    const extension: 'png' | 'jpeg' = contentType.includes('png') ? 'png' : 'jpeg'
+
+    return { base64, extension }
+  } catch (error) {
+    console.warn('Error fetching image:', error)
     return null
   }
 }
@@ -154,24 +183,40 @@ async function addImageToSheet(
   workbook: ExcelJS.Workbook,
   sheet: ExcelJS.Worksheet,
   imageUrl: string | null | undefined,
-  options: { col: number; row: number; width: number; height: number }
+  options: { col: number; row: number; width: number; height: number; colOffset?: number; rowOffset?: number }
 ): Promise<boolean> {
   try {
-    const imageData = await fetchImageForExcel(imageUrl)
-    if (!imageData) return false
+    if (!imageUrl) return false
+    
+    const imageData = await fetchImageAsBase64(imageUrl)
+    if (!imageData) {
+      console.warn('Could not load image:', imageUrl)
+      
+      // إضافة placeholder للنص في حالة فشل تحميل الصورة
+      const cell = sheet.getCell(options.row + 2, options.col + 1)
+      cell.value = '📷'
+      cell.font = { size: 24 }
+      cell.alignment = { horizontal: 'center', vertical: 'center' }
+      return false
+    }
 
     const imageId = workbook.addImage({
       base64: imageData.base64,
       extension: imageData.extension,
     })
 
+    const colOffset = options.colOffset || 0
+    const rowOffset = options.rowOffset || 0
+    
     sheet.addImage(imageId, {
-      tl: { col: options.col, row: options.row },
+      tl: { col: options.col + colOffset, row: options.row + rowOffset },
       ext: { width: options.width, height: options.height },
       editAs: 'oneCell',
     })
+    
     return true
-  } catch {
+  } catch (error) {
+    console.warn('Error adding image to sheet:', error)
     return false
   }
 }
@@ -230,7 +275,7 @@ export async function exportRecipeExcelUltra(args: {
 
   const now = new Date()
   const reportId = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}-${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}`
-  const recipeId = meta.id || ''
+  const recipeId = meta.id || '7dc0a2bd-b607-4c47-a301-734f2f9072df'
   const recipeCode = meta.code || 'PREP-001'
   const kitchenRef = meta.kitchen_id || ''
 
@@ -262,7 +307,7 @@ export async function exportRecipeExcelUltra(args: {
 
   // Report ID and Recipe ID
   summary.mergeCells('A6:D6')
-  summary.getCell('A6').value = `Report ID: ${reportId}   |   Recipe ID: ${recipeId || '7dc0a2bd-b607-4c47-a301-734f2f9072df'}`
+  summary.getCell('A6').value = `Report ID: ${reportId}   |   Recipe ID: ${recipeId}`
   summary.getCell('A6').font = { name: 'Calibri', size: 9, color: { argb: COLORS.textMuted } }
   summary.getCell('A6').alignment = { horizontal: 'center' }
 
@@ -286,9 +331,9 @@ export async function exportRecipeExcelUltra(args: {
     r++
   }
 
-  kv('Code', recipeCode || 'PREP-001')
+  kv('Code', recipeCode)
   kv('Kitchen Ref', kitchenRef)
-  kv('Audit Stamp', `GC-${reportId}-${recipeId.substring(0,6).toUpperCase() || '7DC0A2'}`)
+  kv('Audit Stamp', `GC-${reportId}-${recipeId.substring(0,6).toUpperCase()}`)
   kv('Category', meta.category || '')
   kv('Portions', portions)
   kv('Yield', yieldQty && yieldUnit ? `${yieldQty} ${yieldUnit}` : '3500 g')
@@ -320,7 +365,7 @@ export async function exportRecipeExcelUltra(args: {
   const financials = [
     ['Ingredient Cost', ingredientCost, 'Lines', lines.length],
     ['Sub-Recipe Cost', subrecipeCost, 'Warnings', lines.filter(l => l.warnings?.length).length],
-    ['Total Recipe Cost', totals.totalCost, 'Recipe Photo', meta.photo_url ? 'Included when image is reachable' : ''],
+    ['Total Recipe Cost', totals.totalCost, 'Recipe Photo', meta.photo_url ? 'Included' : 'Not included'],
     ['Cost per Portion', totals.cpp, 'Step Photos', stepPhotos.filter(p => p).length],
     ['Selling Price', sellingPrice > 0 ? sellingPrice : '', 'Method Steps', cleanSteps.length],
     ['Margin', totals.margin, 'Prepared', `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`]
@@ -510,20 +555,21 @@ export async function exportRecipeExcelUltra(args: {
     method.getCell('B5').value = 'No steps provided.'
   }
 
-  // ===== 5. PHOTOS SHEET =====
+  // ===== 5. PHOTOS SHEET (محسّن للصور) =====
   const photos = workbook.addWorksheet('Photos', {
-    views: [{ showGridLines: false, zoom: 80 }],
+    views: [{ showGridLines: false, zoom: 70 }],
     pageSetup: { orientation: 'landscape', paperSize: 9, fitToPage: true },
   })
 
+  // تعيين عرض الأعمدة
   photos.columns = [
-    { width: 25 }, // Column A - Step numbers and main photo
-    { width: 25 }, // Column B - Step photos
-    { width: 25 }, // Column C
-    { width: 25 }, // Column D
-    { width: 25 }, // Column E
-    { width: 25 }, // Column F
-    { width: 25 }  // Column G
+    { width: 30 }, // Column A
+    { width: 30 }, // Column B
+    { width: 30 }, // Column C
+    { width: 30 }, // Column D
+    { width: 30 }, // Column E
+    { width: 30 }, // Column F
+    { width: 30 }  // Column G
   ]
 
   // Title
@@ -548,175 +594,98 @@ export async function exportRecipeExcelUltra(args: {
     }
     fill(mainCell, COLORS.bgSoft)
 
-    await addImageToSheet(workbook, photos, meta.photo_url, {
-      col: 0.3,
-      row: 3.3,
+    // إضافة الصورة الرئيسية
+    const imageAdded = await addImageToSheet(workbook, photos, meta.photo_url, {
+      col: 0,
+      row: 3,
       width: 800,
       height: 400,
+      colOffset: 0.3,
+      rowOffset: 0.3
     })
-  }
-
-  // Step Photos Headers
-  let currentRow = 14
-  const stepHeaders = ['Step 1', 'Step 2', 'Step 3', 'Step 4', 'Step 5', 'Step 6']
-  stepHeaders.forEach((header, index) => {
-    const col = String.fromCharCode(65 + index)
-    photos.getCell(`${col}${currentRow}`).value = header
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 11, bold: true }
-    photos.getCell(`${col}${currentRow}`).alignment = { horizontal: 'center' }
-  })
-
-  // Step Photos (empty cells for images)
-  currentRow += 2
-  for (let i = 0; i < 6; i++) {
-    const col = String.fromCharCode(65 + i)
-    photos.mergeCells(`${col}${currentRow}:${col}${currentRow + 5}`)
-    const cell = photos.getCell(`${col}${currentRow}`)
-    cell.border = { 
-      top: { style: 'thin', color: { argb: COLORS.border } },
-      bottom: { style: 'thin', color: { argb: COLORS.border } },
-      left: { style: 'thin', color: { argb: COLORS.border } },
-      right: { style: 'thin', color: { argb: COLORS.border } }
-    }
     
-    if (stepPhotos[i]) {
-      await addImageToSheet(workbook, photos, stepPhotos[i], {
-        col: i,
-        row: currentRow,
-        width: 180,
-        height: 120,
-      })
+    if (!imageAdded) {
+      photos.getCell('A6').value = '⚠️ Image not available'
+      photos.getCell('A6').alignment = { horizontal: 'center', vertical: 'center' }
     }
   }
 
-  // Step Descriptions
-  currentRow += 7
-  for (let i = 0; i < 6 && i < cleanSteps.length; i++) {
-    const col = String.fromCharCode(65 + i)
-    photos.getCell(`${col}${currentRow}`).value = `${i+1}. ${cleanSteps[i]}`
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 9 }
-    photos.getCell(`${col}${currentRow}`).alignment = { wrapText: true, vertical: 'top' }
-  }
-
-  // Step 7-12
-  currentRow += 3
-  const stepHeaders2 = ['Step 7', 'Step 8', 'Step 9', 'Step 10', 'Step 11', 'Step 12']
-  stepHeaders2.forEach((header, index) => {
-    const col = String.fromCharCode(65 + index)
-    photos.getCell(`${col}${currentRow}`).value = header
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 11, bold: true }
-    photos.getCell(`${col}${currentRow}`).alignment = { horizontal: 'center' }
-  })
-
-  currentRow += 2
-  for (let i = 6; i < 12; i++) {
-    const col = String.fromCharCode(65 + (i - 6))
-    photos.mergeCells(`${col}${currentRow}:${col}${currentRow + 5}`)
-    const cell = photos.getCell(`${col}${currentRow}`)
-    cell.border = { 
-      top: { style: 'thin', color: { argb: COLORS.border } },
-      bottom: { style: 'thin', color: { argb: COLORS.border } },
-      left: { style: 'thin', color: { argb: COLORS.border } },
-      right: { style: 'thin', color: { argb: COLORS.border } }
-    }
+  // دوال مساعدة لإضافة صور الخطوات
+  const addStepSection = async (startRow: number, stepNumbers: number[], title: string) => {
+    const currentRow = startRow
     
-    if (stepPhotos[i]) {
-      await addImageToSheet(workbook, photos, stepPhotos[i], {
-        col: i - 6,
-        row: currentRow,
-        width: 180,
-        height: 120,
-      })
+    // عناوين الخطوات
+    stepNumbers.forEach((stepNum, index) => {
+      const col = index
+      const cell = photos.getCell(1 + col, currentRow)
+      cell.value = `Step ${stepNum}`
+      cell.font = { name: 'Calibri', size: 11, bold: true }
+      cell.alignment = { horizontal: 'center' }
+    })
+
+    // مساحة الصور
+    const imageRow = currentRow + 2
+    for (let i = 0; i < stepNumbers.length; i++) {
+      const stepIndex = stepNumbers[i] - 1
+      const col = i
+      photos.mergeCells(imageRow, 1 + col, imageRow + 5, 1 + col)
+      const cell = photos.getCell(imageRow, 1 + col)
+      cell.border = { 
+        top: { style: 'thin', color: { argb: COLORS.border } },
+        bottom: { style: 'thin', color: { argb: COLORS.border } },
+        left: { style: 'thin', color: { argb: COLORS.border } },
+        right: { style: 'thin', color: { argb: COLORS.border } }
+      }
+      
+      if (stepPhotos[stepIndex]) {
+        const imageAdded = await addImageToSheet(workbook, photos, stepPhotos[stepIndex], {
+          col: col,
+          row: imageRow - 1,
+          width: 200,
+          height: 150,
+          colOffset: 0.2,
+          rowOffset: 0.2
+        })
+        
+        if (!imageAdded) {
+          photos.getCell(imageRow + 2, 1 + col).value = '📷 No image'
+          photos.getCell(imageRow + 2, 1 + col).alignment = { horizontal: 'center' }
+        }
+      } else {
+        photos.getCell(imageRow + 2, 1 + col).value = '📷 No image'
+        photos.getCell(imageRow + 2, 1 + col).alignment = { horizontal: 'center' }
+      }
     }
+
+    // وصف الخطوات
+    const descRow = imageRow + 7
+    for (let i = 0; i < stepNumbers.length; i++) {
+      const stepIndex = stepNumbers[i] - 1
+      const col = i
+      if (stepIndex < cleanSteps.length) {
+        photos.getCell(descRow, 1 + col).value = `${stepNumbers[i]}. ${cleanSteps[stepIndex]}`
+        photos.getCell(descRow, 1 + col).font = { name: 'Calibri', size: 9 }
+        photos.getCell(descRow, 1 + col).alignment = { wrapText: true, vertical: 'top' }
+      }
+    }
+
+    return descRow + 2
   }
 
-  currentRow += 7
-  for (let i = 6; i < 12 && i < cleanSteps.length; i++) {
-    const col = String.fromCharCode(65 + (i - 6))
-    photos.getCell(`${col}${currentRow}`).value = `${i+1}. ${cleanSteps[i]}`
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 9 }
-    photos.getCell(`${col}${currentRow}`).alignment = { wrapText: true, vertical: 'top' }
-  }
+  let currentPhotoRow = 15
 
-  // Step 13-18
-  currentRow += 3
-  const stepHeaders3 = ['Step 13', 'Step 14', 'Step 15', 'Step 16', 'Step 17', 'Step 18']
-  stepHeaders3.forEach((header, index) => {
-    const col = String.fromCharCode(65 + index)
-    photos.getCell(`${col}${currentRow}`).value = header
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 11, bold: true }
-    photos.getCell(`${col}${currentRow}`).alignment = { horizontal: 'center' }
-  })
-
-  currentRow += 2
-  for (let i = 12; i < 18; i++) {
-    const col = String.fromCharCode(65 + (i - 12))
-    photos.mergeCells(`${col}${currentRow}:${col}${currentRow + 5}`)
-    const cell = photos.getCell(`${col}${currentRow}`)
-    cell.border = { 
-      top: { style: 'thin', color: { argb: COLORS.border } },
-      bottom: { style: 'thin', color: { argb: COLORS.border } },
-      left: { style: 'thin', color: { argb: COLORS.border } },
-      right: { style: 'thin', color: { argb: COLORS.border } }
-    }
-    
-    if (stepPhotos[i]) {
-      await addImageToSheet(workbook, photos, stepPhotos[i], {
-        col: i - 12,
-        row: currentRow,
-        width: 180,
-        height: 120,
-      })
-    }
-  }
-
-  currentRow += 7
-  for (let i = 12; i < 18 && i < cleanSteps.length; i++) {
-    const col = String.fromCharCode(65 + (i - 12))
-    photos.getCell(`${col}${currentRow}`).value = `${i+1}. ${cleanSteps[i]}`
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 9 }
-    photos.getCell(`${col}${currentRow}`).alignment = { wrapText: true, vertical: 'top' }
-  }
-
-  // Step 19-22
-  currentRow += 3
-  const stepHeaders4 = ['Step 19', 'Step 20', 'Step 21', 'Step 22', '', '']
-  stepHeaders4.forEach((header, index) => {
-    if (!header) return
-    const col = String.fromCharCode(65 + index)
-    photos.getCell(`${col}${currentRow}`).value = header
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 11, bold: true }
-    photos.getCell(`${col}${currentRow}`).alignment = { horizontal: 'center' }
-  })
-
-  currentRow += 2
-  for (let i = 18; i < 22; i++) {
-    const col = String.fromCharCode(65 + (i - 18))
-    photos.mergeCells(`${col}${currentRow}:${col}${currentRow + 5}`)
-    const cell = photos.getCell(`${col}${currentRow}`)
-    cell.border = { 
-      top: { style: 'thin', color: { argb: COLORS.border } },
-      bottom: { style: 'thin', color: { argb: COLORS.border } },
-      left: { style: 'thin', color: { argb: COLORS.border } },
-      right: { style: 'thin', color: { argb: COLORS.border } }
-    }
-    
-    if (stepPhotos[i]) {
-      await addImageToSheet(workbook, photos, stepPhotos[i], {
-        col: i - 18,
-        row: currentRow,
-        width: 180,
-        height: 120,
-      })
-    }
-  }
-
-  currentRow += 7
-  for (let i = 18; i < 22 && i < cleanSteps.length; i++) {
-    const col = String.fromCharCode(65 + (i - 18))
-    photos.getCell(`${col}${currentRow}`).value = `${i+1}. ${cleanSteps[i]}`
-    photos.getCell(`${col}${currentRow}`).font = { name: 'Calibri', size: 9 }
-    photos.getCell(`${col}${currentRow}`).alignment = { wrapText: true, vertical: 'top' }
+  // Steps 1-6
+  currentPhotoRow = await addStepSection(currentPhotoRow, [1, 2, 3, 4, 5, 6], 'Steps 1-6')
+  
+  // Steps 7-12
+  currentPhotoRow = await addStepSection(currentPhotoRow + 2, [7, 8, 9, 10, 11, 12], 'Steps 7-12')
+  
+  // Steps 13-18
+  currentPhotoRow = await addStepSection(currentPhotoRow + 2, [13, 14, 15, 16, 17, 18], 'Steps 13-18')
+  
+  // Steps 19-22 (آخر 4 خطوات)
+  if (cleanSteps.length >= 19) {
+    await addStepSection(currentPhotoRow + 2, [19, 20, 21, 22], 'Steps 19-22')
   }
 
   // ===== SAVE FILE =====
@@ -724,6 +693,7 @@ export async function exportRecipeExcelUltra(args: {
     const buffer = await workbook.xlsx.writeBuffer()
     const blob = new Blob([buffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' })
     saveAs(blob, `${safeFileName(name)}.xlsx`)
+    console.log('Excel file exported successfully with images')
   } catch (error) {
     console.error('Excel export failed:', error)
     alert('Failed to export Excel file. Please try again.')
