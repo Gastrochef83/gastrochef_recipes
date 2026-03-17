@@ -280,7 +280,7 @@ export default function RecipeEditor() {
 
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [ingSearch, setIngSearch] = useState('')
-  const [addNote, setAddNote] = useState('') // New state for note
+  const [addNote, setAddNote] = useState('')
 
   const cur = (currency || 'USD').toUpperCase()
 
@@ -803,7 +803,7 @@ export default function RecipeEditor() {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: addNote || null, // Add the note
+        notes: addNote || null,
         gross_qty_override: gross,
         line_type: 'ingredient',
         group_title: null,
@@ -816,7 +816,6 @@ export default function RecipeEditor() {
       const ok = await saveLinesNow(next)
       if (ok) {
         showToast('Line added & saved.')
-        // Reset form after successful save
         setAddNote('')
         setAddNetQty('1')
         setAddGross('')
@@ -844,7 +843,7 @@ export default function RecipeEditor() {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: addNote || null, // Add the note
+        notes: addNote || null,
         gross_qty_override: gross,
         line_type: 'subrecipe',
         group_title: null,
@@ -1732,37 +1731,54 @@ export default function RecipeEditor() {
         background-size: 16px;
         padding-right: 40px;
         min-width: 200px;
+        color: var(--text);
+        background-color: white;
       }
 
       .gc-recipe-pro .gc-select option {
         color: var(--text);
         background: white;
-        padding: 8px;
+        padding: 12px;
+        font-size: 0.95rem;
       }
 
       /* تحسين شبكة ADD LINE */
       .gc-recipe-pro .gc-add-line-grid {
         display: grid;
-        grid-template-columns: repeat(6, 1fr);
+        grid-template-columns: 2fr 2fr 3fr 1fr 1fr 1.5fr 2fr 2fr;
         gap: 12px;
-        margin-bottom: 12px;
+        margin-bottom: 16px;
+        align-items: end;
       }
 
-      .gc-recipe-pro .gc-add-line-note {
-        grid-column: span 6;
+      .gc-recipe-pro .gc-add-line-field {
+        display: flex;
+        flex-direction: column;
+      }
+
+      .gc-recipe-pro .gc-add-line-field .gc-label {
+        margin-bottom: 6px;
+        font-size: 0.7rem;
+      }
+
+      .gc-recipe-pro .gc-gross-hint {
+        font-size: 0.7rem;
+        color: var(--text-light);
+        margin-top: 4px;
+        font-style: italic;
+        white-space: nowrap;
       }
 
       .gc-recipe-pro .gc-add-line-actions {
         display: flex;
-        gap: 10px;
+        gap: 12px;
         margin-top: 16px;
       }
 
-      .gc-recipe-pro .gc-gross-hint {
-        font-size: 0.75rem;
-        color: var(--text-light);
-        margin-top: 4px;
-        font-style: italic;
+      @media (max-width: 1200px) {
+        .gc-recipe-pro .gc-add-line-grid {
+          grid-template-columns: repeat(4, 1fr);
+        }
       }
 
       @media (max-width: 1024px) {
@@ -1775,7 +1791,7 @@ export default function RecipeEditor() {
         }
 
         .gc-recipe-pro .gc-add-line-grid {
-          grid-template-columns: repeat(3, 1fr);
+          grid-template-columns: repeat(2, 1fr);
         }
       }
 
@@ -2331,102 +2347,89 @@ export default function RecipeEditor() {
                 </div>
 
                 <div className="gc-card-body">
-                  <div className="gc-field-row">
-                    <div className="gc-col-3">
-                      <div className="gc-field">
-                        <div className="gc-label">TYPE</div>
-                        <select className="gc-select" value={addType} onChange={(e) => setAddType(e.target.value as LineType)}>
-                          <option value="ingredient">Ingredient</option>
-                          <option value="subrecipe">Subrecipe</option>
-                          <option value="group">Group title</option>
-                        </select>
-                      </div>
+                  <div className="gc-add-line-grid">
+                    <div className="gc-add-line-field">
+                      <div className="gc-label">TYPE</div>
+                      <select className="gc-select" value={addType} onChange={(e) => setAddType(e.target.value as LineType)}>
+                        <option value="ingredient">Ingredient</option>
+                        <option value="subrecipe">Subrecipe</option>
+                        <option value="group">Group title</option>
+                      </select>
                     </div>
 
-                    {addType === 'group' ? (
-                      <div className="gc-col-9">
-                        <div className="gc-field">
-                          <div className="gc-label">GROUP TITLE</div>
-                          <input className="gc-input" value={addGroupTitle} onChange={(e) => setAddGroupTitle(e.target.value)} placeholder="e.g. Sauce / Toppings / Marinade" />
-                        </div>
-                      </div>
-                    ) : (
+                    {addType !== 'group' && (
                       <>
-                        <div className="gc-col-3">
-                          <div className="gc-field">
-                            <div className="gc-label">SEARCH</div>
-                            <input className="gc-input" value={ingSearch} onChange={(e) => setIngSearch(e.target.value)} placeholder="Type to filter…" />
-                          </div>
+                        <div className="gc-add-line-field">
+                          <div className="gc-label">SEARCH</div>
+                          <input className="gc-input" value={ingSearch} onChange={(e) => setIngSearch(e.target.value)} placeholder="Type to filter…" />
                         </div>
 
-                        <div className="gc-col-6">
-                          <div className="gc-field">
-                            <div className="gc-label">{addType === 'ingredient' ? 'INGREDIENT' : 'SUBRECIPE'}</div>
-                            {addType === 'ingredient' ? (
-                              <select className="gc-select" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
-                                <option value="">— Select —</option>
-                                {filteredIngredients.map((i) => (
-                                  <option key={i.id} value={i.id}>
-                                    {i.name || 'Unnamed'}
-                                  </option>
-                                ))}
-                              </select>
-                            ) : (
-                              <select className="gc-select" value={addSubRecipeId} onChange={(e) => setAddSubRecipeId(e.target.value)}>
-                                <option value="">— Select —</option>
-                                {subRecipeOptions.map((r) => (
-                                  <option key={r.id} value={r.id}>
-                                    {r.name || 'Untitled'}
-                                  </option>
-                                ))}
-                              </select>
-                            )}
-                          </div>
+                        <div className="gc-add-line-field">
+                          <div className="gc-label">{addType === 'ingredient' ? 'INGREDIENT' : 'SUBRECIPE'}</div>
+                          {addType === 'ingredient' ? (
+                            <select className="gc-select" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
+                              <option value="">— Select ingredient —</option>
+                              {filteredIngredients.map((i) => (
+                                <option key={i.id} value={i.id}>
+                                  {i.name || 'Unnamed'} ({i.code || '—'})
+                                </option>
+                              ))}
+                            </select>
+                          ) : (
+                            <select className="gc-select" value={addSubRecipeId} onChange={(e) => setAddSubRecipeId(e.target.value)}>
+                              <option value="">— Select subrecipe —</option>
+                              {subRecipeOptions.map((r) => (
+                                <option key={r.id} value={r.id}>
+                                  {r.name || 'Untitled'} ({r.code || '—'})
+                                </option>
+                              ))}
+                            </select>
+                          )}
                         </div>
                       </>
                     )}
 
-                    {addType !== 'group' ? (
-                      <>
-                        <div className="gc-col-2">
-                          <div className="gc-field">
-                            <div className="gc-label">NET</div>
-                            <input className="gc-input" value={addNetQty} onChange={(e) => setAddNetQty(e.target.value)} inputMode="decimal" />
-                          </div>
-                        </div>
-
-                        <div className="gc-col-2">
-                          <div className="gc-field">
-                            <div className="gc-label">UNIT</div>
-                            <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
-                          </div>
-                        </div>
-
-                        <div className="gc-col-2">
-                          <div className="gc-field">
-                            <div className="gc-label">YIELD %</div>
-                            <input className="gc-input" value={addYield} onChange={(e) => setAddYield(e.target.value)} inputMode="decimal" />
-                          </div>
-                        </div>
-
-                        <div className="gc-col-3">
-                          <div className="gc-field">
-                            <div className="gc-label">GROSS (optional)</div>
-                            <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="leave empty to auto" />
-                          </div>
-                        </div>
-
-                        <div className="gc-col-3">
-                          <div className="gc-field">
-                            <div className="gc-label">NOTE</div>
-                            <input className="gc-input" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="e.g. Chopped, Powder, Fresh..." />
-                          </div>
-                        </div>
-                      </>
-                    ) : null}
+                    {addType === 'group' && (
+                      <div className="gc-add-line-field" style={{ gridColumn: 'span 2' }}>
+                        <div className="gc-label">GROUP TITLE</div>
+                        <input className="gc-input" value={addGroupTitle} onChange={(e) => setAddGroupTitle(e.target.value)} placeholder="e.g. Sauce / Toppings / Marinade" />
+                      </div>
+                    )}
                   </div>
 
-                  <div style={{ marginTop: 12, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                  {addType !== 'group' && (
+                    <>
+                      <div className="gc-add-line-grid" style={{ marginTop: 12 }}>
+                        <div className="gc-add-line-field">
+                          <div className="gc-label">NET</div>
+                          <input className="gc-input" value={addNetQty} onChange={(e) => setAddNetQty(e.target.value)} inputMode="decimal" />
+                        </div>
+
+                        <div className="gc-add-line-field">
+                          <div className="gc-label">UNIT</div>
+                          <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
+                        </div>
+
+                        <div className="gc-add-line-field">
+                          <div className="gc-label">YIELD %</div>
+                          <input className="gc-input" value={addYield} onChange={(e) => setAddYield(e.target.value)} inputMode="decimal" />
+                        </div>
+
+                        <div className="gc-add-line-field">
+                          <div className="gc-label">GROSS</div>
+                          <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="optional" />
+                          <div className="gc-gross-hint">leave empty to auto</div>
+                        </div>
+
+                        <div className="gc-add-line-field" style={{ gridColumn: 'span 2' }}>
+                          <div className="gc-label">NOTE</div>
+                          <input className="gc-input" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="e.g. Chopped, Powder, Fresh..." />
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  <div className="gc-add-line-actions">
                     <Button variant="primary" type="button" onClick={addLineLocal}>
                       Add line
                     </Button>
