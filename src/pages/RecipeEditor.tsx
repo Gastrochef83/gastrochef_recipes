@@ -91,6 +91,7 @@ function fmtMoney(n: number, currency: string) {
 
 function fmtQty(n: number) {
   const v = Number.isFinite(n) ? n : 0
+  if (Math.abs(v) >= 1000) return v.toFixed(0)
   if (Math.abs(v) >= 100) return v.toFixed(1)
   if (Math.abs(v) >= 10) return v.toFixed(2)
   return v.toFixed(3)
@@ -1548,6 +1549,7 @@ export default function RecipeEditor() {
         width: 100%;
         border-collapse: separate;
         border-spacing: 0;
+        table-layout: fixed;
       }
 
       .gc-recipe-pro .gc-kitopi-table thead th {
@@ -1559,6 +1561,9 @@ export default function RecipeEditor() {
         text-transform: uppercase;
         color: var(--text-light);
         padding: 16px 12px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-kitopi-table tbody td {
@@ -1566,6 +1571,10 @@ export default function RecipeEditor() {
         border-bottom: 1px solid rgba(46,125,120,0.08);
         color: var(--text);
         transition: background 0.15s ease;
+        vertical-align: middle;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-kitopi-table tbody tr:hover td {
@@ -2070,7 +2079,7 @@ export default function RecipeEditor() {
         box-shadow: 0 8px 20px -8px rgba(46,125,120,0.2);
       }
 
-      /* أنماط LINES المحسنة */
+      /* أنماط LINES المحسنة مع تناسق عمودي مثالي */
       .gc-recipe-pro .gc-empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -2179,7 +2188,17 @@ export default function RecipeEditor() {
         border-collapse: separate;
         border-spacing: 0;
         font-size: 0.9rem;
+        table-layout: fixed;
       }
+
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(1) { width: 100px; }  /* CODE */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(2) { width: auto; min-width: 200px; }  /* INGREDIENT */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(3) { width: 80px; }  /* NET */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(4) { width: 60px; }  /* UNIT */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(5) { width: 80px; }  /* GROSS */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(6) { width: 70px; }  /* YIELD */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(7) { width: 100px; } /* COST (if shown) */
+      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(8) { width: 80px; }  /* ACTIONS */
 
       .gc-recipe-pro .gc-kitopi-table thead {
         position: sticky;
@@ -2197,12 +2216,15 @@ export default function RecipeEditor() {
         text-transform: uppercase;
         color: var(--primary-dark);
         white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-th-content {
         display: flex;
         align-items: center;
         gap: 6px;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-th-right {
@@ -2218,6 +2240,9 @@ export default function RecipeEditor() {
         border-bottom: 1px solid rgba(46,125,120,0.08);
         vertical-align: middle;
         transition: background-color 0.15s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-line-row:hover td {
@@ -2231,6 +2256,8 @@ export default function RecipeEditor() {
       .gc-recipe-pro .gc-code-wrapper {
         display: flex;
         align-items: center;
+        justify-content: flex-start;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-code-pill {
@@ -2245,19 +2272,26 @@ export default function RecipeEditor() {
         display: inline-block;
         white-space: nowrap;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-ingredient-info {
         display: flex;
         flex-direction: column;
         gap: 4px;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-ingredient-name {
         font-weight: 500;
         color: var(--text);
         line-height: 1.4;
-        word-break: break-word;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-ingredient-note {
@@ -2270,17 +2304,22 @@ export default function RecipeEditor() {
         padding: 4px 10px;
         border-radius: 30px;
         width: fit-content;
+        max-width: 100%;
         border: 1px solid rgba(193,123,74,0.15);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-note-icon {
         font-size: 0.7rem;
         opacity: 0.7;
+        flex-shrink: 0;
       }
 
       .gc-recipe-pro .gc-cell-input-wrapper {
         position: relative;
-        max-width: 100px;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-table-input {
@@ -2295,6 +2334,7 @@ export default function RecipeEditor() {
         color: var(--text);
         text-align: right;
         transition: all 0.15s ease;
+        box-sizing: border-box;
       }
 
       .gc-recipe-pro .gc-table-input:focus {
@@ -2335,6 +2375,7 @@ export default function RecipeEditor() {
         display: inline-block;
         border: 1px solid rgba(46,125,120,0.1);
         white-space: nowrap;
+        width: fit-content;
       }
 
       .gc-recipe-pro .gc-cost-value {
@@ -2344,11 +2385,15 @@ export default function RecipeEditor() {
         gap: 6px;
         font-weight: 600;
         color: var(--primary-dark);
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-cost-amount {
         font-family: 'Courier New', monospace;
         font-size: 0.9rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-cost-missing {
@@ -2366,12 +2411,14 @@ export default function RecipeEditor() {
         font-size: 0.8rem;
         color: var(--accent);
         cursor: help;
+        flex-shrink: 0;
       }
 
       .gc-recipe-pro .gc-row-actions {
         display: flex;
         gap: 6px;
         justify-content: center;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-action-btn {
@@ -2386,6 +2433,7 @@ export default function RecipeEditor() {
         align-items: center;
         justify-content: center;
         transition: all 0.15s ease;
+        flex-shrink: 0;
       }
 
       .gc-recipe-pro .gc-action-btn:hover {
@@ -2411,17 +2459,21 @@ export default function RecipeEditor() {
         align-items: center;
         justify-content: space-between;
         padding: 8px 4px;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-group-info {
         display: flex;
         align-items: center;
         gap: 12px;
+        min-width: 0;
+        flex: 1;
       }
 
       .gc-recipe-pro .gc-group-icon {
         font-size: 1.2rem;
         opacity: 0.7;
+        flex-shrink: 0;
       }
 
       .gc-recipe-pro .gc-group-title {
@@ -2429,6 +2481,9 @@ export default function RecipeEditor() {
         font-weight: 800;
         color: var(--primary-dark);
         letter-spacing: -0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-group-badge {
@@ -2440,11 +2495,13 @@ export default function RecipeEditor() {
         border-radius: 30px;
         text-transform: uppercase;
         letter-spacing: 0.05em;
+        flex-shrink: 0;
       }
 
       .gc-recipe-pro .gc-group-actions {
         display: flex;
         gap: 8px;
+        flex-shrink: 0;
       }
 
       .gc-recipe-pro .gc-icon-btn-sm {
@@ -2477,6 +2534,7 @@ export default function RecipeEditor() {
       .gc-recipe-pro .gc-stat-label {
         color: var(--text-light);
         font-weight: 500;
+        white-space: nowrap;
       }
 
       .gc-recipe-pro .gc-stat-value {
@@ -2486,6 +2544,7 @@ export default function RecipeEditor() {
         padding: 4px 12px;
         border-radius: 30px;
         border: 1px solid rgba(46,125,120,0.15);
+        white-space: nowrap;
       }
 
       .gc-recipe-pro .gc-stat-total .gc-stat-value {
@@ -2495,6 +2554,17 @@ export default function RecipeEditor() {
       }
 
       /* تحسينات للشاشات الصغيرة */
+      @media (max-width: 1200px) {
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(1) { width: 90px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(2) { width: 180px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(3) { width: 70px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(4) { width: 50px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(5) { width: 70px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(6) { width: 60px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(7) { width: 90px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(8) { width: 70px; }
+      }
+
       @media (max-width: 1024px) {
         .gc-recipe-pro .gc-kitopi-table {
           font-size: 0.8rem;
@@ -2509,6 +2579,15 @@ export default function RecipeEditor() {
           font-size: 0.7rem;
           padding: 3px 8px;
         }
+        
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(1) { width: 80px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(2) { width: 150px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(3) { width: 65px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(4) { width: 45px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(5) { width: 65px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(6) { width: 55px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(7) { width: 80px; }
+        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(8) { width: 65px; }
       }
 
       @media (max-width: 768px) {
@@ -2720,6 +2799,7 @@ export default function RecipeEditor() {
           border-collapse: collapse;
           margin-top: 4mm;
           font-size: 10pt;
+          table-layout: fixed;
         }
 
         .gc-print-table th {
@@ -2734,6 +2814,9 @@ export default function RecipeEditor() {
         .gc-print-table td {
           padding: 2.5mm 2mm;
           border-bottom: 1px solid rgba(46,125,120,0.15);
+          white-space: nowrap;
+          overflow: hidden;
+          text-overflow: ellipsis;
         }
 
         .gc-print-kpis {
@@ -3284,7 +3367,7 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* LINES Section المحسن */}
+          {/* LINES Section المحسن مع تناسق عمودي مثالي */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
               <div className="gc-label" id="sec-lines">LINES</div>
@@ -3324,18 +3407,18 @@ export default function RecipeEditor() {
                     </div>
                   </div>
 
-                  {/* الجدول الرئيسي */}
+                  {/* الجدول الرئيسي مع عرض محسن */}
                   <div className="gc-kitopi-table-wrap">
                     <table className="gc-kitopi-table">
                       <colgroup>
-                        <col style={{ width: '10%' }} />
-                        <col style={{ width: '25%' }} />
-                        <col style={{ width: '10%' }} />
-                        <col style={{ width: '7%' }} />
-                        <col style={{ width: '10%' }} />
-                        <col style={{ width: '8%' }} />
-                        {showCost ? <col style={{ width: '12%' }} /> : null}
-                        <col style={{ width: '8%' }} />
+                        <col style={{ width: '100px' }} />
+                        <col style={{ width: 'auto', minWidth: '200px' }} />
+                        <col style={{ width: '80px' }} />
+                        <col style={{ width: '60px' }} />
+                        <col style={{ width: '80px' }} />
+                        <col style={{ width: '70px' }} />
+                        {showCost ? <col style={{ width: '100px' }} /> : null}
+                        <col style={{ width: '80px' }} />
                       </colgroup>
                       <thead>
                         <tr>
@@ -3442,7 +3525,7 @@ export default function RecipeEditor() {
                             >
                               <td>
                                 <div className="gc-code-wrapper">
-                                  <span className="gc-code-pill">
+                                  <span className="gc-code-pill" title={l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')}>
                                     {l.line_type === 'ingredient'
                                       ? (ing?.code || '—')
                                       : (sub?.code || '—')}
@@ -3452,13 +3535,13 @@ export default function RecipeEditor() {
 
                               <td>
                                 <div className="gc-ingredient-info">
-                                  <div className="gc-ingredient-name">
+                                  <div className="gc-ingredient-name" title={l.line_type === 'ingredient' ? (ing?.name || 'Unknown Ingredient') : (sub?.name || 'Unknown Subrecipe')}>
                                     {l.line_type === 'ingredient'
                                       ? (ing?.name || 'Unknown Ingredient')
                                       : (sub?.name || 'Unknown Subrecipe')}
                                   </div>
                                   {l.notes && (
-                                    <div className="gc-ingredient-note">
+                                    <div className="gc-ingredient-note" title={l.notes}>
                                       <span className="gc-note-icon">📝</span>
                                       <span>{l.notes}</span>
                                     </div>
@@ -3473,12 +3556,13 @@ export default function RecipeEditor() {
                                     value={fmtQty(toNum(l.qty, 0))}
                                     onChange={(e) => onNetChange(l.id, e.target.value)}
                                     inputMode="decimal"
+                                    title={`Net quantity: ${fmtQty(toNum(l.qty, 0))}`}
                                   />
                                 </div>
                               </td>
 
                               <td>
-                                <span className="gc-unit-badge-small">{l.unit || 'g'}</span>
+                                <span className="gc-unit-badge-small" title={l.unit || 'g'}>{l.unit || 'g'}</span>
                               </td>
 
                               <td>
@@ -3489,6 +3573,7 @@ export default function RecipeEditor() {
                                     onChange={(e) => onGrossChange(l.id, e.target.value)}
                                     inputMode="decimal"
                                     placeholder={c ? fmtQty(c.gross) : ''}
+                                    title={c ? `Gross quantity: ${fmtQty(c.gross)}` : 'Gross quantity'}
                                   />
                                 </div>
                               </td>
@@ -3500,6 +3585,7 @@ export default function RecipeEditor() {
                                     value={String(Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100)}
                                     onChange={(e) => onYieldChange(l.id, e.target.value)}
                                     inputMode="decimal"
+                                    title={`Yield percentage: ${Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100}%`}
                                   />
                                   <span className="gc-yield-suffix">%</span>
                                 </div>
@@ -3510,7 +3596,7 @@ export default function RecipeEditor() {
                                   <div className={cx("gc-cost-value", (!c || c.lineCost <= 0) && "gc-cost-missing")}>
                                     {c && c.lineCost > 0 ? (
                                       <>
-                                        <span className="gc-cost-amount">{fmtMoney(c.lineCost, cur)}</span>
+                                        <span className="gc-cost-amount" title={`Cost: ${fmtMoney(c.lineCost, cur)}`}>{fmtMoney(c.lineCost, cur)}</span>
                                         {c.warnings.length > 0 && (
                                           <span className="gc-cost-warning" title={c.warnings[0]}>⚠</span>
                                         )}
@@ -3528,7 +3614,7 @@ export default function RecipeEditor() {
                                     className="gc-action-btn"
                                     type="button"
                                     onClick={() => duplicateLineLocal(l.id)}
-                                    title="Duplicate"
+                                    title="Duplicate line"
                                   >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
@@ -3539,7 +3625,7 @@ export default function RecipeEditor() {
                                     className="gc-action-btn gc-action-btn-danger"
                                     type="button"
                                     onClick={() => deleteLineLocal(l.id)}
-                                    title="Delete"
+                                    title="Delete line"
                                   >
                                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                       <polyline points="3 6 5 6 21 6" />
@@ -3736,6 +3822,15 @@ export default function RecipeEditor() {
           <div className="gc-print-section">
             <div className="gc-print-title">Ingredients</div>
             <table className="gc-print-table">
+              <colgroup>
+                <col style={{ width: '15%' }} />
+                <col style={{ width: '30%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '8%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '10%' }} />
+                <col style={{ width: '17%' }} />
+              </colgroup>
               <thead>
                 <tr>
                   <th>Code</th>
