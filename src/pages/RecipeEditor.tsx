@@ -3796,11 +3796,11 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Method Section */}
+          {/* Method Section - محسّن بصرياً */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
               <div className="gc-label flex items-center gap-2" id="sec-method">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
                   <line x1="16" y1="13" x2="8" y2="13" />
@@ -3810,84 +3810,279 @@ export default function RecipeEditor() {
                 METHOD
               </div>
               <div className="gc-hint" style={{ marginTop: 6 }}>
-                Add steps. You can upload a photo per step.
+                <span className="flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
+                  Add steps with photos. Auto-save enabled.
+                </span>
               </div>
             </div>
 
             <div className="gc-card-body">
-              <div className="gc-field">
-                <div className="gc-label">NEW STEP</div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
-                  <button className="gc-btn gc-btn-primary flex items-center gap-2" type="button" onClick={addStep}>
+              {/* NEW STEP - بطريقة محسنة */}
+              <div className="gc-meta-card" style={{ padding: '16px', marginBottom: '20px' }}>
+                <div className="flex items-center gap-3 mb-3">
+                  <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">NEW STEP</div>
+                    <div className="text-[11px] text-neutral-500">Write a clear, concise instruction</div>
+                  </div>
+                </div>
+
+                <div className="flex gap-3 items-start flex-wrap">
+                  <div className="flex-1 min-w-[300px]">
+                    <input 
+                      className="gc-modern-input" 
+                      value={newStep} 
+                      onChange={(e) => setNewStep(e.target.value)} 
+                      placeholder="e.g., Sauté onions until golden brown..."
+                      style={{
+                        padding: '14px 18px',
+                        fontSize: '0.95rem'
+                      }}
+                    />
+                  </div>
+                  <button 
+                    className="gc-btn-primary-modern flex items-center gap-2" 
+                    type="button" 
+                    onClick={addStep}
+                    style={{
+                      padding: '14px 28px',
+                      whiteSpace: 'nowrap'
+                    }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
                       <line x1="5" y1="12" x2="19" y2="12" />
                     </svg>
-                    Add step
+                    ADD STEP
                   </button>
                 </div>
               </div>
 
+              {/* قائمة الخطوات - بطريقة محسنة */}
               {steps.length ? (
-                <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+                <div className="space-y-4">
                   {steps.map((s, idx) => (
-                    <div key={idx} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-                      <div className="gc-label flex items-center justify-between">
-                        <span>STEP {idx + 1}</span>
-                        <button className="text-xs text-red-600 hover:text-red-700" type="button" onClick={() => removeStep(idx)}>
-                          Remove
-                        </button>
-                      </div>
-                      <textarea className="gc-textarea" value={s} onChange={(e) => updateStep(idx, e.target.value)} rows={2} />
+                    <div 
+                      key={idx} 
+                      className="gc-meta-card relative overflow-hidden"
+                      style={{
+                        padding: 0,
+                        border: '1px solid rgba(46,125,120,0.15)',
+                        transition: 'all 0.2s ease'
+                      }}
+                    >
+                      {/* شريط علوي ملون */}
+                      <div 
+                        className="absolute top-0 left-0 right-0 h-1"
+                        style={{
+                          background: 'linear-gradient(90deg, var(--primary), var(--secondary))',
+                          opacity: 0.6
+                        }}
+                      />
+                      
+                      <div style={{ padding: '20px' }}>
+                        {/* HEADER */}
+                        <div className="flex items-center justify-between mb-4">
+                          <div className="flex items-center gap-3">
+                            <div 
+                              className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
+                              style={{ fontSize: '1.2rem' }}
+                            >
+                              {idx + 1}
+                            </div>
+                            <div>
+                              <div className="text-xs font-bold text-primary-dark uppercase tracking-wider">
+                                STEP {idx + 1}
+                              </div>
+                              {stepPhotos[idx] && (
+                                <div className="text-[10px] text-neutral-500 flex items-center gap-1 mt-0.5">
+                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                                    <path d="M21 15l-5-5L7 21" />
+                                  </svg>
+                                  Photo attached
+                                </div>
+                              )}
+                            </div>
+                          </div>
 
-                      <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <div className="flex items-center gap-2">
-                          <input
-                            type="file"
-                            accept="image/*"
-                            disabled={stepUploading}
-                            id={`step-photo-${idx}`}
-                            className="hidden"
-                            onChange={(e) => {
-                              const f = e.target.files?.[0]
-                              if (!f) return
-                              uploadStepPhoto(f, idx).catch(() => { })
-                              e.currentTarget.value = ''
-                            }}
-                          />
-                          <label 
-                            htmlFor={`step-photo-${idx}`}
-                            className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium cursor-pointer hover:bg-primary/20 transition-colors"
+                          <button 
+                            className="px-4 py-2 rounded-full text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors flex items-center gap-1"
+                            type="button" 
+                            onClick={() => removeStep(idx)}
                           >
-                            {stepUploading ? 'Uploading...' : 'Upload photo'}
-                          </label>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <polyline points="3 6 5 6 21 6" />
+                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                            </svg>
+                            Remove
+                          </button>
+                        </div>
+
+                        {/* STEP CONTENT */}
+                        <div className="grid grid-cols-12 gap-4">
+                          <div className="col-span-12 md:col-span-7">
+                            <textarea 
+                              className="gc-textarea" 
+                              value={s} 
+                              onChange={(e) => updateStep(idx, e.target.value)} 
+                              rows={3}
+                              style={{
+                                minHeight: '100px',
+                                fontSize: '0.95rem',
+                                lineHeight: '1.6',
+                                padding: '14px'
+                              }}
+                              placeholder={`Describe step ${idx + 1} in detail...`}
+                            />
+                          </div>
+
+                          <div className="col-span-12 md:col-span-5">
+                            {/* PHOTO SECTION */}
+                            <div 
+                              className="rounded-xl overflow-hidden border-2 border-dashed transition-all"
+                              style={{
+                                borderColor: stepPhotos[idx] ? 'rgba(46,125,120,0.3)' : 'rgba(46,125,120,0.15)',
+                                background: stepPhotos[idx] ? 'transparent' : 'rgba(46,125,120,0.02)'
+                              }}
+                            >
+                              {stepPhotos[idx] ? (
+                                <div className="relative group">
+                                  <img 
+                                    src={stepPhotos[idx]} 
+                                    alt={`Step ${idx + 1}`} 
+                                    style={{
+                                      width: '100%',
+                                      height: '160px',
+                                      objectFit: 'cover',
+                                      display: 'block'
+                                    }} 
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                                    <label 
+                                      htmlFor={`step-photo-${idx}`}
+                                      className="px-3 py-1.5 bg-white rounded-lg text-xs font-medium cursor-pointer hover:bg-neutral-100"
+                                    >
+                                      Change
+                                    </label>
+                                  </div>
+                                </div>
+                              ) : (
+                                <label 
+                                  htmlFor={`step-photo-${idx}`}
+                                  className="flex flex-col items-center justify-center cursor-pointer"
+                                  style={{
+                                    height: '160px',
+                                    padding: '16px',
+                                    textAlign: 'center'
+                                  }}
+                                >
+                                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400 mb-2">
+                                    <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                                    <path d="M21 15l-5-5L7 21" />
+                                  </svg>
+                                  <span className="text-xs text-neutral-500 font-medium">Click to upload photo</span>
+                                  <span className="text-[10px] text-neutral-400 mt-1">Supports JPG, PNG, WebP</span>
+                                </label>
+                              )}
+                            </div>
+
+                            <input
+                              type="file"
+                              accept="image/*"
+                              disabled={stepUploading}
+                              id={`step-photo-${idx}`}
+                              className="hidden"
+                              onChange={(e) => {
+                                const f = e.target.files?.[0]
+                                if (!f) return
+                                uploadStepPhoto(f, idx).catch(() => {})
+                                e.currentTarget.value = ''
+                              }}
+                            />
+
+                            {stepUploading && (
+                              <div className="mt-2 flex items-center justify-center gap-2 text-primary text-xs">
+                                <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                Uploading...
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
-
-                      {stepPhotos[idx] ? (
-                        <div style={{ marginTop: 10, width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)' }}>
-                          <img src={stepPhotos[idx]} alt={`Step ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        </div>
-                      ) : null}
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="gc-hint flex items-center gap-2" style={{ marginTop: 10 }}>
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="8" x2="12" y2="12" />
-                    <line x1="12" y1="16" x2="12.01" y2="16" />
-                  </svg>
-                  No steps yet.
+                <div className="gc-empty-state" style={{ padding: '40px 20px' }}>
+                  <div className="gc-empty-icon" style={{ fontSize: '3rem', marginBottom: '12px' }}>📝</div>
+                  <div className="gc-empty-title" style={{ fontSize: '1.1rem' }}>No steps yet</div>
+                  <div className="gc-empty-description" style={{ fontSize: '0.85rem' }}>
+                    Add your first step above. Each step can have its own photo.
+                  </div>
                 </div>
               )}
 
-              <div style={{ marginTop: 12 }} className="gc-card-soft">
-                <div style={{ padding: 12 }}>
-                  <div className="gc-label">LEGACY METHOD (OPTIONAL)</div>
-                  <textarea className="gc-textarea" value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="Optional long method text…" rows={3} />
+              {/* LEGACY METHOD - بطريقة محسنة */}
+              <div style={{ marginTop: '24px' }}>
+                <div className="gc-meta-card" style={{ padding: 0 }}>
+                  <div 
+                    className="flex items-center gap-3 p-4 border-b border-neutral-200/60"
+                    style={{ background: 'linear-gradient(to right, rgba(46,125,120,0.02), transparent)' }}
+                  >
+                    <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M4 7h16M4 12h16M4 17h10" />
+                        <rect x="14" y="15" width="6" height="6" rx="1" />
+                      </svg>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold text-secondary-dark uppercase tracking-wider">
+                        LEGACY METHOD (OPTIONAL)
+                      </div>
+                      <div className="text-[11px] text-neutral-500">
+                        Use this for longer, formatted instructions or as fallback
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ padding: '16px' }}>
+                    <textarea 
+                      className="gc-textarea" 
+                      value={methodLegacy} 
+                      onChange={(e) => setMethodLegacy(e.target.value)} 
+                      placeholder="Write your full method here. This can be used instead of steps if you prefer a single text block..."
+                      rows={4}
+                      style={{
+                        fontSize: '0.95rem',
+                        lineHeight: '1.6',
+                        padding: '14px'
+                      }}
+                    />
+                    
+                    <div className="flex items-center justify-between mt-2">
+                      <div className="text-[10px] text-neutral-400 flex items-center gap-1">
+                        <span className="w-1.5 h-1.5 bg-secondary rounded-full"></span>
+                        {methodLegacy.length} characters
+                      </div>
+                      
+                      {steps.length > 0 && methodLegacy && (
+                        <div className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded-full">
+                          <span>ℹ️</span>
+                          <span>Both steps and legacy method are saved</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
