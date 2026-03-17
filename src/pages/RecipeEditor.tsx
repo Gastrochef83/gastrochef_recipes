@@ -1182,9 +1182,12 @@ export default function RecipeEditor() {
   if (loading) {
     return (
       <div className="gc-card" style={{ padding: 16 }}>
-        <div className="gc-label">RECIPE EDITOR</div>
+        <div className="gc-label flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          RECIPE EDITOR
+        </div>
         <div className="gc-hint" style={{ marginTop: 10 }}>
-          Loading…
+          Loading recipe data...
         </div>
       </div>
     )
@@ -1193,7 +1196,7 @@ export default function RecipeEditor() {
   if (!id) {
     return (
       <div className="gc-card" style={{ padding: 16 }}>
-        <div className="gc-label">ERROR</div>
+        <div className="gc-label text-red-600">ERROR</div>
         <div className="gc-hint" style={{ marginTop: 10 }}>
           Missing recipe id.
         </div>
@@ -1203,8 +1206,12 @@ export default function RecipeEditor() {
 
   const headerLeft = (
     <div className="gc-recipe-pro-head-left">
-      <NavLink to="/recipes" className="gc-btn gc-btn-ghost">
-        ← Back
+      <NavLink to="/recipes" className="gc-btn gc-btn-ghost flex items-center gap-1">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <line x1="19" y1="12" x2="5" y2="12" />
+          <polyline points="12 19 5 12 12 5" />
+        </svg>
+        Back
       </NavLink>
 
       <div className="gc-recipe-pro-titleWrap">
@@ -1213,11 +1220,16 @@ export default function RecipeEditor() {
         </div>
 
         <div className="gc-recipe-pro-titleBlock">
-          <div className="gc-label">RECIPE EDITOR</div>
+          <div className="gc-label flex items-center gap-2">
+            RECIPE EDITOR
+            <span className="px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-mono text-primary">
+              v2.0
+            </span>
+          </div>
           <div className="gc-recipe-pro-title">{(name || 'Untitled').trim()}</div>
 
           <div className="gc-recipe-pro-subline">
-            <span className="gc-recipe-pro-statusDot" aria-hidden="true" />
+            <span className={`gc-recipe-pro-statusDot ${autosave.status === 'saving' ? 'animate-pulse' : ''}`} aria-hidden="true" />
             <span className="gc-hint" style={{ fontWeight: 800 }}>
               {autosave.status === 'saving'
                 ? 'Saving…'
@@ -1235,20 +1247,30 @@ export default function RecipeEditor() {
 
   const headerRight = (
     <div className="gc-tabs gc-recipe-pro-head-right">
-      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>{isKitchen ? 'Kitchen' : 'Mgmt'}</span>
+      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>
+        {isKitchen ? '👨‍🍳 Kitchen' : '📊 Mgmt'}
+      </span>
 
-      <button className="gc-btn-soft" type="button" onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}>
-        Density: {density}
+      <button 
+        className="gc-btn-soft flex items-center gap-1.5" 
+        type="button" 
+        onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <rect x="3" y="3" width="18" height="18" rx="2" />
+          <line x1="9" y1="3" x2="9" y2="21" />
+        </svg>
+        {density === 'compact' ? 'Compact' : 'Comfort'}
       </button>
 
-      <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>Basics</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>Method</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>Nutrition</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')} type="button" onClick={() => scrollToSection('sec-lines')}>Lines</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')} type="button" onClick={() => scrollToSection('sec-print')}>Print</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cook')}>Cook Mode</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>📋 Basics</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>📝 Method</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>🥗 Nutrition</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')} type="button" onClick={() => scrollToSection('sec-lines')}>📦 Lines</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')} type="button" onClick={() => scrollToSection('sec-print')}>🖨️ Print</button>
+      <button className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cook')}>🔥 Cook</button>
       {showCost ? (
-        <button className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cost')}>Cost</button>
+        <button className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cost')}>💰 Cost</button>
       ) : null}
     </div>
   )
@@ -1387,6 +1409,9 @@ export default function RecipeEditor() {
         transition: all 0.15s ease;
         cursor: pointer;
         box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
       }
 
       .gc-recipe-pro .gc-btn-soft:hover {
@@ -1583,7 +1608,6 @@ export default function RecipeEditor() {
         border: 1px solid rgba(46,125,120,0.2);
       }
 
-      /* تصميم الجدول مثل الأكسيل */
       .gc-recipe-pro .gc-excel-table {
         width: 100%;
         border-collapse: collapse;
@@ -1591,15 +1615,14 @@ export default function RecipeEditor() {
         font-size: 0.9rem;
       }
 
-      /* توزيع عرض الأعمدة بدقة */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(1) { width: 12%; }  /* CODE */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(2) { width: 28%; }  /* INGREDIENT */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(3) { width: 10%; }  /* NET */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(4) { width: 8%; }   /* UNIT */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(5) { width: 10%; }  /* GROSS */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(6) { width: 10%; }  /* YIELD */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(7) { width: 12%; }  /* COST (if shown) */
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(8) { width: 10%; }  /* ACTIONS */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(1) { width: 12%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(2) { width: 28%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(3) { width: 10%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(4) { width: 8%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(5) { width: 10%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(6) { width: 10%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(7) { width: 12%; }
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(8) { width: 10%; }
 
       .gc-recipe-pro .gc-excel-table thead {
         background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
@@ -1644,7 +1667,6 @@ export default function RecipeEditor() {
         background-color: rgba(193,123,74,0.02);
       }
 
-      /* عمود CODE */
       .gc-recipe-pro .gc-code-cell {
         font-family: 'Courier New', monospace;
         font-weight: 600;
@@ -1659,7 +1681,6 @@ export default function RecipeEditor() {
         text-overflow: ellipsis;
       }
 
-      /* عمود INGREDIENT */
       .gc-recipe-pro .gc-ingredient-cell {
         display: flex;
         flex-direction: column;
@@ -1688,7 +1709,6 @@ export default function RecipeEditor() {
         border: 1px solid rgba(193,123,74,0.1);
       }
 
-      /* أعمدة الأرقام */
       .gc-recipe-pro .gc-number-cell {
         font-family: 'Courier New', monospace;
         font-weight: 600;
@@ -1741,7 +1761,6 @@ export default function RecipeEditor() {
         pointer-events: none;
       }
 
-      /* عمود UNIT */
       .gc-recipe-pro .gc-unit-cell {
         font-weight: 600;
         color: var(--text-light);
@@ -1754,7 +1773,6 @@ export default function RecipeEditor() {
         min-width: 40px;
       }
 
-      /* عمود COST */
       .gc-recipe-pro .gc-cost-cell {
         font-family: 'Courier New', monospace;
         font-weight: 600;
@@ -1777,7 +1795,6 @@ export default function RecipeEditor() {
         opacity: 0.5;
       }
 
-      /* عمود ACTIONS */
       .gc-recipe-pro .gc-actions-cell {
         display: flex;
         gap: 6px;
@@ -1811,7 +1828,6 @@ export default function RecipeEditor() {
         color: var(--accent);
       }
 
-      /* صفوف المجموعات */
       .gc-recipe-pro .gc-group-row {
         background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03));
         font-weight: 700;
@@ -1860,7 +1876,6 @@ export default function RecipeEditor() {
         gap: 8px;
       }
 
-      /* تذييل الجدول */
       .gc-recipe-pro .gc-table-footer {
         padding: 16px 20px;
         background: linear-gradient(to right, #f8fafc, #ffffff);
@@ -1900,7 +1915,6 @@ export default function RecipeEditor() {
         border-color: var(--primary);
       }
 
-      /* تأثير التمرير */
       .gc-flash-row {
         animation: excel-flash 0.5s ease;
       }
@@ -1919,7 +1933,6 @@ export default function RecipeEditor() {
         50% { background: rgba(46,125,120,0.15); }
       }
 
-      /* باقي الأنماط */
       .gc-recipe-pro .gc-empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -2219,34 +2232,146 @@ export default function RecipeEditor() {
         gap: 16px;
       }
 
-      @media (max-width: 1200px) {
-        .gc-recipe-pro .gc-quantity-grid {
-          grid-template-columns: repeat(3, 1fr);
+      /* ===== أنماط التحسين الجديدة ===== */
+      .gc-meta-card {
+        background: white;
+        border: 1px solid rgba(46,125,120,0.1);
+        border-radius: 20px;
+        padding: 20px;
+        transition: all 0.2s ease;
+        height: 100%;
+      }
+
+      .gc-meta-card:hover {
+        border-color: rgba(46,125,120,0.25);
+        box-shadow: 0 12px 24px -12px rgba(46,125,120,0.2);
+      }
+
+      .gc-meta-card .gc-input,
+      .gc-meta-card .gc-select,
+      .gc-meta-card .gc-textarea {
+        border-radius: 12px;
+        border: 1.5px solid rgba(46,125,120,0.1);
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        transition: all 0.15s ease;
+      }
+
+      .gc-meta-card .gc-input:focus,
+      .gc-meta-card .gc-select:focus,
+      .gc-meta-card .gc-textarea:focus {
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+        outline: none;
+      }
+
+      .gc-meta-card .gc-input:disabled {
+        background: #f9fafb;
+        border-color: rgba(46,125,120,0.05);
+        color: #94a3b8;
+      }
+
+      .grid-cols-12 {
+        display: grid;
+        grid-template-columns: repeat(12, 1fr);
+        gap: 16px;
+      }
+
+      .col-span-12 { grid-column: span 12 / span 12; }
+      .col-span-6 { grid-column: span 6 / span 6; }
+      .col-span-4 { grid-column: span 4 / span 4; }
+      .col-span-3 { grid-column: span 3 / span 3; }
+
+      @media (max-width: 768px) {
+        .grid-cols-12 {
+          grid-template-columns: 1fr;
         }
-        .gc-recipe-pro .gc-note-field {
-          grid-column: span 3;
+        .col-span-6,
+        .col-span-12,
+        .col-span-4,
+        .col-span-3 {
+          grid-column: span 1 / span 1;
+        }
+        
+        .gc-meta-card {
+          padding: 16px;
+        }
+        
+        .gc-recipe-pro .gc-quantity-grid {
+          grid-template-columns: 1fr;
         }
       }
 
-      @media (max-width: 768px) {
-        .gc-recipe-pro .gc-add-line-search-section {
-          grid-template-columns: 1fr;
-        }
-        .gc-recipe-pro .gc-quantity-grid {
-          grid-template-columns: 1fr;
-        }
-        .gc-recipe-pro .gc-table-stats {
-          gap: 12px;
-        }
-        .gc-recipe-pro .gc-excel-table thead th {
-          font-size: 0.7rem;
-          padding: 10px 4px;
-        }
-        .gc-recipe-pro .gc-excel-table tbody td {
-          padding: 8px 4px;
-          font-size: 0.8rem;
-        }
+      .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
       }
+
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.5; }
+      }
+
+      .font-mono {
+        font-family: 'Courier New', monospace;
+      }
+
+      .text-primary { color: var(--primary); }
+      .bg-primary\/10 { background: rgba(46,125,120,0.1); }
+      .bg-primary\/20 { background: rgba(46,125,120,0.2); }
+      .border-primary\/20 { border-color: rgba(46,125,120,0.2); }
+      .from-primary { --tw-gradient-from: var(--primary); }
+      .to-primary-dark { --tw-gradient-to: var(--primary-dark); }
+
+      .flex { display: flex; }
+      .items-center { align-items: center; }
+      .justify-between { justify-content: space-between; }
+      .gap-1 { gap: 0.25rem; }
+      .gap-2 { gap: 0.5rem; }
+      .gap-3 { gap: 0.75rem; }
+      .gap-4 { gap: 1rem; }
+      .mb-2 { margin-bottom: 0.5rem; }
+      .mb-3 { margin-bottom: 0.75rem; }
+      .mb-4 { margin-bottom: 1rem; }
+      .mt-1 { margin-top: 0.25rem; }
+      .mt-2 { margin-top: 0.5rem; }
+      .p-2 { padding: 0.5rem; }
+      .p-3 { padding: 0.75rem; }
+      .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
+      .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
+      .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+      .rounded-lg { border-radius: 0.5rem; }
+      .rounded-xl { border-radius: 0.75rem; }
+      .rounded-full { border-radius: 9999px; }
+      .border { border-width: 1px; }
+      .border-2 { border-width: 2px; }
+      .border-dashed { border-style: dashed; }
+      .bg-amber-50 { background: #fffbeb; }
+      .border-amber-200 { border-color: #fde68a; }
+      .text-amber-600 { color: #d97706; }
+      .text-amber-700 { color: #b45309; }
+      .text-xs { font-size: 0.75rem; }
+      .text-sm { font-size: 0.875rem; }
+      .text-\[10px\] { font-size: 10px; }
+      .text-\[11px\] { font-size: 11px; }
+      .font-semibold { font-weight: 600; }
+      .font-bold { font-weight: 700; }
+      .font-medium { font-weight: 500; }
+      .tracking-wider { letter-spacing: 0.05em; }
+      .uppercase { text-transform: uppercase; }
+      .w-2 { width: 0.5rem; }
+      .w-4 { width: 1rem; }
+      .w-8 { width: 2rem; }
+      .h-2 { height: 0.5rem; }
+      .h-4 { height: 1rem; }
+      .h-8 { height: 2rem; }
+      .min-h-\[80px\] { min-height: 80px; }
+      .space-y-1 > * + * { margin-top: 0.25rem; }
+      .space-y-2 > * + * { margin-top: 0.5rem; }
+      .space-y-3 > * + * { margin-top: 0.75rem; }
+      .space-y-4 > * + * { margin-top: 1rem; }
+      .pl-4 { padding-left: 1rem; }
+      .pl-10 { padding-left: 2.5rem; }
+      .list-disc { list-style-type: disc; }
     `}</style>
   )
 
@@ -2400,8 +2525,15 @@ export default function RecipeEditor() {
 
         <div className="gc-card-body">
           {err && (
-            <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12 }}>
-              <div style={{ fontWeight: 900, color: 'var(--gc-danger)' }}>{err}</div>
+            <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12, background: '#fee2e2', border: '1px solid #fecaca' }}>
+              <div className="flex items-center gap-2 text-red-700">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span style={{ fontWeight: 900 }}>{err}</span>
+              </div>
             </div>
           )}
 
@@ -2409,12 +2541,34 @@ export default function RecipeEditor() {
           <div className="gc-section gc-card-soft">
             <div style={{ padding: 14 }} className="gc-highlight-head">
               <div>
-                <div className="gc-label" id="sec-print">PRINT (A4)</div>
+                <div className="gc-label flex items-center gap-2" id="sec-print">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <path d="M6 9V3h12v6" />
+                    <rect x="6" y="15" width="12" height="6" rx="2" />
+                  </svg>
+                  PRINT (A4)
+                </div>
                 <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
               </div>
               <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow}>Print now</button>
-                <button className="gc-btn gc-btn-primary" type="button" onClick={exportExcel}>Export Excel</button>
+                <button className="gc-btn gc-btn-secondary flex items-center gap-2" type="button" onClick={printNow}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
+                    <path d="M6 9V3h12v6" />
+                    <rect x="6" y="15" width="12" height="6" rx="2" />
+                  </svg>
+                  Print now
+                </button>
+                <button className="gc-btn gc-btn-primary flex items-center gap-2" type="button" onClick={exportExcel}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                    <polyline points="14 2 14 8 20 8" />
+                    <line x1="8" y1="16" x2="16" y2="16" />
+                    <line x1="8" y1="12" x2="16" y2="12" />
+                  </svg>
+                  Export Excel
+                </button>
                 <button
                   className="gc-btn gc-btn-ghost"
                   type="button"
@@ -2424,7 +2578,8 @@ export default function RecipeEditor() {
                   Open Print Page
                 </button>
 
-                <div className="gc-hint" style={{ marginLeft: 6 }}>
+                <div className={`gc-hint flex items-center gap-1 ${savePulse ? 'text-primary' : ''}`} style={{ marginLeft: 6 }}>
+                  <span className={`w-2 h-2 rounded-full ${savePulse ? 'bg-primary animate-pulse' : 'bg-green-500'}`} />
                   {savePulse ? 'Auto-saving…' : 'Auto-save ready.'}
                 </div>
               </div>
@@ -2435,10 +2590,24 @@ export default function RecipeEditor() {
           <div className="gc-section gc-section-alt gc-card-soft">
             <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
               <div>
-                <div className="gc-label" id="sec-cook">COOK MODE</div>
+                <div className="gc-label flex items-center gap-2" id="sec-cook">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
+                  </svg>
+                  COOK MODE
+                </div>
                 <div className="gc-hint" style={{ marginTop: 6 }}>Zero distraction cooking workflow.</div>
               </div>
-              <button className="gc-btn gc-btn-primary gc-btn-hero" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>Open Cook Mode</button>
+              <button className="gc-btn gc-btn-primary gc-btn-hero flex items-center gap-2" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
+                  <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
+                  <line x1="6" y1="1" x2="6" y2="4" />
+                  <line x1="10" y1="1" x2="10" y2="4" />
+                  <line x1="14" y1="1" x2="14" y2="4" />
+                </svg>
+                Open Cook Mode
+              </button>
             </div>
           </div>
 
@@ -2447,10 +2616,20 @@ export default function RecipeEditor() {
             <div className="gc-section gc-card-soft" style={{ padding: 14, borderRadius: 18 }}>
               <div className="gc-highlight-head">
                 <div>
-                  <div className="gc-label" id="sec-cost">KPI</div>
+                  <div className="gc-label flex items-center gap-2" id="sec-cost">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="6" x2="12" y2="12" />
+                      <line x1="12" y1="12" x2="16" y2="14" />
+                    </svg>
+                    KPI
+                  </div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>Live recipe performance overview.</div>
                 </div>
-                <div className="gc-hint" style={{ fontWeight: 800 }}>Currency: {cur}</div>
+                <div className="gc-hint flex items-center gap-1" style={{ fontWeight: 800 }}>
+                  <span>Currency:</span>
+                  <span className="px-2 py-1 bg-primary/10 rounded-full text-primary">{cur}</span>
+                </div>
               </div>
 
               <div className="gc-grid-4" style={{ marginTop: 12 }}>
@@ -2477,7 +2656,7 @@ export default function RecipeEditor() {
                   <div className="gc-warning-icon" aria-hidden="true">⚠</div>
                   <div>
                     <div className="gc-warning-title">PRICING WARNING</div>
-                    <div style={{ fontWeight: 900, color: 'var(--gc-warn)' }}>{totals.warnings[0]}</div>
+                    <div style={{ fontWeight: 900, color: 'var(--accent)' }}>{totals.warnings[0]}</div>
                   </div>
                 </div>
               ) : null}
@@ -2490,7 +2669,14 @@ export default function RecipeEditor() {
               <div style={{ padding: 14 }}>
                 <div className="gc-highlight-head">
                   <div>
-                    <div className="gc-label">PRICING / PORTION</div>
+                    <div className="gc-label flex items-center gap-2">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="6" x2="12" y2="12" />
+                        <line x1="12" y1="12" x2="16" y2="14" />
+                      </svg>
+                      PRICING / PORTION
+                    </div>
                     <div className="gc-hint" style={{ marginTop: 6 }}>Set commercial values for management view and targets.</div>
                   </div>
                   <div className="gc-hint" style={{ fontWeight: 800 }}>FC% = cost / portion ÷ selling price</div>
@@ -2519,7 +2705,12 @@ export default function RecipeEditor() {
           {/* Nutrition Section */}
           <div className="gc-section gc-section-alt gc-card-soft">
             <div style={{ padding: 12 }}>
-              <div className="gc-label" id="sec-nutrition">NUTRITION / PORTION</div>
+              <div className="gc-label flex items-center gap-2" id="sec-nutrition">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M12 2v20M12 12l8-8M12 12l-8-8M12 12l8 8M12 12l-8 8" />
+                </svg>
+                NUTRITION / PORTION
+              </div>
               <div className="gc-grid-4" style={{ marginTop: 10 }}>
                 <div className="gc-field">
                   <div className="gc-label">CAL</div>
@@ -2539,171 +2730,402 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-              <div className="gc-hint" style={{ marginTop: 10 }}>
+              <div className="gc-hint flex items-center gap-1" style={{ marginTop: 10 }}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="16" x2="12" y2="12" />
+                  <line x1="12" y1="8" x2="12.01" y2="8" />
+                </svg>
                 Manual fields (no auto nutrition calc).
               </div>
             </div>
           </div>
 
-          {/* Meta Section */}
+          {/* Meta Section - محسن */}
           <div id="sec-basics" className="gc-section gc-card">
             <div className="gc-card-head">
-              <div className="gc-label">META</div>
-              <div className="gc-hint" style={{ marginTop: 6 }}>
-                Labels are always above inputs. Auto-save is enabled.
+              <div className="flex items-center justify-between w-full">
+                <div>
+                  <div className="gc-label flex items-center gap-2">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="3" y1="9" x2="21" y2="9" />
+                      <line x1="3" y1="15" x2="21" y2="15" />
+                      <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                    BASIC INFORMATION
+                  </div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                    <span className="flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
+                      Auto-save enabled • Labels above inputs
+                    </span>
+                  </div>
+                </div>
+                
+                {/* Status Badge */}
+                <div className="flex items-center gap-3">
+                  <div className="px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20 text-xs font-semibold text-primary-dark flex items-center gap-1.5">
+                    <span className={`w-2 h-2 ${savePulse ? 'bg-primary animate-pulse' : 'bg-green-500'} rounded-full`} />
+                    {savePulse ? 'Saving...' : 'All changes saved'}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="gc-card-body">
-              <div className="gc-field-row">
-                <div className="gc-col-6">
-                  <div className="gc-field">
-                    <div className="gc-label">CODE</div>
-                    <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" disabled={!canEditCodes} />
-                    <div className="mt-2">
-                      <div className="gc-label">CODE CATEGORY</div>
-                      <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" disabled={!canEditCodes} />
-                      <div className="mt-1 text-[11px] text-neutral-500">Optional (max 6). If empty, DB uses Category.</div>
-                      {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
+              <div className="grid-cols-12">
+                {/* العمود الأيسر - CODE و CODE CATEGORY */}
+                <div className="col-span-6">
+                  <div className="gc-meta-card group">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M16 3h5v5M14 10l6-6M4 21h5v-5M10 14l-6 6" />
+                          <rect x="8" y="8" width="8" height="8" rx="2" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
+                          Recipe Code
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          Unique identifier for this recipe
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                          CODE <span className="text-neutral-400 font-normal">(auto-generated if empty)</span>
+                        </label>
+                        <div className="relative">
+                          <input 
+                            className={`gc-input pl-10 ${!canEditCodes ? "opacity-60 cursor-not-allowed bg-neutral-50" : ""}`} 
+                            value={code} 
+                            onChange={(e) => setCode(e.target.value.toUpperCase())} 
+                            placeholder="e.g. SAUCE-001"
+                            disabled={!canEditCodes} 
+                          />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                            #
+                          </div>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                          CODE CATEGORY <span className="text-neutral-400 font-normal">(max 6 chars)</span>
+                        </label>
+                        <div className="relative">
+                          <input 
+                            className={`gc-input pl-10 ${!canEditCodes ? "opacity-60 cursor-not-allowed bg-neutral-50" : ""}`} 
+                            value={codeCategory} 
+                            onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} 
+                            placeholder="e.g. SAUCE / SAND"
+                            maxLength={6}
+                            disabled={!canEditCodes} 
+                          />
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
+                            📂
+                          </div>
+                        </div>
+                      </div>
+
+                      {!canEditCodes && (
+                        <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                          <div className="flex items-start gap-2">
+                            <span className="text-amber-600 text-sm">🔒</span>
+                            <span className="text-[11px] text-amber-700">Code fields are editable by Kitchen Owners only</span>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
 
-                <div className="gc-col-3">
-                  <div className="gc-field">
-                    <div className="gc-label">NAME</div>
-                    <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
+                {/* العمود الأيمن - NAME و CATEGORY و PORTIONS */}
+                <div className="col-span-6">
+                  <div className="gc-meta-card group">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
+                          Recipe Identity
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          Basic identification details
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                          NAME <span className="text-red-500">*</span>
+                        </label>
+                        <input 
+                          className="gc-input" 
+                          value={name} 
+                          onChange={(e) => setName(e.target.value)} 
+                          placeholder="Enter recipe name..."
+                        />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                            CATEGORY
+                          </label>
+                          <select 
+                            className="gc-select"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                          >
+                            <option value="">Select category</option>
+                            <option value="Appetizer">Appetizer</option>
+                            <option value="Main Course">Main Course</option>
+                            <option value="Dessert">Dessert</option>
+                            <option value="Sauce">Sauce</option>
+                            <option value="Soup">Soup</option>
+                            <option value="Salad">Salad</option>
+                            <option value="Beverage">Beverage</option>
+                            <option value="Bakery">Bakery</option>
+                            <option value="Other">Other</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                            PORTIONS
+                          </label>
+                          <div className="relative">
+                            <input 
+                              className="gc-input pl-10" 
+                              value={portions} 
+                              onChange={(e) => setPortions(e.target.value)} 
+                              inputMode="numeric"
+                            />
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
+                              👥
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
                   </div>
                 </div>
 
-                <div className="gc-col-3">
-                  <div className="gc-field">
-                    <div className="gc-label">CATEGORY</div>
-                    <input className="gc-input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Salad" />
+                {/* DESCRIPTION - صف كامل */}
+                <div className="col-span-12">
+                  <div className="gc-meta-card">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
+                          Description
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          Brief overview of the recipe
+                        </div>
+                      </div>
+                    </div>
+                    <textarea 
+                      className="gc-textarea min-h-[80px]" 
+                      value={description} 
+                      onChange={(e) => setDescription(e.target.value)} 
+                      placeholder="Write a short description of this recipe..."
+                      maxLength={500}
+                    />
+                    <div className="mt-1 text-right">
+                      <span className="text-[10px] text-neutral-400">
+                        {description.length}/500 characters
+                      </span>
+                    </div>
                   </div>
                 </div>
 
-                <div className="gc-col-3">
-                  <div className="gc-field">
-                    <div className="gc-label">PORTIONS</div>
-                    <input className="gc-input" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="numeric" />
-                  </div>
-                </div>
-
-                <div className="gc-col-12">
-                  <div className="gc-field">
-                    <div className="gc-label">DESCRIPTION</div>
-                    <textarea className="gc-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description…" />
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 12 }} className="gc-card-soft">
-                <div style={{ padding: 12 }}>
-                  <div className="gc-label">PHOTO</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    Upload uses Supabase bucket: <b>{PHOTO_BUCKET}</b>
-                  </div>
-
-                  <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
-                      {recipe?.photo_url ? (
-                        <img src={recipe.photo_url} alt="Recipe" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      ) : (
-                        <div style={{ padding: 12 }} className="gc-hint">
-                          No photo.
+                {/* PHOTO بطاقة محسنة */}
+                <div className="col-span-12">
+                  <div className="gc-meta-card">
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                            <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                            <path d="M21 15l-5-5L7 21" />
+                          </svg>
+                        </div>
+                        <div>
+                          <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
+                            Recipe Photo
+                          </div>
+                          <div className="text-[11px] text-neutral-500">
+                            Upload from Supabase bucket: <span className="font-mono">{PHOTO_BUCKET}</span>
+                          </div>
+                        </div>
+                      </div>
+                      
+                      {uploading && (
+                        <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
+                          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                          <span className="text-xs font-medium text-primary">Uploading...</span>
                         </div>
                       )}
                     </div>
 
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={uploading}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (!f) return
-                          uploadRecipePhoto(f).catch(() => { })
-                          e.currentTarget.value = ''
-                        }}
-                      />
-                      <div className="gc-hint" style={{ marginTop: 8 }}>
-                        {uploading ? 'Uploading…' : 'PNG/JPG recommended.'}
+                    <div className="flex gap-6 flex-wrap items-start">
+                      <div className="relative w-[200px] h-[150px] rounded-xl overflow-hidden border-2 border-dashed border-primary/20 group hover:border-primary/40 transition-all">
+                        {recipe?.photo_url ? (
+                          <>
+                            <img 
+                              src={recipe.photo_url} 
+                              alt="Recipe" 
+                              className="w-full h-full object-cover"
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <button 
+                                className="px-3 py-1.5 bg-white rounded-lg text-xs font-medium"
+                                onClick={() => {
+                                  document.getElementById('photo-upload')?.click()
+                                }}
+                              >
+                                Change
+                              </button>
+                            </div>
+                          </>
+                        ) : (
+                          <label 
+                            htmlFor="photo-upload" 
+                            className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors"
+                          >
+                            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400">
+                              <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                              <path d="M21 15l-5-5L7 21" />
+                            </svg>
+                            <span className="mt-2 text-xs text-neutral-500">Click to upload</span>
+                            <span className="text-[10px] text-neutral-400">PNG/JPG recommended</span>
+                          </label>
+                        )}
+                      </div>
+
+                      <div className="flex-1 space-y-3">
+                        <input
+                          id="photo-upload"
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          disabled={uploading}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            if (!f) return
+                            uploadRecipePhoto(f).catch(() => {})
+                            e.currentTarget.value = ''
+                          }}
+                        />
+                        
+                        <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
+                          <div className="text-[11px] font-medium text-neutral-600 mb-2">Upload tips:</div>
+                          <ul className="text-[10px] text-neutral-500 space-y-1 list-disc pl-4">
+                            <li>Recommended size: 1200 x 800px</li>
+                            <li>Max file size: 5MB</li>
+                            <li>Supported formats: JPG, PNG, WebP</li>
+                          </ul>
+                        </div>
+
+                        {recipe?.photo_url && (
+                          <button 
+                            className="text-xs text-primary hover:text-primary-dark font-medium"
+                            onClick={() => {
+                              if (window.confirm('Remove recipe photo?')) {
+                                // يمكن إضافة منطق إزالة الصورة هنا
+                                setRecipe(prev => prev ? { ...prev, photo_url: null } : prev)
+                                showToast('Photo removed')
+                              }
+                            }}
+                          >
+                            Remove photo
+                          </button>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              <div style={{ marginTop: 12 }} className="gc-card-soft">
-                <div style={{ padding: 12 }}>
-                  <div className="gc-label">SUBRECIPE SETTINGS</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    If enabled, this recipe can be used inside other recipes.
-                  </div>
+                {/* Subrecipe Settings */}
+                <div className="col-span-12">
+                  <div className="gc-meta-card">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M4 7h16M4 12h16M4 17h10" />
+                        </svg>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
+                          Subrecipe Settings
+                        </div>
+                        <div className="text-[11px] text-neutral-500">
+                          If enabled, this recipe can be used inside other recipes
+                        </div>
+                      </div>
+                    </div>
 
-                  <div className="gc-field-row" style={{ marginTop: 10 }}>
-                    <div className="gc-col-4">
-                      <div className="gc-field">
-                        <div className="gc-label">IS SUBRECIPE</div>
-                        <select className="gc-select" value={isSubRecipe ? 'yes' : 'no'} onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                          IS SUBRECIPE
+                        </label>
+                        <select 
+                          className="gc-select" 
+                          value={isSubRecipe ? 'yes' : 'no'} 
+                          onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}
+                        >
                           <option value="no">No</option>
                           <option value="yes">Yes</option>
                         </select>
                       </div>
-                    </div>
 
-                    <div className="gc-col-4">
-                      <div className="gc-field">
-                        <div className="gc-label">YIELD QTY</div>
-                        <input className="gc-input" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} inputMode="decimal" />
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                          YIELD QTY
+                        </label>
+                        <input 
+                          className="gc-input" 
+                          value={yieldQty} 
+                          onChange={(e) => setYieldQty(e.target.value)} 
+                          inputMode="decimal" 
+                          placeholder="e.g. 500"
+                        />
                       </div>
-                    </div>
 
-                    <div className="gc-col-4">
-                      <div className="gc-field">
-                        <div className="gc-label">YIELD UNIT</div>
-                        <select className="gc-select" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)}>
-                          <option value="g">g</option>
-                          <option value="kg">kg</option>
-                          <option value="ml">ml</option>
-                          <option value="l">l</option>
-                          <option value="pcs">pcs</option>
+                      <div>
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                          YIELD UNIT
+                        </label>
+                        <select 
+                          className="gc-select" 
+                          value={yieldUnit} 
+                          onChange={(e) => setYieldUnit(e.target.value as any)}
+                        >
+                          <option value="g">g (gram)</option>
+                          <option value="kg">kg (kilogram)</option>
+                          <option value="ml">ml (milliliter)</option>
+                          <option value="l">l (liter)</option>
+                          <option value="pcs">pcs (pieces)</option>
                         </select>
                       </div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 12 }} className="gc-field-row">
-                <div className="gc-col-6">
-                  <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-                    <div className="gc-label">PRICING / PORTION</div>
-                    <div className="gc-field-row" style={{ marginTop: 10 }}>
-                      <div className="gc-col-4">
-                        <div className="gc-field">
-                          <div className="gc-label">CURRENCY</div>
-                          <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
-                        </div>
-                      </div>
-                      <div className="gc-col-4">
-                        <div className="gc-field">
-                          <div className="gc-label">SELLING PRICE</div>
-                          <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
-                        </div>
-                      </div>
-                      <div className="gc-col-4">
-                        <div className="gc-field">
-                          <div className="gc-label">TARGET FC%</div>
-                          <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="gc-hint" style={{ marginTop: 8 }}>
-                      FC% = cost/portion ÷ selling price.
                     </div>
                   </div>
                 </div>
@@ -2714,7 +3136,13 @@ export default function RecipeEditor() {
           {/* ADD LINE Section */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
-              <div className="gc-label">ADD LINE</div>
+              <div className="gc-label flex items-center gap-2">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                ADD LINE
+              </div>
               <div className="gc-hint" style={{ marginTop: 6 }}>
                 Smart rule: edit <b>Gross</b> → yield auto. edit <b>Yield%</b> → clears gross override.
               </div>
@@ -2911,10 +3339,20 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* LINES Section - تصميم مثل الأكسيل */}
+          {/* LINES Section */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
-              <div className="gc-label" id="sec-lines">LINES</div>
+              <div className="gc-label flex items-center gap-2" id="sec-lines">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="8" y1="6" x2="21" y2="6" />
+                  <line x1="8" y1="12" x2="21" y2="12" />
+                  <line x1="8" y1="18" x2="21" y2="18" />
+                  <line x1="3" y1="6" x2="3.01" y2="6" />
+                  <line x1="3" y1="12" x2="3.01" y2="12" />
+                  <line x1="3" y1="18" x2="3.01" y2="18" />
+                </svg>
+                LINES
+              </div>
               <div className="gc-hint" style={{ marginTop: 6 }}>
                 Edit Net/Gross/Yield safely. Groups have no cost.
               </div>
@@ -2938,17 +3376,16 @@ export default function RecipeEditor() {
                     </div>
                   </div>
 
-                  {/* جدول مثل الأكسيل */}
                   <table className="gc-excel-table">
                     <colgroup>
-                      <col /> {/* CODE */}
-                      <col /> {/* INGREDIENT */}
-                      <col /> {/* NET */}
-                      <col /> {/* UNIT */}
-                      <col /> {/* GROSS */}
-                      <col /> {/* YIELD */}
-                      {showCost ? <col /> : null} {/* COST */}
-                      <col /> {/* ACTIONS */}
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                      <col />
+                      {showCost ? <col /> : null}
+                      <col />
                     </colgroup>
                     <thead>
                       <tr>
@@ -3127,7 +3564,6 @@ export default function RecipeEditor() {
                     </tbody>
                   </table>
 
-                  {/* تذييل الجدول */}
                   {visibleLines.length > 0 && (
                     <div className="gc-table-footer">
                       <div className="gc-table-stats">
@@ -3160,7 +3596,16 @@ export default function RecipeEditor() {
           {/* Method Section */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
-              <div className="gc-label" id="sec-method">METHOD</div>
+              <div className="gc-label flex items-center gap-2" id="sec-method">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+                  <polyline points="14 2 14 8 20 8" />
+                  <line x1="16" y1="13" x2="8" y2="13" />
+                  <line x1="16" y1="17" x2="8" y2="17" />
+                  <polyline points="10 9 9 9 8 9" />
+                </svg>
+                METHOD
+              </div>
               <div className="gc-hint" style={{ marginTop: 6 }}>
                 Add steps. You can upload a photo per step.
               </div>
@@ -3171,7 +3616,11 @@ export default function RecipeEditor() {
                 <div className="gc-label">NEW STEP</div>
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
                   <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
+                  <button className="gc-btn gc-btn-primary flex items-center gap-2" type="button" onClick={addStep}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
                     Add step
                   </button>
                 </div>
@@ -3181,24 +3630,36 @@ export default function RecipeEditor() {
                 <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
                   {steps.map((s, idx) => (
                     <div key={idx} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-                      <div className="gc-label">STEP {idx + 1}</div>
-                      <textarea className="gc-textarea" value={s} onChange={(e) => updateStep(idx, e.target.value)} />
+                      <div className="gc-label flex items-center justify-between">
+                        <span>STEP {idx + 1}</span>
+                        <button className="text-xs text-red-600 hover:text-red-700" type="button" onClick={() => removeStep(idx)}>
+                          Remove
+                        </button>
+                      </div>
+                      <textarea className="gc-textarea" value={s} onChange={(e) => updateStep(idx, e.target.value)} rows={2} />
 
                       <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          disabled={stepUploading}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0]
-                            if (!f) return
-                            uploadStepPhoto(f, idx).catch(() => { })
-                            e.currentTarget.value = ''
-                          }}
-                        />
-                        <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeStep(idx)}>
-                          Remove step
-                        </button>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="file"
+                            accept="image/*"
+                            disabled={stepUploading}
+                            id={`step-photo-${idx}`}
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0]
+                              if (!f) return
+                              uploadStepPhoto(f, idx).catch(() => { })
+                              e.currentTarget.value = ''
+                            }}
+                          />
+                          <label 
+                            htmlFor={`step-photo-${idx}`}
+                            className="px-3 py-1.5 bg-primary/10 text-primary rounded-lg text-xs font-medium cursor-pointer hover:bg-primary/20 transition-colors"
+                          >
+                            {stepUploading ? 'Uploading...' : 'Upload photo'}
+                          </label>
+                        </div>
                       </div>
 
                       {stepPhotos[idx] ? (
@@ -3210,7 +3671,12 @@ export default function RecipeEditor() {
                   ))}
                 </div>
               ) : (
-                <div className="gc-hint" style={{ marginTop: 10 }}>
+                <div className="gc-hint flex items-center gap-2" style={{ marginTop: 10 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
                   No steps yet.
                 </div>
               )}
@@ -3218,7 +3684,7 @@ export default function RecipeEditor() {
               <div style={{ marginTop: 12 }} className="gc-card-soft">
                 <div style={{ padding: 12 }}>
                   <div className="gc-label">LEGACY METHOD (OPTIONAL)</div>
-                  <textarea className="gc-textarea" value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="Optional long method text…" />
+                  <textarea className="gc-textarea" value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="Optional long method text…" rows={3} />
                 </div>
               </div>
             </div>
@@ -3229,7 +3695,13 @@ export default function RecipeEditor() {
             <div style={{ marginTop: 14 }} className="gc-card">
               <div className="gc-card-head" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
                 <div>
-                  <div className="gc-label">COST HISTORY</div>
+                  <div className="gc-label flex items-center gap-2">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12 6 12 12 16 14" />
+                    </svg>
+                    COST HISTORY
+                  </div>
                   <div className="gc-hint" style={{ marginTop: 6 }}>
                     Snapshots stored locally per recipe.
                   </div>
@@ -3239,10 +3711,19 @@ export default function RecipeEditor() {
                 </div>
 
                 <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={addSnapshot}>
+                  <button className="gc-btn gc-btn-primary flex items-center gap-2" type="button" onClick={addSnapshot}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="16" />
+                      <line x1="8" y1="12" x2="16" y2="12" />
+                    </svg>
                     Add snapshot
                   </button>
-                  <button className="gc-btn gc-btn-danger" type="button" onClick={clearSnapshots}>
+                  <button className="gc-btn gc-btn-danger flex items-center gap-2" type="button" onClick={clearSnapshots}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <polyline points="3 6 5 6 21 6" />
+                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                    </svg>
                     Clear
                   </button>
                 </div>
@@ -3250,7 +3731,14 @@ export default function RecipeEditor() {
 
               <div className="gc-card-body">
                 {!costPoints.length ? (
-                  <div className="gc-hint">No snapshots yet.</div>
+                  <div className="gc-hint flex items-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <line x1="12" y1="8" x2="12" y2="12" />
+                      <line x1="12" y1="16" x2="12.01" y2="16" />
+                    </svg>
+                    No snapshots yet.
+                  </div>
                 ) : (
                   <div style={{ display: 'grid', gap: 10 }}>
                     {costPoints.map((p: any) => (
