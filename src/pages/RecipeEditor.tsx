@@ -3186,10 +3186,11 @@ export default function RecipeEditor() {
                               value={yieldQty}
                               onChange={(e) => setYieldQty(e.target.value)}
                               placeholder="0.0"
-                              className="w-full px-4 py-3 text-right text-lg font-mono border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                              className="w-full pr-16 pl-4 py-3 text-left text-lg font-mono leading-none border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                              style={{ minHeight: '48px' }}
                               disabled={!isSubRecipe}
                             />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md">
+                            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md min-w-[36px] text-center leading-none">
                               {yieldUnit}
                             </div>
                           </div>
