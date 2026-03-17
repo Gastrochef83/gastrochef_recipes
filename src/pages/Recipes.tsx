@@ -20,7 +20,6 @@ import {
   ChevronUp,
   Filter,
   X,
-  Check,
   AlertCircle,
   Loader2,
   Sparkles,
@@ -29,7 +28,6 @@ import {
   DollarSign,
   TrendingUp,
   PieChart,
-  Settings,
   Download,
   Upload,
   Copy,
@@ -45,8 +43,7 @@ import {
   Info,
   AlertTriangle,
   CheckCircle,
-  XCircle,
-  Star
+  XCircle
 } from 'lucide-react'
 
 // ==================== Types ====================
@@ -90,7 +87,6 @@ type RecipeRow = {
   kitchen_id: string
   name: string
   category: string | null
-  subcategory?: string | null
   cuisine?: string | null
   portions: number
   yield_qty: number | null
@@ -148,7 +144,7 @@ type CostPoint = {
 
 type Density = 'comfortable' | 'dense' | 'compact'
 type ViewMode = 'grid' | 'list' | 'table'
-type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date' | 'popularity'
+type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date'
 type SortOrder = 'asc' | 'desc'
 type FilterType = {
   categories: string[]
@@ -364,23 +360,12 @@ function getDifficultyColor(difficulty: string): string {
   }
 }
 
-function getSeasonIcon(season: string): string {
-  switch (season) {
-    case 'spring': return '🌸'
-    case 'summer': return '☀️'
-    case 'autumn': return '🍂'
-    case 'winter': return '❄️'
-    default: return '🍽'
-  }
-}
-
 // ==================== Cache Management ====================
 
 const CACHE_KEYS = {
   INGREDIENTS_REV: 'gc:ingredients:rev',
   COST_CACHE: 'gc:cost:cache',
   RECIPES_CACHE: 'gc:recipes:cache',
-  USER_PREFERENCES: 'gc:user:prefs',
   LAST_SYNC: 'gc:last:sync'
 }
 
@@ -433,7 +418,6 @@ class CacheManager {
 function RecipesStyles() {
   return (
     <style>{`
-      /* ===== CSS Variables ===== */
       :root {
         --gc-primary: #2C3E50;
         --gc-primary-light: #34495E;
@@ -509,7 +493,6 @@ function RecipesStyles() {
         }
       }
 
-      /* ===== Base Styles ===== */
       .recipes-page {
         min-height: 100vh;
         background: var(--gc-background);
@@ -523,7 +506,6 @@ function RecipesStyles() {
         padding: var(--gc-space-lg);
       }
 
-      /* ===== Header ===== */
       .recipes-header {
         display: flex;
         align-items: center;
@@ -574,7 +556,6 @@ function RecipesStyles() {
         flex-wrap: wrap;
       }
 
-      /* ===== Stats Cards ===== */
       .recipes-stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -656,7 +637,6 @@ function RecipesStyles() {
         color: var(--gc-danger);
       }
 
-      /* ===== Toolbar ===== */
       .recipes-toolbar {
         background: var(--gc-surface);
         border-radius: var(--gc-radius-xl);
@@ -738,76 +718,6 @@ function RecipesStyles() {
         color: var(--gc-text);
       }
 
-      /* ===== Filter Bar ===== */
-      .recipes-filters {
-        background: var(--gc-surface);
-        border-radius: var(--gc-radius-lg);
-        padding: var(--gc-space-md);
-        border: 1px solid var(--gc-border);
-        margin-bottom: var(--gc-space-lg);
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--gc-space-sm);
-        align-items: center;
-      }
-
-      .filter-chip {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--gc-space-xs);
-        padding: var(--gc-space-xs) var(--gc-space-sm);
-        background: var(--gc-background);
-        border: 1px solid var(--gc-border);
-        border-radius: var(--gc-radius-full);
-        font-size: var(--gc-font-xs);
-        font-weight: 600;
-        color: var(--gc-text);
-        cursor: pointer;
-        transition: all var(--gc-transition-fast);
-      }
-
-      .filter-chip:hover {
-        background: var(--gc-surface-hover);
-        border-color: var(--gc-gray);
-      }
-
-      .filter-chip--active {
-        background: var(--gc-secondary);
-        border-color: var(--gc-secondary);
-        color: white;
-      }
-
-      .filter-chip--active .filter-chip-icon {
-        color: white;
-      }
-
-      .filter-chip-icon {
-        width: 14px;
-        height: 14px;
-        color: var(--gc-text-light);
-      }
-
-      .filter-group {
-        display: flex;
-        align-items: center;
-        gap: var(--gc-space-xs);
-        padding: 0 var(--gc-space-sm);
-        border-right: 1px solid var(--gc-border);
-      }
-
-      .filter-group:last-child {
-        border-right: none;
-      }
-
-      .filter-label {
-        font-size: var(--gc-font-xs);
-        font-weight: 600;
-        color: var(--gc-text-light);
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-      }
-
-      /* ===== View Controls ===== */
       .recipes-view-controls {
         display: flex;
         align-items: center;
@@ -844,7 +754,6 @@ function RecipesStyles() {
         box-shadow: 0 2px 4px var(--gc-shadow);
       }
 
-      /* ===== Density Controls ===== */
       .density-controls {
         display: flex;
         align-items: center;
@@ -878,7 +787,6 @@ function RecipesStyles() {
         box-shadow: 0 2px 4px var(--gc-shadow);
       }
 
-      /* ===== Recipe Cards ===== */
       .recipes-grid {
         display: grid;
         gap: var(--gc-space-md);
@@ -974,11 +882,6 @@ function RecipesStyles() {
       .recipe-card--archived {
         opacity: 0.7;
         filter: grayscale(0.5);
-      }
-
-      .recipe-card--archived:hover {
-        opacity: 0.9;
-        filter: grayscale(0.3);
       }
 
       .recipe-card__badge {
@@ -1283,12 +1186,6 @@ function RecipesStyles() {
         color: white;
       }
 
-      .action-btn--success:hover {
-        background: var(--gc-success);
-        border-color: var(--gc-success);
-        color: white;
-      }
-
       .recipe-list-item {
         background: var(--gc-surface);
         border-radius: var(--gc-radius-lg);
@@ -1529,16 +1426,6 @@ function RecipesStyles() {
           justify-content: space-between;
         }
 
-        .recipes-filters {
-          overflow-x: auto;
-          flex-wrap: nowrap;
-          padding: var(--gc-space-sm);
-        }
-
-        .filter-group {
-          flex-shrink: 0;
-        }
-
         .recipes-grid {
           grid-template-columns: 1fr !important;
         }
@@ -1606,24 +1493,6 @@ function RecipesStyles() {
         .recipes-grid {
           grid-template-columns: repeat(2, 1fr) !important;
         }
-      }
-
-      .fade-enter {
-        opacity: 0;
-      }
-
-      .fade-enter-active {
-        opacity: 1;
-        transition: opacity var(--gc-transition-base);
-      }
-
-      .fade-exit {
-        opacity: 1;
-      }
-
-      .fade-exit-active {
-        opacity: 0;
-        transition: opacity var(--gc-transition-base);
       }
 
       ::-webkit-scrollbar {
@@ -1821,8 +1690,9 @@ export default function Recipes() {
         }
       }
 
+      // ✅ الأعمدة المؤكدة فقط - تم إزالة subcategory و allergens
       const selectRecipes = `
-        id,code,kitchen_id,name,category,subcategory,cuisine,portions,
+        id,code,kitchen_id,name,category,cuisine,portions,
         yield_qty,yield_unit,is_subrecipe,is_archived,is_featured,is_favorite,
         photo_url,description,preparation_time,cooking_time,difficulty,tags,
         calories,protein_g,carbs_g,fat_g,fiber_g,sugar_g,sodium_mg,
@@ -2370,7 +2240,6 @@ export default function Recipes() {
         {sortedRecipes.map((r) => {
           const c = costCache[r.id]
           const cur = (r.currency || 'USD').toUpperCase()
-          const hasWarning = Boolean(c?.warnings?.length)
           const portions = toNum(r.portions, 1)
           const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
 
@@ -2636,9 +2505,9 @@ export default function Recipes() {
                   <div className="recipe-list-item__title">
                     <span>{r.name}</span>
                     <span className="recipe-list-item__category">{r.category}</span>
-                    {r.is_featured && <Sparkles size={14} className="text-warning" />}
-                    {r.is_favorite && <Heart size={14} className="text-danger" fill="currentColor" />}
-                    {r.is_archived && <Archive size={14} className="text-light" />}
+                    {r.is_featured && <Sparkles size={14} style={{ color: 'var(--gc-warning)' }} />}
+                    {r.is_favorite && <Heart size={14} style={{ color: 'var(--gc-danger)' }} fill="currentColor" />}
+                    {r.is_archived && <Archive size={14} style={{ color: 'var(--gc-text-light)' }} />}
                   </div>
                   
                   <div className="recipe-list-item__meta">
@@ -2712,7 +2581,7 @@ export default function Recipes() {
             <tr key={r.id}>
               <td>
                 <strong>{r.name}</strong>
-                {r.is_featured && <Sparkles size={12} className="text-warning" style={{ marginLeft: 4 }} />}
+                {r.is_featured && <Sparkles size={12} style={{ color: 'var(--gc-warning)', marginLeft: 4 }} />}
               </td>
               <td>{r.category || '—'}</td>
               <td>{r.cuisine || '—'}</td>
@@ -2996,53 +2865,6 @@ export default function Recipes() {
               </button>
             </div>
           </div>
-
-          {showFilters && (
-            <motion.div
-              className="recipes-filters"
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-            >
-              <div className="filter-group">
-                <span className="filter-label">Categories</span>
-              </div>
-              
-              <div className="filter-group">
-                <span className="filter-label">Cuisine</span>
-              </div>
-              
-              <div className="filter-group">
-                <span className="filter-label">Dietary</span>
-              </div>
-              
-              <div className="filter-group">
-                <span className="filter-label">Difficulty</span>
-              </div>
-              
-              <Button
-                variant="ghost"
-                size="small"
-                onClick={() => setFilters({
-                  categories: [],
-                  cuisines: [],
-                  dietary: [],
-                  priceRange: [0, 1000],
-                  costRange: [0, 1000],
-                  marginRange: [0, 100],
-                  preparationTime: [0, 240],
-                  difficulty: [],
-                  tags: [],
-                  isFeatured: null,
-                  isFavorite: null,
-                  isSubrecipe: null,
-                  season: []
-                })}
-              >
-                Clear all
-              </Button>
-            </motion.div>
-          )}
 
           {err && (
             <div className="recipes-error">
