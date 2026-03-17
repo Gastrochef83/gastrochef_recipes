@@ -32,7 +32,6 @@ type Ingredient = {
   net_unit_cost?: number | null
   is_active?: boolean
   category?: string | null
-  allergen_info?: string[] | null
 }
 
 type RecipeRow = {
@@ -41,7 +40,6 @@ type RecipeRow = {
   kitchen_id: string
   name: string
   category: string | null
-  subcategory?: string | null
   cuisine?: string | null
   portions: number
   yield_qty: number | null
@@ -81,12 +79,11 @@ type CostPoint = {
 
 type Density = 'comfortable' | 'dense' | 'compact'
 type ViewMode = 'grid' | 'list' | 'table'
-type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date' | 'popularity'
+type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date'
 type SortOrder = 'asc' | 'desc'
 type FilterType = {
   categories: string[]
   cuisines: string[]
-  dietary: string[]
   difficulty: string[]
   isFeatured: boolean | null
   isFavorite: boolean | null
@@ -149,15 +146,6 @@ function getDifficultyColor(difficulty: string): string {
   }
 }
 
-function getDifficultyIcon(difficulty: string): string {
-  switch (difficulty) {
-    case 'easy': return '😊'
-    case 'medium': return '😐'
-    case 'hard': return '😅'
-    default: return '❓'
-  }
-}
-
 // ==================== Cache Management ====================
 const CACHE_KEYS = {
   INGREDIENTS_REV: 'gc:ingredients:rev',
@@ -167,9 +155,9 @@ const CACHE_KEYS = {
 }
 
 const CACHE_TTL = {
-  COST: 10 * 60 * 1000, // 10 minutes
-  RECIPES: 5 * 60 * 1000, // 5 minutes
-  INGREDIENTS: 15 * 60 * 1000 // 15 minutes
+  COST: 10 * 60 * 1000,
+  RECIPES: 5 * 60 * 1000,
+  INGREDIENTS: 15 * 60 * 1000
 }
 
 class CacheManager {
@@ -240,33 +228,6 @@ function useDebounce<T>(value: T, delay: number): T {
   }, [value, delay])
 
   return debouncedValue
-}
-
-function useRecipeCost(recipeId: string, lines: Line[], ingredients: Map<string, Ingredient>) {
-  return useMemo(() => {
-    let totalCost = 0
-    const warnings: string[] = []
-
-    for (const l of lines) {
-      if (l.line_type === 'group' || l.line_type === 'subrecipe') continue
-
-      const ing = l.ingredient_id ? ingredients.get(l.ingredient_id) : null
-      if (!ing) continue
-
-      const unitCost = toNum(ing.net_unit_cost, 0)
-      if (!Number.isFinite(unitCost) || unitCost <= 0) {
-        warnings.push(`Ingredient ${ing.name || 'unknown'} without price`)
-      }
-
-      const netQty = Math.max(0, toNum(l.qty, 0))
-      const packUnit = ing.pack_unit || l.unit
-      const qtyInPack = convertQtyToPackUnit(netQty, l.unit, packUnit)
-      const lineCost = qtyInPack * unitCost
-      totalCost += Number.isFinite(lineCost) ? lineCost : 0
-    }
-
-    return { cost: totalCost, warnings }
-  }, [recipeId, lines, ingredients])
 }
 
 // ==================== Styles Component ====================
@@ -346,7 +307,6 @@ function RecipesStyles() {
         }
       }
 
-      /* ===== Base Layout ===== */
       .recipes-pro {
         min-height: 100vh;
         background: var(--bg-secondary);
@@ -360,7 +320,6 @@ function RecipesStyles() {
         margin: 0 auto;
       }
 
-      /* ===== Header ===== */
       .recipes-pro__header {
         display: flex;
         align-items: center;
@@ -412,7 +371,6 @@ function RecipesStyles() {
         flex-wrap: wrap;
       }
 
-      /* ===== Stats Grid ===== */
       .recipes-pro__stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -503,7 +461,6 @@ function RecipesStyles() {
         color: var(--danger-500);
       }
 
-      /* ===== Toolbar ===== */
       .recipes-pro__toolbar {
         background: var(--bg-primary);
         border-radius: var(--radius-2xl);
@@ -604,10 +561,6 @@ function RecipesStyles() {
         color: white;
       }
 
-      .recipes-pro__filters-btn--active:hover {
-        background: var(--primary-600);
-      }
-
       .recipes-pro__view-controls {
         display: flex;
         align-items: center;
@@ -665,7 +618,6 @@ function RecipesStyles() {
         color: var(--secondary-700);
       }
 
-      /* ===== Filter Bar ===== */
       .recipes-pro__filters {
         background: var(--bg-primary);
         border-radius: var(--radius-xl);
@@ -736,11 +688,6 @@ function RecipesStyles() {
         color: white;
       }
 
-      .filter-chip--active:hover {
-        background: var(--primary-600);
-      }
-
-      /* ===== Sort Bar ===== */
       .recipes-pro__sort {
         display: flex;
         align-items: center;
@@ -795,7 +742,6 @@ function RecipesStyles() {
         color: var(--primary-600);
       }
 
-      /* ===== Results Info ===== */
       .recipes-pro__results-info {
         display: flex;
         align-items: center;
@@ -837,7 +783,6 @@ function RecipesStyles() {
         color: white;
       }
 
-      /* ===== Recipe Grid ===== */
       .recipes-pro__grid {
         display: grid;
         gap: 1rem;
@@ -856,7 +801,6 @@ function RecipesStyles() {
         grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       }
 
-      /* ===== Recipe Card ===== */
       .recipe-card {
         background: var(--bg-primary);
         border-radius: var(--radius-2xl);
@@ -1163,12 +1107,6 @@ function RecipesStyles() {
         color: white;
       }
 
-      .action-btn--success:hover {
-        background: var(--success-500);
-        border-color: var(--success-500);
-        color: white;
-      }
-
       .select-btn {
         display: inline-flex;
         align-items: center;
@@ -1197,7 +1135,6 @@ function RecipesStyles() {
         cursor: pointer;
       }
 
-      /* ===== List View ===== */
       .recipes-pro__list {
         display: flex;
         flex-direction: column;
@@ -1277,7 +1214,6 @@ function RecipesStyles() {
         color: var(--primary-600);
       }
 
-      /* ===== Table View ===== */
       .recipes-pro__table {
         width: 100%;
         border-collapse: collapse;
@@ -1321,7 +1257,6 @@ function RecipesStyles() {
         gap: 0.25rem;
       }
 
-      /* ===== Loading State ===== */
       .recipes-pro__loading {
         display: flex;
         align-items: center;
@@ -1346,7 +1281,6 @@ function RecipesStyles() {
         to { transform: rotate(360deg); }
       }
 
-      /* ===== Error State ===== */
       .recipes-pro__error {
         background: var(--danger-50);
         border: 2px solid var(--danger-500);
@@ -1384,7 +1318,6 @@ function RecipesStyles() {
         background: var(--danger-100);
       }
 
-      /* ===== Toast ===== */
       .toast-container {
         position: fixed;
         bottom: 1.5rem;
@@ -1444,7 +1377,6 @@ function RecipesStyles() {
         color: var(--text-primary);
       }
 
-      /* ===== Responsive ===== */
       @media (max-width: 1280px) {
         .recipes-pro__grid--comfortable {
           grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -1543,10 +1475,6 @@ function RecipesStyles() {
           align-items: flex-start;
           gap: 0.25rem;
         }
-
-        .toast {
-          min-width: 250px;
-        }
       }
 
       @media (max-width: 480px) {
@@ -1569,13 +1497,7 @@ function RecipesStyles() {
         }
       }
 
-      /* ===== Print Styles ===== */
       @media print {
-        .recipes-pro {
-          background: white;
-          padding: 0;
-        }
-
         .recipes-pro__header-actions,
         .recipes-pro__toolbar,
         .recipes-pro__filters,
@@ -1596,62 +1518,9 @@ function RecipesStyles() {
 
         .recipes-pro__grid {
           grid-template-columns: repeat(2, 1fr) !important;
-          gap: 0.5in;
         }
       }
 
-      /* ===== Utilities ===== */
-      .text-primary { color: var(--primary-600); }
-      .text-secondary { color: var(--secondary-500); }
-      .text-success { color: var(--success-500); }
-      .text-danger { color: var(--danger-500); }
-      .text-warning { color: var(--warning-500); }
-
-      .bg-primary { background: var(--primary-50); }
-      .bg-secondary { background: var(--secondary-50); }
-      .bg-success { background: var(--success-50); }
-      .bg-danger { background: var(--danger-50); }
-      .bg-warning { background: var(--warning-50); }
-
-      .font-bold { font-weight: 700; }
-      .font-extrabold { font-weight: 800; }
-      .font-black { font-weight: 900; }
-
-      .mt-1 { margin-top: 0.25rem; }
-      .mt-2 { margin-top: 0.5rem; }
-      .mt-3 { margin-top: 0.75rem; }
-      .mt-4 { margin-top: 1rem; }
-
-      .mb-1 { margin-bottom: 0.25rem; }
-      .mb-2 { margin-bottom: 0.5rem; }
-      .mb-3 { margin-bottom: 0.75rem; }
-      .mb-4 { margin-bottom: 1rem; }
-
-      .p-1 { padding: 0.25rem; }
-      .p-2 { padding: 0.5rem; }
-      .p-3 { padding: 0.75rem; }
-      .p-4 { padding: 1rem; }
-
-      .flex { display: flex; }
-      .items-center { align-items: center; }
-      .justify-between { justify-content: space-between; }
-      .justify-center { justify-content: center; }
-      .gap-1 { gap: 0.25rem; }
-      .gap-2 { gap: 0.5rem; }
-      .gap-3 { gap: 0.75rem; }
-      .gap-4 { gap: 1rem; }
-
-      .w-full { width: 100%; }
-      .h-full { height: 100%; }
-
-      .cursor-pointer { cursor: pointer; }
-      .select-none { user-select: none; }
-
-      .transition-all { transition: all 0.2s ease; }
-      .hover-scale:hover { transform: scale(1.02); }
-      .hover-lift:hover { transform: translateY(-2px); }
-
-      /* ===== Scrollbar ===== */
       ::-webkit-scrollbar {
         width: 0.5rem;
         height: 0.5rem;
@@ -1690,7 +1559,6 @@ export default function Recipes() {
     }
   }, [])
 
-  // State
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -1704,7 +1572,6 @@ export default function Recipes() {
   const loadingLinesRef = useRef<Set<string>>(new Set())
   const [costCache, setCostCache] = useState<Record<string, CostPoint>>(() => CacheManager.get(CACHE_KEYS.COST_CACHE, CACHE_TTL.COST) || {})
 
-  // Preferences
   const [density, setDensity] = useLocalStorage<Density>('gc:density', 'comfortable')
   const [viewMode, setViewMode] = useLocalStorage<ViewMode>('gc:view:mode', 'grid')
   const [sortField, setSortField] = useLocalStorage<SortField>('gc:sort:field', 'name')
@@ -1712,17 +1579,14 @@ export default function Recipes() {
   const [filters, setFilters] = useLocalStorage<FilterType>('gc:filters', {
     categories: [],
     cuisines: [],
-    dietary: [],
     difficulty: [],
     isFeatured: null,
     isFavorite: null,
     isSubrecipe: null
   })
 
-  // Debounced search
   const debouncedQ = useDebounce(q, 300)
 
-  // Memoized values
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
     for (const i of ingredients) m.set(i.id, i)
@@ -1732,7 +1596,6 @@ export default function Recipes() {
   const filteredRecipes = useMemo(() => {
     let list = recipes
 
-    // Search filter
     if (debouncedQ) {
       const query = debouncedQ.toLowerCase()
       list = list.filter(r => 
@@ -1743,22 +1606,22 @@ export default function Recipes() {
       )
     }
 
-    // Archive filter
     if (!showArchived) {
       list = list.filter(r => !r.is_archived)
     }
 
-    // Category filter
     if (filters.categories.length > 0) {
       list = list.filter(r => r.category && filters.categories.includes(r.category))
     }
 
-    // Cuisine filter
     if (filters.cuisines.length > 0) {
       list = list.filter(r => r.cuisine && filters.cuisines.includes(r.cuisine))
     }
 
-    // Featured/Favorite filters
+    if (filters.difficulty.length > 0) {
+      list = list.filter(r => r.difficulty && filters.difficulty.includes(r.difficulty))
+    }
+
     if (filters.isFeatured !== null) {
       list = list.filter(r => r.is_featured === filters.isFeatured)
     }
@@ -1838,7 +1701,6 @@ export default function Recipes() {
     }
   }, [recipes, costCache])
 
-  // Load data
   const loadAll = useCallback(async (sync = false) => {
     if (!mountedRef.current) return
     
@@ -1848,7 +1710,6 @@ export default function Recipes() {
     setErr(null)
 
     try {
-      // Try cache first
       if (!sync) {
         const cachedRecipes = CacheManager.get<RecipeRow[]>(CACHE_KEYS.RECIPES_CACHE, CACHE_TTL.RECIPES)
         const cachedIngredients = CacheManager.get<Ingredient[]>(CACHE_KEYS.INGREDIENTS_REV, CACHE_TTL.INGREDIENTS)
@@ -1861,7 +1722,7 @@ export default function Recipes() {
         }
       }
 
-      // الأعمدة المؤكدة فقط
+      // ✅ الأعمدة المؤكدة فقط - تم إزالة allergen_info
       const selectRecipes = `
         id,
         code,
@@ -1908,9 +1769,10 @@ export default function Recipes() {
         CacheManager.set(CACHE_KEYS.RECIPES_CACHE, recipesData)
       }
 
+      // ✅ تم إزالة allergen_info من استعلام ingredients
       const { data: i, error: iErr } = await supabase
         .from('ingredients')
-        .select('id,name,pack_unit,net_unit_cost,is_active,category,allergen_info')
+        .select('id,name,pack_unit,net_unit_cost,is_active,category')
         .order('name', { ascending: true })
 
       if (iErr) throw iErr
@@ -1924,7 +1786,7 @@ export default function Recipes() {
     } catch (e: any) {
       if (mountedRef.current) {
         setErr(e?.message || 'Failed to load recipes')
-        showToast('error', e?.message || 'Failed to load recipes')
+        setToast({ type: 'error', message: e?.message || 'Failed to load recipes' })
       }
     } finally {
       if (mountedRef.current) {
@@ -1937,7 +1799,6 @@ export default function Recipes() {
     loadAll().catch(() => {})
   }, [loadAll])
 
-  // Load recipe lines
   const ensureRecipeLinesLoaded = useCallback(async (ids: string[]) => {
     const need = ids.filter(
       id => !recipeLinesCache[id] && !loadingLinesRef.current.has(id)
@@ -1970,7 +1831,6 @@ export default function Recipes() {
     }
   }, [recipeLinesCache])
 
-  // Calculate costs
   useEffect(() => {
     if (loading) return
     if (!sortedRecipes.length) return
@@ -2039,7 +1899,6 @@ export default function Recipes() {
     }
   }, [loading, sortedRecipes, recipeLinesCache, ingById, costCache, ensureRecipeLinesLoaded])
 
-  // Actions
   const showToast = (type: 'success' | 'error' | 'info', message: string) => {
     setToast({ type, message })
     setTimeout(() => setToast(null), 3000)
@@ -2273,7 +2132,6 @@ export default function Recipes() {
     }
   }, [])
 
-  // Render functions
   const renderGridView = () => (
     <div className={`recipes-pro__grid recipes-pro__grid--${density}`}>
       <AnimatePresence>
@@ -2693,7 +2551,6 @@ export default function Recipes() {
 
       <div className="recipes-pro">
         <div className="recipes-pro__container">
-          {/* Header */}
           <div className="recipes-pro__header">
             <div className="recipes-pro__header-left">
               <div className="recipes-pro__header-icon">
@@ -2750,7 +2607,6 @@ export default function Recipes() {
             </div>
           </div>
 
-          {/* Stats Cards */}
           <div className="recipes-pro__stats">
             <div className="stat-card">
               <div className="stat-card__header">
@@ -2821,7 +2677,6 @@ export default function Recipes() {
             </div>
           </div>
 
-          {/* Toolbar */}
           <div className="recipes-pro__toolbar">
             <div className="recipes-pro__search">
               <svg className="recipes-pro__search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -2915,7 +2770,6 @@ export default function Recipes() {
             </button>
           </div>
 
-          {/* Filters */}
           {showFilters && (
             <motion.div
               className="recipes-pro__filters"
@@ -2949,7 +2803,6 @@ export default function Recipes() {
               <Button variant="ghost" size="small" onClick={() => setFilters({
                 categories: [],
                 cuisines: [],
-                dietary: [],
                 difficulty: [],
                 isFeatured: null,
                 isFavorite: null,
@@ -2960,7 +2813,6 @@ export default function Recipes() {
             </motion.div>
           )}
 
-          {/* Sort Bar */}
           <div className="recipes-pro__sort">
             <span className="sort-label">Sort by:</span>
             <select
@@ -2993,7 +2845,6 @@ export default function Recipes() {
             </button>
           </div>
 
-          {/* Results Info */}
           <div className="recipes-pro__results-info">
             <span className="recipes-pro__results-count">
               Showing {sortedRecipes.length} of {recipes.length} recipes
@@ -3009,7 +2860,6 @@ export default function Recipes() {
             )}
           </div>
 
-          {/* Error */}
           {err && (
             <div className="recipes-pro__error">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3027,7 +2877,6 @@ export default function Recipes() {
             </div>
           )}
 
-          {/* Loading */}
           {loading ? (
             <div className="recipes-pro__loading">
               <div className="loading-spinner" />
@@ -3092,7 +2941,6 @@ export default function Recipes() {
         </div>
       </div>
 
-      {/* Toast */}
       <AnimatePresence>
         {toast && (
           <motion.div
