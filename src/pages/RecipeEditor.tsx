@@ -57,11 +57,11 @@ type Line = {
   ingredient_id: string | null
   sub_recipe_id: string | null
   position: number
-  qty: number // NET qty
+  qty: number
   unit: string
   yield_percent: number
   notes: string | null
-  gross_qty_override: number | null // manual gross
+  gross_qty_override: number | null
   line_type: LineType
   group_title: string | null
 }
@@ -280,6 +280,7 @@ export default function RecipeEditor() {
 
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [ingSearch, setIngSearch] = useState('')
+  const [addNote, setAddNote] = useState('') // New state for note
 
   const cur = (currency || 'USD').toUpperCase()
 
@@ -802,7 +803,7 @@ export default function RecipeEditor() {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: null,
+        notes: addNote || null, // Add the note
         gross_qty_override: gross,
         line_type: 'ingredient',
         group_title: null,
@@ -815,6 +816,13 @@ export default function RecipeEditor() {
       const ok = await saveLinesNow(next)
       if (ok) {
         showToast('Line added & saved.')
+        // Reset form after successful save
+        setAddNote('')
+        setAddNetQty('1')
+        setAddGross('')
+        setAddYield('100')
+        setAddIngredientId('')
+        setIngSearch('')
       } else {
         showToast('Could not save line yet. It is kept locally — try again in a moment.')
       }
@@ -836,7 +844,7 @@ export default function RecipeEditor() {
         qty: net,
         unit: addUnit || 'g',
         yield_percent: y,
-        notes: null,
+        notes: addNote || null, // Add the note
         gross_qty_override: gross,
         line_type: 'subrecipe',
         group_title: null,
@@ -848,6 +856,14 @@ export default function RecipeEditor() {
       setFlashLineId(newL.id)
       const ok = await saveLinesNow(next)
       showToast(ok ? 'Subrecipe line added & saved.' : 'Subrecipe line added — saved locally (syncing...).')
+      if (ok) {
+        setAddNote('')
+        setAddNetQty('1')
+        setAddGross('')
+        setAddYield('100')
+        setAddSubRecipeId('')
+        setIngSearch('')
+      }
       if (!ok) scheduleLinesSave()
       return
     }
@@ -878,10 +894,13 @@ export default function RecipeEditor() {
     setLinesSafe(next)
     const ok = await saveLinesNow(next)
     showToast(ok ? 'Group added & saved.' : 'Group added — saved locally (syncing...).')
+    if (ok) {
+      setAddGroupTitle('')
+    }
     if (!ok) scheduleLinesSave()
   }, [
     id, addType, addIngredientId, addSubRecipeId, addGroupTitle, addNetQty, addUnit,
-    addYield, addGross, setLinesSafe, saveLinesNow, scheduleLinesSave, showToast, k.kitchenId,
+    addYield, addGross, addNote, setLinesSafe, saveLinesNow, scheduleLinesSave, showToast, k.kitchenId,
   ])
 
   const onNetChange = useCallback(
@@ -929,6 +948,13 @@ export default function RecipeEditor() {
     (lineId: string, value: string) => {
       const y = clamp(toNum(value, 100), 0.0001, 100)
       updateLine(lineId, { yield_percent: y, gross_qty_override: null })
+    },
+    [updateLine]
+  )
+
+  const onNoteChange = useCallback(
+    (lineId: string, value: string) => {
+      updateLine(lineId, { notes: value || null })
     },
     [updateLine]
   )
@@ -1617,8 +1643,9 @@ export default function RecipeEditor() {
       }
 
       .gc-recipe-pro .gc-input-compact {
-        padding: 10px 12px;
-        border-radius: 14px;
+        padding: 8px 10px;
+        font-size: 0.9rem;
+        min-width: 80px;
       }
 
       .gc-recipe-pro .gc-section {
@@ -1649,7 +1676,7 @@ export default function RecipeEditor() {
         margin-bottom: 16px;
       }
 
-      /* أنماط جديدة لعرض النص بشكل صحيح */
+      /* أنماط لعرض النص بشكل صحيح */
       .gc-recipe-pro .gc-code-display {
         font-family: 'Courier New', monospace;
         font-size: 0.9rem;
@@ -1659,6 +1686,7 @@ export default function RecipeEditor() {
         padding: 4px 8px;
         border-radius: 6px;
         display: inline-block;
+        white-space: nowrap;
       }
 
       .gc-recipe-pro .gc-name-with-note {
@@ -1669,6 +1697,9 @@ export default function RecipeEditor() {
       .gc-recipe-pro .gc-name-main {
         font-weight: 500;
         color: var(--text);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-name-note {
@@ -1676,6 +1707,9 @@ export default function RecipeEditor() {
         color: var(--text-light);
         margin-top: 2px;
         font-style: italic;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-unit-display {
@@ -1686,12 +1720,7 @@ export default function RecipeEditor() {
         border-radius: 6px;
         display: inline-block;
         font-weight: 500;
-      }
-
-      .gc-recipe-pro .gc-checkmark {
-        color: var(--primary);
-        font-size: 1.1rem;
-        margin: 0 2px;
+        white-space: nowrap;
       }
 
       /* تحسين ظهور الـ selects */
@@ -1702,12 +1731,38 @@ export default function RecipeEditor() {
         background-position: right 12px center;
         background-size: 16px;
         padding-right: 40px;
+        min-width: 200px;
       }
 
       .gc-recipe-pro .gc-select option {
         color: var(--text);
         background: white;
         padding: 8px;
+      }
+
+      /* تحسين شبكة ADD LINE */
+      .gc-recipe-pro .gc-add-line-grid {
+        display: grid;
+        grid-template-columns: repeat(6, 1fr);
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+
+      .gc-recipe-pro .gc-add-line-note {
+        grid-column: span 6;
+      }
+
+      .gc-recipe-pro .gc-add-line-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 16px;
+      }
+
+      .gc-recipe-pro .gc-gross-hint {
+        font-size: 0.75rem;
+        color: var(--text-light);
+        margin-top: 4px;
+        font-style: italic;
       }
 
       @media (max-width: 1024px) {
@@ -1717,6 +1772,10 @@ export default function RecipeEditor() {
         
         .gc-recipe-pro .gc-pricing-grid {
           grid-template-columns: 1fr;
+        }
+
+        .gc-recipe-pro .gc-add-line-grid {
+          grid-template-columns: repeat(3, 1fr);
         }
       }
 
@@ -1742,6 +1801,10 @@ export default function RecipeEditor() {
         
         .gc-recipe-pro .gc-card-body {
           padding: 18px;
+        }
+
+        .gc-recipe-pro .gc-add-line-grid {
+          grid-template-columns: 1fr;
         }
       }
 
@@ -2325,21 +2388,21 @@ export default function RecipeEditor() {
 
                     {addType !== 'group' ? (
                       <>
-                        <div className="gc-col-3">
+                        <div className="gc-col-2">
                           <div className="gc-field">
                             <div className="gc-label">NET</div>
                             <input className="gc-input" value={addNetQty} onChange={(e) => setAddNetQty(e.target.value)} inputMode="decimal" />
                           </div>
                         </div>
 
-                        <div className="gc-col-3">
+                        <div className="gc-col-2">
                           <div className="gc-field">
                             <div className="gc-label">UNIT</div>
                             <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
                           </div>
                         </div>
 
-                        <div className="gc-col-3">
+                        <div className="gc-col-2">
                           <div className="gc-field">
                             <div className="gc-label">YIELD %</div>
                             <input className="gc-input" value={addYield} onChange={(e) => setAddYield(e.target.value)} inputMode="decimal" />
@@ -2350,6 +2413,13 @@ export default function RecipeEditor() {
                           <div className="gc-field">
                             <div className="gc-label">GROSS (optional)</div>
                             <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="leave empty to auto" />
+                          </div>
+                        </div>
+
+                        <div className="gc-col-3">
+                          <div className="gc-field">
+                            <div className="gc-label">NOTE</div>
+                            <input className="gc-input" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="e.g. Chopped, Powder, Fresh..." />
                           </div>
                         </div>
                       </>
