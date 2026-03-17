@@ -1,5 +1,5 @@
 // src/pages/recipes.tsx
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -7,7 +7,9 @@ import { useMode } from '../lib/mode'
 import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/EmptyState'
+import { motion, AnimatePresence } from 'framer-motion'
 
+// ==================== Types ====================
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
 type Line = {
@@ -29,6 +31,8 @@ type Ingredient = {
   pack_unit?: string | null
   net_unit_cost?: number | null
   is_active?: boolean
+  category?: string | null
+  allergen_info?: string[] | null
 }
 
 type RecipeRow = {
@@ -37,13 +41,21 @@ type RecipeRow = {
   kitchen_id: string
   name: string
   category: string | null
+  subcategory?: string | null
+  cuisine?: string | null
   portions: number
   yield_qty: number | null
   yield_unit: string | null
   is_subrecipe: boolean
   is_archived: boolean
+  is_featured?: boolean
+  is_favorite?: boolean
   photo_url: string | null
   description: string | null
+  preparation_time?: number | null
+  cooking_time?: number | null
+  difficulty?: 'easy' | 'medium' | 'hard' | null
+  tags?: string[] | null
   calories: number | null
   protein_g: number | null
   carbs_g: number | null
@@ -51,6 +63,9 @@ type RecipeRow = {
   selling_price?: number | null
   currency?: string | null
   target_food_cost_pct?: number | null
+  created_at?: string
+  updated_at?: string
+  version?: number
 }
 
 type CostPoint = {
@@ -60,21 +75,35 @@ type CostPoint = {
   fcPct: number | null
   margin: number
   marginPct: number | null
+  profit: number
   warnings: string[]
 }
 
-type Density = 'comfortable' | 'dense'
+type Density = 'comfortable' | 'dense' | 'compact'
+type ViewMode = 'grid' | 'list' | 'table'
+type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date' | 'popularity'
+type SortOrder = 'asc' | 'desc'
+type FilterType = {
+  categories: string[]
+  cuisines: string[]
+  dietary: string[]
+  difficulty: string[]
+  isFeatured: boolean | null
+  isFavorite: boolean | null
+  isSubrecipe: boolean | null
+}
 
-function toNum(x: any, fallback = 0) {
+// ==================== Utility Functions ====================
+function toNum(x: any, fallback = 0): number {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
 
-function safeUnit(u: string) {
+function safeUnit(u: string): string {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
 
-function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
+function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string): number {
   const u = safeUnit(lineUnit)
   const p = safeUnit(packUnit)
   let conv = qty
@@ -87,338 +116,454 @@ function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
   return conv
 }
 
-const ING_REV_KEY = 'gc:ingredients:rev'
+function formatCurrency(amount: number, currency: string = 'USD'): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: currency,
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount)
+}
 
-function getIngredientsRev(): string {
-  try {
-    return localStorage.getItem(ING_REV_KEY) || '0'
-  } catch {
-    return '0'
+function formatPercentage(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(value / 100)
+}
+
+function formatTime(minutes: number): string {
+  if (minutes < 60) return `${minutes} min`
+  const hours = Math.floor(minutes / 60)
+  const mins = minutes % 60
+  return mins > 0 ? `${hours}h ${mins}m` : `${hours}h`
+}
+
+function getDifficultyColor(difficulty: string): string {
+  switch (difficulty) {
+    case 'easy': return '#10b981'
+    case 'medium': return '#f59e0b'
+    case 'hard': return '#ef4444'
+    default: return '#6b7280'
   }
 }
 
-function getCostCacheKey() {
-  return `gc_v5_cost_cache_v1::rev:${getIngredientsRev()}`
-}
-
-const COST_TTL_MS = 10 * 60 * 1000
-
-function loadCostCache(): Record<string, CostPoint> {
-  try {
-    const raw = localStorage.getItem(getCostCacheKey())
-    if (!raw) return {}
-    const obj = JSON.parse(raw) as Record<string, CostPoint>
-    if (!obj || typeof obj !== 'object') return {}
-    return obj
-  } catch {
-    return {}
+function getDifficultyIcon(difficulty: string): string {
+  switch (difficulty) {
+    case 'easy': return '😊'
+    case 'medium': return '😐'
+    case 'hard': return '😅'
+    default: return '❓'
   }
 }
 
-function saveCostCache(cache: Record<string, CostPoint>) {
-  try {
-    localStorage.setItem(getCostCacheKey(), JSON.stringify(cache))
-  } catch {}
+// ==================== Cache Management ====================
+const CACHE_KEYS = {
+  INGREDIENTS_REV: 'gc:ingredients:rev',
+  COST_CACHE: 'gc:cost:cache',
+  RECIPES_CACHE: 'gc:recipes:cache',
+  USER_PREFERENCES: 'gc:user:prefs'
 }
 
-function recipeAccent(name: string) {
-  const v = (name || '').trim().toLowerCase()
-  if (v.includes('chicken')) return 'recipe-card--amber'
-  if (v.includes('rice')) return 'recipe-card--gold'
-  if (v.includes('salad') || v.includes('raita')) return 'recipe-card--mint'
-  if (v.includes('soup')) return 'recipe-card--warm'
-  return 'recipe-card--olive'
+const CACHE_TTL = {
+  COST: 10 * 60 * 1000, // 10 minutes
+  RECIPES: 5 * 60 * 1000, // 5 minutes
+  INGREDIENTS: 15 * 60 * 1000 // 15 minutes
 }
 
-function recipeGlyph(name: string, category?: string | null) {
-  const n = (name || '').toLowerCase()
-  const c = (category || '').toLowerCase()
+class CacheManager {
+  static get<T>(key: string, maxAge: number): T | null {
+    try {
+      const item = localStorage.getItem(key)
+      if (!item) return null
+      
+      const { data, timestamp } = JSON.parse(item)
+      if (Date.now() - timestamp > maxAge) {
+        localStorage.removeItem(key)
+        return null
+      }
+      
+      return data as T
+    } catch {
+      return null
+    }
+  }
 
-  if (n.includes('rice')) return '🍚'
-  if (n.includes('chicken') || n.includes('biryani')) return '🍛'
-  if (n.includes('salad') || n.includes('raita')) return '🥗'
-  if (n.includes('soup')) return '🍲'
-  if (c.includes('dessert')) return '🍰'
-  if (c.includes('drink')) return '🥤'
+  static set(key: string, data: any): void {
+    try {
+      localStorage.setItem(key, JSON.stringify({
+        data,
+        timestamp: Date.now()
+      }))
+    } catch {}
+  }
 
-  return '🍽'
+  static clear(pattern: string): void {
+    try {
+      Object.keys(localStorage).forEach(key => {
+        if (key.startsWith(pattern)) {
+          localStorage.removeItem(key)
+        }
+      })
+    } catch {}
+  }
 }
 
+// ==================== Custom Hooks ====================
+function useLocalStorage<T>(key: string, initialValue: T): [T, (value: T) => void] {
+  const [storedValue, setStoredValue] = useState<T>(() => {
+    try {
+      const item = localStorage.getItem(key)
+      return item ? JSON.parse(item) : initialValue
+    } catch {
+      return initialValue
+    }
+  })
+
+  const setValue = (value: T) => {
+    try {
+      setStoredValue(value)
+      localStorage.setItem(key, JSON.stringify(value))
+    } catch {}
+  }
+
+  return [storedValue, setValue]
+}
+
+function useDebounce<T>(value: T, delay: number): T {
+  const [debouncedValue, setDebouncedValue] = useState<T>(value)
+
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedValue(value), delay)
+    return () => clearTimeout(timer)
+  }, [value, delay])
+
+  return debouncedValue
+}
+
+function useRecipeCost(recipeId: string, lines: Line[], ingredients: Map<string, Ingredient>) {
+  return useMemo(() => {
+    let totalCost = 0
+    const warnings: string[] = []
+
+    for (const l of lines) {
+      if (l.line_type === 'group' || l.line_type === 'subrecipe') continue
+
+      const ing = l.ingredient_id ? ingredients.get(l.ingredient_id) : null
+      if (!ing) continue
+
+      const unitCost = toNum(ing.net_unit_cost, 0)
+      if (!Number.isFinite(unitCost) || unitCost <= 0) {
+        warnings.push(`Ingredient ${ing.name || 'unknown'} without price`)
+      }
+
+      const netQty = Math.max(0, toNum(l.qty, 0))
+      const packUnit = ing.pack_unit || l.unit
+      const qtyInPack = convertQtyToPackUnit(netQty, l.unit, packUnit)
+      const lineCost = qtyInPack * unitCost
+      totalCost += Number.isFinite(lineCost) ? lineCost : 0
+    }
+
+    return { cost: totalCost, warnings }
+  }, [recipeId, lines, ingredients])
+}
+
+// ==================== Styles Component ====================
 function RecipesStyles() {
   return (
     <style>{`
       /* ===== CSS Variables ===== */
-      .recipes-page-v7 {
-        --primary: #2E7D78;
-        --primary-light: #E8F3F2;
-        --primary-dark: #1E5A56;
-        --secondary: #C17B4A;
-        --secondary-light: #E8A87C;
-        --secondary-dark: #A55D2C;
-        --success: #4CAF50;
-        --warning: #FFC107;
-        --danger: #F44336;
-        --info: #2196F3;
-        --text: #1E2A3A;
-        --text-light: #64748B;
-        --bg: #F8FAFC;
-        --bg-card: #FFFFFF;
-        --border: #E2E8F0;
-        --shadow-sm: 0 4px 6px -2px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
-        --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -4px rgba(0, 0, 0, 0.04);
-        --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-        --shadow-xl: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-        --gradient-primary: linear-gradient(135deg, #2E7D78, #1E5A56);
-        --gradient-secondary: linear-gradient(135deg, #C17B4A, #A55D2C);
-        --gradient-success: linear-gradient(135deg, #4CAF50, #2E7D32);
-        --gradient-warning: linear-gradient(135deg, #FFC107, #FF8F00);
-        --gradient-danger: linear-gradient(135deg, #F44336, #C62828);
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        --radius-sm: 8px;
-        --radius-md: 12px;
-        --radius-lg: 16px;
-        --radius-xl: 24px;
+      .recipes-pro {
+        --primary-50: #f0f9ff;
+        --primary-100: #e0f2fe;
+        --primary-200: #bae6fd;
+        --primary-300: #7dd3fc;
+        --primary-400: #38bdf8;
+        --primary-500: #0ea5e9;
+        --primary-600: #0284c7;
+        --primary-700: #0369a1;
+        --primary-800: #075985;
+        --primary-900: #0c4a6e;
+        
+        --secondary-50: #fef3c7;
+        --secondary-500: #f59e0b;
+        --secondary-700: #b45309;
+        
+        --success-50: #f0fdf4;
+        --success-500: #22c55e;
+        --success-700: #15803d;
+        
+        --danger-50: #fef2f2;
+        --danger-500: #ef4444;
+        --danger-700: #b91c1c;
+        
+        --warning-50: #fffbeb;
+        --warning-500: #f59e0b;
+        --warning-700: #b45309;
+        
+        --gray-50: #f9fafb;
+        --gray-100: #f3f4f6;
+        --gray-200: #e5e7eb;
+        --gray-300: #d1d5db;
+        --gray-400: #9ca3af;
+        --gray-500: #6b7280;
+        --gray-600: #4b5563;
+        --gray-700: #374151;
+        --gray-800: #1f2937;
+        --gray-900: #111827;
+        
+        --bg-primary: #ffffff;
+        --bg-secondary: var(--gray-50);
+        --text-primary: var(--gray-900);
+        --text-secondary: var(--gray-600);
+        --text-tertiary: var(--gray-400);
+        --border-color: var(--gray-200);
+        
+        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        
+        --radius-sm: 0.375rem;
+        --radius-md: 0.5rem;
+        --radius-lg: 0.75rem;
+        --radius-xl: 1rem;
+        --radius-2xl: 1.5rem;
         --radius-full: 9999px;
+        
+        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       }
 
       @media (prefers-color-scheme: dark) {
-        .recipes-page-v7 {
-          --primary: #3B9B94;
-          --primary-light: #2A5E5A;
-          --primary-dark: #1E5A56;
-          --secondary: #E8A87C;
-          --secondary-light: #C17B4A;
-          --secondary-dark: #A55D2C;
-          --text: #F1F5F9;
-          --text-light: #94A3B8;
-          --bg: #0F172A;
-          --bg-card: #1E293B;
-          --border: #334155;
+        .recipes-pro {
+          --bg-primary: var(--gray-800);
+          --bg-secondary: var(--gray-900);
+          --text-primary: var(--gray-100);
+          --text-secondary: var(--gray-300);
+          --text-tertiary: var(--gray-500);
+          --border-color: var(--gray-700);
         }
       }
 
-      .recipes-page-v7 {
-        display: grid;
-        gap: 24px;
-        background: var(--bg);
+      /* ===== Base Layout ===== */
+      .recipes-pro {
         min-height: 100vh;
-        padding: 24px;
+        background: var(--bg-secondary);
+        color: var(--text-primary);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        padding: 2rem;
       }
 
-      /* ===== Header Section ===== */
-      .recipes-header-v7 {
-        background: var(--bg-card);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--border);
-        padding: 20px 24px;
-        box-shadow: var(--shadow-md);
+      .recipes-pro__container {
+        max-width: 1600px;
+        margin: 0 auto;
+      }
+
+      /* ===== Header ===== */
+      .recipes-pro__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
+        margin-bottom: 2rem;
         flex-wrap: wrap;
-        gap: 16px;
-        backdrop-filter: blur(8px);
-        background: rgba(255, 255, 255, 0.9);
+        gap: 1rem;
       }
 
-      .recipes-header-left-v7 {
+      .recipes-pro__header-left {
         display: flex;
         align-items: center;
-        gap: 16px;
+        gap: 1rem;
       }
 
-      .recipes-header-icon-v7 {
-        width: 48px;
-        height: 48px;
-        border-radius: var(--radius-md);
-        background: var(--gradient-primary);
+      .recipes-pro__header-icon {
+        width: 3.5rem;
+        height: 3.5rem;
+        border-radius: var(--radius-xl);
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 24px;
-        box-shadow: 0 8px 16px rgba(46, 125, 120, 0.2);
+        font-size: 1.5rem;
+        box-shadow: var(--shadow-lg);
       }
 
-      .recipes-header-title-v7 {
-        font-size: 1.5rem;
+      .recipes-pro__header-title {
+        font-size: 2rem;
         font-weight: 800;
         letter-spacing: -0.02em;
-        background: var(--gradient-primary);
+        background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         margin: 0;
       }
 
-      .recipes-header-subtitle-v7 {
+      .recipes-pro__header-subtitle {
         font-size: 0.875rem;
-        color: var(--text-light);
-        margin-top: 4px;
+        color: var(--text-secondary);
+        margin-top: 0.25rem;
       }
 
-      .recipes-header-actions-v7 {
+      .recipes-pro__header-actions {
         display: flex;
         align-items: center;
-        gap: 8px;
+        gap: 0.5rem;
         flex-wrap: wrap;
       }
 
-      /* ===== Stats Cards ===== */
-      .recipes-stats-v7 {
+      /* ===== Stats Grid ===== */
+      .recipes-pro__stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 1rem;
+        margin-bottom: 2rem;
       }
 
-      .stat-card-v7 {
-        background: var(--bg-card);
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--border);
-        padding: 16px;
-        box-shadow: var(--shadow-sm);
+      .stat-card {
+        background: var(--bg-primary);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-color);
+        padding: 1.5rem;
+        box-shadow: var(--shadow-md);
         transition: var(--transition);
         position: relative;
         overflow: hidden;
       }
 
-      .stat-card-v7:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
-        border-color: var(--primary);
-      }
-
-      .stat-card-v7::before {
+      .stat-card::before {
         content: '';
         position: absolute;
         top: 0;
         left: 0;
         right: 0;
         height: 4px;
-        background: var(--gradient-primary);
+        background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
         opacity: 0;
         transition: var(--transition);
       }
 
-      .stat-card-v7:hover::before {
+      .stat-card:hover {
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-xl);
+        border-color: var(--primary-300);
+      }
+
+      .stat-card:hover::before {
         opacity: 1;
       }
 
-      .stat-card-header-v7 {
+      .stat-card__header {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 12px;
+        margin-bottom: 1rem;
       }
 
-      .stat-card-label-v7 {
+      .stat-card__label {
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--text-light);
+        color: var(--text-secondary);
       }
 
-      .stat-card-icon-v7 {
-        width: 32px;
-        height: 32px;
-        border-radius: var(--radius-sm);
-        background: var(--primary-light);
+      .stat-card__icon {
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--radius-lg);
+        background: var(--primary-50);
         display: flex;
         align-items: center;
         justify-content: center;
-        color: var(--primary);
+        color: var(--primary-600);
       }
 
-      .stat-card-value-v7 {
-        font-size: 1.5rem;
+      .stat-card__value {
+        font-size: 2rem;
         font-weight: 800;
-        color: var(--text);
+        color: var(--text-primary);
         line-height: 1.2;
       }
 
-      .stat-card-change-v7 {
+      .stat-card__change {
         font-size: 0.75rem;
-        margin-top: 8px;
+        margin-top: 0.5rem;
         display: flex;
         align-items: center;
-        gap: 4px;
-        color: var(--text-light);
+        gap: 0.25rem;
+        color: var(--text-secondary);
       }
 
-      .stat-card-change--positive-v7 {
-        color: var(--success);
+      .stat-card__change--positive {
+        color: var(--success-500);
       }
 
-      .stat-card-change--negative-v7 {
-        color: var(--danger);
+      .stat-card__change--negative {
+        color: var(--danger-500);
       }
 
       /* ===== Toolbar ===== */
-      .recipes-toolbar-v7 {
-        background: var(--bg-card);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--border);
-        padding: 16px 20px;
+      .recipes-pro__toolbar {
+        background: var(--bg-primary);
+        border-radius: var(--radius-2xl);
+        border: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
         box-shadow: var(--shadow-md);
+        margin-bottom: 1.5rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
-        gap: 16px;
+        gap: 1rem;
+        backdrop-filter: blur(8px);
+        background: rgba(255, 255, 255, 0.8);
       }
 
-      .recipes-toolbar-left-v7 {
-        display: flex;
-        align-items: center;
-        gap: 12px;
+      .recipes-pro__search {
         flex: 1;
         min-width: 300px;
-      }
-
-      .recipes-search-v7 {
         position: relative;
-        flex: 1;
       }
 
-      .recipes-search-icon-v7 {
+      .recipes-pro__search-icon {
         position: absolute;
-        left: 14px;
+        left: 1rem;
         top: 50%;
         transform: translateY(-50%);
-        color: var(--text-light);
-        width: 18px;
-        height: 18px;
+        color: var(--text-tertiary);
+        width: 1.25rem;
+        height: 1.25rem;
       }
 
-      .recipes-search-input-v7 {
+      .recipes-pro__search-input {
         width: 100%;
-        height: 44px;
-        padding: 0 16px 0 44px;
+        height: 2.75rem;
+        padding: 0 1rem 0 2.75rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text);
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
         font-size: 0.95rem;
         transition: var(--transition);
       }
 
-      .recipes-search-input-v7:focus {
+      .recipes-pro__search-input:focus {
         outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46, 125, 120, 0.1);
+        border-color: var(--primary-400);
+        box-shadow: 0 0 0 4px var(--primary-100);
       }
 
-      .recipes-search-clear-v7 {
+      .recipes-pro__search-clear {
         position: absolute;
-        right: 14px;
+        right: 1rem;
         top: 50%;
         transform: translateY(-50%);
         background: none;
         border: none;
-        color: var(--text-light);
+        color: var(--text-tertiary);
         cursor: pointer;
-        padding: 4px;
+        padding: 0.25rem;
         border-radius: var(--radius-full);
         display: flex;
         align-items: center;
@@ -426,104 +571,111 @@ function RecipesStyles() {
         transition: var(--transition);
       }
 
-      .recipes-search-clear-v7:hover {
-        background: var(--border);
-        color: var(--text);
+      .recipes-pro__search-clear:hover {
+        background: var(--gray-100);
+        color: var(--text-primary);
       }
 
-      .recipes-filter-btn-v7 {
+      .recipes-pro__filters-btn {
         display: flex;
         align-items: center;
-        gap: 8px;
-        height: 44px;
-        padding: 0 20px;
+        gap: 0.5rem;
+        height: 2.75rem;
+        padding: 0 1.5rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text);
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
         font-weight: 600;
         cursor: pointer;
         transition: var(--transition);
         white-space: nowrap;
       }
 
-      .recipes-filter-btn-v7:hover {
-        border-color: var(--primary);
-        background: var(--primary-light);
-        color: var(--primary-dark);
+      .recipes-pro__filters-btn:hover {
+        border-color: var(--primary-400);
+        background: var(--primary-50);
+        color: var(--primary-700);
       }
 
-      .recipes-filter-btn-v7--active {
-        background: var(--primary);
-        border-color: var(--primary);
+      .recipes-pro__filters-btn--active {
+        background: var(--primary-500);
+        border-color: var(--primary-500);
         color: white;
       }
 
-      .recipes-view-controls-v7 {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        background: var(--bg);
-        border-radius: var(--radius-full);
-        padding: 2px;
-        border: 1px solid var(--border);
+      .recipes-pro__filters-btn--active:hover {
+        background: var(--primary-600);
       }
 
-      .view-control-btn-v7 {
-        padding: 8px 16px;
+      .recipes-pro__view-controls {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        background: var(--gray-100);
+        border-radius: var(--radius-full);
+        padding: 0.25rem;
+        border: 1px solid var(--border-color);
+      }
+
+      .view-control-btn {
+        padding: 0.5rem 1rem;
         border-radius: var(--radius-full);
         border: none;
         background: transparent;
-        color: var(--text-light);
+        color: var(--text-secondary);
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
         transition: var(--transition);
-        white-space: nowrap;
-      }
-
-      .view-control-btn-v7:hover {
-        color: var(--primary);
-      }
-
-      .view-control-btn-v7--active {
-        background: white;
-        color: var(--primary);
-        box-shadow: var(--shadow-sm);
-      }
-
-      .recipes-density-btn-v7 {
         display: flex;
         align-items: center;
-        gap: 8px;
-        height: 44px;
-        padding: 0 20px;
+        gap: 0.25rem;
+      }
+
+      .view-control-btn:hover {
+        color: var(--primary-600);
+      }
+
+      .view-control-btn--active {
+        background: white;
+        color: var(--primary-600);
+        box-shadow: var(--shadow-md);
+      }
+
+      .recipes-pro__density-btn {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        height: 2.75rem;
+        padding: 0 1.5rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text);
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
         font-weight: 600;
         cursor: pointer;
         transition: var(--transition);
         white-space: nowrap;
       }
 
-      .recipes-density-btn-v7:hover {
-        border-color: var(--secondary);
-        background: var(--secondary-light);
-        color: var(--secondary-dark);
+      .recipes-pro__density-btn:hover {
+        border-color: var(--secondary-500);
+        background: var(--secondary-50);
+        color: var(--secondary-700);
       }
 
       /* ===== Filter Bar ===== */
-      .recipes-filters-v7 {
-        background: var(--bg-card);
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--border);
-        padding: 16px;
-        box-shadow: var(--shadow-sm);
+      .recipes-pro__filters {
+        background: var(--bg-primary);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-color);
+        padding: 1rem 1.5rem;
+        box-shadow: var(--shadow-md);
+        margin-bottom: 1.5rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 12px;
+        gap: 1rem;
         align-items: center;
         animation: slideDown 0.2s ease-out;
       }
@@ -531,7 +683,7 @@ function RecipesStyles() {
       @keyframes slideDown {
         from {
           opacity: 0;
-          transform: translateY(-10px);
+          transform: translateY(-0.5rem);
         }
         to {
           opacity: 1;
@@ -539,93 +691,98 @@ function RecipesStyles() {
         }
       }
 
-      .filter-group-v7 {
+      .filter-group {
         display: flex;
         align-items: center;
-        gap: 8px;
-        padding: 0 12px;
-        border-right: 1px solid var(--border);
+        gap: 0.5rem;
+        padding: 0 1rem;
+        border-right: 1px solid var(--border-color);
       }
 
-      .filter-group-v7:last-child {
+      .filter-group:last-child {
         border-right: none;
       }
 
-      .filter-label-v7 {
+      .filter-label {
         font-size: 0.7rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--text-light);
+        color: var(--text-tertiary);
       }
 
-      .filter-chip-v7 {
+      .filter-chip {
         display: inline-flex;
         align-items: center;
-        gap: 4px;
-        padding: 6px 12px;
+        gap: 0.25rem;
+        padding: 0.375rem 0.75rem;
         border-radius: var(--radius-full);
-        background: var(--bg);
-        border: 1px solid var(--border);
-        font-size: 0.8rem;
+        background: var(--gray-100);
+        border: 1px solid var(--border-color);
+        font-size: 0.75rem;
         font-weight: 600;
-        color: var(--text);
+        color: var(--text-secondary);
         cursor: pointer;
         transition: var(--transition);
       }
 
-      .filter-chip-v7:hover {
-        background: var(--border);
+      .filter-chip:hover {
+        background: var(--gray-200);
       }
 
-      .filter-chip-v7--active {
-        background: var(--primary);
-        border-color: var(--primary);
+      .filter-chip--active {
+        background: var(--primary-500);
+        border-color: var(--primary-500);
         color: white;
       }
 
-      /* ===== Sort Bar ===== */
-      .recipes-sort-v7 {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 12px 0;
+      .filter-chip--active:hover {
+        background: var(--primary-600);
       }
 
-      .sort-label-v7 {
+      /* ===== Sort Bar ===== */
+      .recipes-pro__sort {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        padding: 0.5rem 0;
+        margin-bottom: 1rem;
+      }
+
+      .sort-label {
         font-size: 0.75rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--text-light);
+        color: var(--text-tertiary);
       }
 
-      .sort-select-v7 {
-        padding: 8px 32px 8px 16px;
+      .sort-select {
+        padding: 0.5rem 2rem 0.5rem 1rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text);
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-primary);
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
         appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748B' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 12px center;
+        background-position: right 0.75rem center;
       }
 
-      .sort-select-v7:focus {
+      .sort-select:focus {
         outline: none;
-        border-color: var(--primary);
+        border-color: var(--primary-400);
       }
 
-      .sort-order-btn-v7 {
-        padding: 8px;
+      .sort-order-btn {
+        padding: 0.5rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border);
-        background: var(--bg-card);
-        color: var(--text);
+        border: 2px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-secondary);
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -633,43 +790,88 @@ function RecipesStyles() {
         transition: var(--transition);
       }
 
-      .sort-order-btn-v7:hover {
-        border-color: var(--primary);
-        color: var(--primary);
+      .sort-order-btn:hover {
+        border-color: var(--primary-400);
+        color: var(--primary-600);
       }
 
-      /* ===== Recipe List ===== */
-      .recipes-list-v7 {
+      /* ===== Results Info ===== */
+      .recipes-pro__results-info {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+      }
+
+      .recipes-pro__results-count {
+        font-weight: 600;
+      }
+
+      .recipes-pro__results-actions {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .bulk-action-btn {
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--radius-full);
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .bulk-action-btn:hover {
+        background: var(--gray-100);
+      }
+
+      .bulk-action-btn--danger:hover {
+        background: var(--danger-500);
+        border-color: var(--danger-500);
+        color: white;
+      }
+
+      /* ===== Recipe Grid ===== */
+      .recipes-pro__grid {
         display: grid;
-        gap: 12px;
-        animation: fadeIn 0.3s ease-out;
+        gap: 1rem;
+        transition: var(--transition);
       }
 
-      @keyframes fadeIn {
-        from {
-          opacity: 0;
-        }
-        to {
-          opacity: 1;
-        }
+      .recipes-pro__grid--comfortable {
+        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+      }
+
+      .recipes-pro__grid--dense {
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+      }
+
+      .recipes-pro__grid--compact {
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
       }
 
       /* ===== Recipe Card ===== */
-      .recipe-card-v7 {
-        position: relative;
-        background: var(--bg-card);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--border);
+      .recipe-card {
+        background: var(--bg-primary);
+        border-radius: var(--radius-2xl);
+        border: 1px solid var(--border-color);
         overflow: hidden;
-        box-shadow: var(--shadow-sm);
+        box-shadow: var(--shadow-md);
         transition: var(--transition);
+        position: relative;
         animation: cardAppear 0.3s ease-out;
       }
 
       @keyframes cardAppear {
         from {
           opacity: 0;
-          transform: translateY(20px);
+          transform: translateY(1rem);
         }
         to {
           opacity: 1;
@@ -677,306 +879,465 @@ function RecipesStyles() {
         }
       }
 
-      .recipe-card-v7:hover {
-        transform: translateY(-2px) scale(1.01);
+      .recipe-card:hover {
+        transform: translateY(-2px) scale(1.02);
         box-shadow: var(--shadow-xl);
-        border-color: var(--primary);
+        border-color: var(--primary-300);
       }
 
-      .recipe-card-v7__accent {
+      .recipe-card__accent {
         position: absolute;
         top: 0;
         left: 0;
         bottom: 0;
         width: 4px;
-        background: var(--gradient-primary);
+        background: linear-gradient(180deg, var(--primary-500), var(--primary-600));
         border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
         opacity: 0;
         transition: var(--transition);
       }
 
-      .recipe-card-v7:hover .recipe-card-v7__accent {
+      .recipe-card:hover .recipe-card__accent {
         opacity: 1;
       }
 
-      .recipe-card--olive .recipe-card-v7__accent {
-        background: linear-gradient(180deg, #748d3f, #97ab62);
+      .recipe-card__body {
+        padding: 1.5rem;
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
       }
 
-      .recipe-card--amber .recipe-card-v7__accent {
-        background: linear-gradient(180deg, #b7791f, #d6a340);
+      .recipe-card__header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
       }
 
-      .recipe-card--gold .recipe-card-v7__accent {
-        background: linear-gradient(180deg, #b17f1e, #d2b35e);
-      }
-
-      .recipe-card--mint .recipe-card-v7__accent {
-        background: linear-gradient(180deg, #4b8f73, #7fc3a4);
-      }
-
-      .recipe-card--warm .recipe-card-v7__accent {
-        background: linear-gradient(180deg, #9b6b4e, #cd9a78);
-      }
-
-      .recipe-card-v7__body {
-        display: grid;
-        grid-template-columns: minmax(0, 1fr) auto;
-        gap: 16px;
-        align-items: center;
-        padding: 16px 16px 16px 20px;
-      }
-
-      .recipe-card-v7__left {
+      .recipe-card__title-section {
         min-width: 0;
-        display: grid;
-        gap: 12px;
+        flex: 1;
       }
 
-      .recipe-card-v7__top {
-        display: grid;
-        grid-template-columns: 44px minmax(0, 1fr);
-        gap: 12px;
+      .recipe-card__title {
+        margin: 0;
+        font-size: 1.125rem;
+        font-weight: 800;
+        color: var(--text-primary);
+        letter-spacing: -0.02em;
+        line-height: 1.3;
+      }
+
+      .recipe-card__category {
+        display: flex;
         align-items: center;
+        gap: 0.5rem;
+        margin-top: 0.25rem;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 600;
       }
 
-      .recipe-card-v7__icon {
-        width: 44px;
-        height: 44px;
+      .recipe-card__badges {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        flex-wrap: wrap;
+      }
+
+      .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.25rem 0.5rem;
+        border-radius: var(--radius-full);
+        font-size: 0.625rem;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+        white-space: nowrap;
+      }
+
+      .badge--featured {
+        background: var(--secondary-50);
+        color: var(--secondary-700);
+        border: 1px solid var(--secondary-500);
+      }
+
+      .badge--favorite {
+        background: var(--danger-50);
+        color: var(--danger-700);
+        border: 1px solid var(--danger-500);
+      }
+
+      .badge--subrecipe {
+        background: var(--primary-50);
+        color: var(--primary-700);
+        border: 1px solid var(--primary-500);
+      }
+
+      .badge--archived {
+        background: var(--gray-100);
+        color: var(--gray-600);
+        border: 1px solid var(--gray-400);
+      }
+
+      .badge--warning {
+        background: var(--warning-50);
+        color: var(--warning-700);
+        border: 1px solid var(--warning-500);
+      }
+
+      .recipe-card__meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        flex-wrap: wrap;
+      }
+
+      .meta-item {
+        display: flex;
+        align-items: center;
+        gap: 0.375rem;
+        padding: 0.25rem 0.75rem;
+        background: var(--gray-100);
+        border-radius: var(--radius-full);
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+      }
+
+      .meta-item__icon {
+        color: var(--text-tertiary);
+      }
+
+      .recipe-card__description {
+        color: var(--text-secondary);
+        font-size: 0.875rem;
+        line-height: 1.5;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
+      }
+
+      .recipe-card__tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.25rem;
+      }
+
+      .tag {
+        font-size: 0.625rem;
+        padding: 0.125rem 0.5rem;
+        background: var(--gray-100);
+        border-radius: var(--radius-full);
+        color: var(--text-secondary);
+        border: 1px solid var(--border-color);
+      }
+
+      .recipe-card__metrics {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 0.5rem;
+        margin-top: 0.5rem;
+      }
+
+      .metric {
+        background: linear-gradient(135deg, var(--gray-50), var(--gray-100));
+        border-radius: var(--radius-lg);
+        padding: 0.75rem;
+        text-align: center;
+        border: 1px solid var(--border-color);
+        transition: var(--transition);
+      }
+
+      .metric:hover {
+        background: var(--primary-50);
+        border-color: var(--primary-300);
+        transform: translateY(-1px);
+      }
+
+      .metric__label {
+        color: var(--text-tertiary);
+        font-size: 0.625rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        font-weight: 800;
+      }
+
+      .metric__value {
+        margin-top: 0.25rem;
+        color: var(--text-primary);
+        font-size: 0.875rem;
+        font-weight: 800;
+        line-height: 1.2;
+      }
+
+      .metric__value--warning {
+        color: var(--danger-500);
+      }
+
+      .metric__value--success {
+        color: var(--success-500);
+      }
+
+      .recipe-card__nutrition {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        padding: 0.5rem 0;
+        border-top: 1px solid var(--border-color);
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.75rem;
+      }
+
+      .nutrition-item {
+        flex: 1;
+        text-align: center;
+      }
+
+      .nutrition-value {
+        font-weight: 800;
+        color: var(--text-primary);
+      }
+
+      .nutrition-label {
+        color: var(--text-tertiary);
+        font-size: 0.625rem;
+        text-transform: uppercase;
+        letter-spacing: 0.03em;
+      }
+
+      .recipe-card__footer {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-top: 0.5rem;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .recipe-card__price {
+        font-size: 1.125rem;
+        font-weight: 800;
+        color: var(--primary-600);
+      }
+
+      .recipe-card__price small {
+        font-size: 0.75rem;
+        color: var(--text-tertiary);
+        font-weight: 500;
+      }
+
+      .recipe-card__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .action-btn {
+        width: 2rem;
+        height: 2rem;
         border-radius: var(--radius-md);
-        background: var(--gradient-primary);
+        border: 1px solid var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-secondary);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .action-btn:hover {
+        background: var(--gray-100);
+        border-color: var(--primary-400);
+        color: var(--primary-600);
+        transform: translateY(-1px);
+      }
+
+      .action-btn--danger:hover {
+        background: var(--danger-500);
+        border-color: var(--danger-500);
+        color: white;
+      }
+
+      .action-btn--success:hover {
+        background: var(--success-500);
+        border-color: var(--success-500);
+        color: white;
+      }
+
+      .select-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        padding: 0.375rem 0.75rem;
+        border-radius: var(--radius-md);
+        border: 1px dashed var(--border-color);
+        background: var(--bg-primary);
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: var(--transition);
+      }
+
+      .select-btn:hover {
+        border-color: var(--primary-400);
+        background: var(--primary-50);
+        color: var(--primary-700);
+      }
+
+      .select-btn input {
+        width: 1rem;
+        height: 1rem;
+        accent-color: var(--primary-500);
+        cursor: pointer;
+      }
+
+      /* ===== List View ===== */
+      .recipes-pro__list {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+      }
+
+      .recipe-list-item {
+        background: var(--bg-primary);
+        border-radius: var(--radius-xl);
+        border: 1px solid var(--border-color);
+        padding: 1rem;
+        transition: var(--transition);
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .recipe-list-item:hover {
+        background: var(--gray-50);
+        border-color: var(--primary-300);
+        transform: translateX(0.25rem);
+      }
+
+      .recipe-list-item__icon {
+        width: 3rem;
+        height: 3rem;
+        border-radius: var(--radius-md);
+        background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 20px;
-        box-shadow: 0 4px 8px rgba(46, 125, 120, 0.2);
-        transition: var(--transition);
+        font-size: 1.25rem;
       }
 
-      .recipe-card-v7:hover .recipe-card-v7__icon {
-        transform: scale(1.05) rotate(5deg);
-      }
-
-      .recipe-card-v7__titleRow {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-      }
-
-      .recipe-card-v7__titleWrap {
+      .recipe-list-item__content {
+        flex: 1;
         min-width: 0;
-        flex: 1 1 auto;
       }
 
-      .recipe-card-v7__title {
-        margin: 0;
-        font-size: 1rem;
-        line-height: 1.2;
-        font-weight: 800;
-        letter-spacing: -0.02em;
-        color: var(--text);
-        white-space: nowrap;
+      .recipe-list-item__title {
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+
+      .recipe-list-item__category {
+        color: var(--text-tertiary);
+        font-size: 0.75rem;
+      }
+
+      .recipe-list-item__meta {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+        color: var(--text-secondary);
+        font-size: 0.75rem;
+      }
+
+      .recipe-list-item__stats {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+
+      .recipe-list-item__stat {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+      }
+
+      .recipe-list-item__price {
+        font-weight: 700;
+        color: var(--primary-600);
+      }
+
+      /* ===== Table View ===== */
+      .recipes-pro__table {
+        width: 100%;
+        border-collapse: collapse;
+        background: var(--bg-primary);
+        border-radius: var(--radius-2xl);
         overflow: hidden;
-        text-overflow: ellipsis;
+        border: 1px solid var(--border-color);
+        box-shadow: var(--shadow-md);
       }
 
-      .recipe-card-v7__sub {
-        margin-top: 4px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        flex-wrap: wrap;
-        color: var(--text-light);
-        font-size: 0.8rem;
-        font-weight: 600;
-      }
-
-      .recipe-dot-v7 {
-        color: var(--border);
-      }
-
-      .recipe-badges-v7 {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-      }
-
-      .recipe-badge-v7 {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        min-height: 24px;
-        padding: 0 10px;
-        border-radius: var(--radius-full);
-        font-size: 0.7rem;
+      .recipes-pro__table th {
+        background: var(--gray-100);
+        padding: 1rem;
+        text-align: left;
+        font-size: 0.75rem;
         font-weight: 700;
-        letter-spacing: 0.03em;
-        white-space: nowrap;
-        border: 1px solid transparent;
-        transition: var(--transition);
-      }
-
-      .recipe-badge-v7--soft {
-        color: var(--primary-dark);
-        background: var(--primary-light);
-        border-color: var(--primary);
-      }
-
-      .recipe-badge-v7--neutral {
-        color: var(--text);
-        background: var(--bg);
-        border-color: var(--border);
-      }
-
-      .recipe-badge-v7--archived {
-        color: var(--text-light);
-        background: rgba(100, 116, 139, 0.1);
-        border-color: var(--border);
-      }
-
-      .recipe-badge-v7--warning {
-        color: #9a5a00;
-        background: rgba(255, 193, 7, 0.1);
-        border-color: #FFC107;
-      }
-
-      .recipe-card-v7__meta {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 16px;
-        margin-left: 56px;
-      }
-
-      .recipe-meta-v7 {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        padding: 4px 12px;
-        background: var(--bg);
-        border-radius: var(--radius-full);
-        border: 1px solid var(--border);
-        font-size: 0.8rem;
-        font-weight: 700;
-        color: var(--text);
-      }
-
-      .recipe-meta-v7__label {
-        color: var(--text-light);
-        font-size: 0.7rem;
+        color: var(--text-tertiary);
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        font-weight: 800;
+        border-bottom: 2px solid var(--border-color);
       }
 
-      .recipe-card-v7__right {
-        width: min(560px, 100%);
-        display: grid;
-        gap: 12px;
+      .recipes-pro__table td {
+        padding: 1rem;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.875rem;
+        color: var(--text-secondary);
       }
 
-      .recipe-card-v7__metrics {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 8px;
+      .recipes-pro__table tr:hover td {
+        background: var(--gray-50);
       }
 
-      .metric-v7 {
-        background: linear-gradient(135deg, var(--bg-card), var(--bg));
-        border-radius: var(--radius-lg);
-        border: 1px solid var(--border);
-        padding: 10px 12px;
-        transition: var(--transition);
+      .recipes-pro__table tr:last-child td {
+        border-bottom: none;
       }
 
-      .metric-v7:hover {
-        background: var(--primary-light);
-        border-color: var(--primary);
-        transform: translateY(-2px);
-      }
-
-      .metric-v7__label {
-        color: var(--text-light);
-        font-size: 0.65rem;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        font-weight: 800;
-        line-height: 1;
-      }
-
-      .metric-v7__value {
-        margin-top: 6px;
-        color: var(--text);
-        font-size: 1rem;
-        font-weight: 900;
-        line-height: 1.2;
-        white-space: nowrap;
-      }
-
-      .metric-v7__value--warning {
-        color: var(--danger);
-      }
-
-      .metric-v7__value--success {
-        color: var(--success);
-      }
-
-      .recipe-actions-v7 {
+      .table-actions {
         display: flex;
         align-items: center;
-        justify-content: flex-end;
-        gap: 8px;
-        flex-wrap: wrap;
-      }
-
-      .recipe-select-v7 {
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        min-height: 36px;
-        padding: 0 14px;
-        border-radius: var(--radius-md);
-        border: 2px dashed var(--border);
-        background: var(--bg);
-        color: var(--text);
-        font-weight: 600;
-        cursor: pointer;
-        transition: var(--transition);
-      }
-
-      .recipe-select-v7:hover {
-        border-color: var(--primary);
-        background: var(--primary-light);
-      }
-
-      .recipe-select-v7 input {
-        width: 16px;
-        height: 16px;
-        accent-color: var(--primary);
-        cursor: pointer;
+        gap: 0.25rem;
       }
 
       /* ===== Loading State ===== */
-      .recipes-loading-v7 {
+      .recipes-pro__loading {
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 400px;
-        background: var(--bg-card);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--border);
+        background: var(--bg-primary);
+        border-radius: var(--radius-2xl);
+        border: 1px solid var(--border-color);
         box-shadow: var(--shadow-md);
       }
 
-      .loading-spinner-v7 {
-        width: 48px;
-        height: 48px;
-        border: 3px solid var(--border);
-        border-top-color: var(--primary);
+      .loading-spinner {
+        width: 3rem;
+        height: 3rem;
+        border: 3px solid var(--border-color);
+        border-top-color: var(--primary-500);
         border-radius: 50%;
         animation: spin 1s linear infinite;
       }
@@ -986,16 +1347,17 @@ function RecipesStyles() {
       }
 
       /* ===== Error State ===== */
-      .recipes-error-v7 {
-        background: rgba(244, 67, 54, 0.1);
-        border: 2px solid var(--danger);
-        border-radius: var(--radius-lg);
-        padding: 16px 20px;
-        color: var(--danger);
+      .recipes-pro__error {
+        background: var(--danger-50);
+        border: 2px solid var(--danger-500);
+        border-radius: var(--radius-xl);
+        padding: 1rem 1.5rem;
+        color: var(--danger-700);
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 12px;
+        gap: 0.75rem;
+        margin-bottom: 1rem;
         animation: shake 0.5s ease-out;
       }
 
@@ -1005,200 +1367,279 @@ function RecipesStyles() {
         20%, 40%, 60%, 80% { transform: translateX(2px); }
       }
 
-      /* ===== Responsive Design ===== */
+      .recipes-pro__error-close {
+        margin-left: auto;
+        background: none;
+        border: none;
+        color: var(--danger-700);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .recipes-pro__error-close:hover {
+        background: var(--danger-100);
+      }
+
+      /* ===== Toast ===== */
+      .toast-container {
+        position: fixed;
+        bottom: 1.5rem;
+        right: 1.5rem;
+        z-index: 9999;
+      }
+
+      .toast {
+        background: var(--bg-primary);
+        border-radius: var(--radius-xl);
+        padding: 1rem 1.5rem;
+        box-shadow: var(--shadow-xl);
+        border-left: 4px solid var(--primary-500);
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        animation: slideIn 0.3s ease-out;
+      }
+
+      @keyframes slideIn {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
+      }
+
+      .toast--success {
+        border-left-color: var(--success-500);
+      }
+
+      .toast--error {
+        border-left-color: var(--danger-500);
+      }
+
+      .toast--warning {
+        border-left-color: var(--warning-500);
+      }
+
+      .toast-close {
+        background: none;
+        border: none;
+        color: var(--text-tertiary);
+        cursor: pointer;
+        padding: 0.25rem;
+        border-radius: var(--radius-full);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .toast-close:hover {
+        background: var(--gray-100);
+        color: var(--text-primary);
+      }
+
+      /* ===== Responsive ===== */
       @media (max-width: 1280px) {
-        .recipe-card-v7__body {
-          grid-template-columns: 1fr;
-          align-items: stretch;
+        .recipes-pro__grid--comfortable {
+          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         }
-
-        .recipe-card-v7__right {
-          width: 100%;
+        
+        .recipes-pro__grid--dense {
+          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
         }
-
-        .recipe-actions-v7 {
-          justify-content: flex-start;
+        
+        .recipes-pro__grid--compact {
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         }
       }
 
       @media (max-width: 1024px) {
-        .recipes-page-v7 {
-          padding: 16px;
+        .recipes-pro {
+          padding: 1.5rem;
         }
 
-        .recipes-stats-v7 {
+        .recipes-pro__stats {
           grid-template-columns: repeat(2, 1fr);
         }
       }
 
-      @media (max-width: 820px) {
-        .recipe-card-v7__top {
-          grid-template-columns: 38px minmax(0, 1fr);
+      @media (max-width: 768px) {
+        .recipes-pro {
+          padding: 1rem;
         }
 
-        .recipe-card-v7__icon {
-          width: 38px;
-          height: 38px;
-          font-size: 18px;
-        }
-
-        .recipe-card-v7__meta {
-          margin-left: 0;
-        }
-
-        .recipe-card-v7__title {
-          white-space: normal;
-        }
-
-        .recipe-card-v7__metrics {
-          grid-template-columns: repeat(3, 1fr);
-        }
-      }
-
-      @media (max-width: 640px) {
-        .recipes-page-v7 {
-          padding: 12px;
-        }
-
-        .recipes-header-v7 {
+        .recipes-pro__header {
           flex-direction: column;
           align-items: flex-start;
         }
 
-        .recipes-header-actions-v7 {
+        .recipes-pro__header-actions {
           width: 100%;
         }
 
-        .recipes-header-actions-v7 > * {
+        .recipes-pro__header-actions > * {
           flex: 1;
         }
 
-        .recipes-toolbar-v7 {
+        .recipes-pro__toolbar {
           flex-direction: column;
           align-items: stretch;
         }
 
-        .recipes-toolbar-left-v7 {
+        .recipes-pro__search {
+          min-width: 100%;
+        }
+
+        .recipes-pro__filters {
           flex-direction: column;
           align-items: stretch;
         }
 
-        .recipes-stats-v7 {
+        .filter-group {
+          border-right: none;
+          border-bottom: 1px solid var(--border-color);
+          padding: 0.5rem 0;
+        }
+
+        .filter-group:last-child {
+          border-bottom: none;
+        }
+
+        .recipes-pro__grid {
+          grid-template-columns: 1fr !important;
+        }
+
+        .recipe-card__metrics {
           grid-template-columns: 1fr;
         }
 
-        .recipes-view-controls-v7 {
-          width: 100%;
+        .recipe-card__footer {
+          flex-direction: column;
+          align-items: stretch;
         }
 
-        .view-control-btn-v7 {
-          flex: 1;
-          text-align: center;
+        .recipe-card__actions {
+          justify-content: space-between;
         }
 
-        .recipe-card-v7__titleRow {
+        .recipes-pro__table {
+          display: block;
+          overflow-x: auto;
+        }
+
+        .recipe-list-item {
           flex-direction: column;
           align-items: flex-start;
         }
 
-        .recipe-badges-v7 {
-          justify-content: flex-start;
+        .recipe-list-item__meta {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.25rem;
         }
 
-        .recipe-card-v7__metrics {
-          grid-template-columns: 1fr;
-        }
-
-        .recipe-actions-v7 > * {
-          width: 100%;
-        }
-
-        .recipe-select-v7 {
-          width: 100%;
-          justify-content: center;
+        .toast {
+          min-width: 250px;
         }
       }
 
       @media (max-width: 480px) {
-        .recipes-header-v7 {
-          padding: 16px;
+        .recipes-pro__stats {
+          grid-template-columns: 1fr;
         }
 
-        .recipes-toolbar-v7 {
-          padding: 12px;
+        .recipes-pro__results-info {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 0.5rem;
         }
 
-        .recipe-card-v7__body {
-          padding: 12px;
+        .recipes-pro__results-actions {
+          width: 100%;
+        }
+
+        .bulk-action-btn {
+          flex: 1;
         }
       }
 
       /* ===== Print Styles ===== */
       @media print {
-        .recipes-page-v7 {
+        .recipes-pro {
           background: white;
           padding: 0;
         }
 
-        .recipes-header-actions-v7,
-        .recipes-toolbar-v7,
-        .recipes-filters-v7,
-        .recipes-sort-v7,
-        .recipe-actions-v7,
-        .recipe-select-v7 {
+        .recipes-pro__header-actions,
+        .recipes-pro__toolbar,
+        .recipes-pro__filters,
+        .recipes-pro__sort,
+        .recipes-pro__results-actions,
+        .recipe-card__actions,
+        .action-btn,
+        .select-btn,
+        .toast-container {
           display: none !important;
         }
 
-        .recipe-card-v7 {
+        .recipe-card {
           break-inside: avoid;
           border: 1px solid #000;
           box-shadow: none;
         }
+
+        .recipes-pro__grid {
+          grid-template-columns: repeat(2, 1fr) !important;
+          gap: 0.5in;
+        }
       }
 
-      /* ===== Utility Classes ===== */
-      .text-primary-v7 { color: var(--primary); }
-      .text-secondary-v7 { color: var(--secondary); }
-      .text-success-v7 { color: var(--success); }
-      .text-warning-v7 { color: var(--warning); }
-      .text-danger-v7 { color: var(--danger); }
+      /* ===== Utilities ===== */
+      .text-primary { color: var(--primary-600); }
+      .text-secondary { color: var(--secondary-500); }
+      .text-success { color: var(--success-500); }
+      .text-danger { color: var(--danger-500); }
+      .text-warning { color: var(--warning-500); }
 
-      .bg-primary-v7 { background: var(--primary); }
-      .bg-secondary-v7 { background: var(--secondary); }
-      .bg-success-v7 { background: var(--success); }
-      .bg-warning-v7 { background: var(--warning); }
-      .bg-danger-v7 { background: var(--danger); }
+      .bg-primary { background: var(--primary-50); }
+      .bg-secondary { background: var(--secondary-50); }
+      .bg-success { background: var(--success-50); }
+      .bg-danger { background: var(--danger-50); }
+      .bg-warning { background: var(--warning-50); }
 
-      .font-bold-v7 { font-weight: 700; }
-      .font-extrabold-v7 { font-weight: 800; }
-      .font-black-v7 { font-weight: 900; }
+      .font-bold { font-weight: 700; }
+      .font-extrabold { font-weight: 800; }
+      .font-black { font-weight: 900; }
 
-      .mt-1 { margin-top: 4px; }
-      .mt-2 { margin-top: 8px; }
-      .mt-3 { margin-top: 12px; }
-      .mt-4 { margin-top: 16px; }
-      .mt-5 { margin-top: 24px; }
+      .mt-1 { margin-top: 0.25rem; }
+      .mt-2 { margin-top: 0.5rem; }
+      .mt-3 { margin-top: 0.75rem; }
+      .mt-4 { margin-top: 1rem; }
 
-      .mb-1 { margin-bottom: 4px; }
-      .mb-2 { margin-bottom: 8px; }
-      .mb-3 { margin-bottom: 12px; }
-      .mb-4 { margin-bottom: 16px; }
-      .mb-5 { margin-bottom: 24px; }
+      .mb-1 { margin-bottom: 0.25rem; }
+      .mb-2 { margin-bottom: 0.5rem; }
+      .mb-3 { margin-bottom: 0.75rem; }
+      .mb-4 { margin-bottom: 1rem; }
 
-      .p-1 { padding: 4px; }
-      .p-2 { padding: 8px; }
-      .p-3 { padding: 12px; }
-      .p-4 { padding: 16px; }
-      .p-5 { padding: 24px; }
+      .p-1 { padding: 0.25rem; }
+      .p-2 { padding: 0.5rem; }
+      .p-3 { padding: 0.75rem; }
+      .p-4 { padding: 1rem; }
 
       .flex { display: flex; }
       .items-center { align-items: center; }
       .justify-between { justify-content: space-between; }
       .justify-center { justify-content: center; }
-      .gap-1 { gap: 4px; }
-      .gap-2 { gap: 8px; }
-      .gap-3 { gap: 12px; }
-      .gap-4 { gap: 16px; }
+      .gap-1 { gap: 0.25rem; }
+      .gap-2 { gap: 0.5rem; }
+      .gap-3 { gap: 0.75rem; }
+      .gap-4 { gap: 1rem; }
 
       .w-full { width: 100%; }
       .h-full { height: 100%; }
@@ -1209,10 +1650,30 @@ function RecipesStyles() {
       .transition-all { transition: all 0.2s ease; }
       .hover-scale:hover { transform: scale(1.02); }
       .hover-lift:hover { transform: translateY(-2px); }
+
+      /* ===== Scrollbar ===== */
+      ::-webkit-scrollbar {
+        width: 0.5rem;
+        height: 0.5rem;
+      }
+
+      ::-webkit-scrollbar-track {
+        background: var(--gray-100);
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: var(--gray-400);
+        border-radius: var(--radius-full);
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: var(--gray-500);
+      }
     `}</style>
   )
 }
 
+// ==================== Main Component ====================
 export default function Recipes() {
   const nav = useNavigate()
   const loc = useLocation()
@@ -1229,7 +1690,8 @@ export default function Recipes() {
     }
   }, [])
 
-  const [toast, setToast] = useState<string | null>(null)
+  // State
+  const [toast, setToast] = useState<{ type: 'success' | 'error' | 'info', message: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
@@ -1240,65 +1702,114 @@ export default function Recipes() {
   const [selected, setSelected] = useState<Record<string, boolean>>({})
   const [recipeLinesCache, setRecipeLinesCache] = useState<Record<string, Line[]>>({})
   const loadingLinesRef = useRef<Set<string>>(new Set())
-  const [costCache, setCostCache] = useState<Record<string, CostPoint>>(() => loadCostCache())
+  const [costCache, setCostCache] = useState<Record<string, CostPoint>>(() => CacheManager.get(CACHE_KEYS.COST_CACHE, CACHE_TTL.COST) || {})
 
-  const [density, setDensity] = useState<Density>(() => {
-    try {
-      const v = localStorage.getItem('gc_v5_density')
-      return v === 'dense' ? 'dense' : 'comfortable'
-    } catch {
-      return 'comfortable'
-    }
+  // Preferences
+  const [density, setDensity] = useLocalStorage<Density>('gc:density', 'comfortable')
+  const [viewMode, setViewMode] = useLocalStorage<ViewMode>('gc:view:mode', 'grid')
+  const [sortField, setSortField] = useLocalStorage<SortField>('gc:sort:field', 'name')
+  const [sortOrder, setSortOrder] = useLocalStorage<SortOrder>('gc:sort:order', 'asc')
+  const [filters, setFilters] = useLocalStorage<FilterType>('gc:filters', {
+    categories: [],
+    cuisines: [],
+    dietary: [],
+    difficulty: [],
+    isFeatured: null,
+    isFavorite: null,
+    isSubrecipe: null
   })
 
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list')
+  // Debounced search
+  const debouncedQ = useDebounce(q, 300)
 
-  useEffect(() => {
-    try {
-      const v = sessionStorage.getItem('gc:prefill:recipes')
-      if (v && typeof v === 'string') {
-        setQ(v)
-        sessionStorage.removeItem('gc:prefill:recipes')
-      }
-    } catch {}
-  }, [loc.pathname, loc.hash])
-
-  useEffect(() => {
-    try {
-      const d = density === 'dense' ? 'compact' : 'comfort'
-      document.documentElement.setAttribute('data-density', d)
-      localStorage.setItem('gc_density', d)
-      localStorage.setItem('gc_v5_density', density)
-    } catch {}
-  }, [density])
-
-  const selectedIds = useMemo(
-    () => Object.keys(selected).filter((key) => selected[key]),
-    [selected]
-  )
-
+  // Memoized values
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
     for (const i of ingredients) m.set(i.id, i)
     return m
   }, [ingredients])
 
-  const filtered = useMemo(() => {
-    const s = q.trim().toLowerCase()
+  const filteredRecipes = useMemo(() => {
     let list = recipes
 
-    if (!showArchived) list = list.filter((r) => !r.is_archived)
-    if (!s) return list
+    // Search filter
+    if (debouncedQ) {
+      const query = debouncedQ.toLowerCase()
+      list = list.filter(r => 
+        r.name.toLowerCase().includes(query) ||
+        r.category?.toLowerCase().includes(query) ||
+        r.cuisine?.toLowerCase().includes(query) ||
+        r.tags?.some(tag => tag.toLowerCase().includes(query))
+      )
+    }
 
-    return list.filter((r) => {
-      const a = (r.name || '').toLowerCase()
-      const b = (r.category || '').toLowerCase()
-      return a.includes(s) || b.includes(s)
+    // Archive filter
+    if (!showArchived) {
+      list = list.filter(r => !r.is_archived)
+    }
+
+    // Category filter
+    if (filters.categories.length > 0) {
+      list = list.filter(r => r.category && filters.categories.includes(r.category))
+    }
+
+    // Cuisine filter
+    if (filters.cuisines.length > 0) {
+      list = list.filter(r => r.cuisine && filters.cuisines.includes(r.cuisine))
+    }
+
+    // Featured/Favorite filters
+    if (filters.isFeatured !== null) {
+      list = list.filter(r => r.is_featured === filters.isFeatured)
+    }
+    if (filters.isFavorite !== null) {
+      list = list.filter(r => r.is_favorite === filters.isFavorite)
+    }
+    if (filters.isSubrecipe !== null) {
+      list = list.filter(r => r.is_subrecipe === filters.isSubrecipe)
+    }
+
+    return list
+  }, [recipes, debouncedQ, showArchived, filters])
+
+  const sortedRecipes = useMemo(() => {
+    return [...filteredRecipes].sort((a, b) => {
+      let comparison = 0
+      
+      switch (sortField) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name)
+          break
+        case 'category':
+          comparison = (a.category || '').localeCompare(b.category || '')
+          break
+        case 'price':
+          comparison = (a.selling_price || 0) - (b.selling_price || 0)
+          break
+        case 'cost':
+          comparison = (costCache[a.id]?.totalCost || 0) - (costCache[b.id]?.totalCost || 0)
+          break
+        case 'margin':
+          comparison = (costCache[a.id]?.margin || 0) - (costCache[b.id]?.margin || 0)
+          break
+        case 'date':
+          comparison = new Date(b.created_at || 0).getTime() - new Date(a.created_at || 0).getTime()
+          break
+        default:
+          comparison = 0
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison
     })
-  }, [recipes, q, showArchived])
+  }, [filteredRecipes, sortField, sortOrder, costCache])
+
+  const selectedIds = useMemo(
+    () => Object.keys(selected).filter(key => selected[key]),
+    [selected]
+  )
 
   const hasAnyRecipes = recipes.length > 0
-  const hasActiveRecipes = useMemo(() => recipes.some((r) => !r.is_archived), [recipes])
+  const hasActiveRecipes = useMemo(() => recipes.some(r => !r.is_archived), [recipes])
   const hasSearch = q.trim().length > 0
   const showArchivedEmptyHint = !showArchived && hasAnyRecipes && !hasActiveRecipes
 
@@ -1307,46 +1818,80 @@ export default function Recipes() {
     const active = recipes.filter(r => !r.is_archived).length
     const archived = total - active
     const subrecipes = recipes.filter(r => r.is_subrecipe).length
+    const featured = recipes.filter(r => r.is_featured).length
+    const favorites = recipes.filter(r => r.is_favorite).length
+    
     const totalCost = Object.values(costCache).reduce((sum, c) => sum + c.totalCost, 0)
     const avgCost = active > 0 ? totalCost / active : 0
+    const avgMargin = Object.values(costCache).reduce((sum, c) => sum + (c.margin || 0), 0) / (active || 1)
     
     return {
       total,
       active,
       archived,
       subrecipes,
+      featured,
+      favorites,
       totalCost,
-      avgCost
+      avgCost,
+      avgMargin
     }
   }, [recipes, costCache])
 
-  async function loadAll() {
-    if (mountedRef.current) {
+  // Load data
+  const loadAll = useCallback(async (sync = false) => {
+    if (!mountedRef.current) return
+    
+    if (!sync) {
       setLoading(true)
-      setErr(null)
     }
+    setErr(null)
 
     try {
+      // Try cache first
+      if (!sync) {
+        const cachedRecipes = CacheManager.get<RecipeRow[]>(CACHE_KEYS.RECIPES_CACHE, CACHE_TTL.RECIPES)
+        const cachedIngredients = CacheManager.get<Ingredient[]>(CACHE_KEYS.INGREDIENTS_REV, CACHE_TTL.INGREDIENTS)
+        
+        if (cachedRecipes && cachedIngredients) {
+          setRecipes(cachedRecipes)
+          setIngredients(cachedIngredients)
+          setLoading(false)
+          return
+        }
+      }
+
+      // الأعمدة المؤكدة فقط
       const selectRecipes = `
         id,
         code,
         kitchen_id,
         name,
         category,
+        cuisine,
         portions,
         yield_qty,
         yield_unit,
         is_subrecipe,
         is_archived,
+        is_featured,
+        is_favorite,
         photo_url,
         description,
+        preparation_time,
+        cooking_time,
+        difficulty,
+        tags,
         calories,
         protein_g,
         carbs_g,
         fat_g,
         selling_price,
         currency,
-        target_food_cost_pct
+        target_food_cost_pct,
+        created_at,
+        updated_at,
+        version
       `
 
       const { data: r, error: rErr } = await supabase
@@ -1356,30 +1901,46 @@ export default function Recipes() {
         .order('name', { ascending: true })
 
       if (rErr) throw rErr
-      if (mountedRef.current) setRecipes((r ?? []) as RecipeRow[])
+      
+      const recipesData = (r ?? []) as RecipeRow[]
+      if (mountedRef.current) {
+        setRecipes(recipesData)
+        CacheManager.set(CACHE_KEYS.RECIPES_CACHE, recipesData)
+      }
 
       const { data: i, error: iErr } = await supabase
         .from('ingredients')
-        .select('id,name,pack_unit,net_unit_cost,is_active')
+        .select('id,name,pack_unit,net_unit_cost,is_active,category,allergen_info')
         .order('name', { ascending: true })
 
       if (iErr) throw iErr
-      if (mountedRef.current) setIngredients((i ?? []) as Ingredient[])
+      
+      const ingredientsData = (i ?? []) as Ingredient[]
+      if (mountedRef.current) {
+        setIngredients(ingredientsData)
+        CacheManager.set(CACHE_KEYS.INGREDIENTS_REV, ingredientsData)
+      }
+      
     } catch (e: any) {
-      if (mountedRef.current) setErr(e?.message || 'Failed to load recipes')
+      if (mountedRef.current) {
+        setErr(e?.message || 'Failed to load recipes')
+        showToast('error', e?.message || 'Failed to load recipes')
+      }
     } finally {
-      if (mountedRef.current) setLoading(false)
+      if (mountedRef.current) {
+        setLoading(false)
+      }
     }
-  }
+  }, [])
 
   useEffect(() => {
     loadAll().catch(() => {})
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [loadAll])
 
-  async function ensureRecipeLinesLoaded(ids: string[]) {
+  // Load recipe lines
+  const ensureRecipeLinesLoaded = useCallback(async (ids: string[]) => {
     const need = ids.filter(
-      (id) => !recipeLinesCache[id] && !loadingLinesRef.current.has(id)
+      id => !recipeLinesCache[id] && !loadingLinesRef.current.has(id)
     )
     if (!need.length) return
 
@@ -1388,9 +1949,7 @@ export default function Recipes() {
     try {
       const { data, error } = await supabase
         .from('recipe_lines')
-        .select(
-          'id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,notes,position,line_type,group_title'
-        )
+        .select('id,recipe_id,ingredient_id,sub_recipe_id,qty,unit,notes,position,line_type,group_title')
         .in('recipe_id', need)
         .order('position', { ascending: true })
 
@@ -1404,26 +1963,38 @@ export default function Recipes() {
       }
 
       if (mountedRef.current) {
-        setRecipeLinesCache((prev) => ({ ...prev, ...grouped }))
+        setRecipeLinesCache(prev => ({ ...prev, ...grouped }))
       }
     } finally {
       for (const id of need) loadingLinesRef.current.delete(id)
     }
-  }
+  }, [recipeLinesCache])
 
-  const costMemo = useMemo(() => {
-    const memo = new Map<string, { cost: number; warnings: string[] }>()
+  // Calculate costs
+  useEffect(() => {
+    if (loading) return
+    if (!sortedRecipes.length) return
 
-    for (const r of recipes) {
-      const lines = recipeLinesCache[r.id]
-      if (!lines) continue
+    const visible = sortedRecipes.slice(0, 50)
+    ensureRecipeLinesLoaded(visible.map(r => r.id)).catch(() => {})
 
-      let cost = 0
+    const now = Date.now()
+    const nextCache: Record<string, CostPoint> = { ...costCache }
+    let changed = false
+
+    for (const r of visible) {
+      const rid = r.id
+      const hit = nextCache[rid]
+
+      if (hit && now - hit.at < CACHE_TTL.COST) continue
+      if (!recipeLinesCache[rid]) continue
+
+      const lines = recipeLinesCache[rid] || []
+      let totalCost = 0
       const warnings: string[] = []
 
       for (const l of lines) {
-        if (l.line_type === 'group') continue
-        if (l.line_type === 'subrecipe') continue
+        if (l.line_type === 'group' || l.line_type === 'subrecipe') continue
 
         const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
         if (!ing) continue
@@ -1437,41 +2008,16 @@ export default function Recipes() {
         const packUnit = ing.pack_unit || l.unit
         const qtyInPack = convertQtyToPackUnit(netQty, l.unit, packUnit)
         const lineCost = qtyInPack * unitCost
-        cost += Number.isFinite(lineCost) ? lineCost : 0
+        totalCost += Number.isFinite(lineCost) ? lineCost : 0
       }
-
-      memo.set(r.id, { cost, warnings })
-    }
-
-    return memo
-  }, [recipes, recipeLinesCache, ingById])
-
-  useEffect(() => {
-    if (loading) return
-    if (!filtered.length) return
-
-    const visible = filtered.slice(0, 50)
-    ensureRecipeLinesLoaded(visible.map((r) => r.id)).catch(() => {})
-
-    const now = Date.now()
-    const nextCache: Record<string, CostPoint> = { ...costCache }
-    let changed = false
-
-    for (const r of visible) {
-      const rid = r.id
-      const hit = nextCache[rid]
-
-      if (hit && now - hit.at < COST_TTL_MS) continue
-      if (!recipeLinesCache[rid]) continue
-
-      const totalRes = costMemo.get(rid) || { cost: 0, warnings: [] }
-      const totalCost = totalRes.cost
+      
       const portionsN = Math.max(1, toNum(r.portions, 1))
       const cpp = portionsN > 0 ? totalCost / portionsN : 0
       const sell = Math.max(0, toNum(r.selling_price, 0))
       const fcPct = sell > 0 ? (cpp / sell) * 100 : null
       const margin = sell - cpp
       const marginPct = sell > 0 ? (margin / sell) * 100 : null
+      const profit = margin
 
       nextCache[rid] = {
         at: now,
@@ -1480,7 +2026,8 @@ export default function Recipes() {
         fcPct,
         margin,
         marginPct,
-        warnings: totalRes.warnings,
+        profit,
+        warnings
       }
 
       changed = true
@@ -1488,28 +2035,40 @@ export default function Recipes() {
 
     if (changed) {
       if (mountedRef.current) setCostCache(nextCache)
-      saveCostCache(nextCache)
+      CacheManager.set(CACHE_KEYS.COST_CACHE, nextCache)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [loading, filtered, recipeLinesCache, costMemo])
+  }, [loading, sortedRecipes, recipeLinesCache, ingById, costCache, ensureRecipeLinesLoaded])
 
-  async function createNewRecipe() {
+  // Actions
+  const showToast = (type: 'success' | 'error' | 'info', message: string) => {
+    setToast({ type, message })
+    setTimeout(() => setToast(null), 3000)
+  }
+
+  const createNewRecipe = useCallback(async () => {
     if (mountedRef.current) setErr(null)
 
     try {
       if (!k.kitchenId) {
-        throw new Error('Kitchen not ready yet.\nPlease wait a second and try again.')
+        throw new Error('Kitchen not ready yet. Please wait a moment and try again.')
       }
 
       const payload: Partial<RecipeRow> = {
         kitchen_id: k.kitchenId,
         name: 'New Recipe',
         category: null,
-        portions: 1,
+        portions: 4,
         is_subrecipe: false,
         is_archived: false,
+        is_featured: false,
+        is_favorite: false,
         description: '',
         photo_url: null,
+        preparation_time: 30,
+        cooking_time: 20,
+        difficulty: 'medium',
+        tags: [],
+        version: 1
       }
 
       const { data, error } = await supabase
@@ -1521,47 +2080,164 @@ export default function Recipes() {
       if (error) throw error
 
       const id = (data as any)?.id as string
-      if (mountedRef.current) setToast('Created. Opening editor…')
-      nav(`/recipe?id=${encodeURIComponent(id)}`)
+      showToast('success', 'Recipe created successfully. Opening editor...')
+      
+      CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
+      
+      setTimeout(() => {
+        nav(`/recipe?id=${encodeURIComponent(id)}`)
+      }, 500)
+      
     } catch (e: any) {
-      if (mountedRef.current) setErr(e?.message || 'Failed to create recipe')
+      if (mountedRef.current) {
+        setErr(e?.message || 'Failed to create recipe')
+        showToast('error', e?.message || 'Failed to create recipe')
+      }
     }
-  }
+  }, [k.kitchenId, nav])
 
-  async function toggleArchive(r: RecipeRow) {
+  const toggleArchive = useCallback(async (r: RecipeRow) => {
     try {
       const next = !r.is_archived
       const { error } = await supabase
         .from('recipes')
-        .update({ is_archived: next })
+        .update({ is_archived: next, updated_at: new Date().toISOString() })
         .eq('id', r.id)
 
       if (error) throw error
 
       if (mountedRef.current) {
-        setRecipes((prev) => prev.map((x) => (x.id === r.id ? { ...x, is_archived: next } : x)))
-        setToast(next ? 'Archived.' : 'Restored.')
+        setRecipes(prev => prev.map(x => x.id === r.id ? { ...x, is_archived: next } : x))
+        showToast('success', next ? 'Recipe archived' : 'Recipe restored')
       }
     } catch (e: any) {
-      if (mountedRef.current) setErr(e?.message || 'Failed to update recipe')
+      showToast('error', e?.message || 'Failed to update recipe')
     }
-  }
+  }, [])
 
-  function toggleSelect(id: string) {
-    setSelected((p) => ({ ...p, [id]: !p[id] }))
-  }
+  const toggleFeatured = useCallback(async (r: RecipeRow) => {
+    try {
+      const next = !r.is_featured
+      const { error } = await supabase
+        .from('recipes')
+        .update({ is_featured: next, updated_at: new Date().toISOString() })
+        .eq('id', r.id)
 
-  function clearSelection() {
+      if (error) throw error
+
+      if (mountedRef.current) {
+        setRecipes(prev => prev.map(x => x.id === r.id ? { ...x, is_featured: next } : x))
+        showToast('success', next ? 'Recipe featured' : 'Recipe unfeatured')
+      }
+    } catch (e: any) {
+      showToast('error', e?.message || 'Failed to update recipe')
+    }
+  }, [])
+
+  const toggleFavorite = useCallback(async (r: RecipeRow) => {
+    try {
+      const next = !r.is_favorite
+      const { error } = await supabase
+        .from('recipes')
+        .update({ is_favorite: next, updated_at: new Date().toISOString() })
+        .eq('id', r.id)
+
+      if (error) throw error
+
+      if (mountedRef.current) {
+        setRecipes(prev => prev.map(x => x.id === r.id ? { ...x, is_favorite: next } : x))
+        showToast('success', next ? 'Added to favorites' : 'Removed from favorites')
+      }
+    } catch (e: any) {
+      showToast('error', e?.message || 'Failed to update recipe')
+    }
+  }, [])
+
+  const toggleSelect = useCallback((id: string) => {
+    setSelected(prev => ({ ...prev, [id]: !prev[id] }))
+  }, [])
+
+  const clearSelection = useCallback(() => {
     setSelected({})
-  }
+  }, [])
 
-  async function deleteOneRecipe(recipeId: string) {
+  const selectAll = useCallback(() => {
+    const newSelected: Record<string, boolean> = {}
+    sortedRecipes.forEach(r => { newSelected[r.id] = true })
+    setSelected(newSelected)
+  }, [sortedRecipes])
+
+  const bulkArchive = useCallback(async () => {
+    if (selectedIds.length === 0) return
+    
+    const ok = window.confirm(`Archive ${selectedIds.length} selected recipes?`)
+    if (!ok) return
+
+    try {
+      const { error } = await supabase
+        .from('recipes')
+        .update({ is_archived: true, updated_at: new Date().toISOString() })
+        .in('id', selectedIds)
+
+      if (error) throw error
+
+      if (mountedRef.current) {
+        setRecipes(prev =>
+          prev.map(r =>
+            selectedIds.includes(r.id) ? { ...r, is_archived: true } : r
+          )
+        )
+        setSelected({})
+        showToast('success', `${selectedIds.length} recipes archived`)
+      }
+    } catch (e: any) {
+      showToast('error', e?.message || 'Failed to archive recipes')
+    }
+  }, [selectedIds])
+
+  const bulkDelete = useCallback(async () => {
+    if (selectedIds.length === 0) return
+    
+    const ok = window.confirm(
+      `Permanently delete ${selectedIds.length} selected recipes?\n\nThis action cannot be undone.`
+    )
+    if (!ok) return
+
+    try {
+      const { error: lErr } = await supabase
+        .from('recipe_lines')
+        .delete()
+        .in('recipe_id', selectedIds)
+      if (lErr) throw lErr
+
+      const { error: rErr } = await supabase
+        .from('recipes')
+        .delete()
+        .in('id', selectedIds)
+      if (rErr) throw rErr
+
+      if (mountedRef.current) {
+        setRecipes(prev => prev.filter(r => !selectedIds.includes(r.id)))
+        setRecipeLinesCache(prev => {
+          const next = { ...prev }
+          selectedIds.forEach(id => delete next[id])
+          return next
+        })
+        setSelected({})
+        showToast('success', `${selectedIds.length} recipes deleted`)
+        
+        CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
+      }
+    } catch (e: any) {
+      showToast('error', e?.message || 'Failed to delete recipes')
+    }
+  }, [selectedIds])
+
+  const deleteOneRecipe = useCallback(async (recipeId: string) => {
     const ok = window.confirm(
       'Delete this recipe permanently?\n\nThis will also delete its recipe lines.\nThis action cannot be undone.'
     )
     if (!ok) return
-
-    if (mountedRef.current) setErr(null)
 
     try {
       const { error: lErr } = await supabase
@@ -1577,156 +2253,590 @@ export default function Recipes() {
       if (rErr) throw rErr
 
       if (mountedRef.current) {
-        setRecipes((prev) => prev.filter((r) => r.id !== recipeId))
-        setRecipeLinesCache((p) => {
-          const next = { ...p }
+        setRecipes(prev => prev.filter(r => r.id !== recipeId))
+        setRecipeLinesCache(prev => {
+          const next = { ...prev }
           delete next[recipeId]
           return next
         })
-        setSelected((p) => {
-          const next = { ...p }
+        setSelected(prev => {
+          const next = { ...prev }
           delete next[recipeId]
           return next
         })
-        setToast('Deleted.')
+        showToast('success', 'Recipe deleted successfully')
+        
+        CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
       }
     } catch (e: any) {
-      if (mountedRef.current) setErr(e?.message || 'Failed to delete recipe')
+      showToast('error', e?.message || 'Failed to delete recipe')
     }
-  }
+  }, [])
+
+  // Render functions
+  const renderGridView = () => (
+    <div className={`recipes-pro__grid recipes-pro__grid--${density}`}>
+      <AnimatePresence>
+        {sortedRecipes.map(r => {
+          const c = costCache[r.id]
+          const cur = (r.currency || 'USD').toUpperCase()
+          const hasWarning = Boolean(c?.warnings?.length)
+          const portions = toNum(r.portions, 1)
+          const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
+
+          return (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ duration: 0.2 }}
+              layout
+            >
+              <div className="recipe-card">
+                <div className="recipe-card__accent" />
+
+                <div className="recipe-card__body">
+                  <div className="recipe-card__header">
+                    <div className="recipe-card__title-section">
+                      <h3 className="recipe-card__title">{r.name}</h3>
+                      <div className="recipe-card__category">
+                        <span>{r.category || 'Uncategorized'}</span>
+                        {r.cuisine && <span>• {r.cuisine}</span>}
+                      </div>
+                    </div>
+
+                    <div className="recipe-card__badges">
+                      {r.is_featured && (
+                        <span className="badge badge--featured">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                          </svg>
+                          Featured
+                        </span>
+                      )}
+                      {r.is_favorite && (
+                        <span className="badge badge--favorite">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+                            <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                          </svg>
+                          Favorite
+                        </span>
+                      )}
+                      {r.is_subrecipe && (
+                        <span className="badge badge--subrecipe">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                            <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                          </svg>
+                          Subrecipe
+                        </span>
+                      )}
+                      {r.is_archived && (
+                        <span className="badge badge--archived">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <polyline points="21 8 21 21 3 21 3 8" />
+                            <rect x="1" y="3" width="22" height="5" rx="2" ry="2" />
+                            <line x1="10" y1="12" x2="14" y2="12" />
+                          </svg>
+                          Archived
+                        </span>
+                      )}
+                      {hasWarning && (
+                        <span className="badge badge--warning">
+                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="12" cy="12" r="10" />
+                            <line x1="12" y1="8" x2="12" y2="12" />
+                            <line x1="12" y1="16" x2="12.01" y2="16" />
+                          </svg>
+                          Missing Price
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="recipe-card__meta">
+                    <div className="meta-item">
+                      <svg className="meta-item__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M5.37 16c.92-1.52 2.84-2 5.37-2h2.52c2.53 0 4.45.48 5.37 2" />
+                      </svg>
+                      <span>{portions} portions</span>
+                    </div>
+                    <div className="meta-item">
+                      <svg className="meta-item__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      <span>{formatTime(totalTime)}</span>
+                    </div>
+                    <div className="meta-item">
+                      <svg className="meta-item__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                      </svg>
+                      <span>{r.yield_qty ? `${r.yield_qty} ${r.yield_unit || ''}` : '—'}</span>
+                    </div>
+                  </div>
+
+                  {r.description && (
+                    <p className="recipe-card__description">{r.description}</p>
+                  )}
+
+                  {r.tags && r.tags.length > 0 && (
+                    <div className="recipe-card__tags">
+                      {r.tags.slice(0, 5).map(tag => (
+                        <span key={tag} className="tag">{tag}</span>
+                      ))}
+                    </div>
+                  )}
+
+                  <div className="recipe-card__metrics">
+                    <div className="metric">
+                      <div className="metric__label">Cost / Portion</div>
+                      <div className="metric__value">
+                        {c ? formatCurrency(c.cpp, cur) : '—'}
+                      </div>
+                    </div>
+                    <div className="metric">
+                      <div className="metric__label">FC%</div>
+                      <div className={`metric__value ${c?.fcPct && c.fcPct > 30 ? 'metric__value--warning' : 'metric__value--success'}`}>
+                        {c?.fcPct != null ? `${c.fcPct.toFixed(1)}%` : '—'}
+                      </div>
+                    </div>
+                    <div className="metric">
+                      <div className="metric__label">Margin</div>
+                      <div className="metric__value">
+                        {c ? formatCurrency(c.margin, cur) : '—'}
+                      </div>
+                    </div>
+                  </div>
+
+                  {(r.calories || r.protein_g || r.carbs_g || r.fat_g) && (
+                    <div className="recipe-card__nutrition">
+                      {r.calories && (
+                        <div className="nutrition-item">
+                          <div className="nutrition-value">{r.calories}</div>
+                          <div className="nutrition-label">Cal</div>
+                        </div>
+                      )}
+                      {r.protein_g && (
+                        <div className="nutrition-item">
+                          <div className="nutrition-value">{r.protein_g}g</div>
+                          <div className="nutrition-label">Protein</div>
+                        </div>
+                      )}
+                      {r.carbs_g && (
+                        <div className="nutrition-item">
+                          <div className="nutrition-value">{r.carbs_g}g</div>
+                          <div className="nutrition-label">Carbs</div>
+                        </div>
+                      )}
+                      {r.fat_g && (
+                        <div className="nutrition-item">
+                          <div className="nutrition-value">{r.fat_g}g</div>
+                          <div className="nutrition-label">Fat</div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+
+                  <div className="recipe-card__footer">
+                    <div className="recipe-card__price">
+                      {r.selling_price ? formatCurrency(r.selling_price, cur) : 'Price not set'}
+                      {c?.profit && (
+                        <small>
+                          {' '}
+                          (Profit: {formatCurrency(c.profit, cur)})
+                        </small>
+                      )}
+                    </div>
+                    <div className="recipe-card__actions">
+                      <button
+                        className="action-btn"
+                        onClick={() => toggleFavorite(r)}
+                        title={r.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill={r.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+                        </svg>
+                      </button>
+                      <button
+                        className="action-btn"
+                        onClick={() => toggleFeatured(r)}
+                        title={r.is_featured ? 'Unfeature' : 'Feature'}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                        </svg>
+                      </button>
+                      <button
+                        className="action-btn"
+                        onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}
+                        title="Edit"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                        </svg>
+                      </button>
+                      <button
+                        className="action-btn"
+                        onClick={() => toggleArchive(r)}
+                        title={r.is_archived ? 'Restore' : 'Archive'}
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="21 8 21 21 3 21 3 8" />
+                          <rect x="1" y="3" width="22" height="5" rx="2" ry="2" />
+                          <line x1="10" y1="12" x2="14" y2="12" />
+                        </svg>
+                      </button>
+                      <button
+                        className="action-btn action-btn--danger"
+                        onClick={() => deleteOneRecipe(r.id)}
+                        title="Delete"
+                      >
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="3 6 5 6 21 6" />
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                        </svg>
+                      </button>
+                      <label className="select-btn">
+                        <input
+                          type="checkbox"
+                          checked={!!selected[r.id]}
+                          onChange={() => toggleSelect(r.id)}
+                        />
+                        <span>Select</span>
+                      </label>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
+    </div>
+  )
+
+  const renderListView = () => (
+    <div className="recipes-pro__list">
+      <AnimatePresence>
+        {sortedRecipes.map(r => {
+          const c = costCache[r.id]
+          const cur = (r.currency || 'USD').toUpperCase()
+          const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
+
+          return (
+            <motion.div
+              key={r.id}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 20 }}
+              transition={{ duration: 0.2 }}
+              layout
+            >
+              <div className="recipe-list-item">
+                <div className="recipe-list-item__icon">
+                  {r.cuisine === 'italian' && '🍝'}
+                  {r.cuisine === 'asian' && '🍜'}
+                  {r.cuisine === 'mexican' && '🌮'}
+                  {r.cuisine === 'indian' && '🍛'}
+                  {!r.cuisine && '🍽'}
+                </div>
+                
+                <div className="recipe-list-item__content">
+                  <div className="recipe-list-item__title">
+                    <span>{r.name}</span>
+                    <span className="recipe-list-item__category">{r.category}</span>
+                    {r.is_featured && <span className="badge badge--featured">Featured</span>}
+                    {r.is_favorite && <span className="badge badge--favorite">Favorite</span>}
+                    {r.is_archived && <span className="badge badge--archived">Archived</span>}
+                  </div>
+                  
+                  <div className="recipe-list-item__meta">
+                    <span className="recipe-list-item__stat">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="8" r="4" />
+                        <path d="M5.37 16c.92-1.52 2.84-2 5.37-2h2.52c2.53 0 4.45.48 5.37 2" />
+                      </svg>
+                      {r.portions} portions
+                    </span>
+                    <span className="recipe-list-item__stat">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <polyline points="12 6 12 12 16 14" />
+                      </svg>
+                      {formatTime(totalTime)}
+                    </span>
+                    <span className="recipe-list-item__stat">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+                      </svg>
+                      {r.yield_qty ? `${r.yield_qty} ${r.yield_unit || ''}` : '—'}
+                    </span>
+                    <span className="recipe-list-item__stat">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" />
+                        <line x1="12" y1="6" x2="12" y2="12" />
+                        <line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      {c ? formatCurrency(c.cpp, cur) : '—'} / portion
+                    </span>
+                    <span className="recipe-list-item__price">
+                      {r.selling_price ? formatCurrency(r.selling_price, cur) : 'No price'}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="recipe-card__actions">
+                  <button className="action-btn" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                  </button>
+                  <label className="select-btn">
+                    <input
+                      type="checkbox"
+                      checked={!!selected[r.id]}
+                      onChange={() => toggleSelect(r.id)}
+                    />
+                  </label>
+                </div>
+              </div>
+            </motion.div>
+          )
+        })}
+      </AnimatePresence>
+    </div>
+  )
+
+  const renderTableView = () => (
+    <table className="recipes-pro__table">
+      <thead>
+        <tr>
+          <th>
+            <input
+              type="checkbox"
+              checked={selectedIds.length === sortedRecipes.length && sortedRecipes.length > 0}
+              onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
+              style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary-500)' }}
+            />
+          </th>
+          <th>Name</th>
+          <th>Category</th>
+          <th>Cuisine</th>
+          <th>Portions</th>
+          <th>Time</th>
+          <th>Cost/Portion</th>
+          <th>Selling Price</th>
+          <th>FC%</th>
+          <th>Profit</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        {sortedRecipes.map(r => {
+          const c = costCache[r.id]
+          const cur = (r.currency || 'USD').toUpperCase()
+          const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
+
+          return (
+            <tr key={r.id}>
+              <td>
+                <input
+                  type="checkbox"
+                  checked={!!selected[r.id]}
+                  onChange={() => toggleSelect(r.id)}
+                  style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary-500)' }}
+                />
+              </td>
+              <td>
+                <strong>{r.name}</strong>
+                {r.is_featured && <span className="badge badge--featured">★</span>}
+              </td>
+              <td>{r.category || '—'}</td>
+              <td>{r.cuisine || '—'}</td>
+              <td>{r.portions}</td>
+              <td>{formatTime(totalTime)}</td>
+              <td>{c ? formatCurrency(c.cpp, cur) : '—'}</td>
+              <td>{r.selling_price ? formatCurrency(r.selling_price, cur) : '—'}</td>
+              <td style={{ color: c?.fcPct && c.fcPct > 30 ? 'var(--danger-500)' : 'var(--success-500)' }}>
+                {c?.fcPct ? `${c.fcPct.toFixed(1)}%` : '—'}
+              </td>
+              <td>{c ? formatCurrency(c.profit, cur) : '—'}</td>
+              <td>
+                {r.is_archived && <span className="badge badge--archived">Archived</span>}
+                {!r.is_archived && <span className="badge badge--success">Active</span>}
+              </td>
+              <td>
+                <div className="table-actions">
+                  <button className="action-btn" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          )
+        })}
+      </tbody>
+    </table>
+  )
 
   return (
     <>
       <RecipesStyles />
 
-      <div className="recipes-page-v7">
-        {/* Header */}
-        <div className="recipes-header-v7">
-          <div className="recipes-header-left-v7">
-            <div className="recipes-header-icon-v7">
-              <span>🍳</span>
+      <div className="recipes-pro">
+        <div className="recipes-pro__container">
+          {/* Header */}
+          <div className="recipes-pro__header">
+            <div className="recipes-pro__header-left">
+              <div className="recipes-pro__header-icon">
+                <span>🍳</span>
+              </div>
+              <div>
+                <h1 className="recipes-pro__header-title">Recipe Management</h1>
+                <p className="recipes-pro__header-subtitle">
+                  {isMgmt ? 'Costing, pricing & analytics' : 'Kitchen operations & production'}
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="recipes-header-title-v7">Recipe Management</h1>
-              <p className="recipes-header-subtitle-v7">
-                {isMgmt ? 'Costing, pricing & analytics' : 'Kitchen operations & production'}
-              </p>
-            </div>
-          </div>
 
-          <div className="recipes-header-actions-v7">
-            <Button onClick={createNewRecipe}>New recipe</Button>
-
-            <Button variant="secondary" onClick={() => setShowArchived((v) => !v)}>
-              {showArchived ? 'Hide archived' : 'Show archived'}
-            </Button>
-
-            <Button
-              variant="secondary"
-              onClick={() => {
-                const next = density === 'dense' ? 'comfortable' : 'dense'
-                setDensity(next)
-                localStorage.setItem('gc_v5_density', next)
-              }}
-            >
-              Density: {density}
-            </Button>
-
-            {selectedIds.length > 0 && (
-              <Button variant="ghost" onClick={clearSelection}>
-                Clear ({selectedIds.length})
+            <div className="recipes-pro__header-actions">
+              <Button onClick={createNewRecipe}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+                New Recipe
               </Button>
-            )}
-          </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="recipes-stats-v7">
-          <div className="stat-card-v7">
-            <div className="stat-card-header-v7">
-              <span className="stat-card-label-v7">Total Recipes</span>
-              <div className="stat-card-icon-v7">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 7h16M4 12h16M4 17h10" />
+              <Button variant="secondary" onClick={() => loadAll(true)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+                  <path d="M23 4v6h-6" />
+                  <path d="M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
                 </svg>
+                Sync
+              </Button>
+
+              <Button variant="secondary" onClick={() => setShowArchived(!showArchived)}>
+                {showArchived ? (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="9" y1="9" x2="15" y2="15" />
+                      <line x1="15" y1="9" x2="9" y2="15" />
+                    </svg>
+                    Hide Archived
+                  </>
+                ) : (
+                  <>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                      <line x1="3" y1="9" x2="21" y2="9" />
+                      <line x1="3" y1="15" x2="21" y2="15" />
+                      <line x1="9" y1="21" x2="9" y2="9" />
+                    </svg>
+                    Show Archived
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Stats Cards */}
+          <div className="recipes-pro__stats">
+            <div className="stat-card">
+              <div className="stat-card__header">
+                <span className="stat-card__label">Total Recipes</span>
+                <div className="stat-card__icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 7h16M4 12h16M4 17h10" />
+                  </svg>
+                </div>
+              </div>
+              <div className="stat-card__value">{stats.total}</div>
+              <div className="stat-card__change">
+                <span className="stat-card__change--positive">↑ {stats.active} active</span>
               </div>
             </div>
-            <div className="stat-card-value-v7">{stats.total}</div>
-            <div className="stat-card-change-v7">
-              <span className="stat-card-change--positive-v7">↑ {stats.active} active</span>
-            </div>
-          </div>
 
-          <div className="stat-card-v7">
-            <div className="stat-card-header-v7">
-              <span className="stat-card-label-v7">Subrecipes</span>
-              <div className="stat-card-icon-v7">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                </svg>
+            <div className="stat-card">
+              <div className="stat-card__header">
+                <span className="stat-card__label">Featured</span>
+                <div className="stat-card__icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+                  </svg>
+                </div>
+              </div>
+              <div className="stat-card__value">{stats.featured}</div>
+              <div className="stat-card__change">
+                <span>{stats.favorites} favorites</span>
               </div>
             </div>
-            <div className="stat-card-value-v7">{stats.subrecipes}</div>
-            <div className="stat-card-change-v7">
-              <span>components</span>
-            </div>
-          </div>
 
-          <div className="stat-card-v7">
-            <div className="stat-card-header-v7">
-              <span className="stat-card-label-v7">Avg Cost</span>
-              <div className="stat-card-icon-v7">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="6" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
+            <div className="stat-card">
+              <div className="stat-card__header">
+                <span className="stat-card__label">Avg Cost</span>
+                <div className="stat-card__icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="6" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+              </div>
+              <div className="stat-card__value">
+                {formatCurrency(stats.avgCost)}
+              </div>
+              <div className="stat-card__change">
+                <span>per recipe</span>
               </div>
             </div>
-            <div className="stat-card-value-v7">
-              {stats.avgCost.toFixed(2)} {recipes[0]?.currency || 'USD'}
-            </div>
-            <div className="stat-card-change-v7">
-              <span>per recipe</span>
-            </div>
-          </div>
 
-          <div className="stat-card-v7">
-            <div className="stat-card-header-v7">
-              <span className="stat-card-label-v7">Archived</span>
-              <div className="stat-card-icon-v7">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <polyline points="21 8 21 21 3 21 3 8" />
-                  <rect x="1" y="3" width="22" height="5" rx="2" ry="2" />
-                  <line x1="10" y1="12" x2="14" y2="12" />
-                </svg>
+            <div className="stat-card">
+              <div className="stat-card__header">
+                <span className="stat-card__label">Avg Margin</span>
+                <div className="stat-card__icon">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="12" y1="20" x2="12" y2="10" />
+                    <line x1="18" y1="20" x2="18" y2="4" />
+                    <line x1="6" y1="20" x2="6" y2="16" />
+                  </svg>
+                </div>
+              </div>
+              <div className={`stat-card__value ${stats.avgMargin > 0 ? 'text-success' : 'text-danger'}`}>
+                {formatPercentage(stats.avgMargin)}
+              </div>
+              <div className="stat-card__change">
+                <span className="stat-card__change--negative">↓ {stats.archived} archived</span>
               </div>
             </div>
-            <div className="stat-card-value-v7">{stats.archived}</div>
-            <div className="stat-card-change-v7">
-              <span className="stat-card-change--negative-v7">↓ archived</span>
-            </div>
           </div>
-        </div>
 
-        {/* Toolbar */}
-        <div className="recipes-toolbar-v7">
-          <div className="recipes-toolbar-left-v7">
-            <div className="recipes-search-v7">
-              <svg className="recipes-search-icon-v7" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          {/* Toolbar */}
+          <div className="recipes-pro__toolbar">
+            <div className="recipes-pro__search">
+              <svg className="recipes-pro__search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
               <input
-                className="recipes-search-input-v7"
+                className="recipes-pro__search-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name or category..."
+                placeholder="Search by name, category, cuisine, tags..."
               />
               {q && (
                 <button
-                  className="recipes-search-clear-v7"
+                  className="recipes-pro__search-clear"
                   onClick={() => setQ('')}
                 >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1738,7 +2848,7 @@ export default function Recipes() {
             </div>
 
             <button
-              className={`recipes-filter-btn-v7 ${showFilters ? 'recipes-filter-btn-v7--active' : ''}`}
+              className={`recipes-pro__filters-btn ${showFilters ? 'recipes-pro__filters-btn--active' : ''}`}
               onClick={() => setShowFilters(!showFilters)}
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1746,12 +2856,10 @@ export default function Recipes() {
               </svg>
               Filters
             </button>
-          </div>
 
-          <div className="recipes-header-actions-v7">
-            <div className="recipes-view-controls-v7">
+            <div className="recipes-pro__view-controls">
               <button
-                className={`view-control-btn-v7 ${viewMode === 'grid' ? 'view-control-btn-v7--active' : ''}`}
+                className={`view-control-btn ${viewMode === 'grid' ? 'view-control-btn--active' : ''}`}
                 onClick={() => setViewMode('grid')}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1763,7 +2871,7 @@ export default function Recipes() {
                 Grid
               </button>
               <button
-                className={`view-control-btn-v7 ${viewMode === 'list' ? 'view-control-btn-v7--active' : ''}`}
+                className={`view-control-btn ${viewMode === 'list' ? 'view-control-btn--active' : ''}`}
                 onClick={() => setViewMode('list')}
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1776,271 +2884,257 @@ export default function Recipes() {
                 </svg>
                 List
               </button>
+              <button
+                className={`view-control-btn ${viewMode === 'table' ? 'view-control-btn--active' : ''}`}
+                onClick={() => setViewMode('table')}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                  <line x1="3" y1="9" x2="21" y2="9" />
+                  <line x1="3" y1="15" x2="21" y2="15" />
+                  <line x1="9" y1="21" x2="9" y2="9" />
+                </svg>
+                Table
+              </button>
             </div>
 
-            <button className="recipes-density-btn-v7" onClick={() => {
-              const next = density === 'dense' ? 'comfortable' : 'dense'
-              setDensity(next)
-            }}>
+            <button
+              className="recipes-pro__density-btn"
+              onClick={() => {
+                const next = density === 'comfortable' ? 'dense' : density === 'dense' ? 'compact' : 'comfortable'
+                setDensity(next)
+              }}
+            >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <line x1="9" y1="3" x2="9" y2="21" />
               </svg>
-              {density === 'dense' ? 'Compact' : 'Comfort'}
+              {density === 'comfortable' && 'Comfort'}
+              {density === 'dense' && 'Dense'}
+              {density === 'compact' && 'Compact'}
             </button>
           </div>
-        </div>
 
-        {/* Filters */}
-        {showFilters && (
-          <div className="recipes-filters-v7">
-            <div className="filter-group-v7">
-              <span className="filter-label-v7">Category</span>
-              <button className="filter-chip-v7 filter-chip-v7--active">All</button>
-              <button className="filter-chip-v7">Appetizer</button>
-              <button className="filter-chip-v7">Main</button>
-              <button className="filter-chip-v7">Dessert</button>
+          {/* Filters */}
+          {showFilters && (
+            <motion.div
+              className="recipes-pro__filters"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+            >
+              <div className="filter-group">
+                <span className="filter-label">Category</span>
+                <button className="filter-chip filter-chip--active">All</button>
+                <button className="filter-chip">Appetizer</button>
+                <button className="filter-chip">Main</button>
+                <button className="filter-chip">Dessert</button>
+              </div>
+              
+              <div className="filter-group">
+                <span className="filter-label">Difficulty</span>
+                <button className="filter-chip">Easy</button>
+                <button className="filter-chip">Medium</button>
+                <button className="filter-chip">Hard</button>
+              </div>
+              
+              <div className="filter-group">
+                <span className="filter-label">Status</span>
+                <button className="filter-chip filter-chip--active">All</button>
+                <button className="filter-chip">Active</button>
+                <button className="filter-chip">Featured</button>
+                <button className="filter-chip">Favorite</button>
+              </div>
+
+              <Button variant="ghost" size="small" onClick={() => setFilters({
+                categories: [],
+                cuisines: [],
+                dietary: [],
+                difficulty: [],
+                isFeatured: null,
+                isFavorite: null,
+                isSubrecipe: null
+              })}>
+                Clear all
+              </Button>
+            </motion.div>
+          )}
+
+          {/* Sort Bar */}
+          <div className="recipes-pro__sort">
+            <span className="sort-label">Sort by:</span>
+            <select
+              className="sort-select"
+              value={sortField}
+              onChange={(e) => setSortField(e.target.value as SortField)}
+            >
+              <option value="name">Name</option>
+              <option value="category">Category</option>
+              <option value="price">Price</option>
+              <option value="cost">Cost</option>
+              <option value="margin">Margin</option>
+              <option value="date">Date</option>
+            </select>
+            <button
+              className="sort-order-btn"
+              onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
+            >
+              {sortOrder === 'asc' ? (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="19" x2="12" y2="5" />
+                  <polyline points="5 12 12 5 19 12" />
+                </svg>
+              ) : (
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="12" y1="5" x2="12" y2="19" />
+                  <polyline points="19 12 12 19 5 12" />
+                </svg>
+              )}
+            </button>
+          </div>
+
+          {/* Results Info */}
+          <div className="recipes-pro__results-info">
+            <span className="recipes-pro__results-count">
+              Showing {sortedRecipes.length} of {recipes.length} recipes
+            </span>
+            {selectedIds.length > 0 && (
+              <div className="recipes-pro__results-actions">
+                <span>{selectedIds.length} selected</span>
+                <button className="bulk-action-btn" onClick={bulkArchive}>Archive</button>
+                <button className="bulk-action-btn bulk-action-btn--danger" onClick={bulkDelete}>Delete</button>
+                <button className="bulk-action-btn" onClick={clearSelection}>Clear</button>
+                <button className="bulk-action-btn" onClick={selectAll}>Select all</button>
+              </div>
+            )}
+          </div>
+
+          {/* Error */}
+          {err && (
+            <div className="recipes-pro__error">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span>{err}</span>
+              <button className="recipes-pro__error-close" onClick={() => setErr(null)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
             </div>
-            
-            <div className="filter-group-v7">
-              <span className="filter-label-v7">Status</span>
-              <button className="filter-chip-v7 filter-chip-v7--active">All</button>
-              <button className="filter-chip-v7">Active</button>
-              <button className="filter-chip-v7">Archived</button>
+          )}
+
+          {/* Loading */}
+          {loading ? (
+            <div className="recipes-pro__loading">
+              <div className="loading-spinner" />
             </div>
-
-            <Button variant="ghost" size="small">
-              Clear all
-            </Button>
-          </div>
-        )}
-
-        {/* Sort Bar */}
-        <div className="recipes-sort-v7">
-          <span className="sort-label-v7">Sort by:</span>
-          <select className="sort-select-v7" value="name">
-            <option value="name">Name</option>
-            <option value="category">Category</option>
-            <option value="cost">Cost</option>
-            <option value="date">Date</option>
-          </select>
-          <button className="sort-order-btn-v7">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <polyline points="19 12 12 19 5 12" />
-            </svg>
-          </button>
-        </div>
-
-        {err && (
-          <div className="recipes-error-v7">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{err}</span>
-          </div>
-        )}
-
-        {loading ? (
-          <div className="recipes-loading-v7">
-            <div className="loading-spinner-v7" />
-          </div>
-        ) : !filtered.length ? (
-          <EmptyState
-            title={
-              !hasAnyRecipes
-                ? 'No recipes yet'
-                : showArchivedEmptyHint
-                  ? 'Only archived recipes found'
-                  : hasSearch
-                    ? 'No recipes match your search'
-                    : 'No recipes to show'
-            }
-            description={
-              !hasAnyRecipes
-                ? 'Create your first recipe to start costing and kitchen operations.'
-                : showArchivedEmptyHint
-                  ? 'All recipes are archived right now. You can show them or create a new one.'
-                  : hasSearch
-                    ? 'Try a different search term or clear the search.'
-                    : 'Create a new recipe to get started.'
-            }
-            primaryAction={{
-              label: !hasAnyRecipes
-                ? 'Create first recipe'
-                : showArchivedEmptyHint
-                  ? 'Show archived'
-                  : hasSearch
-                    ? 'Clear search'
-                    : 'New recipe',
-              onClick: () => {
-                if (!hasAnyRecipes) {
+          ) : !sortedRecipes.length ? (
+            <EmptyState
+              title={
+                !hasAnyRecipes
+                  ? 'No recipes yet'
+                  : showArchivedEmptyHint
+                    ? 'Only archived recipes found'
+                    : hasSearch
+                      ? 'No recipes match your search'
+                      : 'No recipes to show'
+              }
+              description={
+                !hasAnyRecipes
+                  ? 'Create your first recipe to start costing and kitchen operations.'
+                  : showArchivedEmptyHint
+                    ? 'All recipes are archived right now. You can show them or create a new one.'
+                    : hasSearch
+                      ? 'Try a different search term or clear the search.'
+                      : 'Create a new recipe to get started.'
+              }
+              primaryAction={{
+                label: !hasAnyRecipes
+                  ? 'Create first recipe'
+                  : showArchivedEmptyHint
+                    ? 'Show archived'
+                    : hasSearch
+                      ? 'Clear search'
+                      : 'New recipe',
+                onClick: () => {
+                  if (!hasAnyRecipes) {
+                    createNewRecipe()
+                    return
+                  }
+                  if (showArchivedEmptyHint) {
+                    setShowArchived(true)
+                    return
+                  }
+                  if (hasSearch) {
+                    setQ('')
+                    return
+                  }
                   createNewRecipe()
-                  return
-                }
-                if (showArchivedEmptyHint) {
-                  setShowArchived(true)
-                  return
-                }
-                if (hasSearch) {
-                  setQ('')
-                  return
-                }
-                createNewRecipe()
-              },
-            }}
-            secondaryAction={{
-              label: !hasAnyRecipes ? 'Add ingredient' : 'New recipe',
-              onClick: () => {
-                if (!hasAnyRecipes) {
-                  nav('/ingredients')
-                  return
-                }
-                createNewRecipe()
-              },
-            }}
-            icon="🍳"
-          />
-        ) : (
-          <div className="recipes-list-v7">
-            {filtered.map((r) => {
-              const c = costCache[r.id]
-              const cur = (r.currency || 'USD').toUpperCase()
-              const accentClass = recipeAccent(r.name)
-              const glyph = recipeGlyph(r.name, r.category)
-              const hasWarning = Boolean(c?.warnings?.length)
-              const portions = toNum(r.portions, 1)
-
-              return (
-                <div
-                  key={r.id}
-                  className={`recipe-card-v7 ${accentClass}`}
-                >
-                  <div className="recipe-card-v7__accent" />
-
-                  <div className="recipe-card-v7__body">
-                    <div className="recipe-card-v7__left">
-                      <div className="recipe-card-v7__top">
-                        <div className="recipe-card-v7__icon" aria-hidden="true">
-                          <span>{glyph}</span>
-                        </div>
-
-                        <div>
-                          <div className="recipe-card-v7__titleRow">
-                            <div className="recipe-card-v7__titleWrap">
-                              <h3 className="recipe-card-v7__title">{r.name}</h3>
-                              <div className="recipe-card-v7__sub">
-                                <span>{r.category || 'Uncategorized'}</span>
-                                <span className="recipe-dot-v7">•</span>
-                                {r.is_subrecipe ? (
-                                  <span className="recipe-badge-v7 recipe-badge-v7--neutral">
-                                    Subrecipe
-                                  </span>
-                                ) : (
-                                  <span className="recipe-badge-v7 recipe-badge-v7--soft">
-                                    Recipe
-                                  </span>
-                                )}
-                                {hasWarning ? (
-                                  <span className="recipe-badge-v7 recipe-badge-v7--warning">
-                                    ⚠ Missing price
-                                  </span>
-                                ) : null}
-                                {r.is_archived ? (
-                                  <span className="recipe-badge-v7 recipe-badge-v7--archived">
-                                    Archived
-                                  </span>
-                                ) : null}
-                              </div>
-                            </div>
-
-                            <div className="recipe-badges-v7" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="recipe-card-v7__meta">
-                        <div className="recipe-meta-v7">
-                          <span className="recipe-meta-v7__label">Portions</span>
-                          <span>{portions}</span>
-                        </div>
-
-                        <div className="recipe-meta-v7">
-                          <span className="recipe-meta-v7__label">Yield</span>
-                          <span>
-                            {r.yield_qty
-                              ? `${r.yield_qty}${r.yield_unit ? ` ${r.yield_unit}` : ''}`
-                              : '—'}
-                          </span>
-                        </div>
-
-                        {r.calories && (
-                          <div className="recipe-meta-v7">
-                            <span className="recipe-meta-v7__label">Cal</span>
-                            <span>{r.calories}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="recipe-card-v7__right">
-                      <div className="recipe-card-v7__metrics">
-                        <div className="metric-v7">
-                          <div className="metric-v7__label">Cost / Portion</div>
-                          <div className="metric-v7__value">
-                            {c ? `${c.cpp.toFixed(2)} ${cur}` : '—'}
-                          </div>
-                        </div>
-
-                        <div className="metric-v7">
-                          <div className="metric-v7__label">FC%</div>
-                          <div className={`metric-v7__value ${c?.fcPct && c.fcPct > 30 ? 'metric-v7__value--warning' : 'metric-v7__value--success'}`}>
-                            {c?.fcPct != null ? `${c.fcPct.toFixed(1)}%` : '—'}
-                          </div>
-                        </div>
-
-                        <div className="metric-v7">
-                          <div className="metric-v7__label">Margin</div>
-                          <div className="metric-v7__value">
-                            {c ? `${c.margin.toFixed(2)} ${cur}` : '—'}
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="recipe-actions-v7">
-                        <Button onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                          Open
-                        </Button>
-
-                        <Button variant="secondary" onClick={() => toggleArchive(r)}>
-                          {r.is_archived ? 'Restore' : 'Archive'}
-                        </Button>
-
-                        <Button variant="danger" onClick={() => deleteOneRecipe(r.id)}>
-                          Delete
-                        </Button>
-
-                        <label className="recipe-select-v7">
-                          <input
-                            type="checkbox"
-                            checked={!!selected[r.id]}
-                            onChange={() => toggleSelect(r.id)}
-                          />
-                          <span>Select</span>
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )
-            })}
-          </div>
-        )}
-
-        {toast && <Toast message={toast} onClose={() => setToast(null)} />}
+                },
+              }}
+              secondaryAction={{
+                label: !hasAnyRecipes ? 'Add ingredient' : 'Browse ingredients',
+                onClick: !hasAnyRecipes ? () => nav('/ingredients') : () => nav('/ingredients'),
+              }}
+              icon="🍳"
+            />
+          ) : (
+            <>
+              {viewMode === 'grid' && renderGridView()}
+              {viewMode === 'list' && renderListView()}
+              {viewMode === 'table' && renderTableView()}
+            </>
+          )}
+        </div>
       </div>
+
+      {/* Toast */}
+      <AnimatePresence>
+        {toast && (
+          <motion.div
+            className="toast-container"
+            initial={{ opacity: 0, x: 100 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 100 }}
+          >
+            <div className={`toast toast--${toast.type}`}>
+              <div className="toast-icon">
+                {toast.type === 'success' && (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+                    <polyline points="22 4 12 14.01 9 11.01" />
+                  </svg>
+                )}
+                {toast.type === 'error' && (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                )}
+                {toast.type === 'info' && (
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="16" x2="12" y2="12" />
+                    <line x1="12" y1="8" x2="12.01" y2="8" />
+                  </svg>
+                )}
+              </div>
+              <div className="toast-message">{toast.message}</div>
+              <button className="toast-close" onClick={() => setToast(null)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <line x1="18" y1="6" x2="6" y2="18" />
+                  <line x1="6" y1="6" x2="18" y2="18" />
+                </svg>
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   )
 }
