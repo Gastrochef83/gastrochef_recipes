@@ -1742,86 +1742,359 @@ export default function RecipeEditor() {
         font-size: 0.95rem;
       }
 
-      /* تحسين شبكة ADD LINE */
-      .gc-recipe-pro .gc-add-line-grid {
-        display: grid;
-        grid-template-columns: 2fr 2fr 3fr 1fr 1fr 1.5fr 2fr 2fr;
-        gap: 12px;
-        margin-bottom: 16px;
-        align-items: end;
+      /* ===== أنماط ADD LINE الجديدة والمحسنة ===== */
+      .gc-recipe-pro .gc-add-line-modern {
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid rgba(46,125,120,0.1);
+        box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 12px rgba(0,0,0,0.02);
       }
 
-      .gc-recipe-pro .gc-add-line-field {
+      .gc-recipe-pro .gc-add-line-type-bar {
         display: flex;
-        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+        background: rgba(46,125,120,0.04);
+        padding: 6px;
+        border-radius: 60px;
+        border: 1px solid rgba(46,125,120,0.1);
       }
 
-      .gc-recipe-pro .gc-add-line-field .gc-label {
-        margin-bottom: 6px;
-        font-size: 0.7rem;
-      }
-
-      .gc-recipe-pro .gc-gross-hint {
-        font-size: 0.7rem;
+      .gc-recipe-pro .gc-type-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 14px 20px;
+        border-radius: 40px;
+        border: none;
+        background: transparent;
         color: var(--text-light);
-        margin-top: 4px;
-        font-style: italic;
-        white-space: nowrap;
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        letter-spacing: 0.02em;
       }
 
-      .gc-recipe-pro .gc-add-line-actions {
+      .gc-recipe-pro .gc-type-btn.active {
+        background: white;
+        color: var(--primary-dark);
+        box-shadow: 0 8px 20px -8px rgba(46,125,120,0.25);
+        border: 1px solid rgba(46,125,120,0.2);
+      }
+
+      .gc-recipe-pro .gc-type-btn:hover:not(.active) {
+        background: rgba(255,255,255,0.7);
+        color: var(--primary);
+      }
+
+      .gc-recipe-pro .gc-type-icon {
+        font-size: 1.3rem;
+        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
+      }
+
+      .gc-recipe-pro .gc-add-line-search-section {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .gc-recipe-pro .gc-search-field {
+        position: relative;
         display: flex;
-        gap: 12px;
-        margin-top: 16px;
+        align-items: center;
+      }
+
+      .gc-recipe-pro .gc-search-icon {
+        position: absolute;
+        left: 16px;
+        color: var(--primary);
+        opacity: 0.7;
+        width: 20px;
+        height: 20px;
+      }
+
+      .gc-recipe-pro .gc-search-input {
+        width: 100%;
+        padding: 16px 16px 16px 52px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-search-input::placeholder {
+        color: #a0b3c9;
+        font-style: italic;
+      }
+
+      .gc-recipe-pro .gc-select-wrapper {
+        position: relative;
+      }
+
+      .gc-recipe-pro .gc-modern-select {
+        width: 100%;
+        padding: 16px 24px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.95rem;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 20px center;
+        background-size: 20px;
+        cursor: pointer;
+        font-weight: 500;
+        color: var(--text);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-modern-select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-modern-select option {
+        padding: 16px;
+        font-size: 0.95rem;
+      }
+
+      .gc-recipe-pro .gc-group-title-field {
+        margin-top: 8px;
+        margin-bottom: 8px;
+      }
+
+      .gc-recipe-pro .gc-modern-input {
+        width: 100%;
+        padding: 16px 20px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-modern-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-group-input {
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border: 2px dashed rgba(46,125,120,0.3);
+        text-align: center;
+        font-weight: 600;
+        color: var(--primary-dark);
+        font-size: 1.1rem;
+        padding: 20px;
+      }
+
+      .gc-recipe-pro .gc-group-input::placeholder {
+        color: var(--primary);
+        opacity: 0.5;
+        font-weight: 400;
+      }
+
+      .gc-recipe-pro .gc-add-line-quantities {
+        margin-top: 24px;
+        padding-top: 24px;
+        border-top: 2px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-quantity-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+        align-items: start;
       }
 
       @media (max-width: 1200px) {
-        .gc-recipe-pro .gc-add-line-grid {
-          grid-template-columns: repeat(4, 1fr);
+        .gc-recipe-pro .gc-quantity-grid {
+          grid-template-columns: repeat(3, 1fr);
         }
-      }
-
-      @media (max-width: 1024px) {
-        .gc-recipe-pro .gc-grid-4 {
-          grid-template-columns: repeat(2, 1fr);
-        }
-        
-        .gc-recipe-pro .gc-pricing-grid {
-          grid-template-columns: 1fr;
-        }
-
-        .gc-recipe-pro .gc-add-line-grid {
-          grid-template-columns: repeat(2, 1fr);
+        .gc-recipe-pro .gc-note-field {
+          grid-column: span 3;
         }
       }
 
       @media (max-width: 768px) {
-        .gc-recipe-pro-head-left {
-          min-width: 100%;
-        }
-        
-        .gc-recipe-pro-titleIcon {
-          width: 48px;
-          height: 48px;
-          flex-basis: 48px;
-          font-size: 22px;
-        }
-        
-        .gc-recipe-pro-title {
-          font-size: 1.2rem;
-        }
-        
-        .gc-recipe-pro .gc-card-head {
-          padding: 14px 18px;
-        }
-        
-        .gc-recipe-pro .gc-card-body {
-          padding: 18px;
-        }
-
-        .gc-recipe-pro .gc-add-line-grid {
+        .gc-recipe-pro .gc-add-line-search-section {
           grid-template-columns: 1fr;
         }
+        .gc-recipe-pro .gc-quantity-grid {
+          grid-template-columns: 1fr;
+        }
+        .gc-recipe-pro .gc-note-field {
+          grid-column: auto;
+        }
+      }
+
+      .gc-recipe-pro .gc-quantity-field {
+        position: relative;
+      }
+
+      .gc-recipe-pro .gc-field-label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-light);
+        margin-bottom: 8px;
+        margin-left: 8px;
+      }
+
+      .gc-recipe-pro .gc-input-unit-group {
+        position: relative;
+        display: flex;
+        align-items: center;
+      }
+
+      .gc-recipe-pro .gc-number-input {
+        padding-right: 60px;
+        text-align: right;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        font-size: 1rem;
+      }
+
+      .gc-recipe-pro .gc-unit-badge {
+        position: absolute;
+        right: 12px;
+        font-size: 0.7rem;
+        font-weight: 800;
+        color: var(--primary-dark);
+        background: rgba(46,125,120,0.1);
+        padding: 6px 12px;
+        border-radius: 30px;
+        pointer-events: none;
+        text-transform: uppercase;
+        letter-spacing: 0.02em;
+      }
+
+      .gc-recipe-pro .gc-field-hint {
+        font-size: 0.65rem;
+        color: var(--text-light);
+        margin-top: 6px;
+        margin-left: 8px;
+        opacity: 0.8;
+        font-style: italic;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .gc-recipe-pro .gc-field-hint::before {
+        content: "ⓘ";
+        font-size: 0.7rem;
+        opacity: 0.7;
+      }
+
+      .gc-recipe-pro .gc-add-line-actions-modern {
+        display: flex;
+        gap: 16px;
+        margin-top: 32px;
+        justify-content: flex-end;
+        align-items: center;
+      }
+
+      .gc-recipe-pro .gc-btn-primary-modern {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 16px 40px;
+        border-radius: 40px;
+        border: none;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+        color: white;
+        font-weight: 700;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 10px 25px -8px rgba(46,125,120,0.5);
+        letter-spacing: 0.02em;
+      }
+
+      .gc-recipe-pro .gc-btn-primary-modern:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 15px 30px -8px rgba(46,125,120,0.7);
+      }
+
+      .gc-recipe-pro .gc-btn-primary-modern:active {
+        transform: translateY(-1px);
+      }
+
+      .gc-recipe-pro .gc-btn-secondary-modern {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        padding: 16px 40px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.2);
+        background: white;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-btn-secondary-modern:hover {
+        border-color: var(--primary);
+        background: rgba(46,125,120,0.02);
+        color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 8px 20px -8px rgba(46,125,120,0.2);
+      }
+
+      /* تحسينات للـ tooltips */
+      .gc-recipe-pro [data-tooltip] {
+        position: relative;
+        cursor: help;
+      }
+
+      .gc-recipe-pro [data-tooltip]:before {
+        content: attr(data-tooltip);
+        position: absolute;
+        bottom: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 8px 16px;
+        border-radius: 30px;
+        background: var(--primary-dark);
+        color: white;
+        font-size: 0.7rem;
+        font-weight: 500;
+        white-space: nowrap;
+        opacity: 0;
+        pointer-events: none;
+        transition: all 0.2s ease;
+        z-index: 1000;
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      }
+
+      .gc-recipe-pro [data-tooltip]:hover:before {
+        opacity: 1;
+        transform: translateX(-50%) translateY(-10px);
       }
 
       .gc-flash-row {
@@ -2347,95 +2620,192 @@ export default function RecipeEditor() {
                 </div>
 
                 <div className="gc-card-body">
-                  <div className="gc-add-line-grid">
-                    <div className="gc-add-line-field">
-                      <div className="gc-label">TYPE</div>
-                      <select className="gc-select" value={addType} onChange={(e) => setAddType(e.target.value as LineType)}>
-                        <option value="ingredient">Ingredient</option>
-                        <option value="subrecipe">Subrecipe</option>
-                        <option value="group">Group title</option>
-                      </select>
+                  <div className="gc-add-line-modern">
+                    <div className="gc-add-line-type-bar">
+                      <button
+                        className={cx("gc-type-btn", addType === 'ingredient' && "active")}
+                        onClick={() => setAddType('ingredient')}
+                        type="button"
+                      >
+                        <span className="gc-type-icon">🥗</span>
+                        <span>Ingredient</span>
+                      </button>
+                      <button
+                        className={cx("gc-type-btn", addType === 'subrecipe' && "active")}
+                        onClick={() => setAddType('subrecipe')}
+                        type="button"
+                      >
+                        <span className="gc-type-icon">📋</span>
+                        <span>Subrecipe</span>
+                      </button>
+                      <button
+                        className={cx("gc-type-btn", addType === 'group' && "active")}
+                        onClick={() => setAddType('group')}
+                        type="button"
+                      >
+                        <span className="gc-type-icon">📌</span>
+                        <span>Group</span>
+                      </button>
                     </div>
 
                     {addType !== 'group' && (
-                      <>
-                        <div className="gc-add-line-field">
-                          <div className="gc-label">SEARCH</div>
-                          <input className="gc-input" value={ingSearch} onChange={(e) => setIngSearch(e.target.value)} placeholder="Type to filter…" />
+                      <div className="gc-add-line-search-section">
+                        <div className="gc-search-field">
+                          <svg className="gc-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                            <circle cx="11" cy="11" r="8" />
+                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                          </svg>
+                          <input
+                            className="gc-search-input"
+                            value={ingSearch}
+                            onChange={(e) => setIngSearch(e.target.value)}
+                            placeholder={`Search ${addType === 'ingredient' ? 'ingredients' : 'subrecipes'}...`}
+                          />
                         </div>
 
-                        <div className="gc-add-line-field">
-                          <div className="gc-label">{addType === 'ingredient' ? 'INGREDIENT' : 'SUBRECIPE'}</div>
-                          {addType === 'ingredient' ? (
-                            <select className="gc-select" value={addIngredientId} onChange={(e) => setAddIngredientId(e.target.value)}>
-                              <option value="">— Select ingredient —</option>
-                              {filteredIngredients.map((i) => (
-                                <option key={i.id} value={i.id}>
-                                  {i.name || 'Unnamed'} ({i.code || '—'})
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            <select className="gc-select" value={addSubRecipeId} onChange={(e) => setAddSubRecipeId(e.target.value)}>
-                              <option value="">— Select subrecipe —</option>
-                              {subRecipeOptions.map((r) => (
-                                <option key={r.id} value={r.id}>
-                                  {r.name || 'Untitled'} ({r.code || '—'})
-                                </option>
-                              ))}
-                            </select>
-                          )}
+                        <div className="gc-select-wrapper">
+                          <select
+                            className="gc-modern-select"
+                            value={addType === 'ingredient' ? addIngredientId : addSubRecipeId}
+                            onChange={(e) => {
+                              if (addType === 'ingredient') {
+                                setAddIngredientId(e.target.value)
+                              } else {
+                                setAddSubRecipeId(e.target.value)
+                              }
+                            }}
+                          >
+                            <option value="">— Select {addType === 'ingredient' ? 'ingredient' : 'subrecipe'} —</option>
+                            {addType === 'ingredient'
+                              ? filteredIngredients.map((i) => (
+                                  <option key={i.id} value={i.id}>
+                                    {i.name || 'Unnamed'} {i.code ? `(${i.code})` : ''}
+                                  </option>
+                                ))
+                              : subRecipeOptions.map((r) => (
+                                  <option key={r.id} value={r.id}>
+                                    {r.name || 'Untitled'} {r.code ? `(${r.code})` : ''}
+                                  </option>
+                                ))}
+                          </select>
                         </div>
-                      </>
+                      </div>
                     )}
 
                     {addType === 'group' && (
-                      <div className="gc-add-line-field" style={{ gridColumn: 'span 2' }}>
-                        <div className="gc-label">GROUP TITLE</div>
-                        <input className="gc-input" value={addGroupTitle} onChange={(e) => setAddGroupTitle(e.target.value)} placeholder="e.g. Sauce / Toppings / Marinade" />
+                      <div className="gc-group-title-field">
+                        <input
+                          className="gc-modern-input gc-group-input"
+                          value={addGroupTitle}
+                          onChange={(e) => setAddGroupTitle(e.target.value)}
+                          placeholder="Enter group title (e.g. Sauce, Toppings, Marinade)..."
+                        />
                       </div>
                     )}
-                  </div>
 
-                  {addType !== 'group' && (
-                    <>
-                      <div className="gc-add-line-grid" style={{ marginTop: 12 }}>
-                        <div className="gc-add-line-field">
-                          <div className="gc-label">NET</div>
-                          <input className="gc-input" value={addNetQty} onChange={(e) => setAddNetQty(e.target.value)} inputMode="decimal" />
-                        </div>
+                    {addType !== 'group' && (
+                      <div className="gc-add-line-quantities">
+                        <div className="gc-quantity-grid">
+                          <div className="gc-quantity-field">
+                            <label className="gc-field-label">NET</label>
+                            <div className="gc-input-unit-group">
+                              <input
+                                className="gc-modern-input gc-number-input"
+                                value={addNetQty}
+                                onChange={(e) => setAddNetQty(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="0.000"
+                              />
+                              <span className="gc-unit-badge">qty</span>
+                            </div>
+                          </div>
 
-                        <div className="gc-add-line-field">
-                          <div className="gc-label">UNIT</div>
-                          <input className="gc-input" value={addUnit} onChange={(e) => setAddUnit(e.target.value)} placeholder="g / kg / ml / l / pcs" />
-                        </div>
+                          <div className="gc-quantity-field">
+                            <label className="gc-field-label">UNIT</label>
+                            <select
+                              className="gc-modern-select gc-unit-select"
+                              value={addUnit}
+                              onChange={(e) => setAddUnit(e.target.value)}
+                            >
+                              <option value="g">g (gram)</option>
+                              <option value="kg">kg (kilogram)</option>
+                              <option value="ml">ml (milliliter)</option>
+                              <option value="l">l (liter)</option>
+                              <option value="pcs">pcs (pieces)</option>
+                              <option value="tbsp">tbsp</option>
+                              <option value="tsp">tsp</option>
+                              <option value="cup">cup</option>
+                            </select>
+                          </div>
 
-                        <div className="gc-add-line-field">
-                          <div className="gc-label">YIELD %</div>
-                          <input className="gc-input" value={addYield} onChange={(e) => setAddYield(e.target.value)} inputMode="decimal" />
-                        </div>
+                          <div className="gc-quantity-field">
+                            <label className="gc-field-label">YIELD %</label>
+                            <div className="gc-input-unit-group">
+                              <input
+                                className="gc-modern-input gc-number-input"
+                                value={addYield}
+                                onChange={(e) => setAddYield(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="100"
+                              />
+                              <span className="gc-unit-badge">%</span>
+                            </div>
+                            <div className="gc-field-hint">edit → auto gross</div>
+                          </div>
 
-                        <div className="gc-add-line-field">
-                          <div className="gc-label">GROSS</div>
-                          <input className="gc-input" value={addGross} onChange={(e) => setAddGross(e.target.value)} inputMode="decimal" placeholder="optional" />
-                          <div className="gc-gross-hint">leave empty to auto</div>
-                        </div>
+                          <div className="gc-quantity-field">
+                            <label className="gc-field-label">GROSS</label>
+                            <div className="gc-input-unit-group">
+                              <input
+                                className="gc-modern-input gc-number-input"
+                                value={addGross}
+                                onChange={(e) => setAddGross(e.target.value)}
+                                inputMode="decimal"
+                                placeholder="auto"
+                              />
+                              <span className="gc-unit-badge">{addUnit || 'g'}</span>
+                            </div>
+                            <div className="gc-field-hint">optional • auto from yield</div>
+                          </div>
 
-                        <div className="gc-add-line-field" style={{ gridColumn: 'span 2' }}>
-                          <div className="gc-label">NOTE</div>
-                          <input className="gc-input" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="e.g. Chopped, Powder, Fresh..." />
+                          <div className="gc-quantity-field gc-note-field">
+                            <label className="gc-field-label">NOTE</label>
+                            <input
+                              className="gc-modern-input"
+                              value={addNote}
+                              onChange={(e) => setAddNote(e.target.value)}
+                              placeholder="e.g. Chopped, Powdered, Fresh..."
+                            />
+                          </div>
                         </div>
                       </div>
-                    </>
-                  )}
+                    )}
 
-                  <div className="gc-add-line-actions">
-                    <Button variant="primary" type="button" onClick={addLineLocal}>
-                      Add line
-                    </Button>
-                    <Button variant="ghost" type="button" onClick={() => { saveLinesNow().catch(() => {}) }}>
-                      Save lines
-                    </Button>
+                    <div className="gc-add-line-actions-modern">
+                      <button
+                        className="gc-btn-primary-modern"
+                        type="button"
+                        onClick={addLineLocal}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="12" y1="5" x2="12" y2="19" />
+                          <line x1="5" y1="12" x2="19" y2="12" />
+                        </svg>
+                        Add {addType === 'group' ? 'Group' : 'Line'}
+                      </button>
+                      <button
+                        className="gc-btn-secondary-modern"
+                        type="button"
+                        onClick={() => { saveLinesNow().catch(() => {}) }}
+                      >
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                          <polyline points="17 21 17 13 7 13 7 21" />
+                          <polyline points="7 3 7 8 15 8" />
+                        </svg>
+                        Save Lines
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
