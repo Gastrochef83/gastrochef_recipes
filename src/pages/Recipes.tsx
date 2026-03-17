@@ -1,3 +1,4 @@
+// src/pages/recipes.tsx
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -213,6 +214,7 @@ function RecipesStyles() {
       }
 
       .recipes-search-input-v6:focus {
+        outline: none;
         border-color: rgba(107,127,59,.38);
         box-shadow: 0 0 0 4px rgba(107,127,59,.14);
         background: rgba(255,255,255,.98);
@@ -683,8 +685,28 @@ export default function Recipes() {
     }
 
     try {
-      const selectRecipes =
-        'id,code,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct'
+      // ✅ الأعمدة المؤكدة فقط - تم إزالة أي أعمدة غير موجودة
+      const selectRecipes = `
+        id,
+        code,
+        kitchen_id,
+        name,
+        category,
+        portions,
+        yield_qty,
+        yield_unit,
+        is_subrecipe,
+        is_archived,
+        photo_url,
+        description,
+        calories,
+        protein_g,
+        carbs_g,
+        fat_g,
+        selling_price,
+        currency,
+        target_food_cost_pct
+      `
 
       const { data: r, error: rErr } = await supabase
         .from('recipes')
