@@ -70,12 +70,15 @@ function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
 }
+
 function clamp(n: number, a: number, b: number) {
   return Math.min(b, Math.max(a, n))
 }
+
 function safeUnit(u: string) {
   return (u ?? '').trim().toLowerCase() || 'g'
 }
+
 function fmtMoney(n: number, currency: string) {
   const v = Number.isFinite(n) ? n : 0
   const cur = (currency || 'USD').toUpperCase()
@@ -85,6 +88,7 @@ function fmtMoney(n: number, currency: string) {
     return `${v.toFixed(2)} ${cur}`
   }
 }
+
 function fmtQty(n: number) {
   const v = Number.isFinite(n) ? n : 0
   if (Math.abs(v) >= 100) return v.toFixed(1)
@@ -254,7 +258,7 @@ export default function RecipeEditor() {
 
   const [activeSection, setActiveSection] = useState<string>('sec-basics')
   useEffect(() => {
-    const ids = ['sec-basics','sec-method','sec-nutrition','sec-lines','sec-print','sec-cook','sec-cost']
+    const ids = ['sec-basics', 'sec-method', 'sec-nutrition', 'sec-lines', 'sec-print', 'sec-cook', 'sec-cost']
     const els = ids.map((x) => document.getElementById(x)).filter(Boolean) as HTMLElement[]
     if (!els.length) return
     const io = new IntersectionObserver(
@@ -1217,10 +1221,10 @@ export default function RecipeEditor() {
               {autosave.status === 'saving'
                 ? 'Saving…'
                 : autosave.status === 'error'
-                ? (autosave.message || 'Save issue. Retrying…')
-                : autosave.lastSavedAt
-                ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
-                : 'Auto-save ready.'}
+                  ? (autosave.message || 'Save issue. Retrying…')
+                  : autosave.lastSavedAt
+                    ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
+                    : 'Auto-save ready.'}
             </span>
           </div>
         </div>
@@ -1742,7 +1746,7 @@ export default function RecipeEditor() {
         font-size: 0.95rem;
       }
 
-      /* ===== أنماط ADD LINE الجديدة والمحسنة ===== */
+      /* أنماط ADD LINE المحسنة */
       .gc-recipe-pro .gc-add-line-modern {
         background: linear-gradient(145deg, #ffffff, #f8fafc);
         border-radius: 24px;
@@ -2066,6 +2070,488 @@ export default function RecipeEditor() {
         box-shadow: 0 8px 20px -8px rgba(46,125,120,0.2);
       }
 
+      /* أنماط LINES المحسنة */
+      .gc-recipe-pro .gc-empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(145deg, #f8fafc, #ffffff);
+        border-radius: 32px;
+        border: 2px dashed rgba(46,125,120,0.2);
+      }
+
+      .gc-recipe-pro .gc-empty-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.7;
+        filter: drop-shadow(0 8px 16px rgba(46,125,120,0.1));
+      }
+
+      .gc-recipe-pro .gc-empty-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--primary-dark);
+        margin-bottom: 8px;
+      }
+
+      .gc-recipe-pro .gc-empty-description {
+        font-size: 0.95rem;
+        color: var(--text-light);
+        max-width: 400px;
+        margin: 0 auto;
+      }
+
+      .gc-recipe-pro .gc-lines-container {
+        background: white;
+        border-radius: 24px;
+        overflow: hidden;
+      }
+
+      .gc-recipe-pro .gc-table-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 16px 20px;
+        background: linear-gradient(to right, #f8fafc, #ffffff);
+        border-bottom: 1px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-table-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .gc-recipe-pro .gc-table-count {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--text);
+        background: white;
+        padding: 6px 14px;
+        border-radius: 30px;
+        border: 1px solid rgba(46,125,120,0.15);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-table-badge {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        background: var(--primary-light);
+        padding: 4px 12px;
+        border-radius: 30px;
+        border: 1px solid rgba(46,125,120,0.2);
+      }
+
+      .gc-recipe-pro .gc-table-actions {
+        display: flex;
+        gap: 6px;
+      }
+
+      .gc-recipe-pro .gc-table-action-btn {
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        border: 1px solid rgba(46,125,120,0.15);
+        background: white;
+        color: var(--text-light);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+      }
+
+      .gc-recipe-pro .gc-table-action-btn:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary-dark);
+      }
+
+      .gc-recipe-pro .gc-kitopi-table-wrap {
+        overflow-x: auto;
+        border-radius: 0;
+        background: white;
+        box-shadow: inset 0 -1px 0 rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-kitopi-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.9rem;
+      }
+
+      .gc-recipe-pro .gc-kitopi-table thead {
+        position: sticky;
+        top: 0;
+        z-index: 10;
+      }
+
+      .gc-recipe-pro .gc-kitopi-table thead th {
+        background: linear-gradient(to bottom, #ffffff, #f8fafc);
+        border-bottom: 2px solid rgba(46,125,120,0.15);
+        padding: 18px 12px;
+        font-weight: 700;
+        font-size: 0.8rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--primary-dark);
+        white-space: nowrap;
+      }
+
+      .gc-recipe-pro .gc-th-content {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+
+      .gc-recipe-pro .gc-th-right {
+        justify-content: flex-end;
+      }
+
+      .gc-recipe-pro .gc-th-center {
+        justify-content: center;
+      }
+
+      .gc-recipe-pro .gc-kitopi-table tbody td {
+        padding: 16px 12px;
+        border-bottom: 1px solid rgba(46,125,120,0.08);
+        vertical-align: middle;
+        transition: background-color 0.15s ease;
+      }
+
+      .gc-recipe-pro .gc-line-row:hover td {
+        background-color: rgba(46,125,120,0.02);
+      }
+
+      .gc-recipe-pro .gc-line-row.has-note td {
+        background-color: rgba(193,123,74,0.02);
+      }
+
+      .gc-recipe-pro .gc-code-wrapper {
+        display: flex;
+        align-items: center;
+      }
+
+      .gc-recipe-pro .gc-code-pill {
+        font-family: 'Courier New', monospace;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        background: linear-gradient(145deg, var(--primary-light), #ffffff);
+        padding: 4px 10px;
+        border-radius: 30px;
+        border: 1px solid rgba(46,125,120,0.15);
+        display: inline-block;
+        white-space: nowrap;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-ingredient-info {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .gc-recipe-pro .gc-ingredient-name {
+        font-weight: 500;
+        color: var(--text);
+        line-height: 1.4;
+        word-break: break-word;
+      }
+
+      .gc-recipe-pro .gc-ingredient-note {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 0.75rem;
+        color: var(--secondary);
+        background: rgba(193,123,74,0.05);
+        padding: 4px 10px;
+        border-radius: 30px;
+        width: fit-content;
+        border: 1px solid rgba(193,123,74,0.15);
+      }
+
+      .gc-recipe-pro .gc-note-icon {
+        font-size: 0.7rem;
+        opacity: 0.7;
+      }
+
+      .gc-recipe-pro .gc-cell-input-wrapper {
+        position: relative;
+        max-width: 100px;
+      }
+
+      .gc-recipe-pro .gc-table-input {
+        width: 100%;
+        padding: 8px 12px;
+        border-radius: 30px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.85rem;
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        color: var(--text);
+        text-align: right;
+        transition: all 0.15s ease;
+      }
+
+      .gc-recipe-pro .gc-table-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-table-input::placeholder {
+        color: #a0b3c9;
+        font-style: italic;
+        font-weight: 400;
+      }
+
+      .gc-recipe-pro .gc-yield-input {
+        padding-right: 30px;
+      }
+
+      .gc-recipe-pro .gc-yield-suffix {
+        position: absolute;
+        right: 10px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        opacity: 0.7;
+        pointer-events: none;
+      }
+
+      .gc-recipe-pro .gc-unit-badge-small {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--text-light);
+        background: var(--bg-gradient);
+        padding: 4px 8px;
+        border-radius: 30px;
+        display: inline-block;
+        border: 1px solid rgba(46,125,120,0.1);
+        white-space: nowrap;
+      }
+
+      .gc-recipe-pro .gc-cost-value {
+        display: flex;
+        align-items: center;
+        justify-content: flex-end;
+        gap: 6px;
+        font-weight: 600;
+        color: var(--primary-dark);
+      }
+
+      .gc-recipe-pro .gc-cost-amount {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+      }
+
+      .gc-recipe-pro .gc-cost-missing {
+        color: var(--text-light);
+        opacity: 0.5;
+      }
+
+      .gc-recipe-pro .gc-cost-placeholder {
+        font-family: 'Courier New', monospace;
+        font-size: 0.9rem;
+        color: var(--text-light);
+      }
+
+      .gc-recipe-pro .gc-cost-warning {
+        font-size: 0.8rem;
+        color: var(--accent);
+        cursor: help;
+      }
+
+      .gc-recipe-pro .gc-row-actions {
+        display: flex;
+        gap: 6px;
+        justify-content: center;
+      }
+
+      .gc-recipe-pro .gc-action-btn {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        border: 1px solid rgba(46,125,120,0.1);
+        background: white;
+        color: var(--text-light);
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.15s ease;
+      }
+
+      .gc-recipe-pro .gc-action-btn:hover {
+        background: var(--primary-light);
+        border-color: var(--primary);
+        color: var(--primary-dark);
+        transform: scale(1.05);
+      }
+
+      .gc-recipe-pro .gc-action-btn-danger:hover {
+        background: rgba(217,78,78,0.1);
+        border-color: var(--accent);
+        color: var(--accent);
+      }
+
+      /* أنماط صفوف المجموعات */
+      .gc-recipe-pro .gc-kitopi-group {
+        background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03)) !important;
+      }
+
+      .gc-recipe-pro .gc-group-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 4px;
+      }
+
+      .gc-recipe-pro .gc-group-info {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+
+      .gc-recipe-pro .gc-group-icon {
+        font-size: 1.2rem;
+        opacity: 0.7;
+      }
+
+      .gc-recipe-pro .gc-group-title {
+        font-size: 1rem;
+        font-weight: 800;
+        color: var(--primary-dark);
+        letter-spacing: -0.01em;
+      }
+
+      .gc-recipe-pro .gc-group-badge {
+        font-size: 0.65rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        background: rgba(46,125,120,0.1);
+        padding: 2px 10px;
+        border-radius: 30px;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+      }
+
+      .gc-recipe-pro .gc-group-actions {
+        display: flex;
+        gap: 8px;
+      }
+
+      .gc-recipe-pro .gc-icon-btn-sm {
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+      }
+
+      /* تذييل الجدول */
+      .gc-recipe-pro .gc-table-footer {
+        padding: 16px 20px;
+        background: linear-gradient(to right, #f8fafc, #ffffff);
+        border-top: 1px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-table-stats {
+        display: flex;
+        align-items: center;
+        gap: 24px;
+        flex-wrap: wrap;
+      }
+
+      .gc-recipe-pro .gc-stat-item {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+      }
+
+      .gc-recipe-pro .gc-stat-label {
+        color: var(--text-light);
+        font-weight: 500;
+      }
+
+      .gc-recipe-pro .gc-stat-value {
+        font-weight: 700;
+        color: var(--primary-dark);
+        background: white;
+        padding: 4px 12px;
+        border-radius: 30px;
+        border: 1px solid rgba(46,125,120,0.15);
+      }
+
+      .gc-recipe-pro .gc-stat-total .gc-stat-value {
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        border-color: var(--primary);
+      }
+
+      /* تحسينات للشاشات الصغيرة */
+      @media (max-width: 1024px) {
+        .gc-recipe-pro .gc-kitopi-table {
+          font-size: 0.8rem;
+        }
+
+        .gc-recipe-pro .gc-table-input {
+          padding: 6px 8px;
+          font-size: 0.75rem;
+        }
+
+        .gc-recipe-pro .gc-code-pill {
+          font-size: 0.7rem;
+          padding: 3px 8px;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .gc-recipe-pro .gc-table-stats {
+          gap: 12px;
+        }
+
+        .gc-recipe-pro .gc-stat-item {
+          font-size: 0.75rem;
+        }
+
+        .gc-recipe-pro .gc-stat-value {
+          padding: 3px 8px;
+        }
+      }
+
+      /* تأثير التمرير */
+      .gc-flash-row {
+        animation: gc-flash 0.5s ease;
+      }
+
+      @keyframes gc-flash {
+        0%, 100% {
+          background: transparent;
+        }
+        50% {
+          background: rgba(46,125,120,0.1);
+        }
+      }
+
+      .gc-kitopi-group.gc-flash-row {
+        animation: gc-flash-group 0.5s ease;
+      }
+
+      @keyframes gc-flash-group {
+        0%, 100% {
+          background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03));
+        }
+        50% {
+          background: rgba(46,125,120,0.15);
+        }
+      }
+
       /* تحسينات للـ tooltips */
       .gc-recipe-pro [data-tooltip] {
         position: relative;
@@ -2095,15 +2581,6 @@ export default function RecipeEditor() {
       .gc-recipe-pro [data-tooltip]:hover:before {
         opacity: 1;
         transform: translateX(-50%) translateY(-10px);
-      }
-
-      .gc-flash-row {
-        animation: flash 0.5s ease;
-      }
-
-      @keyframes flash {
-        0%, 100% { background: transparent; }
-        50% { background: rgba(46,125,120,0.1); }
       }
 
       .gc-btn-hero {
@@ -2301,45 +2778,44 @@ export default function RecipeEditor() {
             </div>
           )}
 
-          {true && (
-            <div className="gc-section gc-card-soft">
-              <div style={{ padding: 14 }} className="gc-highlight-head">
-                <div>
-                  <div className="gc-label" id="sec-print">PRINT (A4)</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
-                </div>
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                  <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow}>Print now</button>
-                  <button className="gc-btn gc-btn-primary" type="button" onClick={exportExcel}>Export Excel</button>
-                  <button
-                    className="gc-btn gc-btn-ghost"
-                    type="button"
-                    onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)}
-                    disabled={!id}
-                  >
-                    Open Print Page
-                  </button>
+          {/* Print Section */}
+          <div className="gc-section gc-card-soft">
+            <div style={{ padding: 14 }} className="gc-highlight-head">
+              <div>
+                <div className="gc-label" id="sec-print">PRINT (A4)</div>
+                <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                <button className="gc-btn gc-btn-secondary" type="button" onClick={printNow}>Print now</button>
+                <button className="gc-btn gc-btn-primary" type="button" onClick={exportExcel}>Export Excel</button>
+                <button
+                  className="gc-btn gc-btn-ghost"
+                  type="button"
+                  onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)}
+                  disabled={!id}
+                >
+                  Open Print Page
+                </button>
 
-                  <div className="gc-hint" style={{ marginLeft: 6 }}>
-                    {savePulse ? 'Auto-saving…' : 'Auto-save ready.'}
-                  </div>
+                <div className="gc-hint" style={{ marginLeft: 6 }}>
+                  {savePulse ? 'Auto-saving…' : 'Auto-save ready.'}
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {true && (
-            <div className="gc-section gc-section-alt gc-card-soft">
-              <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
-                <div>
-                  <div className="gc-label" id="sec-cook">COOK MODE</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>Zero distraction cooking workflow.</div>
-                </div>
-                <button className="gc-btn gc-btn-primary gc-btn-hero" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>Open Cook Mode</button>
+          {/* Cook Mode Section */}
+          <div className="gc-section gc-section-alt gc-card-soft">
+            <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+              <div>
+                <div className="gc-label" id="sec-cook">COOK MODE</div>
+                <div className="gc-hint" style={{ marginTop: 6 }}>Zero distraction cooking workflow.</div>
               </div>
+              <button className="gc-btn gc-btn-primary gc-btn-hero" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>Open Cook Mode</button>
             </div>
-          )}
+          </div>
 
+          {/* KPI Section */}
           {showCost && (
             <div className="gc-section gc-card-soft" style={{ padding: 14, borderRadius: 18 }}>
               <div className="gc-highlight-head">
@@ -2381,6 +2857,7 @@ export default function RecipeEditor() {
             </div>
           )}
 
+          {/* Pricing Section */}
           {showCost && (
             <div className="gc-section gc-section-alt gc-card-soft">
               <div style={{ padding: 14 }}>
@@ -2412,611 +2889,770 @@ export default function RecipeEditor() {
             </div>
           )}
 
-          {true && (
-            <div className="gc-section gc-section-alt gc-card-soft">
-              <div style={{ padding: 12 }}>
-                <div className="gc-label" id="sec-nutrition">NUTRITION / PORTION</div>
-                <div className="gc-grid-4" style={{ marginTop: 10 }}>
-                  <div className="gc-field">
-                    <div className="gc-label">CAL</div>
-                    <input className="gc-input" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="decimal" />
-                  </div>
-                  <div className="gc-field">
-                    <div className="gc-label">PROTEIN g</div>
-                    <input className="gc-input" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" />
-                  </div>
-                  <div className="gc-field">
-                    <div className="gc-label">CARBS g</div>
-                    <input className="gc-input" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" />
-                  </div>
-                  <div className="gc-field">
-                    <div className="gc-label">FAT g</div>
-                    <input className="gc-input" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" />
-                  </div>
+          {/* Nutrition Section */}
+          <div className="gc-section gc-section-alt gc-card-soft">
+            <div style={{ padding: 12 }}>
+              <div className="gc-label" id="sec-nutrition">NUTRITION / PORTION</div>
+              <div className="gc-grid-4" style={{ marginTop: 10 }}>
+                <div className="gc-field">
+                  <div className="gc-label">CAL</div>
+                  <input className="gc-input" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="decimal" />
                 </div>
+                <div className="gc-field">
+                  <div className="gc-label">PROTEIN g</div>
+                  <input className="gc-input" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" />
+                </div>
+                <div className="gc-field">
+                  <div className="gc-label">CARBS g</div>
+                  <input className="gc-input" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" />
+                </div>
+                <div className="gc-field">
+                  <div className="gc-label">FAT g</div>
+                  <input className="gc-input" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" />
+                </div>
+              </div>
 
-                <div className="gc-hint" style={{ marginTop: 10 }}>
-                  Manual fields (no auto nutrition calc).
-                </div>
+              <div className="gc-hint" style={{ marginTop: 10 }}>
+                Manual fields (no auto nutrition calc).
               </div>
             </div>
-          )}
+          </div>
 
-          {true && (
-            <div id="sec-basics" className="gc-section gc-card">
-              <div className="gc-card-head">
-                <div className="gc-label">META</div>
-                <div className="gc-hint" style={{ marginTop: 6 }}>
-                  Labels are always above inputs. Auto-save is enabled.
+          {/* Meta Section */}
+          <div id="sec-basics" className="gc-section gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label">META</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Labels are always above inputs. Auto-save is enabled.
+              </div>
+            </div>
+
+            <div className="gc-card-body">
+              <div className="gc-field-row">
+                <div className="gc-col-6">
+                  <div className="gc-field">
+                    <div className="gc-label">CODE</div>
+                    <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" disabled={!canEditCodes} />
+                    <div className="mt-2">
+                      <div className="gc-label">CODE CATEGORY</div>
+                      <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" disabled={!canEditCodes} />
+                      <div className="mt-1 text-[11px] text-neutral-500">Optional (max 6). If empty, DB uses Category.</div>
+                      {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="gc-col-3">
+                  <div className="gc-field">
+                    <div className="gc-label">NAME</div>
+                    <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
+                  </div>
+                </div>
+
+                <div className="gc-col-3">
+                  <div className="gc-field">
+                    <div className="gc-label">CATEGORY</div>
+                    <input className="gc-input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Salad" />
+                  </div>
+                </div>
+
+                <div className="gc-col-3">
+                  <div className="gc-field">
+                    <div className="gc-label">PORTIONS</div>
+                    <input className="gc-input" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="numeric" />
+                  </div>
+                </div>
+
+                <div className="gc-col-12">
+                  <div className="gc-field">
+                    <div className="gc-label">DESCRIPTION</div>
+                    <textarea className="gc-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description…" />
+                  </div>
                 </div>
               </div>
 
-              <div className="gc-card-body">
-                <div className="gc-field-row">
-                  <div className="gc-col-6">
-                    <div className="gc-field">
-                      <div className="gc-label">CODE</div>
-                      <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" disabled={!canEditCodes} />
-                      <div className="mt-2">
-                        <div className="gc-label">CODE CATEGORY</div>
-                        <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" disabled={!canEditCodes} />
-                        <div className="mt-1 text-[11px] text-neutral-500">Optional (max 6). If empty, DB uses Category.</div>
-                        {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
-                      </div>
-                    </div>
+              <div style={{ marginTop: 12 }} className="gc-card-soft">
+                <div style={{ padding: 12 }}>
+                  <div className="gc-label">PHOTO</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                    Upload uses Supabase bucket: <b>{PHOTO_BUCKET}</b>
                   </div>
 
-                  <div className="gc-col-3">
-                    <div className="gc-field">
-                      <div className="gc-label">NAME</div>
-                      <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
-                    </div>
-                  </div>
-
-                  <div className="gc-col-3">
-                    <div className="gc-field">
-                      <div className="gc-label">CATEGORY</div>
-                      <input className="gc-input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Salad" />
-                    </div>
-                  </div>
-
-                  <div className="gc-col-3">
-                    <div className="gc-field">
-                      <div className="gc-label">PORTIONS</div>
-                      <input className="gc-input" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="numeric" />
-                    </div>
-                  </div>
-
-                  <div className="gc-col-12">
-                    <div className="gc-field">
-                      <div className="gc-label">DESCRIPTION</div>
-                      <textarea className="gc-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description…" />
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ marginTop: 12 }} className="gc-card-soft">
-                  <div style={{ padding: 12 }}>
-                    <div className="gc-label">PHOTO</div>
-                    <div className="gc-hint" style={{ marginTop: 6 }}>
-                      Upload uses Supabase bucket: <b>{PHOTO_BUCKET}</b>
-                    </div>
-
-                    <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div style={{ width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
-                        {recipe?.photo_url ? (
-                          <img src={recipe.photo_url} alt="Recipe" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                        ) : (
-                          <div style={{ padding: 12 }} className="gc-hint">
-                            No photo.
-                          </div>
-                        )}
-                      </div>
-
-                      <div>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          disabled={uploading}
-                          onChange={(e) => {
-                            const f = e.target.files?.[0]
-                            if (!f) return
-                            uploadRecipePhoto(f).catch(() => {})
-                            e.currentTarget.value = ''
-                          }}
-                        />
-                        <div className="gc-hint" style={{ marginTop: 8 }}>
-                          {uploading ? 'Uploading…' : 'PNG/JPG recommended.'}
+                  <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <div style={{ width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
+                      {recipe?.photo_url ? (
+                        <img src={recipe.photo_url} alt="Recipe" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                      ) : (
+                        <div style={{ padding: 12 }} className="gc-hint">
+                          No photo.
                         </div>
+                      )}
+                    </div>
+
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const f = e.target.files?.[0]
+                          if (!f) return
+                          uploadRecipePhoto(f).catch(() => { })
+                          e.currentTarget.value = ''
+                        }}
+                      />
+                      <div className="gc-hint" style={{ marginTop: 8 }}>
+                        {uploading ? 'Uploading…' : 'PNG/JPG recommended.'}
                       </div>
                     </div>
                   </div>
                 </div>
+              </div>
 
-                <div style={{ marginTop: 12 }} className="gc-card-soft">
-                  <div style={{ padding: 12 }}>
-                    <div className="gc-label">SUBRECIPE SETTINGS</div>
-                    <div className="gc-hint" style={{ marginTop: 6 }}>
-                      If enabled, this recipe can be used inside other recipes.
+              <div style={{ marginTop: 12 }} className="gc-card-soft">
+                <div style={{ padding: 12 }}>
+                  <div className="gc-label">SUBRECIPE SETTINGS</div>
+                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                    If enabled, this recipe can be used inside other recipes.
+                  </div>
+
+                  <div className="gc-field-row" style={{ marginTop: 10 }}>
+                    <div className="gc-col-4">
+                      <div className="gc-field">
+                        <div className="gc-label">IS SUBRECIPE</div>
+                        <select className="gc-select" value={isSubRecipe ? 'yes' : 'no'} onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}>
+                          <option value="no">No</option>
+                          <option value="yes">Yes</option>
+                        </select>
+                      </div>
                     </div>
 
+                    <div className="gc-col-4">
+                      <div className="gc-field">
+                        <div className="gc-label">YIELD QTY</div>
+                        <input className="gc-input" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} inputMode="decimal" />
+                      </div>
+                    </div>
+
+                    <div className="gc-col-4">
+                      <div className="gc-field">
+                        <div className="gc-label">YIELD UNIT</div>
+                        <select className="gc-select" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)}>
+                          <option value="g">g</option>
+                          <option value="kg">kg</option>
+                          <option value="ml">ml</option>
+                          <option value="l">l</option>
+                          <option value="pcs">pcs</option>
+                        </select>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ marginTop: 12 }} className="gc-field-row">
+                <div className="gc-col-6">
+                  <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+                    <div className="gc-label">PRICING / PORTION</div>
                     <div className="gc-field-row" style={{ marginTop: 10 }}>
                       <div className="gc-col-4">
                         <div className="gc-field">
-                          <div className="gc-label">IS SUBRECIPE</div>
-                          <select className="gc-select" value={isSubRecipe ? 'yes' : 'no'} onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}>
-                            <option value="no">No</option>
-                            <option value="yes">Yes</option>
-                          </select>
+                          <div className="gc-label">CURRENCY</div>
+                          <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
                         </div>
                       </div>
-
                       <div className="gc-col-4">
                         <div className="gc-field">
-                          <div className="gc-label">YIELD QTY</div>
-                          <input className="gc-input" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} inputMode="decimal" />
+                          <div className="gc-label">SELLING PRICE</div>
+                          <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
                         </div>
                       </div>
-
                       <div className="gc-col-4">
                         <div className="gc-field">
-                          <div className="gc-label">YIELD UNIT</div>
-                          <select className="gc-select" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)}>
-                            <option value="g">g</option>
-                            <option value="kg">kg</option>
-                            <option value="ml">ml</option>
-                            <option value="l">l</option>
-                            <option value="pcs">pcs</option>
-                          </select>
+                          <div className="gc-label">TARGET FC%</div>
+                          <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
                         </div>
                       </div>
                     </div>
-                  </div>
-                </div>
 
-                <div style={{ marginTop: 12 }} className="gc-field-row">
-                  <div className="gc-col-6">
-                    <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-                      <div className="gc-label">PRICING / PORTION</div>
-                      <div className="gc-field-row" style={{ marginTop: 10 }}>
-                        <div className="gc-col-4">
-                          <div className="gc-field">
-                            <div className="gc-label">CURRENCY</div>
-                            <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
-                          </div>
-                        </div>
-                        <div className="gc-col-4">
-                          <div className="gc-field">
-                            <div className="gc-label">SELLING PRICE</div>
-                            <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
-                          </div>
-                        </div>
-                        <div className="gc-col-4">
-                          <div className="gc-field">
-                            <div className="gc-label">TARGET FC%</div>
-                            <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="gc-hint" style={{ marginTop: 8 }}>
-                        FC% = cost/portion ÷ selling price.
-                      </div>
+                    <div className="gc-hint" style={{ marginTop: 8 }}>
+                      FC% = cost/portion ÷ selling price.
                     </div>
                   </div>
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {true && (
-            <>
-              <div style={{ marginTop: 14 }} className="gc-card">
-                <div className="gc-card-head">
-                  <div className="gc-label">ADD LINE</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    Smart rule: edit <b>Gross</b> → yield auto. edit <b>Yield%</b> → clears gross override.
-                  </div>
+          {/* ADD LINE Section */}
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label">ADD LINE</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Smart rule: edit <b>Gross</b> → yield auto. edit <b>Yield%</b> → clears gross override.
+              </div>
+            </div>
+
+            <div className="gc-card-body">
+              <div className="gc-add-line-modern">
+                <div className="gc-add-line-type-bar">
+                  <button
+                    className={cx("gc-type-btn", addType === 'ingredient' && "active")}
+                    onClick={() => setAddType('ingredient')}
+                    type="button"
+                  >
+                    <span className="gc-type-icon">🥗</span>
+                    <span>Ingredient</span>
+                  </button>
+                  <button
+                    className={cx("gc-type-btn", addType === 'subrecipe' && "active")}
+                    onClick={() => setAddType('subrecipe')}
+                    type="button"
+                  >
+                    <span className="gc-type-icon">📋</span>
+                    <span>Subrecipe</span>
+                  </button>
+                  <button
+                    className={cx("gc-type-btn", addType === 'group' && "active")}
+                    onClick={() => setAddType('group')}
+                    type="button"
+                  >
+                    <span className="gc-type-icon">📌</span>
+                    <span>Group</span>
+                  </button>
                 </div>
 
-                <div className="gc-card-body">
-                  <div className="gc-add-line-modern">
-                    <div className="gc-add-line-type-bar">
-                      <button
-                        className={cx("gc-type-btn", addType === 'ingredient' && "active")}
-                        onClick={() => setAddType('ingredient')}
-                        type="button"
-                      >
-                        <span className="gc-type-icon">🥗</span>
-                        <span>Ingredient</span>
-                      </button>
-                      <button
-                        className={cx("gc-type-btn", addType === 'subrecipe' && "active")}
-                        onClick={() => setAddType('subrecipe')}
-                        type="button"
-                      >
-                        <span className="gc-type-icon">📋</span>
-                        <span>Subrecipe</span>
-                      </button>
-                      <button
-                        className={cx("gc-type-btn", addType === 'group' && "active")}
-                        onClick={() => setAddType('group')}
-                        type="button"
-                      >
-                        <span className="gc-type-icon">📌</span>
-                        <span>Group</span>
-                      </button>
+                {addType !== 'group' && (
+                  <div className="gc-add-line-search-section">
+                    <div className="gc-search-field">
+                      <svg className="gc-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="11" cy="11" r="8" />
+                        <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                      </svg>
+                      <input
+                        className="gc-search-input"
+                        value={ingSearch}
+                        onChange={(e) => setIngSearch(e.target.value)}
+                        placeholder={`Search ${addType === 'ingredient' ? 'ingredients' : 'subrecipes'}...`}
+                      />
                     </div>
 
-                    {addType !== 'group' && (
-                      <div className="gc-add-line-search-section">
-                        <div className="gc-search-field">
-                          <svg className="gc-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                            <circle cx="11" cy="11" r="8" />
-                            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-                          </svg>
-                          <input
-                            className="gc-search-input"
-                            value={ingSearch}
-                            onChange={(e) => setIngSearch(e.target.value)}
-                            placeholder={`Search ${addType === 'ingredient' ? 'ingredients' : 'subrecipes'}...`}
-                          />
-                        </div>
+                    <div className="gc-select-wrapper">
+                      <select
+                        className="gc-modern-select"
+                        value={addType === 'ingredient' ? addIngredientId : addSubRecipeId}
+                        onChange={(e) => {
+                          if (addType === 'ingredient') {
+                            setAddIngredientId(e.target.value)
+                          } else {
+                            setAddSubRecipeId(e.target.value)
+                          }
+                        }}
+                      >
+                        <option value="">— Select {addType === 'ingredient' ? 'ingredient' : 'subrecipe'} —</option>
+                        {addType === 'ingredient'
+                          ? filteredIngredients.map((i) => (
+                            <option key={i.id} value={i.id}>
+                              {i.name || 'Unnamed'} {i.code ? `(${i.code})` : ''}
+                            </option>
+                          ))
+                          : subRecipeOptions.map((r) => (
+                            <option key={r.id} value={r.id}>
+                              {r.name || 'Untitled'} {r.code ? `(${r.code})` : ''}
+                            </option>
+                          ))}
+                      </select>
+                    </div>
+                  </div>
+                )}
 
-                        <div className="gc-select-wrapper">
-                          <select
-                            className="gc-modern-select"
-                            value={addType === 'ingredient' ? addIngredientId : addSubRecipeId}
-                            onChange={(e) => {
-                              if (addType === 'ingredient') {
-                                setAddIngredientId(e.target.value)
-                              } else {
-                                setAddSubRecipeId(e.target.value)
-                              }
-                            }}
-                          >
-                            <option value="">— Select {addType === 'ingredient' ? 'ingredient' : 'subrecipe'} —</option>
-                            {addType === 'ingredient'
-                              ? filteredIngredients.map((i) => (
-                                  <option key={i.id} value={i.id}>
-                                    {i.name || 'Unnamed'} {i.code ? `(${i.code})` : ''}
-                                  </option>
-                                ))
-                              : subRecipeOptions.map((r) => (
-                                  <option key={r.id} value={r.id}>
-                                    {r.name || 'Untitled'} {r.code ? `(${r.code})` : ''}
-                                  </option>
-                                ))}
-                          </select>
+                {addType === 'group' && (
+                  <div className="gc-group-title-field">
+                    <input
+                      className="gc-modern-input gc-group-input"
+                      value={addGroupTitle}
+                      onChange={(e) => setAddGroupTitle(e.target.value)}
+                      placeholder="Enter group title (e.g. Sauce, Toppings, Marinade)..."
+                    />
+                  </div>
+                )}
+
+                {addType !== 'group' && (
+                  <div className="gc-add-line-quantities">
+                    <div className="gc-quantity-grid">
+                      <div className="gc-quantity-field">
+                        <label className="gc-field-label">NET</label>
+                        <div className="gc-input-unit-group">
+                          <input
+                            className="gc-modern-input gc-number-input"
+                            value={addNetQty}
+                            onChange={(e) => setAddNetQty(e.target.value)}
+                            inputMode="decimal"
+                            placeholder="0.000"
+                          />
+                          <span className="gc-unit-badge">qty</span>
                         </div>
                       </div>
-                    )}
 
-                    {addType === 'group' && (
-                      <div className="gc-group-title-field">
+                      <div className="gc-quantity-field">
+                        <label className="gc-field-label">UNIT</label>
+                        <select
+                          className="gc-modern-select gc-unit-select"
+                          value={addUnit}
+                          onChange={(e) => setAddUnit(e.target.value)}
+                        >
+                          <option value="g">g (gram)</option>
+                          <option value="kg">kg (kilogram)</option>
+                          <option value="ml">ml (milliliter)</option>
+                          <option value="l">l (liter)</option>
+                          <option value="pcs">pcs (pieces)</option>
+                          <option value="tbsp">tbsp</option>
+                          <option value="tsp">tsp</option>
+                          <option value="cup">cup</option>
+                        </select>
+                      </div>
+
+                      <div className="gc-quantity-field">
+                        <label className="gc-field-label">YIELD %</label>
+                        <div className="gc-input-unit-group">
+                          <input
+                            className="gc-modern-input gc-number-input"
+                            value={addYield}
+                            onChange={(e) => setAddYield(e.target.value)}
+                            inputMode="decimal"
+                            placeholder="100"
+                          />
+                          <span className="gc-unit-badge">%</span>
+                        </div>
+                        <div className="gc-field-hint">edit → auto gross</div>
+                      </div>
+
+                      <div className="gc-quantity-field">
+                        <label className="gc-field-label">GROSS</label>
+                        <div className="gc-input-unit-group">
+                          <input
+                            className="gc-modern-input gc-number-input"
+                            value={addGross}
+                            onChange={(e) => setAddGross(e.target.value)}
+                            inputMode="decimal"
+                            placeholder="auto"
+                          />
+                          <span className="gc-unit-badge">{addUnit || 'g'}</span>
+                        </div>
+                        <div className="gc-field-hint">optional • auto from yield</div>
+                      </div>
+
+                      <div className="gc-quantity-field gc-note-field">
+                        <label className="gc-field-label">NOTE</label>
                         <input
-                          className="gc-modern-input gc-group-input"
-                          value={addGroupTitle}
-                          onChange={(e) => setAddGroupTitle(e.target.value)}
-                          placeholder="Enter group title (e.g. Sauce, Toppings, Marinade)..."
+                          className="gc-modern-input"
+                          value={addNote}
+                          onChange={(e) => setAddNote(e.target.value)}
+                          placeholder="e.g. Chopped, Powdered, Fresh..."
                         />
                       </div>
-                    )}
+                    </div>
+                  </div>
+                )}
 
-                    {addType !== 'group' && (
-                      <div className="gc-add-line-quantities">
-                        <div className="gc-quantity-grid">
-                          <div className="gc-quantity-field">
-                            <label className="gc-field-label">NET</label>
-                            <div className="gc-input-unit-group">
-                              <input
-                                className="gc-modern-input gc-number-input"
-                                value={addNetQty}
-                                onChange={(e) => setAddNetQty(e.target.value)}
-                                inputMode="decimal"
-                                placeholder="0.000"
-                              />
-                              <span className="gc-unit-badge">qty</span>
-                            </div>
-                          </div>
+                <div className="gc-add-line-actions-modern">
+                  <button
+                    className="gc-btn-primary-modern"
+                    type="button"
+                    onClick={addLineLocal}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add {addType === 'group' ? 'Group' : 'Line'}
+                  </button>
+                  <button
+                    className="gc-btn-secondary-modern"
+                    type="button"
+                    onClick={() => { saveLinesNow().catch(() => { }) }}
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Save Lines
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
 
-                          <div className="gc-quantity-field">
-                            <label className="gc-field-label">UNIT</label>
-                            <select
-                              className="gc-modern-select gc-unit-select"
-                              value={addUnit}
-                              onChange={(e) => setAddUnit(e.target.value)}
-                            >
-                              <option value="g">g (gram)</option>
-                              <option value="kg">kg (kilogram)</option>
-                              <option value="ml">ml (milliliter)</option>
-                              <option value="l">l (liter)</option>
-                              <option value="pcs">pcs (pieces)</option>
-                              <option value="tbsp">tbsp</option>
-                              <option value="tsp">tsp</option>
-                              <option value="cup">cup</option>
-                            </select>
-                          </div>
+          {/* LINES Section المحسن */}
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label" id="sec-lines">LINES</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Edit Net/Gross/Yield safely. Groups have no cost.
+              </div>
+            </div>
 
-                          <div className="gc-quantity-field">
-                            <label className="gc-field-label">YIELD %</label>
-                            <div className="gc-input-unit-group">
-                              <input
-                                className="gc-modern-input gc-number-input"
-                                value={addYield}
-                                onChange={(e) => setAddYield(e.target.value)}
-                                inputMode="decimal"
-                                placeholder="100"
-                              />
-                              <span className="gc-unit-badge">%</span>
-                            </div>
-                            <div className="gc-field-hint">edit → auto gross</div>
-                          </div>
-
-                          <div className="gc-quantity-field">
-                            <label className="gc-field-label">GROSS</label>
-                            <div className="gc-input-unit-group">
-                              <input
-                                className="gc-modern-input gc-number-input"
-                                value={addGross}
-                                onChange={(e) => setAddGross(e.target.value)}
-                                inputMode="decimal"
-                                placeholder="auto"
-                              />
-                              <span className="gc-unit-badge">{addUnit || 'g'}</span>
-                            </div>
-                            <div className="gc-field-hint">optional • auto from yield</div>
-                          </div>
-
-                          <div className="gc-quantity-field gc-note-field">
-                            <label className="gc-field-label">NOTE</label>
-                            <input
-                              className="gc-modern-input"
-                              value={addNote}
-                              onChange={(e) => setAddNote(e.target.value)}
-                              placeholder="e.g. Chopped, Powdered, Fresh..."
-                            />
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    <div className="gc-add-line-actions-modern">
-                      <button
-                        className="gc-btn-primary-modern"
-                        type="button"
-                        onClick={addLineLocal}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="12" y1="5" x2="12" y2="19" />
-                          <line x1="5" y1="12" x2="19" y2="12" />
+            <div className="gc-card-body">
+              {!visibleLines.length ? (
+                <div className="gc-empty-state">
+                  <div className="gc-empty-icon">📝</div>
+                  <div className="gc-empty-title">No ingredients yet</div>
+                  <div className="gc-empty-description">Start adding ingredients, subrecipes, or groups using the form above</div>
+                </div>
+              ) : (
+                <div className="gc-lines-container">
+                  {/* لوحة التحكم بالجدول */}
+                  <div className="gc-table-toolbar">
+                    <div className="gc-table-info">
+                      <span className="gc-table-count">{visibleLines.length} items</span>
+                      {visibleLines.filter(l => l.line_type === 'group').length > 0 && (
+                        <span className="gc-table-badge">{visibleLines.filter(l => l.line_type === 'group').length} groups</span>
+                      )}
+                    </div>
+                    <div className="gc-table-actions">
+                      <button className="gc-table-action-btn" type="button" onClick={() => { }} title="Expand all">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="6 9 12 15 18 9" />
                         </svg>
-                        Add {addType === 'group' ? 'Group' : 'Line'}
                       </button>
-                      <button
-                        className="gc-btn-secondary-modern"
-                        type="button"
-                        onClick={() => { saveLinesNow().catch(() => {}) }}
-                      >
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                          <polyline points="17 21 17 13 7 13 7 21" />
-                          <polyline points="7 3 7 8 15 8" />
+                      <button className="gc-table-action-btn" type="button" onClick={() => { }} title="Collapse all">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <polyline points="18 15 12 9 6 15" />
                         </svg>
-                        Save Lines
                       </button>
                     </div>
                   </div>
-                </div>
-              </div>
 
-              <div style={{ marginTop: 14 }} className="gc-card">
-                <div className="gc-card-head">
-                  <div className="gc-label" id="sec-lines">LINES</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    Edit Net/Gross/Yield safely. Groups have no cost.
-                  </div>
-                </div>
+                  {/* الجدول الرئيسي */}
+                  <div className="gc-kitopi-table-wrap">
+                    <table className="gc-kitopi-table">
+                      <colgroup>
+                        <col style={{ width: '10%' }} />
+                        <col style={{ width: '25%' }} />
+                        <col style={{ width: '10%' }} />
+                        <col style={{ width: '7%' }} />
+                        <col style={{ width: '10%' }} />
+                        <col style={{ width: '8%' }} />
+                        {showCost ? <col style={{ width: '12%' }} /> : null}
+                        <col style={{ width: '8%' }} />
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>
+                            <div className="gc-th-content">
+                              <span>CODE</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="gc-th-content">
+                              <span>INGREDIENT</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="gc-th-content gc-th-right">
+                              <span>NET</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="gc-th-content">
+                              <span>UNIT</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="gc-th-content gc-th-right">
+                              <span>GROSS</span>
+                            </div>
+                          </th>
+                          <th>
+                            <div className="gc-th-content gc-th-right">
+                              <span>YIELD</span>
+                            </div>
+                          </th>
+                          {showCost ? (
+                            <th>
+                              <div className="gc-th-content gc-th-right">
+                                <span>COST</span>
+                              </div>
+                            </th>
+                          ) : null}
+                          <th>
+                            <div className="gc-th-content gc-th-center">
+                              <span>ACTIONS</span>
+                            </div>
+                          </th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {visibleLines.map((l, index) => {
+                          const c = lineComputed.get(l.id)
+                          const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+                          const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
 
-                <div className="gc-card-body">
-                  {!visibleLines.length ? (
-                    <div className="gc-hint">No lines yet.</div>
-                  ) : (
-                    <div className="gc-kitopi-table-wrap">
-                      <table className="gc-kitopi-table gc-kitopi-table-fixed">
-                        <colgroup>
-                          <col style={{ width: '12%' }} />
-                          <col style={{ width: '25%' }} />
-                          <col style={{ width: '10%' }} />
-                          <col style={{ width: '8%' }} />
-                          <col style={{ width: '12%' }} />
-                          <col style={{ width: '10%' }} />
-                          {showCost ? <col style={{ width: '12%' }} /> : null}
-                          <col style={{ width: '5%' }} />
-                        </colgroup>
-                        <thead>
-                          <tr>
-                            <th>CODE</th>
-                            <th>INGREDIENT</th>
-                            <th>NET</th>
-                            <th>UNIT</th>
-                            <th>GROSS</th>
-                            <th>YIELD</th>
-                            {showCost ? <th>COST</th> : null}
-                            <th></th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {visibleLines.map((l) => {
-                            const c = lineComputed.get(l.id)
-                            const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
-                            const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
-
-                            if (l.line_type === 'group') {
-                              return (
-                                <tr key={l.id} className={cx("gc-kitopi-group", flashLineId === l.id && "gc-flash-row")}>
-                                  <td colSpan={tableColSpan}>
-                                    <div className="gc-kitopi-group-row">
-                                      <span className="gc-kitopi-group-title">{l.group_title || 'Group'}</span>
-                                      <span className="gc-kitopi-group-actions">
-                                        <button className="gc-icon-btn" type="button" onClick={() => duplicateLineLocal(l.id)} title="Duplicate">⧉</button>
-                                        <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
-                                      </span>
-                                    </div>
-                                  </td>
-                                </tr>
-                              )
-                            }
-
+                          if (l.line_type === 'group') {
                             return (
-                              <tr key={l.id}>
-                                <td>
-                                  <span className="gc-code-display">
-                                    {l.line_type === 'ingredient'
-                                      ? (ing?.code || '—')
-                                      : (sub?.code || '—')}
-                                  </span>
-                                </td>
-
-                                <td>
-                                  <div className="gc-name-with-note">
-                                    <span className="gc-name-main">
-                                      {l.line_type === 'ingredient'
-                                        ? (ing?.name || 'Ingredient')
-                                        : (sub?.name || 'Subrecipe')}
-                                    </span>
-                                    {l.notes && (
-                                      <span className="gc-name-note">{l.notes}</span>
-                                    )}
-                                  </div>
-                                </td>
-
-                                <td>
-                                  <input
-                                    className="gc-input gc-input-compact"
-                                    value={String(toNum(l.qty, 0))}
-                                    onChange={(e) => onNetChange(l.id, e.target.value)}
-                                    inputMode="decimal"
-                                  />
-                                </td>
-
-                                <td>
-                                  <span className="gc-unit-display">{l.unit || 'g'}</span>
-                                </td>
-
-                                <td>
-                                  <input
-                                    className="gc-input gc-input-compact"
-                                    value={l.gross_qty_override != null ? String(l.gross_qty_override) : ''}
-                                    onChange={(e) => onGrossChange(l.id, e.target.value)}
-                                    inputMode="decimal"
-                                    placeholder={c ? fmtQty(c.gross) : ''}
-                                  />
-                                </td>
-
-                                <td>
-                                  <input
-                                    className="gc-input gc-input-compact"
-                                    value={String(
-                                      Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100
-                                    )}
-                                    onChange={(e) => onYieldChange(l.id, e.target.value)}
-                                    inputMode="decimal"
-                                  />
-                                </td>
-
-                                {showCost ? (
-                                  <td>
-                                    <div className="gc-kitopi-money">{c ? fmtMoney(c.lineCost, cur) : '—'}</div>
-                                  </td>
-                                ) : null}
-
-                                <td>
-                                  <div className="gc-kitopi-row-actions">
-                                    <button className="gc-icon-btn" type="button" onClick={() => duplicateLineLocal(l.id)} title="Duplicate">⧉</button>
-                                    <button className="gc-icon-btn gc-icon-btn-danger" type="button" onClick={() => deleteLineLocal(l.id)} title="Delete">✕</button>
+                              <tr key={l.id} className={cx("gc-kitopi-group", flashLineId === l.id && "gc-flash-row")}>
+                                <td colSpan={tableColSpan}>
+                                  <div className="gc-group-row">
+                                    <div className="gc-group-info">
+                                      <span className="gc-group-icon">📁</span>
+                                      <span className="gc-group-title">{l.group_title || 'Untitled Group'}</span>
+                                      <span className="gc-group-badge">Group</span>
+                                    </div>
+                                    <div className="gc-group-actions">
+                                      <button
+                                        className="gc-icon-btn gc-icon-btn-sm"
+                                        type="button"
+                                        onClick={() => duplicateLineLocal(l.id)}
+                                        title="Duplicate group"
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                        </svg>
+                                      </button>
+                                      <button
+                                        className="gc-icon-btn gc-icon-btn-sm gc-icon-btn-danger"
+                                        type="button"
+                                        onClick={() => deleteLineLocal(l.id)}
+                                        title="Delete group"
+                                      >
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                          <polyline points="3 6 5 6 21 6" />
+                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                          <line x1="10" y1="11" x2="10" y2="17" />
+                                          <line x1="14" y1="11" x2="14" y2="17" />
+                                        </svg>
+                                      </button>
+                                    </div>
                                   </div>
                                 </td>
                               </tr>
                             )
-                          })}
-                        </tbody>
-                      </table>
+                          }
+
+                          return (
+                            <tr
+                              key={l.id}
+                              className={cx(
+                                "gc-line-row",
+                                flashLineId === l.id && "gc-flash-row",
+                                l.notes && "has-note"
+                              )}
+                            >
+                              <td>
+                                <div className="gc-code-wrapper">
+                                  <span className="gc-code-pill">
+                                    {l.line_type === 'ingredient'
+                                      ? (ing?.code || '—')
+                                      : (sub?.code || '—')}
+                                  </span>
+                                </div>
+                              </td>
+
+                              <td>
+                                <div className="gc-ingredient-info">
+                                  <div className="gc-ingredient-name">
+                                    {l.line_type === 'ingredient'
+                                      ? (ing?.name || 'Unknown Ingredient')
+                                      : (sub?.name || 'Unknown Subrecipe')}
+                                  </div>
+                                  {l.notes && (
+                                    <div className="gc-ingredient-note">
+                                      <span className="gc-note-icon">📝</span>
+                                      <span>{l.notes}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              </td>
+
+                              <td>
+                                <div className="gc-cell-input-wrapper">
+                                  <input
+                                    className="gc-table-input"
+                                    value={fmtQty(toNum(l.qty, 0))}
+                                    onChange={(e) => onNetChange(l.id, e.target.value)}
+                                    inputMode="decimal"
+                                  />
+                                </div>
+                              </td>
+
+                              <td>
+                                <span className="gc-unit-badge-small">{l.unit || 'g'}</span>
+                              </td>
+
+                              <td>
+                                <div className="gc-cell-input-wrapper">
+                                  <input
+                                    className="gc-table-input"
+                                    value={l.gross_qty_override != null ? fmtQty(l.gross_qty_override) : ''}
+                                    onChange={(e) => onGrossChange(l.id, e.target.value)}
+                                    inputMode="decimal"
+                                    placeholder={c ? fmtQty(c.gross) : ''}
+                                  />
+                                </div>
+                              </td>
+
+                              <td>
+                                <div className="gc-cell-input-wrapper">
+                                  <input
+                                    className="gc-table-input gc-yield-input"
+                                    value={String(Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100)}
+                                    onChange={(e) => onYieldChange(l.id, e.target.value)}
+                                    inputMode="decimal"
+                                  />
+                                  <span className="gc-yield-suffix">%</span>
+                                </div>
+                              </td>
+
+                              {showCost ? (
+                                <td>
+                                  <div className={cx("gc-cost-value", (!c || c.lineCost <= 0) && "gc-cost-missing")}>
+                                    {c && c.lineCost > 0 ? (
+                                      <>
+                                        <span className="gc-cost-amount">{fmtMoney(c.lineCost, cur)}</span>
+                                        {c.warnings.length > 0 && (
+                                          <span className="gc-cost-warning" title={c.warnings[0]}>⚠</span>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <span className="gc-cost-placeholder">—</span>
+                                    )}
+                                  </div>
+                                </td>
+                              ) : null}
+
+                              <td>
+                                <div className="gc-row-actions">
+                                  <button
+                                    className="gc-action-btn"
+                                    type="button"
+                                    onClick={() => duplicateLineLocal(l.id)}
+                                    title="Duplicate"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                    </svg>
+                                  </button>
+                                  <button
+                                    className="gc-action-btn gc-action-btn-danger"
+                                    type="button"
+                                    onClick={() => deleteLineLocal(l.id)}
+                                    title="Delete"
+                                  >
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                      <polyline points="3 6 5 6 21 6" />
+                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                    </svg>
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          )
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* ملخص الجدول */}
+                  {visibleLines.length > 0 && (
+                    <div className="gc-table-footer">
+                      <div className="gc-table-stats">
+                        <div className="gc-stat-item">
+                          <span className="gc-stat-label">Total items:</span>
+                          <span className="gc-stat-value">{visibleLines.length}</span>
+                        </div>
+                        <div className="gc-stat-item">
+                          <span className="gc-stat-label">Ingredients:</span>
+                          <span className="gc-stat-value">{visibleLines.filter(l => l.line_type === 'ingredient').length}</span>
+                        </div>
+                        <div className="gc-stat-item">
+                          <span className="gc-stat-label">Subrecipes:</span>
+                          <span className="gc-stat-value">{visibleLines.filter(l => l.line_type === 'subrecipe').length}</span>
+                        </div>
+                        {showCost && (
+                          <div className="gc-stat-item gc-stat-total">
+                            <span className="gc-stat-label">Total cost:</span>
+                            <span className="gc-stat-value">{fmtMoney(totals.totalCost, cur)}</span>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
-              </div>
-            </>
-          )}
+              )}
+            </div>
+          </div>
 
-          {true && (
-            <div style={{ marginTop: 14 }} className="gc-card">
-              <div className="gc-card-head">
-                <div className="gc-label" id="sec-method">METHOD</div>
-                <div className="gc-hint" style={{ marginTop: 6 }}>
-                  Add steps. You can upload a photo per step.
+          {/* Method Section */}
+          <div style={{ marginTop: 14 }} className="gc-card">
+            <div className="gc-card-head">
+              <div className="gc-label" id="sec-method">METHOD</div>
+              <div className="gc-hint" style={{ marginTop: 6 }}>
+                Add steps. You can upload a photo per step.
+              </div>
+            </div>
+
+            <div className="gc-card-body">
+              <div className="gc-field">
+                <div className="gc-label">NEW STEP</div>
+                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                  <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
+                  <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
+                    Add step
+                  </button>
                 </div>
               </div>
 
-              <div className="gc-card-body">
-                <div className="gc-field">
-                  <div className="gc-label">NEW STEP</div>
-                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <input className="gc-input" value={newStep} onChange={(e) => setNewStep(e.target.value)} placeholder="Write a step…" />
-                    <button className="gc-btn gc-btn-primary" type="button" onClick={addStep}>
-                      Add step
-                    </button>
-                  </div>
-                </div>
+              {steps.length ? (
+                <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
+                  {steps.map((s, idx) => (
+                    <div key={idx} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
+                      <div className="gc-label">STEP {idx + 1}</div>
+                      <textarea className="gc-textarea" value={s} onChange={(e) => updateStep(idx, e.target.value)} />
 
-                {steps.length ? (
-                  <div style={{ marginTop: 12, display: 'grid', gap: 10 }}>
-                    {steps.map((s, idx) => (
-                      <div key={idx} className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-                        <div className="gc-label">STEP {idx + 1}</div>
-                        <textarea className="gc-textarea" value={s} onChange={(e) => updateStep(idx, e.target.value)} />
-
-                        <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                          <input
-                            type="file"
-                            accept="image/*"
-                            disabled={stepUploading}
-                            onChange={(e) => {
-                              const f = e.target.files?.[0]
-                              if (!f) return
-                              uploadStepPhoto(f, idx).catch(() => {})
-                              e.currentTarget.value = ''
-                            }}
-                          />
-                          <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeStep(idx)}>
-                            Remove step
-                          </button>
-                        </div>
-
-                        {stepPhotos[idx] ? (
-                          <div style={{ marginTop: 10, width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)' }}>
-                            <img src={stepPhotos[idx]} alt={`Step ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                          </div>
-                        ) : null}
+                      <div style={{ marginTop: 10, display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          disabled={stepUploading}
+                          onChange={(e) => {
+                            const f = e.target.files?.[0]
+                            if (!f) return
+                            uploadStepPhoto(f, idx).catch(() => { })
+                            e.currentTarget.value = ''
+                          }}
+                        />
+                        <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeStep(idx)}>
+                          Remove step
+                        </button>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="gc-hint" style={{ marginTop: 10 }}>
-                    No steps yet.
-                  </div>
-                )}
 
-                <div style={{ marginTop: 12 }} className="gc-card-soft">
-                  <div style={{ padding: 12 }}>
-                    <div className="gc-label">LEGACY METHOD (OPTIONAL)</div>
-                    <textarea className="gc-textarea" value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="Optional long method text…" />
-                  </div>
+                      {stepPhotos[idx] ? (
+                        <div style={{ marginTop: 10, width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)' }}>
+                          <img src={stepPhotos[idx]} alt={`Step ${idx + 1}`} style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
+                        </div>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="gc-hint" style={{ marginTop: 10 }}>
+                  No steps yet.
+                </div>
+              )}
+
+              <div style={{ marginTop: 12 }} className="gc-card-soft">
+                <div style={{ padding: 12 }}>
+                  <div className="gc-label">LEGACY METHOD (OPTIONAL)</div>
+                  <textarea className="gc-textarea" value={methodLegacy} onChange={(e) => setMethodLegacy(e.target.value)} placeholder="Optional long method text…" />
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
+          {/* Cost History Section */}
           {showCost && (
             <div style={{ marginTop: 14 }} className="gc-card">
               <div className="gc-card-head" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
@@ -3067,6 +3703,7 @@ export default function RecipeEditor() {
         </div>
       </div>
 
+      {/* Print Section */}
       <div className="gc-print-only">
         <div className="gc-print-page">
           <div className="gc-print-header">
