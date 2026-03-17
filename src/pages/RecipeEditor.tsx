@@ -3796,7 +3796,7 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Method Section - محسّن بصرياً */}
+          {/* Method Section - شبكة عرض ثلاثية احترافية */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
               <div className="gc-label flex items-center gap-2" id="sec-method">
@@ -3818,8 +3818,8 @@ export default function RecipeEditor() {
             </div>
 
             <div className="gc-card-body">
-              {/* NEW STEP - بطريقة محسنة */}
-              <div className="gc-meta-card" style={{ padding: '16px', marginBottom: '20px' }}>
+              {/* NEW STEP */}
+              <div className="gc-meta-card" style={{ padding: '16px', marginBottom: '24px' }}>
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3865,17 +3865,30 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-              {/* قائمة الخطوات - بطريقة محسنة */}
+              {/* شبكة عرض 3 أعمدة للخطوات */}
               {steps.length ? (
-                <div className="space-y-4">
+                <div 
+                  style={{ 
+                    display: 'grid',
+                    gridTemplateColumns: 'repeat(3, 1fr)',
+                    gap: '16px',
+                    marginTop: '8px'
+                  }}
+                  className="steps-grid"
+                >
                   {steps.map((s, idx) => (
                     <div 
                       key={idx} 
-                      className="gc-meta-card relative overflow-hidden"
+                      className="gc-meta-card"
                       style={{
                         padding: 0,
                         border: '1px solid rgba(46,125,120,0.15)',
-                        transition: 'all 0.2s ease'
+                        transition: 'all 0.2s ease',
+                        height: 'fit-content',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        position: 'relative',
+                        overflow: 'hidden'
                       }}
                     >
                       {/* شريط علوي ملون */}
@@ -3887,115 +3900,86 @@ export default function RecipeEditor() {
                         }}
                       />
                       
-                      <div style={{ padding: '20px' }}>
-                        {/* HEADER */}
-                        <div className="flex items-center justify-between mb-4">
-                          <div className="flex items-center gap-3">
+                      <div style={{ padding: '16px' }}>
+                        {/* HEADER مع رقم الخطوة */}
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center gap-2">
                             <div 
-                              className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
-                              style={{ fontSize: '1.2rem' }}
+                              className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
+                              style={{ fontSize: '1rem' }}
                             >
                               {idx + 1}
                             </div>
-                            <div>
-                              <div className="text-xs font-bold text-primary-dark uppercase tracking-wider">
-                                STEP {idx + 1}
-                              </div>
-                              {stepPhotos[idx] && (
-                                <div className="text-[10px] text-neutral-500 flex items-center gap-1 mt-0.5">
-                                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                    <rect x="2" y="2" width="20" height="20" rx="2.18" />
-                                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-                                    <path d="M21 15l-5-5L7 21" />
-                                  </svg>
-                                  Photo attached
-                                </div>
-                              )}
+                            <div className="text-xs font-bold text-primary-dark uppercase tracking-wider">
+                              STEP {idx + 1}
                             </div>
                           </div>
 
                           <button 
-                            className="px-4 py-2 rounded-full text-xs font-medium text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors flex items-center gap-1"
+                            className="text-red-500 hover:text-red-700 transition-colors"
                             type="button" 
                             onClick={() => removeStep(idx)}
+                            style={{ opacity: 0.7, fontSize: '16px' }}
                           >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6" />
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                            </svg>
-                            Remove
+                            ✕
                           </button>
                         </div>
 
-                        {/* STEP CONTENT */}
-                        <div className="grid grid-cols-12 gap-4">
-                          <div className="col-span-12 md:col-span-7">
-                            <textarea 
-                              className="gc-textarea" 
-                              value={s} 
-                              onChange={(e) => updateStep(idx, e.target.value)} 
-                              rows={3}
-                              style={{
-                                minHeight: '100px',
-                                fontSize: '0.95rem',
-                                lineHeight: '1.6',
-                                padding: '14px'
-                              }}
-                              placeholder={`Describe step ${idx + 1} in detail...`}
-                            />
+                        {/* نص الخطوة - Textarea مدمج */}
+                        <textarea 
+                          className="gc-textarea" 
+                          value={s} 
+                          onChange={(e) => updateStep(idx, e.target.value)} 
+                          rows={4}
+                          style={{
+                            fontSize: '0.9rem',
+                            lineHeight: '1.5',
+                            padding: '10px',
+                            minHeight: '100px',
+                            marginBottom: '12px',
+                            resize: 'vertical'
+                          }}
+                          placeholder={`Step ${idx + 1} description...`}
+                        />
+
+                        {/* مؤشر الصورة المرفقة */}
+                        {stepPhotos[idx] && (
+                          <div className="flex items-center gap-1.5 mb-2 text-xs text-primary">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                              <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                              <path d="M21 15l-5-5L7 21" />
+                            </svg>
+                            <span>Photo attached</span>
                           </div>
+                        )}
 
-                          <div className="col-span-12 md:col-span-5">
-                            {/* PHOTO SECTION */}
-                            <div 
-                              className="rounded-xl overflow-hidden border-2 border-dashed transition-all"
+                        {/* معاينة الصورة إذا وجدت */}
+                        {stepPhotos[idx] ? (
+                          <div className="relative group mt-2">
+                            <img 
+                              src={stepPhotos[idx]} 
+                              alt={`Step ${idx + 1}`} 
                               style={{
-                                borderColor: stepPhotos[idx] ? 'rgba(46,125,120,0.3)' : 'rgba(46,125,120,0.15)',
-                                background: stepPhotos[idx] ? 'transparent' : 'rgba(46,125,120,0.02)'
-                              }}
-                            >
-                              {stepPhotos[idx] ? (
-                                <div className="relative group">
-                                  <img 
-                                    src={stepPhotos[idx]} 
-                                    alt={`Step ${idx + 1}`} 
-                                    style={{
-                                      width: '100%',
-                                      height: '160px',
-                                      objectFit: 'cover',
-                                      display: 'block'
-                                    }} 
-                                  />
-                                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
-                                    <label 
-                                      htmlFor={`step-photo-${idx}`}
-                                      className="px-3 py-1.5 bg-white rounded-lg text-xs font-medium cursor-pointer hover:bg-neutral-100"
-                                    >
-                                      Change
-                                    </label>
-                                  </div>
-                                </div>
-                              ) : (
-                                <label 
-                                  htmlFor={`step-photo-${idx}`}
-                                  className="flex flex-col items-center justify-center cursor-pointer"
-                                  style={{
-                                    height: '160px',
-                                    padding: '16px',
-                                    textAlign: 'center'
-                                  }}
-                                >
-                                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400 mb-2">
-                                    <rect x="2" y="2" width="20" height="20" rx="2.18" />
-                                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
-                                    <path d="M21 15l-5-5L7 21" />
-                                  </svg>
-                                  <span className="text-xs text-neutral-500 font-medium">Click to upload photo</span>
-                                  <span className="text-[10px] text-neutral-400 mt-1">Supports JPG, PNG, WebP</span>
-                                </label>
-                              )}
+                                width: '100%',
+                                height: '120px',
+                                objectFit: 'cover',
+                                borderRadius: '10px',
+                                border: '1px solid rgba(46,125,120,0.2)',
+                                display: 'block'
+                              }} 
+                            />
+                            <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
+                              <label 
+                                htmlFor={`step-photo-${idx}`}
+                                className="px-2 py-1 bg-white rounded text-xs font-medium cursor-pointer hover:bg-neutral-100"
+                              >
+                                Change
+                              </label>
                             </div>
-
+                          </div>
+                        ) : (
+                          <div className="mt-2">
                             <input
                               type="file"
                               accept="image/*"
@@ -4009,15 +3993,26 @@ export default function RecipeEditor() {
                                 e.currentTarget.value = ''
                               }}
                             />
-
-                            {stepUploading && (
-                              <div className="mt-2 flex items-center justify-center gap-2 text-primary text-xs">
-                                <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-                                Uploading...
-                              </div>
-                            )}
+                            <label 
+                              htmlFor={`step-photo-${idx}`}
+                              className="flex items-center justify-center gap-1.5 w-full py-2 border-2 border-dashed border-neutral-300 rounded-lg text-xs text-neutral-500 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                            >
+                              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <rect x="2" y="2" width="20" height="20" rx="2.18" />
+                                <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor" />
+                                <path d="M21 15l-5-5L7 21" />
+                              </svg>
+                              Add photo
+                            </label>
                           </div>
-                        </div>
+                        )}
+
+                        {stepUploading && (
+                          <div className="mt-2 flex items-center justify-center gap-2 text-primary text-xs">
+                            <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                            Uploading...
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -4085,6 +4080,21 @@ export default function RecipeEditor() {
                   </div>
                 </div>
               </div>
+
+              {/* CSS مخصص للشبكة المتجاوبة */}
+              <style>{`
+                @media (max-width: 1024px) {
+                  .steps-grid {
+                    grid-template-columns: repeat(2, 1fr) !important;
+                  }
+                }
+                
+                @media (max-width: 640px) {
+                  .steps-grid {
+                    grid-template-columns: 1fr !important;
+                  }
+                }
+              `}</style>
             </div>
           </div>
 
