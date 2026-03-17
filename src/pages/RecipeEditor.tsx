@@ -3954,7 +3954,7 @@ export default function RecipeEditor() {
                           </div>
                         )}
 
-                        {/* معاينة الصورة إذا وجدت */}
+                        {/* معاينة الصورة إذا وجدت - بنسبة 1.54 / 2.4 */}
                         {stepPhotos[idx] ? (
                           <div className="relative group mt-2">
                             <img 
@@ -3962,7 +3962,8 @@ export default function RecipeEditor() {
                               alt={`Step ${idx + 1}`} 
                               style={{
                                 width: '100%',
-                                height: '120px',
+                                height: 'auto',
+                                aspectRatio: '1.54 / 2.4',
                                 objectFit: 'cover',
                                 borderRadius: '10px',
                                 border: '1px solid rgba(46,125,120,0.2)',
@@ -3996,6 +3997,11 @@ export default function RecipeEditor() {
                             <label 
                               htmlFor={`step-photo-${idx}`}
                               className="flex items-center justify-center gap-1.5 w-full py-2 border-2 border-dashed border-neutral-300 rounded-lg text-xs text-neutral-500 hover:border-primary hover:text-primary transition-colors cursor-pointer"
+                              style={{
+                                aspectRatio: '1.54 / 2.4',
+                                display: 'flex',
+                                flexDirection: 'column'
+                              }}
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <rect x="2" y="2" width="20" height="20" rx="2.18" />
