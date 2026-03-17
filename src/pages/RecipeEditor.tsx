@@ -159,7 +159,7 @@ function cx(...arr: Array<string | false | null | undefined>) {
 export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
   const showCost = isMgmt
-  const tableColSpan = 9 + (showCost ? 1 : 0)
+  const tableColSpan = 8 + (showCost ? 1 : 0)
   const k = useKitchen()
   const canEditCodes = k.isOwner
   const navigate = useNavigate()
@@ -1267,6 +1267,8 @@ export default function RecipeEditor() {
         --card-shadow: 0 20px 40px -12px rgba(0,32,64,0.12), 0 8px 24px -8px rgba(0,0,0,0.08);
         --hover-shadow: 0 24px 48px -12px rgba(46,125,120,0.18);
         position: relative;
+        max-width: 100%;
+        overflow-x: hidden;
       }
 
       .gc-recipe-pro .gc-card-head {
@@ -1537,582 +1539,12 @@ export default function RecipeEditor() {
         margin-bottom: 6px;
       }
 
-      .gc-recipe-pro .gc-kitopi-table-wrap {
-        overflow: auto;
-        border-radius: 24px;
-        border: 1px solid rgba(46,125,120,0.1);
-        background: white;
-        box-shadow: 0 8px 20px -8px rgba(0,0,0,0.05);
-      }
-
-      .gc-recipe-pro .gc-kitopi-table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        table-layout: fixed;
-      }
-
-      .gc-recipe-pro .gc-kitopi-table thead th {
-        background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-        border-bottom: 2px solid rgba(46,125,120,0.15);
-        font-size: 0.8rem;
-        font-weight: 800;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        color: var(--text-light);
-        padding: 16px 12px;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-kitopi-table tbody td {
-        padding: 14px 12px;
-        border-bottom: 1px solid rgba(46,125,120,0.08);
-        color: var(--text);
-        transition: background 0.15s ease;
-        vertical-align: middle;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-kitopi-table tbody tr:hover td {
-        background: rgba(46,125,120,0.03);
-      }
-
-      .gc-recipe-pro .gc-kitopi-group {
-        background: linear-gradient(to right, rgba(46,125,120,0.04), rgba(193,123,74,0.04)) !important;
-        font-weight: 800;
-      }
-
-      .gc-kitopi-group-row {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        padding: 8px 12px;
-      }
-
-      .gc-kitopi-group-title {
-        font-size: 1rem;
-        color: var(--primary-dark);
-        font-weight: 900;
-        letter-spacing: -0.02em;
-      }
-
-      .gc-kitopi-group-actions {
-        display: flex;
-        gap: 10px;
-      }
-
-      .gc-recipe-pro .gc-icon-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        border: 1px solid rgba(46,125,120,0.15);
-        background: white;
-        color: var(--text-light);
-        font-size: 1.1rem;
-        cursor: pointer;
-        transition: all 0.15s ease;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-      }
-
-      .gc-icon-btn:hover {
-        background: var(--primary-light);
-        border-color: var(--primary);
-        color: var(--primary-dark);
-        transform: scale(1.05);
-      }
-
-      .gc-icon-btn-danger:hover {
-        background: rgba(217,78,78,0.1);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      .gc-recipe-pro .gc-input,
-      .gc-recipe-pro .gc-select,
-      .gc-recipe-pro .gc-textarea {
-        border-radius: 16px;
-        border: 1.5px solid rgba(46,125,120,0.12);
-        background: white;
-        padding: 12px 16px;
-        font-size: 0.95rem;
-        transition: all 0.15s ease;
-        width: 100%;
-        color: var(--text);
-      }
-
-      .gc-recipe-pro .gc-input:focus,
-      .gc-recipe-pro .gc-select:focus,
-      .gc-recipe-pro .gc-textarea:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-input-compact {
-        padding: 8px 10px;
-        font-size: 0.9rem;
-        min-width: 80px;
-      }
-
-      .gc-recipe-pro .gc-section {
-        margin-bottom: 24px;
-      }
-
-      .gc-recipe-pro .gc-label {
-        font-size: 0.75rem;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--text-light);
-        margin-bottom: 8px;
-      }
-
-      .gc-recipe-pro .gc-hint {
-        font-size: 0.85rem;
-        color: var(--text-light);
-        line-height: 1.5;
-      }
-
-      .gc-recipe-pro .gc-highlight-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-      }
-
-      /* أنماط لعرض النص بشكل صحيح */
-      .gc-recipe-pro .gc-code-display {
-        font-family: 'Courier New', monospace;
-        font-size: 0.9rem;
-        font-weight: 600;
-        color: var(--primary-dark);
-        background: rgba(46,125,120,0.05);
-        padding: 4px 8px;
-        border-radius: 6px;
-        display: inline-block;
-        white-space: nowrap;
-      }
-
-      .gc-recipe-pro .gc-name-with-note {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .gc-recipe-pro .gc-name-main {
-        font-weight: 500;
-        color: var(--text);
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-name-note {
-        font-size: 0.75rem;
-        color: var(--text-light);
-        margin-top: 2px;
-        font-style: italic;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-unit-display {
-        font-size: 0.8rem;
-        color: var(--text-light);
-        background: var(--bg-gradient);
-        padding: 4px 8px;
-        border-radius: 6px;
-        display: inline-block;
-        font-weight: 500;
-        white-space: nowrap;
-      }
-
-      /* تحسين ظهور الـ selects */
-      .gc-recipe-pro .gc-select {
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 12px center;
-        background-size: 16px;
-        padding-right: 40px;
-        min-width: 200px;
-        color: var(--text);
-        background-color: white;
-      }
-
-      .gc-recipe-pro .gc-select option {
-        color: var(--text);
-        background: white;
-        padding: 12px;
-        font-size: 0.95rem;
-      }
-
-      /* أنماط ADD LINE المحسنة */
-      .gc-recipe-pro .gc-add-line-modern {
-        background: linear-gradient(145deg, #ffffff, #f8fafc);
-        border-radius: 24px;
-        padding: 24px;
-        border: 1px solid rgba(46,125,120,0.1);
-        box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), 0 4px 12px rgba(0,0,0,0.02);
-      }
-
-      .gc-recipe-pro .gc-add-line-type-bar {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 24px;
-        background: rgba(46,125,120,0.04);
-        padding: 6px;
-        border-radius: 60px;
-        border: 1px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-type-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 14px 20px;
-        border-radius: 40px;
-        border: none;
-        background: transparent;
-        color: var(--text-light);
-        font-weight: 700;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        letter-spacing: 0.02em;
-      }
-
-      .gc-recipe-pro .gc-type-btn.active {
-        background: white;
-        color: var(--primary-dark);
-        box-shadow: 0 8px 20px -8px rgba(46,125,120,0.25);
-        border: 1px solid rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-type-btn:hover:not(.active) {
-        background: rgba(255,255,255,0.7);
-        color: var(--primary);
-      }
-
-      .gc-recipe-pro .gc-type-icon {
-        font-size: 1.3rem;
-        filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
-      }
-
-      .gc-recipe-pro .gc-add-line-search-section {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 16px;
-        margin-bottom: 24px;
-      }
-
-      .gc-recipe-pro .gc-search-field {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-
-      .gc-recipe-pro .gc-search-icon {
-        position: absolute;
-        left: 16px;
-        color: var(--primary);
-        opacity: 0.7;
-        width: 20px;
-        height: 20px;
-      }
-
-      .gc-recipe-pro .gc-search-input {
-        width: 100%;
-        padding: 16px 16px 16px 52px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.95rem;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-      }
-
-      .gc-recipe-pro .gc-search-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-search-input::placeholder {
-        color: #a0b3c9;
-        font-style: italic;
-      }
-
-      .gc-recipe-pro .gc-select-wrapper {
-        position: relative;
-      }
-
-      .gc-recipe-pro .gc-modern-select {
-        width: 100%;
-        padding: 16px 24px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.95rem;
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 20px center;
-        background-size: 20px;
-        cursor: pointer;
-        font-weight: 500;
-        color: var(--text);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-      }
-
-      .gc-recipe-pro .gc-modern-select:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-modern-select option {
-        padding: 16px;
-        font-size: 0.95rem;
-      }
-
-      .gc-recipe-pro .gc-group-title-field {
-        margin-top: 8px;
-        margin-bottom: 8px;
-      }
-
-      .gc-recipe-pro .gc-modern-input {
-        width: 100%;
-        padding: 16px 20px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.95rem;
-        transition: all 0.2s ease;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-      }
-
-      .gc-recipe-pro .gc-modern-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-group-input {
-        background: linear-gradient(145deg, #ffffff, #f8fafc);
-        border: 2px dashed rgba(46,125,120,0.3);
-        text-align: center;
-        font-weight: 600;
-        color: var(--primary-dark);
-        font-size: 1.1rem;
-        padding: 20px;
-      }
-
-      .gc-recipe-pro .gc-group-input::placeholder {
-        color: var(--primary);
-        opacity: 0.5;
-        font-weight: 400;
-      }
-
-      .gc-recipe-pro .gc-add-line-quantities {
-        margin-top: 24px;
-        padding-top: 24px;
-        border-top: 2px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-quantity-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 16px;
-        align-items: start;
-      }
-
-      @media (max-width: 1200px) {
-        .gc-recipe-pro .gc-quantity-grid {
-          grid-template-columns: repeat(3, 1fr);
-        }
-        .gc-recipe-pro .gc-note-field {
-          grid-column: span 3;
-        }
-      }
-
-      @media (max-width: 768px) {
-        .gc-recipe-pro .gc-add-line-search-section {
-          grid-template-columns: 1fr;
-        }
-        .gc-recipe-pro .gc-quantity-grid {
-          grid-template-columns: 1fr;
-        }
-        .gc-recipe-pro .gc-note-field {
-          grid-column: auto;
-        }
-      }
-
-      .gc-recipe-pro .gc-quantity-field {
-        position: relative;
-      }
-
-      .gc-recipe-pro .gc-field-label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--text-light);
-        margin-bottom: 8px;
-        margin-left: 8px;
-      }
-
-      .gc-recipe-pro .gc-input-unit-group {
-        position: relative;
-        display: flex;
-        align-items: center;
-      }
-
-      .gc-recipe-pro .gc-number-input {
-        padding-right: 60px;
-        text-align: right;
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-        font-size: 1rem;
-      }
-
-      .gc-recipe-pro .gc-unit-badge {
-        position: absolute;
-        right: 12px;
-        font-size: 0.7rem;
-        font-weight: 800;
-        color: var(--primary-dark);
-        background: rgba(46,125,120,0.1);
-        padding: 6px 12px;
-        border-radius: 30px;
-        pointer-events: none;
-        text-transform: uppercase;
-        letter-spacing: 0.02em;
-      }
-
-      .gc-recipe-pro .gc-field-hint {
-        font-size: 0.65rem;
-        color: var(--text-light);
-        margin-top: 6px;
-        margin-left: 8px;
-        opacity: 0.8;
-        font-style: italic;
-        display: flex;
-        align-items: center;
-        gap: 4px;
-      }
-
-      .gc-recipe-pro .gc-field-hint::before {
-        content: "ⓘ";
-        font-size: 0.7rem;
-        opacity: 0.7;
-      }
-
-      .gc-recipe-pro .gc-add-line-actions-modern {
-        display: flex;
-        gap: 16px;
-        margin-top: 32px;
-        justify-content: flex-end;
-        align-items: center;
-      }
-
-      .gc-recipe-pro .gc-btn-primary-modern {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 16px 40px;
-        border-radius: 40px;
-        border: none;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        font-weight: 700;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 10px 25px -8px rgba(46,125,120,0.5);
-        letter-spacing: 0.02em;
-      }
-
-      .gc-recipe-pro .gc-btn-primary-modern:hover {
-        transform: translateY(-3px);
-        box-shadow: 0 15px 30px -8px rgba(46,125,120,0.7);
-      }
-
-      .gc-recipe-pro .gc-btn-primary-modern:active {
-        transform: translateY(-1px);
-      }
-
-      .gc-recipe-pro .gc-btn-secondary-modern {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        padding: 16px 40px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.2);
-        background: white;
-        color: var(--text);
-        font-weight: 600;
-        font-size: 1rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-      }
-
-      .gc-recipe-pro .gc-btn-secondary-modern:hover {
-        border-color: var(--primary);
-        background: rgba(46,125,120,0.02);
-        color: var(--primary-dark);
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px -8px rgba(46,125,120,0.2);
-      }
-
-      /* أنماط LINES المحسنة مع تناسق عمودي مثالي */
-      .gc-recipe-pro .gc-empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: linear-gradient(145deg, #f8fafc, #ffffff);
-        border-radius: 32px;
-        border: 2px dashed rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-empty-icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-        opacity: 0.7;
-        filter: drop-shadow(0 8px 16px rgba(46,125,120,0.1));
-      }
-
-      .gc-recipe-pro .gc-empty-title {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: var(--primary-dark);
-        margin-bottom: 8px;
-      }
-
-      .gc-recipe-pro .gc-empty-description {
-        font-size: 0.95rem;
-        color: var(--text-light);
-        max-width: 400px;
-        margin: 0 auto;
-      }
-
       .gc-recipe-pro .gc-lines-container {
         background: white;
         border-radius: 24px;
         overflow: hidden;
+        border: 1px solid rgba(46,125,120,0.1);
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-table-toolbar {
@@ -2151,261 +1583,193 @@ export default function RecipeEditor() {
         border: 1px solid rgba(46,125,120,0.2);
       }
 
-      .gc-recipe-pro .gc-table-actions {
-        display: flex;
-        gap: 6px;
-      }
-
-      .gc-recipe-pro .gc-table-action-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: 12px;
-        border: 1px solid rgba(46,125,120,0.15);
-        background: white;
-        color: var(--text-light);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s ease;
-      }
-
-      .gc-recipe-pro .gc-table-action-btn:hover {
-        background: var(--primary-light);
-        border-color: var(--primary);
-        color: var(--primary-dark);
-      }
-
-      .gc-recipe-pro .gc-kitopi-table-wrap {
-        overflow-x: auto;
-        border-radius: 0;
-        background: white;
-        box-shadow: inset 0 -1px 0 rgba(46,125,120,0.1);
-        max-height: 600px;
-        overflow-y: auto;
-      }
-
-      .gc-recipe-pro .gc-kitopi-table {
+      /* تصميم الجدول مثل الأكسيل */
+      .gc-recipe-pro .gc-excel-table {
         width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        font-size: 0.9rem;
+        border-collapse: collapse;
         table-layout: fixed;
-        min-width: 1200px;
+        font-size: 0.9rem;
       }
 
-      /* تحسين توزيع عرض الأعمدة */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(1) { width: 110px; }  /* CODE - أوسع قليلاً */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(2) { width: 260px; }  /* INGREDIENT - أوسع بكثير لاستيعاب الاسم والملاحظة */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(3) { width: 100px; }  /* NET - أوسع */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(4) { width: 70px; }   /* UNIT */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(5) { width: 100px; }  /* GROSS - أوسع */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(6) { width: 90px; }   /* YIELD - أوسع */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(7) { width: 110px; }  /* COST (if shown) */
-      .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(8) { width: 100px; }  /* ACTIONS - أوسع للأزرار */
+      /* توزيع عرض الأعمدة بدقة */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(1) { width: 12%; }  /* CODE */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(2) { width: 28%; }  /* INGREDIENT */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(3) { width: 10%; }  /* NET */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(4) { width: 8%; }   /* UNIT */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(5) { width: 10%; }  /* GROSS */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(6) { width: 10%; }  /* YIELD */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(7) { width: 12%; }  /* COST (if shown) */
+      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(8) { width: 10%; }  /* ACTIONS */
 
-      .gc-recipe-pro .gc-kitopi-table thead {
-        position: sticky;
-        top: 0;
-        z-index: 10;
+      .gc-recipe-pro .gc-excel-table thead {
+        background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+        border-bottom: 2px solid rgba(46,125,120,0.2);
       }
 
-      .gc-recipe-pro .gc-kitopi-table thead th {
-        background: linear-gradient(to bottom, #ffffff, #f8fafc);
-        border-bottom: 2px solid rgba(46,125,120,0.15);
-        padding: 18px 12px;
+      .gc-recipe-pro .gc-excel-table thead th {
+        padding: 14px 8px;
         font-weight: 700;
         font-size: 0.8rem;
         letter-spacing: 0.05em;
         text-transform: uppercase;
         color: var(--primary-dark);
+        text-align: left;
         white-space: nowrap;
+        border-right: 1px solid rgba(46,125,120,0.1);
       }
 
-      .gc-recipe-pro .gc-th-content {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        width: 100%;
+      .gc-recipe-pro .gc-excel-table thead th:last-child {
+        border-right: none;
       }
 
-      .gc-recipe-pro .gc-th-right {
-        justify-content: flex-end;
-      }
-
-      .gc-recipe-pro .gc-th-center {
-        justify-content: center;
-      }
-
-      .gc-recipe-pro .gc-kitopi-table tbody td {
-        padding: 16px 12px;
+      .gc-recipe-pro .gc-excel-table tbody td {
+        padding: 12px 8px;
         border-bottom: 1px solid rgba(46,125,120,0.08);
+        border-right: 1px solid rgba(46,125,120,0.05);
         vertical-align: middle;
-        transition: background-color 0.15s ease;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
       }
 
-      .gc-recipe-pro .gc-line-row:hover td {
+      .gc-recipe-pro .gc-excel-table tbody td:last-child {
+        border-right: none;
+      }
+
+      .gc-recipe-pro .gc-excel-table tbody tr:hover td {
         background-color: rgba(46,125,120,0.02);
       }
 
-      .gc-recipe-pro .gc-line-row.has-note td {
+      .gc-recipe-pro .gc-excel-table tbody tr.has-note td {
         background-color: rgba(193,123,74,0.02);
       }
 
-      /* تحسين عمود CODE */
-      .gc-recipe-pro .gc-code-wrapper {
-        display: flex;
-        align-items: center;
-        justify-content: flex-start;
-        width: 100%;
-        padding-right: 4px;
-      }
-
-      .gc-recipe-pro .gc-code-pill {
+      /* عمود CODE */
+      .gc-recipe-pro .gc-code-cell {
         font-family: 'Courier New', monospace;
-        font-size: 0.8rem;
         font-weight: 600;
         color: var(--primary-dark);
-        background: linear-gradient(145deg, var(--primary-light), #ffffff);
-        padding: 6px 12px;
-        border-radius: 30px;
-        border: 1px solid rgba(46,125,120,0.15);
+        background: rgba(46,125,120,0.05);
+        padding: 4px 8px;
+        border-radius: 4px;
         display: inline-block;
-        white-space: nowrap;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+        font-size: 0.85rem;
         max-width: 100%;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
-      /* تحسين عمود INGREDIENT */
-      .gc-recipe-pro .gc-ingredient-info {
+      /* عمود INGREDIENT */
+      .gc-recipe-pro .gc-ingredient-cell {
         display: flex;
         flex-direction: column;
-        gap: 6px;
-        width: 100%;
-        padding-right: 8px;
+        gap: 4px;
       }
 
       .gc-recipe-pro .gc-ingredient-name {
         font-weight: 500;
         color: var(--text);
-        line-height: 1.4;
+        font-size: 0.9rem;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        width: 100%;
-        font-size: 0.95rem;
       }
 
       .gc-recipe-pro .gc-ingredient-note {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        font-size: 0.8rem;
+        font-size: 0.75rem;
         color: var(--secondary);
         background: rgba(193,123,74,0.05);
-        padding: 6px 12px;
-        border-radius: 30px;
-        width: fit-content;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-block;
         max-width: 100%;
-        border: 1px solid rgba(193,123,74,0.15);
-        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        border: 1px solid rgba(193,123,74,0.1);
       }
 
-      .gc-recipe-pro .gc-note-icon {
-        font-size: 0.8rem;
-        opacity: 0.7;
-        flex-shrink: 0;
-      }
-
-      /* تحسين أعمدة الأرقام */
-      .gc-recipe-pro .gc-cell-input-wrapper {
-        position: relative;
-        width: 100%;
-        padding-right: 4px;
-      }
-
-      .gc-recipe-pro .gc-table-input {
-        width: 100%;
-        padding: 10px 12px;
-        border-radius: 30px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.9rem;
+      /* أعمدة الأرقام */
+      .gc-recipe-pro .gc-number-cell {
         font-family: 'Courier New', monospace;
         font-weight: 600;
         color: var(--text);
         text-align: right;
-        transition: all 0.15s ease;
-        box-sizing: border-box;
+        width: 100%;
       }
 
-      .gc-recipe-pro .gc-table-input:focus {
+      .gc-recipe-pro .gc-number-input {
+        width: 100%;
+        padding: 6px 8px;
+        border: 1px solid rgba(46,125,120,0.2);
+        border-radius: 4px;
+        font-family: 'Courier New', monospace;
+        font-size: 0.85rem;
+        text-align: right;
+        background: white;
+        transition: all 0.15s ease;
+      }
+
+      .gc-recipe-pro .gc-number-input:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(46,125,120,0.1);
+        box-shadow: 0 0 0 2px rgba(46,125,120,0.1);
       }
 
-      .gc-recipe-pro .gc-table-input::placeholder {
+      .gc-recipe-pro .gc-number-input::placeholder {
         color: #a0b3c9;
         font-style: italic;
-        font-weight: 400;
       }
 
       .gc-recipe-pro .gc-yield-input {
-        padding-right: 35px;
+        padding-right: 25px;
+      }
+
+      .gc-recipe-pro .gc-input-wrapper {
+        position: relative;
+        display: inline-block;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-yield-suffix {
         position: absolute;
-        right: 16px;
+        right: 8px;
         top: 50%;
         transform: translateY(-50%);
-        font-size: 0.8rem;
-        font-weight: 700;
+        font-size: 0.7rem;
         color: var(--primary-dark);
-        opacity: 0.7;
+        opacity: 0.6;
         pointer-events: none;
       }
 
-      /* تحسين عمود UNIT */
-      .gc-recipe-pro .gc-unit-badge-small {
-        font-size: 0.85rem;
-        font-weight: 700;
+      /* عمود UNIT */
+      .gc-recipe-pro .gc-unit-cell {
+        font-weight: 600;
         color: var(--text-light);
         background: var(--bg-gradient);
-        padding: 6px 12px;
-        border-radius: 30px;
+        padding: 4px 8px;
+        border-radius: 4px;
         display: inline-block;
-        border: 1px solid rgba(46,125,120,0.1);
-        white-space: nowrap;
-        width: fit-content;
-        min-width: 50px;
+        font-size: 0.8rem;
         text-align: center;
+        min-width: 40px;
       }
 
-      /* تحسين عمود COST */
-      .gc-recipe-pro .gc-cost-value {
+      /* عمود COST */
+      .gc-recipe-pro .gc-cost-cell {
+        font-family: 'Courier New', monospace;
+        font-weight: 600;
+        color: var(--primary-dark);
+        text-align: right;
         display: flex;
         align-items: center;
         justify-content: flex-end;
-        gap: 8px;
-        font-weight: 600;
-        color: var(--primary-dark);
-        width: 100%;
-        padding-right: 8px;
+        gap: 4px;
       }
 
-      .gc-recipe-pro .gc-cost-amount {
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        text-align: right;
+      .gc-recipe-pro .gc-cost-warning {
+        color: var(--accent);
+        font-size: 0.8rem;
+        cursor: help;
       }
 
       .gc-recipe-pro .gc-cost-missing {
@@ -2413,34 +1777,18 @@ export default function RecipeEditor() {
         opacity: 0.5;
       }
 
-      .gc-recipe-pro .gc-cost-placeholder {
-        font-family: 'Courier New', monospace;
-        font-size: 0.95rem;
-        color: var(--text-light);
-        text-align: right;
-      }
-
-      .gc-recipe-pro .gc-cost-warning {
-        font-size: 0.9rem;
-        color: var(--accent);
-        cursor: help;
-        flex-shrink: 0;
-      }
-
-      /* تحسين عمود ACTIONS */
-      .gc-recipe-pro .gc-row-actions {
+      /* عمود ACTIONS */
+      .gc-recipe-pro .gc-actions-cell {
         display: flex;
-        gap: 10px;
+        gap: 6px;
         justify-content: center;
-        width: 100%;
-        padding: 0 4px;
       }
 
       .gc-recipe-pro .gc-action-btn {
-        width: 38px;
-        height: 38px;
-        border-radius: 12px;
-        border: 1px solid rgba(46,125,120,0.1);
+        width: 32px;
+        height: 32px;
+        border: 1px solid rgba(46,125,120,0.15);
+        border-radius: 6px;
         background: white;
         color: var(--text-light);
         cursor: pointer;
@@ -2448,14 +1796,13 @@ export default function RecipeEditor() {
         align-items: center;
         justify-content: center;
         transition: all 0.15s ease;
-        flex-shrink: 0;
+        font-size: 0.9rem;
       }
 
       .gc-recipe-pro .gc-action-btn:hover {
         background: var(--primary-light);
         border-color: var(--primary);
         color: var(--primary-dark);
-        transform: scale(1.05);
       }
 
       .gc-recipe-pro .gc-action-btn-danger:hover {
@@ -2464,41 +1811,38 @@ export default function RecipeEditor() {
         color: var(--accent);
       }
 
-      /* أنماط صفوف المجموعات */
-      .gc-recipe-pro .gc-kitopi-group {
-        background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03)) !important;
+      /* صفوف المجموعات */
+      .gc-recipe-pro .gc-group-row {
+        background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03));
+        font-weight: 700;
       }
 
-      .gc-recipe-pro .gc-group-row {
+      .gc-recipe-pro .gc-group-cell {
+        padding: 12px 16px !important;
+      }
+
+      .gc-recipe-pro .gc-group-content {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 12px 16px;
         width: 100%;
       }
 
-      .gc-recipe-pro .gc-group-info {
+      .gc-recipe-pro .gc-group-title {
         display: flex;
         align-items: center;
-        gap: 16px;
-        min-width: 0;
-        flex: 1;
+        gap: 12px;
       }
 
       .gc-recipe-pro .gc-group-icon {
-        font-size: 1.3rem;
+        font-size: 1.1rem;
         opacity: 0.7;
-        flex-shrink: 0;
       }
 
-      .gc-recipe-pro .gc-group-title {
-        font-size: 1.1rem;
+      .gc-recipe-pro .gc-group-name {
+        font-size: 1rem;
         font-weight: 800;
         color: var(--primary-dark);
-        letter-spacing: -0.01em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
       }
 
       .gc-recipe-pro .gc-group-badge {
@@ -2506,28 +1850,19 @@ export default function RecipeEditor() {
         font-weight: 700;
         color: var(--primary-dark);
         background: rgba(46,125,120,0.1);
-        padding: 4px 12px;
-        border-radius: 30px;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        flex-shrink: 0;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-left: 12px;
       }
 
       .gc-recipe-pro .gc-group-actions {
         display: flex;
-        gap: 10px;
-        flex-shrink: 0;
-      }
-
-      .gc-recipe-pro .gc-icon-btn-sm {
-        width: 36px;
-        height: 36px;
-        border-radius: 10px;
+        gap: 8px;
       }
 
       /* تذييل الجدول */
       .gc-recipe-pro .gc-table-footer {
-        padding: 18px 24px;
+        padding: 16px 20px;
         background: linear-gradient(to right, #f8fafc, #ffffff);
         border-top: 1px solid rgba(46,125,120,0.1);
       }
@@ -2535,192 +1870,382 @@ export default function RecipeEditor() {
       .gc-recipe-pro .gc-table-stats {
         display: flex;
         align-items: center;
-        gap: 30px;
+        gap: 24px;
         flex-wrap: wrap;
       }
 
       .gc-recipe-pro .gc-stat-item {
         display: flex;
         align-items: center;
-        gap: 12px;
-        font-size: 0.9rem;
+        gap: 8px;
+        font-size: 0.85rem;
       }
 
       .gc-recipe-pro .gc-stat-label {
         color: var(--text-light);
         font-weight: 500;
-        white-space: nowrap;
       }
 
       .gc-recipe-pro .gc-stat-value {
         font-weight: 700;
         color: var(--primary-dark);
         background: white;
-        padding: 6px 16px;
-        border-radius: 30px;
+        padding: 4px 12px;
+        border-radius: 20px;
         border: 1px solid rgba(46,125,120,0.15);
-        white-space: nowrap;
-        font-size: 0.95rem;
       }
 
       .gc-recipe-pro .gc-stat-total .gc-stat-value {
         background: var(--primary-light);
-        color: var(--primary-dark);
         border-color: var(--primary);
-        font-weight: 800;
-      }
-
-      /* تحسينات للشاشات المتوسطة */
-      @media (max-width: 1400px) {
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(1) { width: 100px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(2) { width: 220px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(3) { width: 90px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(4) { width: 65px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(5) { width: 90px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(6) { width: 80px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(7) { width: 100px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(8) { width: 90px; }
-      }
-
-      @media (max-width: 1200px) {
-        .gc-recipe-pro .gc-kitopi-table {
-          font-size: 0.85rem;
-        }
-
-        .gc-recipe-pro .gc-table-input {
-          padding: 8px 10px;
-          font-size: 0.8rem;
-        }
-
-        .gc-recipe-pro .gc-code-pill {
-          font-size: 0.75rem;
-          padding: 5px 10px;
-        }
-        
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(1) { width: 90px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(2) { width: 200px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(3) { width: 80px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(4) { width: 60px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(5) { width: 80px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(6) { width: 75px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(7) { width: 90px; }
-        .gc-recipe-pro .gc-kitopi-table colgroup col:nth-child(8) { width: 85px; }
-      }
-
-      @media (max-width: 1024px) {
-        .gc-recipe-pro .gc-table-stats {
-          gap: 20px;
-        }
-
-        .gc-recipe-pro .gc-stat-item {
-          font-size: 0.8rem;
-          gap: 8px;
-        }
-
-        .gc-recipe-pro .gc-stat-value {
-          padding: 5px 12px;
-          font-size: 0.85rem;
-        }
       }
 
       /* تأثير التمرير */
       .gc-flash-row {
-        animation: gc-flash 0.5s ease;
+        animation: excel-flash 0.5s ease;
       }
 
-      @keyframes gc-flash {
-        0%, 100% {
-          background: transparent;
-        }
-        50% {
-          background: rgba(46,125,120,0.1);
-        }
+      @keyframes excel-flash {
+        0%, 100% { background: transparent; }
+        50% { background: rgba(46,125,120,0.1); }
       }
 
-      .gc-kitopi-group.gc-flash-row {
-        animation: gc-flash-group 0.5s ease;
+      .gc-group-row.gc-flash-row {
+        animation: group-flash 0.5s ease;
       }
 
-      @keyframes gc-flash-group {
-        0%, 100% {
-          background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03));
-        }
-        50% {
-          background: rgba(46,125,120,0.15);
-        }
+      @keyframes group-flash {
+        0%, 100% { background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03)); }
+        50% { background: rgba(46,125,120,0.15); }
       }
 
-      /* تحسينات للـ tooltips */
-      .gc-recipe-pro [data-tooltip] {
-        position: relative;
-        cursor: help;
+      /* باقي الأنماط */
+      .gc-recipe-pro .gc-empty-state {
+        text-align: center;
+        padding: 60px 20px;
+        background: linear-gradient(145deg, #f8fafc, #ffffff);
+        border-radius: 32px;
+        border: 2px dashed rgba(46,125,120,0.2);
       }
 
-      .gc-recipe-pro [data-tooltip]:before {
-        content: attr(data-tooltip);
-        position: absolute;
-        bottom: 100%;
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 8px 16px;
-        border-radius: 30px;
-        background: var(--primary-dark);
-        color: white;
-        font-size: 0.7rem;
-        font-weight: 500;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: all 0.2s ease;
-        z-index: 1000;
-        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      .gc-recipe-pro .gc-empty-icon {
+        font-size: 4rem;
+        margin-bottom: 20px;
+        opacity: 0.7;
       }
 
-      .gc-recipe-pro [data-tooltip]:hover:before {
-        opacity: 1;
-        transform: translateX(-50%) translateY(-10px);
+      .gc-recipe-pro .gc-empty-title {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: var(--primary-dark);
+        margin-bottom: 8px;
       }
 
-      .gc-btn-hero {
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark)) !important;
-        color: white !important;
-        border: none !important;
-        padding: 14px 28px !important;
-        border-radius: 40px !important;
-        font-weight: 800 !important;
-        letter-spacing: 0.02em !important;
-        box-shadow: 0 12px 24px -8px rgba(46,125,120,0.4) !important;
-        transition: all 0.2s ease !important;
+      .gc-recipe-pro .gc-empty-description {
+        font-size: 0.95rem;
+        color: var(--text-light);
+        max-width: 400px;
+        margin: 0 auto;
       }
 
-      .gc-btn-hero:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: 0 20px 32px -8px rgba(46,125,120,0.5) !important;
+      .gc-recipe-pro .gc-add-line-modern {
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border-radius: 24px;
+        padding: 24px;
+        border: 1px solid rgba(46,125,120,0.1);
       }
 
-      .gc-tabs {
+      .gc-recipe-pro .gc-add-line-type-bar {
         display: flex;
-        gap: 6px;
+        gap: 8px;
+        margin-bottom: 24px;
         background: rgba(46,125,120,0.04);
         padding: 6px;
         border-radius: 60px;
-        backdrop-filter: blur(4px);
-      }
-
-      .gc-chip {
-        padding: 8px 16px;
-        border-radius: 40px;
-        font-size: 0.85rem;
-        font-weight: 700;
-        background: white;
         border: 1px solid rgba(46,125,120,0.1);
-        color: var(--text);
       }
 
-      .gc-chip-active {
-        background: var(--primary);
+      .gc-recipe-pro .gc-type-btn {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        padding: 12px 20px;
+        border-radius: 40px;
+        border: none;
+        background: transparent;
+        color: var(--text-light);
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .gc-recipe-pro .gc-type-btn.active {
+        background: white;
+        color: var(--primary-dark);
+        box-shadow: 0 8px 20px -8px rgba(46,125,120,0.25);
+        border: 1px solid rgba(46,125,120,0.2);
+      }
+
+      .gc-recipe-pro .gc-type-btn:hover:not(.active) {
+        background: rgba(255,255,255,0.7);
+        color: var(--primary);
+      }
+
+      .gc-recipe-pro .gc-type-icon {
+        font-size: 1.2rem;
+      }
+
+      .gc-recipe-pro .gc-add-line-search-section {
+        display: grid;
+        grid-template-columns: 1fr 2fr;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+
+      .gc-recipe-pro .gc-search-field {
+        position: relative;
+      }
+
+      .gc-recipe-pro .gc-search-icon {
+        position: absolute;
+        left: 16px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--primary);
+        opacity: 0.7;
+        width: 20px;
+        height: 20px;
+      }
+
+      .gc-recipe-pro .gc-search-input {
+        width: 100%;
+        padding: 14px 16px 14px 48px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.95rem;
+      }
+
+      .gc-recipe-pro .gc-search-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-modern-select {
+        width: 100%;
+        padding: 14px 24px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.95rem;
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 20px center;
+        background-size: 16px;
+        cursor: pointer;
+      }
+
+      .gc-recipe-pro .gc-group-title-field {
+        margin-bottom: 24px;
+      }
+
+      .gc-recipe-pro .gc-group-input {
+        padding: 16px 20px;
+        border: 2px dashed rgba(46,125,120,0.3);
+        text-align: center;
+        font-weight: 600;
+        color: var(--primary-dark);
+        font-size: 1rem;
+      }
+
+      .gc-recipe-pro .gc-quantity-grid {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 16px;
+        margin-top: 16px;
+      }
+
+      .gc-recipe-pro .gc-field-label {
+        display: block;
+        font-size: 0.7rem;
+        font-weight: 800;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-light);
+        margin-bottom: 6px;
+      }
+
+      .gc-recipe-pro .gc-input-unit-group {
+        position: relative;
+      }
+
+      .gc-recipe-pro .gc-modern-input {
+        width: 100%;
+        padding: 12px 16px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.1);
+        background: white;
+        font-size: 0.95rem;
+      }
+
+      .gc-recipe-pro .gc-number-input {
+        padding-right: 50px;
+        text-align: right;
+        font-family: 'Courier New', monospace;
+      }
+
+      .gc-recipe-pro .gc-unit-badge {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        background: rgba(46,125,120,0.1);
+        padding: 4px 8px;
+        border-radius: 20px;
+        pointer-events: none;
+      }
+
+      .gc-recipe-pro .gc-field-hint {
+        font-size: 0.65rem;
+        color: var(--text-light);
+        margin-top: 4px;
+        opacity: 0.8;
+      }
+
+      .gc-recipe-pro .gc-add-line-actions-modern {
+        display: flex;
+        gap: 16px;
+        margin-top: 24px;
+        justify-content: flex-end;
+      }
+
+      .gc-recipe-pro .gc-btn-primary-modern {
+        padding: 14px 32px;
+        border-radius: 40px;
+        border: none;
+        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
         color: white;
-        border-color: var(--primary-dark);
+        font-weight: 700;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        box-shadow: 0 8px 16px -4px rgba(46,125,120,0.3);
+      }
+
+      .gc-recipe-pro .gc-btn-secondary-modern {
+        padding: 14px 32px;
+        border-radius: 40px;
+        border: 2px solid rgba(46,125,120,0.2);
+        background: white;
+        color: var(--text);
+        font-weight: 600;
+        font-size: 0.95rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .gc-recipe-pro .gc-btn-primary-modern:hover,
+      .gc-recipe-pro .gc-btn-secondary-modern:hover {
+        transform: translateY(-2px);
+      }
+
+      .gc-recipe-pro .gc-label {
+        font-size: 0.75rem;
+        font-weight: 900;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        color: var(--text-light);
+        margin-bottom: 8px;
+      }
+
+      .gc-recipe-pro .gc-hint {
+        font-size: 0.85rem;
+        color: var(--text-light);
+        line-height: 1.5;
+      }
+
+      .gc-recipe-pro .gc-highlight-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+      }
+
+      .gc-recipe-pro .gc-input,
+      .gc-recipe-pro .gc-select,
+      .gc-recipe-pro .gc-textarea {
+        border-radius: 16px;
+        border: 1.5px solid rgba(46,125,120,0.12);
+        background: white;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        width: 100%;
+      }
+
+      .gc-recipe-pro .gc-input:focus,
+      .gc-recipe-pro .gc-select:focus,
+      .gc-recipe-pro .gc-textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-select {
+        appearance: none;
+        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+        background-repeat: no-repeat;
+        background-position: right 16px center;
+        background-size: 16px;
+        padding-right: 48px;
+      }
+
+      .gc-recipe-pro .gc-grid-4 {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 16px;
+      }
+
+      @media (max-width: 1200px) {
+        .gc-recipe-pro .gc-quantity-grid {
+          grid-template-columns: repeat(3, 1fr);
+        }
+        .gc-recipe-pro .gc-note-field {
+          grid-column: span 3;
+        }
+      }
+
+      @media (max-width: 768px) {
+        .gc-recipe-pro .gc-add-line-search-section {
+          grid-template-columns: 1fr;
+        }
+        .gc-recipe-pro .gc-quantity-grid {
+          grid-template-columns: 1fr;
+        }
+        .gc-recipe-pro .gc-table-stats {
+          gap: 12px;
+        }
+        .gc-recipe-pro .gc-excel-table thead th {
+          font-size: 0.7rem;
+          padding: 10px 4px;
+        }
+        .gc-recipe-pro .gc-excel-table tbody td {
+          padding: 8px 4px;
+          font-size: 0.8rem;
+        }
       }
     `}</style>
   )
@@ -3386,7 +2911,7 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* LINES Section المحسن مع تناسق عمودي مثالي */}
+          {/* LINES Section - تصميم مثل الأكسيل */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
               <div className="gc-label" id="sec-lines">LINES</div>
@@ -3404,7 +2929,6 @@ export default function RecipeEditor() {
                 </div>
               ) : (
                 <div className="gc-lines-container">
-                  {/* لوحة التحكم بالجدول */}
                   <div className="gc-table-toolbar">
                     <div className="gc-table-info">
                       <span className="gc-table-count">{visibleLines.length} items</span>
@@ -3412,255 +2936,198 @@ export default function RecipeEditor() {
                         <span className="gc-table-badge">{visibleLines.filter(l => l.line_type === 'group').length} groups</span>
                       )}
                     </div>
-                    <div className="gc-table-actions">
-                      <button className="gc-table-action-btn" type="button" onClick={() => { }} title="Expand all">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </button>
-                      <button className="gc-table-action-btn" type="button" onClick={() => { }} title="Collapse all">
-                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                          <polyline points="18 15 12 9 6 15" />
-                        </svg>
-                      </button>
-                    </div>
                   </div>
 
-                  {/* الجدول الرئيسي مع عرض محسن */}
-                  <div className="gc-kitopi-table-wrap">
-                    <table className="gc-kitopi-table">
-                      <colgroup>
-                        <col style={{ width: '110px' }} />
-                        <col style={{ width: '260px' }} />
-                        <col style={{ width: '100px' }} />
-                        <col style={{ width: '70px' }} />
-                        <col style={{ width: '100px' }} />
-                        <col style={{ width: '90px' }} />
-                        {showCost ? <col style={{ width: '110px' }} /> : null}
-                        <col style={{ width: '100px' }} />
-                      </colgroup>
-                      <thead>
-                        <tr>
-                          <th>
-                            <div className="gc-th-content">
-                              <span>CODE</span>
-                            </div>
-                          </th>
-                          <th>
-                            <div className="gc-th-content">
-                              <span>INGREDIENT</span>
-                            </div>
-                          </th>
-                          <th>
-                            <div className="gc-th-content gc-th-right">
-                              <span>NET</span>
-                            </div>
-                          </th>
-                          <th>
-                            <div className="gc-th-content">
-                              <span>UNIT</span>
-                            </div>
-                          </th>
-                          <th>
-                            <div className="gc-th-content gc-th-right">
-                              <span>GROSS</span>
-                            </div>
-                          </th>
-                          <th>
-                            <div className="gc-th-content gc-th-right">
-                              <span>YIELD</span>
-                            </div>
-                          </th>
-                          {showCost ? (
-                            <th>
-                              <div className="gc-th-content gc-th-right">
-                                <span>COST</span>
-                              </div>
-                            </th>
-                          ) : null}
-                          <th>
-                            <div className="gc-th-content gc-th-center">
-                              <span>ACTIONS</span>
-                            </div>
-                          </th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {visibleLines.map((l, index) => {
-                          const c = lineComputed.get(l.id)
-                          const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
-                          const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
+                  {/* جدول مثل الأكسيل */}
+                  <table className="gc-excel-table">
+                    <colgroup>
+                      <col /> {/* CODE */}
+                      <col /> {/* INGREDIENT */}
+                      <col /> {/* NET */}
+                      <col /> {/* UNIT */}
+                      <col /> {/* GROSS */}
+                      <col /> {/* YIELD */}
+                      {showCost ? <col /> : null} {/* COST */}
+                      <col /> {/* ACTIONS */}
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>CODE</th>
+                        <th>INGREDIENT</th>
+                        <th>NET</th>
+                        <th>UNIT</th>
+                        <th>GROSS</th>
+                        <th>YIELD</th>
+                        {showCost ? <th>COST</th> : null}
+                        <th>ACTIONS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleLines.map((l) => {
+                        const c = lineComputed.get(l.id)
+                        const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+                        const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
 
-                          if (l.line_type === 'group') {
-                            return (
-                              <tr key={l.id} className={cx("gc-kitopi-group", flashLineId === l.id && "gc-flash-row")}>
-                                <td colSpan={tableColSpan}>
-                                  <div className="gc-group-row">
-                                    <div className="gc-group-info">
-                                      <span className="gc-group-icon">📁</span>
-                                      <span className="gc-group-title">{l.group_title || 'Untitled Group'}</span>
-                                      <span className="gc-group-badge">Group</span>
-                                    </div>
-                                    <div className="gc-group-actions">
-                                      <button
-                                        className="gc-icon-btn gc-icon-btn-sm"
-                                        type="button"
-                                        onClick={() => duplicateLineLocal(l.id)}
-                                        title="Duplicate group"
-                                      >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                          <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                        </svg>
-                                      </button>
-                                      <button
-                                        className="gc-icon-btn gc-icon-btn-sm gc-icon-btn-danger"
-                                        type="button"
-                                        onClick={() => deleteLineLocal(l.id)}
-                                        title="Delete group"
-                                      >
-                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                          <polyline points="3 6 5 6 21 6" />
-                                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                          <line x1="10" y1="11" x2="10" y2="17" />
-                                          <line x1="14" y1="11" x2="14" y2="17" />
-                                        </svg>
-                                      </button>
-                                    </div>
-                                  </div>
-                                </td>
-                              </tr>
-                            )
-                          }
-
+                        if (l.line_type === 'group') {
                           return (
-                            <tr
-                              key={l.id}
-                              className={cx(
-                                "gc-line-row",
-                                flashLineId === l.id && "gc-flash-row",
-                                l.notes && "has-note"
-                              )}
-                            >
-                              <td>
-                                <div className="gc-code-wrapper">
-                                  <span className="gc-code-pill" title={l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')}>
-                                    {l.line_type === 'ingredient'
-                                      ? (ing?.code || '—')
-                                      : (sub?.code || '—')}
-                                  </span>
-                                </div>
-                              </td>
-
-                              <td>
-                                <div className="gc-ingredient-info">
-                                  <div className="gc-ingredient-name" title={l.line_type === 'ingredient' ? (ing?.name || 'Unknown Ingredient') : (sub?.name || 'Unknown Subrecipe')}>
-                                    {l.line_type === 'ingredient'
-                                      ? (ing?.name || 'Unknown Ingredient')
-                                      : (sub?.name || 'Unknown Subrecipe')}
+                            <tr key={l.id} className={cx("gc-group-row", flashLineId === l.id && "gc-flash-row")}>
+                              <td colSpan={tableColSpan} className="gc-group-cell">
+                                <div className="gc-group-content">
+                                  <div className="gc-group-title">
+                                    <span className="gc-group-icon">📁</span>
+                                    <span className="gc-group-name">{l.group_title || 'Untitled Group'}</span>
+                                    <span className="gc-group-badge">Group</span>
                                   </div>
-                                  {l.notes && (
-                                    <div className="gc-ingredient-note" title={l.notes}>
-                                      <span className="gc-note-icon">📝</span>
-                                      <span>{l.notes}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </td>
-
-                              <td>
-                                <div className="gc-cell-input-wrapper">
-                                  <input
-                                    className="gc-table-input"
-                                    value={fmtQty(toNum(l.qty, 0))}
-                                    onChange={(e) => onNetChange(l.id, e.target.value)}
-                                    inputMode="decimal"
-                                    title={`Net quantity: ${fmtQty(toNum(l.qty, 0))}`}
-                                  />
-                                </div>
-                              </td>
-
-                              <td>
-                                <span className="gc-unit-badge-small" title={l.unit || 'g'}>{l.unit || 'g'}</span>
-                              </td>
-
-                              <td>
-                                <div className="gc-cell-input-wrapper">
-                                  <input
-                                    className="gc-table-input"
-                                    value={l.gross_qty_override != null ? fmtQty(l.gross_qty_override) : ''}
-                                    onChange={(e) => onGrossChange(l.id, e.target.value)}
-                                    inputMode="decimal"
-                                    placeholder={c ? fmtQty(c.gross) : ''}
-                                    title={c ? `Gross quantity: ${fmtQty(c.gross)}` : 'Gross quantity'}
-                                  />
-                                </div>
-                              </td>
-
-                              <td>
-                                <div className="gc-cell-input-wrapper">
-                                  <input
-                                    className="gc-table-input gc-yield-input"
-                                    value={String(Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100)}
-                                    onChange={(e) => onYieldChange(l.id, e.target.value)}
-                                    inputMode="decimal"
-                                    title={`Yield percentage: ${Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100}%`}
-                                  />
-                                  <span className="gc-yield-suffix">%</span>
-                                </div>
-                              </td>
-
-                              {showCost ? (
-                                <td>
-                                  <div className={cx("gc-cost-value", (!c || c.lineCost <= 0) && "gc-cost-missing")}>
-                                    {c && c.lineCost > 0 ? (
-                                      <>
-                                        <span className="gc-cost-amount" title={`Cost: ${fmtMoney(c.lineCost, cur)}`}>{fmtMoney(c.lineCost, cur)}</span>
-                                        {c.warnings.length > 0 && (
-                                          <span className="gc-cost-warning" title={c.warnings[0]}>⚠</span>
-                                        )}
-                                      </>
-                                    ) : (
-                                      <span className="gc-cost-placeholder">—</span>
-                                    )}
+                                  <div className="gc-group-actions">
+                                    <button
+                                      className="gc-action-btn"
+                                      type="button"
+                                      onClick={() => duplicateLineLocal(l.id)}
+                                      title="Duplicate group"
+                                    >
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      className="gc-action-btn gc-action-btn-danger"
+                                      type="button"
+                                      onClick={() => deleteLineLocal(l.id)}
+                                      title="Delete group"
+                                    >
+                                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                        <polyline points="3 6 5 6 21 6" />
+                                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                      </svg>
+                                    </button>
                                   </div>
-                                </td>
-                              ) : null}
-
-                              <td>
-                                <div className="gc-row-actions">
-                                  <button
-                                    className="gc-action-btn"
-                                    type="button"
-                                    onClick={() => duplicateLineLocal(l.id)}
-                                    title="Duplicate line"
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                                      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-                                    </svg>
-                                  </button>
-                                  <button
-                                    className="gc-action-btn gc-action-btn-danger"
-                                    type="button"
-                                    onClick={() => deleteLineLocal(l.id)}
-                                    title="Delete line"
-                                  >
-                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                      <polyline points="3 6 5 6 21 6" />
-                                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-                                    </svg>
-                                  </button>
                                 </div>
                               </td>
                             </tr>
                           )
-                        })}
-                      </tbody>
-                    </table>
-                  </div>
+                        }
 
-                  {/* ملخص الجدول */}
+                        return (
+                          <tr
+                            key={l.id}
+                            className={cx(
+                              flashLineId === l.id && "gc-flash-row",
+                              l.notes && "has-note"
+                            )}
+                          >
+                            <td>
+                              <span className="gc-code-cell" title={l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')}>
+                                {l.line_type === 'ingredient'
+                                  ? (ing?.code || '—')
+                                  : (sub?.code || '—')}
+                              </span>
+                            </td>
+
+                            <td>
+                              <div className="gc-ingredient-cell">
+                                <span className="gc-ingredient-name" title={l.line_type === 'ingredient' ? (ing?.name || 'Unknown Ingredient') : (sub?.name || 'Unknown Subrecipe')}>
+                                  {l.line_type === 'ingredient'
+                                    ? (ing?.name || 'Unknown Ingredient')
+                                    : (sub?.name || 'Unknown Subrecipe')}
+                                </span>
+                                {l.notes && (
+                                  <span className="gc-ingredient-note" title={l.notes}>
+                                    <span>📝</span> {l.notes}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            <td>
+                              <div className="gc-input-wrapper">
+                                <input
+                                  className="gc-number-input"
+                                  value={fmtQty(toNum(l.qty, 0))}
+                                  onChange={(e) => onNetChange(l.id, e.target.value)}
+                                  inputMode="decimal"
+                                />
+                              </div>
+                            </td>
+
+                            <td>
+                              <span className="gc-unit-cell">{l.unit || 'g'}</span>
+                            </td>
+
+                            <td>
+                              <div className="gc-input-wrapper">
+                                <input
+                                  className="gc-number-input"
+                                  value={l.gross_qty_override != null ? fmtQty(l.gross_qty_override) : ''}
+                                  onChange={(e) => onGrossChange(l.id, e.target.value)}
+                                  inputMode="decimal"
+                                  placeholder={c ? fmtQty(c.gross) : ''}
+                                />
+                              </div>
+                            </td>
+
+                            <td>
+                              <div className="gc-input-wrapper">
+                                <input
+                                  className="gc-number-input gc-yield-input"
+                                  value={String(Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100)}
+                                  onChange={(e) => onYieldChange(l.id, e.target.value)}
+                                  inputMode="decimal"
+                                />
+                                <span className="gc-yield-suffix">%</span>
+                              </div>
+                            </td>
+
+                            {showCost ? (
+                              <td>
+                                <div className={cx("gc-cost-cell", (!c || c.lineCost <= 0) && "gc-cost-missing")}>
+                                  {c && c.lineCost > 0 ? (
+                                    <>
+                                      <span>{fmtMoney(c.lineCost, cur)}</span>
+                                      {c.warnings.length > 0 && (
+                                        <span className="gc-cost-warning" title={c.warnings[0]}>⚠</span>
+                                      )}
+                                    </>
+                                  ) : (
+                                    <span>—</span>
+                                  )}
+                                </div>
+                              </td>
+                            ) : null}
+
+                            <td>
+                              <div className="gc-actions-cell">
+                                <button
+                                  className="gc-action-btn"
+                                  type="button"
+                                  onClick={() => duplicateLineLocal(l.id)}
+                                  title="Duplicate line"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+                                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+                                  </svg>
+                                </button>
+                                <button
+                                  className="gc-action-btn gc-action-btn-danger"
+                                  type="button"
+                                  onClick={() => deleteLineLocal(l.id)}
+                                  title="Delete line"
+                                >
+                                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                    <polyline points="3 6 5 6 21 6" />
+                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                                  </svg>
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* تذييل الجدول */}
                   {visibleLines.length > 0 && (
                     <div className="gc-table-footer">
                       <div className="gc-table-stats">
