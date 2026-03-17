@@ -2095,36 +2095,33 @@ export default function RecipeEditor() {
 
       .gc-recipe-pro .gc-input-unit-group {
         position: relative;
-        width: 100%;
       }
 
       .gc-recipe-pro .gc-modern-input {
         width: 100%;
-        min-height: 46px;
-        height: 46px;
-        box-sizing: border-box;
         padding: 12px 16px;
         border-radius: 40px;
         border: 2px solid rgba(46,125,120,0.1);
         background: white;
-        color: var(--text);
         font-size: 0.95rem;
-        font-weight: 500;
-        line-height: 1.2;
-        vertical-align: middle;
-      }
-
-      .gc-recipe-pro .gc-modern-input::placeholder {
-        color: #8fa1b5;
-        opacity: 1;
       }
 
       .gc-recipe-pro .gc-number-input {
-        padding-left: 16px;
-        padding-right: 64px;
+        padding-right: 50px;
+        text-align: right;
+        font-family: 'Courier New', monospace;
+      }
+
+      .gc-recipe-pro .gc-number-input-inline {
         text-align: left;
-        font-family: inherit;
+        padding-left: 16px;
+        padding-right: 54px;
+        line-height: 1.2;
         font-variant-numeric: tabular-nums;
+      }
+
+      .gc-recipe-pro .gc-number-input-inline::placeholder {
+        text-align: left;
       }
 
       .gc-recipe-pro .gc-unit-badge {
@@ -2132,18 +2129,72 @@ export default function RecipeEditor() {
         right: 12px;
         top: 50%;
         transform: translateY(-50%);
+        min-width: 28px;
+        height: 24px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
-        min-width: 34px;
-        height: 24px;
-        font-size: 0.72rem;
+        font-size: 0.7rem;
         font-weight: 700;
-        line-height: 1;
         color: var(--primary-dark);
         background: rgba(46,125,120,0.1);
-        padding: 0 10px;
+        padding: 0 8px;
         border-radius: 999px;
+        pointer-events: none;
+        white-space: nowrap;
+      }
+
+      .gc-recipe-pro .gc-yield-quantity-input {
+        width: 100%;
+        min-height: 48px;
+        padding: 12px 60px 12px 16px;
+        text-align: left;
+        font-size: 1.125rem;
+        line-height: 1.2;
+        font-weight: 600;
+        font-family: 'Courier New', monospace;
+        font-variant-numeric: tabular-nums;
+        border: 2px solid rgb(229 229 229);
+        border-radius: 0.75rem;
+        background: #fff;
+        color: rgb(31 41 55);
+        box-sizing: border-box;
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+      }
+
+      .gc-recipe-pro .gc-yield-quantity-input::placeholder {
+        text-align: left;
+        color: rgb(156 163 175);
+        opacity: 1;
+      }
+
+      .gc-recipe-pro .gc-yield-quantity-input:focus {
+        outline: none;
+        border-color: rgb(20 184 166);
+        box-shadow: 0 0 0 4px rgba(20,184,166,0.12);
+      }
+
+      .gc-recipe-pro .gc-yield-quantity-input:disabled {
+        background: rgb(249 250 251);
+        color: rgb(107 114 128);
+      }
+
+      .gc-recipe-pro .gc-yield-quantity-unit {
+        position: absolute;
+        right: 12px;
+        top: 50%;
+        transform: translateY(-50%);
+        min-width: 30px;
+        height: 24px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 0 8px;
+        border-radius: 999px;
+        background: rgba(20,184,166,0.10);
+        color: rgb(13 148 136);
+        font-size: 0.75rem;
+        font-weight: 700;
         white-space: nowrap;
         pointer-events: none;
       }
@@ -2222,30 +2273,62 @@ export default function RecipeEditor() {
 
       .gc-recipe-pro .gc-input,
       .gc-recipe-pro .gc-select,
-      .gc-recipe-pro .gc-textarea {
-        border-radius: 16px;
-        border: 1.5px solid rgba(46,125,120,0.12);
-        background: white;
-        padding: 12px 16px;
-        font-size: 0.95rem;
+      .gc-recipe-pro .gc-textarea,
+      .gc-recipe-pro .gc-modern-input {
         width: 100%;
+        box-sizing: border-box;
+        color: var(--text);
+        background: #fff;
+        font-size: 14px;
+        font-weight: 500;
+        line-height: 1.45;
+        border-radius: 14px;
+        border: 1.5px solid rgba(46,125,120,0.12);
+        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
+        -webkit-appearance: none;
+        appearance: none;
+      }
+
+      .gc-recipe-pro .gc-input,
+      .gc-recipe-pro .gc-select,
+      .gc-recipe-pro .gc-modern-input {
+        min-height: 44px;
+        height: 44px;
+        padding: 10px 14px;
+      }
+
+      .gc-recipe-pro .gc-textarea {
+        min-height: 96px;
+        padding: 12px 14px;
+        resize: vertical;
+        line-height: 1.55;
+        display: block;
+      }
+
+      .gc-recipe-pro .gc-input::placeholder,
+      .gc-recipe-pro .gc-modern-input::placeholder,
+      .gc-recipe-pro .gc-textarea::placeholder {
+        color: #94a3b8;
+        opacity: 1;
+        line-height: 1.45;
       }
 
       .gc-recipe-pro .gc-input:focus,
       .gc-recipe-pro .gc-select:focus,
-      .gc-recipe-pro .gc-textarea:focus {
+      .gc-recipe-pro .gc-textarea:focus,
+      .gc-recipe-pro .gc-modern-input:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.10);
       }
 
       .gc-recipe-pro .gc-select {
-        appearance: none;
+        padding-right: 42px;
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
-        background-position: right 16px center;
+        background-position: right 14px center;
         background-size: 16px;
-        padding-right: 48px;
+        cursor: pointer;
       }
 
       .gc-recipe-pro .gc-grid-4 {
@@ -2272,11 +2355,22 @@ export default function RecipeEditor() {
       .gc-meta-card .gc-input,
       .gc-meta-card .gc-select,
       .gc-meta-card .gc-textarea {
+        font-size: 14px;
+        line-height: 1.45;
         border-radius: 12px;
-        border: 1.5px solid rgba(46,125,120,0.1);
-        padding: 10px 14px;
-        font-size: 0.9rem;
-        transition: all 0.15s ease;
+        border: 1.5px solid rgba(46,125,120,0.10);
+      }
+
+      .gc-meta-card .gc-input,
+      .gc-meta-card .gc-select {
+        min-height: 42px;
+        height: 42px;
+        padding: 9px 14px;
+      }
+
+      .gc-meta-card .gc-textarea {
+        min-height: 96px;
+        padding: 12px 14px;
       }
 
       .gc-meta-card .gc-input:focus,
@@ -2288,9 +2382,19 @@ export default function RecipeEditor() {
       }
 
       .gc-meta-card .gc-input:disabled {
-        background: #f9fafb;
-        border-color: rgba(46,125,120,0.05);
+        background: #f8fafc;
         color: #94a3b8;
+        border-color: rgba(46,125,120,0.06);
+      }
+
+      .gc-recipe-pro input,
+      .gc-recipe-pro select,
+      .gc-recipe-pro textarea {
+        font-family: inherit;
+      }
+
+      .gc-recipe-pro .gc-input.pl-10 {
+        padding-left: 40px;
       }
 
       .grid-cols-12 {
@@ -3155,10 +3259,10 @@ export default function RecipeEditor() {
                               value={yieldQty}
                               onChange={(e) => setYieldQty(e.target.value)}
                               placeholder="0.0"
-                              className="w-full px-4 py-3 text-right text-lg font-mono border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                              className="gc-yield-quantity-input"
                               disabled={!isSubRecipe}
                             />
-                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md">
+                            <div className="gc-yield-quantity-unit">
                               {yieldUnit}
                             </div>
                           </div>
@@ -3338,7 +3442,7 @@ export default function RecipeEditor() {
                         <label className="gc-field-label">NET</label>
                         <div className="gc-input-unit-group">
                           <input
-                            className="gc-modern-input gc-number-input"
+                            className="gc-modern-input gc-number-input gc-number-input-inline"
                             value={addNetQty}
                             onChange={(e) => setAddNetQty(e.target.value)}
                             inputMode="decimal"
@@ -3370,7 +3474,7 @@ export default function RecipeEditor() {
                         <label className="gc-field-label">YIELD %</label>
                         <div className="gc-input-unit-group">
                           <input
-                            className="gc-modern-input gc-number-input"
+                            className="gc-modern-input gc-number-input gc-number-input-inline"
                             value={addYield}
                             onChange={(e) => setAddYield(e.target.value)}
                             inputMode="decimal"
@@ -3385,7 +3489,7 @@ export default function RecipeEditor() {
                         <label className="gc-field-label">GROSS</label>
                         <div className="gc-input-unit-group">
                           <input
-                            className="gc-modern-input gc-number-input"
+                            className="gc-modern-input gc-number-input gc-number-input-inline"
                             value={addGross}
                             onChange={(e) => setAddGross(e.target.value)}
                             inputMode="decimal"
