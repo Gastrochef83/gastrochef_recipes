@@ -3796,7 +3796,7 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Method Section - شبكة عرض ثلاثية احترافية */}
+          {/* Method Section - شبكة عرض ثلاثية احترافية - صور مربعة */}
           <div style={{ marginTop: 14 }} className="gc-card">
             <div className="gc-card-head">
               <div className="gc-label flex items-center gap-2" id="sec-method">
@@ -3865,7 +3865,7 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-              {/* شبكة عرض 3 أعمدة للخطوات */}
+              {/* شبكة عرض 3 أعمدة للخطوات - صور مربعة */}
               {steps.length ? (
                 <div 
                   style={{ 
@@ -3954,7 +3954,7 @@ export default function RecipeEditor() {
                           </div>
                         )}
 
-                        {/* معاينة الصورة إذا وجدت - بنسبة 1.54 / 2.4 */}
+                        {/* معاينة الصورة إذا وجدت - مربعة (1:1) */}
                         {stepPhotos[idx] ? (
                           <div className="relative group mt-2">
                             <img 
@@ -3963,7 +3963,7 @@ export default function RecipeEditor() {
                               style={{
                                 width: '100%',
                                 height: 'auto',
-                                aspectRatio: '1.54 / 2.4',
+                                aspectRatio: '1 / 1',
                                 objectFit: 'cover',
                                 borderRadius: '10px',
                                 border: '1px solid rgba(46,125,120,0.2)',
@@ -3998,7 +3998,7 @@ export default function RecipeEditor() {
                               htmlFor={`step-photo-${idx}`}
                               className="flex items-center justify-center gap-1.5 w-full py-2 border-2 border-dashed border-neutral-300 rounded-lg text-xs text-neutral-500 hover:border-primary hover:text-primary transition-colors cursor-pointer"
                               style={{
-                                aspectRatio: '1.54 / 2.4',
+                                aspectRatio: '1 / 1',
                                 display: 'flex',
                                 flexDirection: 'column'
                               }}
