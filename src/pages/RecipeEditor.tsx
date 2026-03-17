@@ -2095,21 +2095,36 @@ export default function RecipeEditor() {
 
       .gc-recipe-pro .gc-input-unit-group {
         position: relative;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-modern-input {
         width: 100%;
+        min-height: 46px;
+        height: 46px;
+        box-sizing: border-box;
         padding: 12px 16px;
         border-radius: 40px;
         border: 2px solid rgba(46,125,120,0.1);
         background: white;
+        color: var(--text);
         font-size: 0.95rem;
+        font-weight: 500;
+        line-height: 1.2;
+        vertical-align: middle;
+      }
+
+      .gc-recipe-pro .gc-modern-input::placeholder {
+        color: #8fa1b5;
+        opacity: 1;
       }
 
       .gc-recipe-pro .gc-number-input {
-        padding-right: 50px;
-        text-align: right;
-        font-family: 'Courier New', monospace;
+        padding-left: 16px;
+        padding-right: 64px;
+        text-align: left;
+        font-family: inherit;
+        font-variant-numeric: tabular-nums;
       }
 
       .gc-recipe-pro .gc-unit-badge {
@@ -2117,12 +2132,19 @@ export default function RecipeEditor() {
         right: 12px;
         top: 50%;
         transform: translateY(-50%);
-        font-size: 0.7rem;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 34px;
+        height: 24px;
+        font-size: 0.72rem;
         font-weight: 700;
+        line-height: 1;
         color: var(--primary-dark);
         background: rgba(46,125,120,0.1);
-        padding: 4px 8px;
-        border-radius: 20px;
+        padding: 0 10px;
+        border-radius: 999px;
+        white-space: nowrap;
         pointer-events: none;
       }
 
@@ -2200,62 +2222,30 @@ export default function RecipeEditor() {
 
       .gc-recipe-pro .gc-input,
       .gc-recipe-pro .gc-select,
-      .gc-recipe-pro .gc-textarea,
-      .gc-recipe-pro .gc-modern-input {
-        width: 100%;
-        box-sizing: border-box;
-        color: var(--text);
-        background: #fff;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.45;
-        border-radius: 14px;
-        border: 1.5px solid rgba(46,125,120,0.12);
-        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-        -webkit-appearance: none;
-        appearance: none;
-      }
-
-      .gc-recipe-pro .gc-input,
-      .gc-recipe-pro .gc-select,
-      .gc-recipe-pro .gc-modern-input {
-        min-height: 44px;
-        height: 44px;
-        padding: 10px 14px;
-      }
-
       .gc-recipe-pro .gc-textarea {
-        min-height: 96px;
-        padding: 12px 14px;
-        resize: vertical;
-        line-height: 1.55;
-        display: block;
-      }
-
-      .gc-recipe-pro .gc-input::placeholder,
-      .gc-recipe-pro .gc-modern-input::placeholder,
-      .gc-recipe-pro .gc-textarea::placeholder {
-        color: #94a3b8;
-        opacity: 1;
-        line-height: 1.45;
+        border-radius: 16px;
+        border: 1.5px solid rgba(46,125,120,0.12);
+        background: white;
+        padding: 12px 16px;
+        font-size: 0.95rem;
+        width: 100%;
       }
 
       .gc-recipe-pro .gc-input:focus,
       .gc-recipe-pro .gc-select:focus,
-      .gc-recipe-pro .gc-textarea:focus,
-      .gc-recipe-pro .gc-modern-input:focus {
+      .gc-recipe-pro .gc-textarea:focus {
         outline: none;
         border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.10);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
       }
 
       .gc-recipe-pro .gc-select {
-        padding-right: 42px;
+        appearance: none;
         background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
         background-repeat: no-repeat;
-        background-position: right 14px center;
+        background-position: right 16px center;
         background-size: 16px;
-        cursor: pointer;
+        padding-right: 48px;
       }
 
       .gc-recipe-pro .gc-grid-4 {
@@ -2282,22 +2272,11 @@ export default function RecipeEditor() {
       .gc-meta-card .gc-input,
       .gc-meta-card .gc-select,
       .gc-meta-card .gc-textarea {
-        font-size: 14px;
-        line-height: 1.45;
         border-radius: 12px;
-        border: 1.5px solid rgba(46,125,120,0.10);
-      }
-
-      .gc-meta-card .gc-input,
-      .gc-meta-card .gc-select {
-        min-height: 42px;
-        height: 42px;
-        padding: 9px 14px;
-      }
-
-      .gc-meta-card .gc-textarea {
-        min-height: 96px;
-        padding: 12px 14px;
+        border: 1.5px solid rgba(46,125,120,0.1);
+        padding: 10px 14px;
+        font-size: 0.9rem;
+        transition: all 0.15s ease;
       }
 
       .gc-meta-card .gc-input:focus,
@@ -2309,19 +2288,9 @@ export default function RecipeEditor() {
       }
 
       .gc-meta-card .gc-input:disabled {
-        background: #f8fafc;
+        background: #f9fafb;
+        border-color: rgba(46,125,120,0.05);
         color: #94a3b8;
-        border-color: rgba(46,125,120,0.06);
-      }
-
-      .gc-recipe-pro input,
-      .gc-recipe-pro select,
-      .gc-recipe-pro textarea {
-        font-family: inherit;
-      }
-
-      .gc-recipe-pro .gc-input.pl-10 {
-        padding-left: 40px;
       }
 
       .grid-cols-12 {
@@ -3186,11 +3155,10 @@ export default function RecipeEditor() {
                               value={yieldQty}
                               onChange={(e) => setYieldQty(e.target.value)}
                               placeholder="0.0"
-                              className="w-full pr-16 pl-4 py-3 text-left text-lg font-mono leading-none border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
-                              style={{ minHeight: '48px' }}
+                              className="w-full px-4 py-3 text-right text-lg font-mono border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
                               disabled={!isSubRecipe}
                             />
-                            <div className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md min-w-[36px] text-center leading-none">
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md">
                               {yieldUnit}
                             </div>
                           </div>
