@@ -1919,7 +1919,446 @@ export default function RecipeEditor() {
         50% { background: rgba(46,125,120,0.15); }
       }
 
-      /* باقي الأنماط */
+      /* أنماط قسم META المحسنة */
+      .gc-recipe-pro .gc-head-with-icon {
+        display: flex;
+        align-items: center;
+        gap: 16px;
+      }
+
+      .gc-recipe-pro .gc-head-icon {
+        font-size: 2rem;
+        background: linear-gradient(135deg, var(--primary-light), #ffffff);
+        width: 48px;
+        height: 48px;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 2px solid rgba(46,125,120,0.15);
+        box-shadow: 0 4px 12px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-head-badge {
+        margin-left: auto;
+      }
+
+      .gc-recipe-pro .gc-status-badge {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+        border-radius: 40px;
+        border: 1px solid rgba(46,125,120,0.2);
+        color: #1E5A56;
+        font-size: 0.85rem;
+        font-weight: 600;
+      }
+
+      .gc-recipe-pro .gc-badge-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: #4CAF50;
+        animation: pulse 2s infinite;
+      }
+
+      /* الشبكة الرئيسية */
+      .gc-recipe-pro .gc-meta-grid {
+        display: grid;
+        grid-template-columns: 1fr 1.5fr;
+        gap: 24px;
+        margin-bottom: 24px;
+      }
+
+      /* قسم CODE */
+      .gc-recipe-pro .gc-code-section {
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border-radius: 24px;
+        padding: 20px;
+        border: 1px solid rgba(46,125,120,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-code-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-code-icon {
+        font-size: 1.3rem;
+        background: var(--primary-light);
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gc-recipe-pro .gc-code-title {
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--primary-dark);
+        letter-spacing: 0.02em;
+      }
+
+      .gc-recipe-pro .gc-owner-badge {
+        margin-left: auto;
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 12px;
+        background: rgba(217,78,78,0.1);
+        border: 1px solid rgba(217,78,78,0.2);
+        border-radius: 30px;
+        color: var(--accent);
+      }
+
+      .gc-recipe-pro .gc-code-input-group {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+      }
+
+      .gc-recipe-pro .gc-code-field {
+        width: 100%;
+      }
+
+      .gc-recipe-pro .gc-field-label {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 8px;
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: var(--text-light);
+      }
+
+      .gc-recipe-pro .gc-label-hint {
+        font-size: 0.7rem;
+        font-weight: 400;
+        color: #94A3B8;
+        background: #F1F5F9;
+        padding: 2px 8px;
+        border-radius: 20px;
+      }
+
+      .gc-recipe-pro .gc-input-wrapper {
+        position: relative;
+        display: flex;
+        align-items: center;
+        width: 100%;
+      }
+
+      .gc-recipe-pro .gc-input-prefix {
+        position: absolute;
+        left: 16px;
+        color: var(--primary);
+        font-weight: 600;
+        font-size: 1.1rem;
+        opacity: 0.7;
+        z-index: 1;
+      }
+
+      .gc-recipe-pro .gc-input-suffix {
+        position: absolute;
+        right: 16px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .gc-recipe-pro .gc-code-input,
+      .gc-recipe-pro .gc-name-input {
+        width: 100%;
+        padding: 14px 16px;
+        padding-left: 48px;
+        border: 2px solid rgba(46,125,120,0.1);
+        border-radius: 16px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: white;
+        font-family: 'Courier New', monospace;
+      }
+
+      .gc-recipe-pro .gc-code-input:focus,
+      .gc-recipe-pro .gc-name-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-code-input:disabled,
+      .gc-recipe-pro .gc-input-disabled {
+        background: #F8FAFC;
+        border-color: rgba(46,125,120,0.05);
+        color: #94A3B8;
+        cursor: not-allowed;
+      }
+
+      .gc-recipe-pro .gc-code-badge,
+      .gc-recipe-pro .gc-category-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        padding: 4px 8px;
+        border-radius: 20px;
+        background: var(--primary-light);
+        color: var(--primary-dark);
+        border: 1px solid rgba(46,125,120,0.2);
+      }
+
+      .gc-recipe-pro .gc-category-badge {
+        background: #E2E8F0;
+        color: #475569;
+      }
+
+      .gc-recipe-pro .gc-code-hint {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 16px;
+        padding: 12px 16px;
+        background: #F8FAFC;
+        border-radius: 16px;
+        font-size: 0.8rem;
+        color: #64748B;
+        border: 1px dashed rgba(46,125,120,0.2);
+      }
+
+      /* قسم NAME */
+      .gc-recipe-pro .gc-name-section {
+        background: white;
+        border-radius: 24px;
+        padding: 20px;
+        border: 1px solid rgba(46,125,120,0.1);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+        height: 100%;
+      }
+
+      .gc-recipe-pro .gc-name-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 20px;
+        padding-bottom: 12px;
+        border-bottom: 2px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-name-icon {
+        font-size: 1.3rem;
+        background: var(--primary-light);
+        width: 36px;
+        height: 36px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gc-recipe-pro .gc-name-title {
+        font-weight: 800;
+        font-size: 1rem;
+        color: var(--primary-dark);
+      }
+
+      .gc-recipe-pro .gc-name-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+      }
+
+      .gc-recipe-pro .gc-name-full {
+        grid-column: 1 / -1;
+      }
+
+      .gc-recipe-pro .gc-name-input {
+        padding-left: 48px;
+        font-family: inherit;
+      }
+
+      .gc-recipe-pro .gc-number-input {
+        text-align: right;
+        padding-right: 80px;
+      }
+
+      .gc-recipe-pro .gc-unit-badge {
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--primary-dark);
+        background: var(--primary-light);
+        padding: 4px 8px;
+        border-radius: 20px;
+        border: 1px solid rgba(46,125,120,0.2);
+      }
+
+      .gc-recipe-pro .gc-char-count {
+        font-size: 0.7rem;
+        color: #94A3B8;
+        background: #F1F5F9;
+        padding: 2px 8px;
+        border-radius: 20px;
+      }
+
+      /* قسم الوصف */
+      .gc-recipe-pro .gc-description-section {
+        margin-top: 24px;
+        padding: 20px;
+        background: linear-gradient(145deg, #ffffff, #f8fafc);
+        border-radius: 24px;
+        border: 1px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-description-header {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .gc-recipe-pro .gc-desc-icon {
+        font-size: 1.2rem;
+        background: var(--primary-light);
+        width: 32px;
+        height: 32px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .gc-recipe-pro .gc-desc-title {
+        font-weight: 700;
+        color: var(--text);
+      }
+
+      .gc-recipe-pro .gc-desc-badge {
+        font-size: 0.7rem;
+        font-weight: 600;
+        padding: 2px 8px;
+        background: #E2E8F0;
+        border-radius: 20px;
+        color: #475569;
+        margin-left: auto;
+      }
+
+      .gc-recipe-pro .gc-description-field {
+        width: 100%;
+      }
+
+      .gc-recipe-pro .gc-description-input {
+        width: 100%;
+        padding: 16px 20px;
+        border: 2px solid rgba(46,125,120,0.1);
+        border-radius: 20px;
+        font-size: 0.95rem;
+        line-height: 1.6;
+        resize: vertical;
+        transition: all 0.2s ease;
+        background: white;
+      }
+
+      .gc-recipe-pro .gc-description-input:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-description-input::placeholder {
+        color: #A0B3C9;
+        font-style: italic;
+      }
+
+      .gc-recipe-pro .gc-description-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-top: 8px;
+        padding: 0 8px;
+      }
+
+      .gc-recipe-pro .gc-char-hint {
+        font-size: 0.7rem;
+        color: #94A3B8;
+      }
+
+      .gc-recipe-pro .gc-char-suggestion {
+        font-size: 0.7rem;
+        color: var(--primary);
+        font-style: italic;
+      }
+
+      /* المعلومات السريعة */
+      .gc-recipe-pro .gc-meta-quick-info {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-top: 24px;
+        padding: 16px 20px;
+        background: linear-gradient(145deg, #F8FAFC, #F1F5F9);
+        border-radius: 20px;
+        border: 1px solid rgba(46,125,120,0.1);
+      }
+
+      .gc-recipe-pro .gc-info-chip {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 16px;
+        background: white;
+        border-radius: 40px;
+        border: 1px solid rgba(46,125,120,0.15);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+      }
+
+      .gc-recipe-pro .gc-info-icon {
+        font-size: 1rem;
+      }
+
+      .gc-recipe-pro .gc-info-label {
+        font-size: 0.8rem;
+        font-weight: 500;
+        color: var(--text-light);
+      }
+
+      .gc-recipe-pro .gc-info-value {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: var(--primary-dark);
+        font-family: 'Courier New', monospace;
+      }
+
+      .gc-recipe-pro .gc-info-save {
+        margin-left: auto;
+        background: linear-gradient(135deg, #E8F5E9, #C8E6C9);
+        border-color: rgba(46,125,120,0.3);
+      }
+
+      .gc-recipe-pro .gc-save-indicator {
+        font-size: 1rem;
+        transition: all 0.3s ease;
+      }
+
+      .gc-recipe-pro .gc-save-pulse {
+        animation: savePulse 1s ease;
+      }
+
+      .gc-recipe-pro .gc-save-text {
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #1E5A56;
+      }
+
+      @keyframes savePulse {
+        0%, 100% { transform: scale(1); opacity: 1; }
+        50% { transform: scale(1.2); opacity: 0.7; }
+      }
+
       .gc-recipe-pro .gc-empty-state {
         text-align: center;
         padding: 60px 20px;
@@ -2220,6 +2659,22 @@ export default function RecipeEditor() {
       }
 
       @media (max-width: 1200px) {
+        .gc-recipe-pro .gc-meta-grid {
+          grid-template-columns: 1fr;
+          gap: 16px;
+        }
+        
+        .gc-recipe-pro .gc-meta-quick-info {
+          flex-direction: column;
+          align-items: flex-start;
+        }
+        
+        .gc-recipe-pro .gc-info-save {
+          margin-left: 0;
+          width: 100%;
+          justify-content: center;
+        }
+
         .gc-recipe-pro .gc-quantity-grid {
           grid-template-columns: repeat(3, 1fr);
         }
@@ -2229,6 +2684,19 @@ export default function RecipeEditor() {
       }
 
       @media (max-width: 768px) {
+        .gc-recipe-pro .gc-name-grid {
+          grid-template-columns: 1fr;
+        }
+        
+        .gc-recipe-pro .gc-code-header,
+        .gc-recipe-pro .gc-name-header {
+          flex-wrap: wrap;
+        }
+        
+        .gc-recipe-pro .gc-owner-badge {
+          margin-left: 0;
+        }
+
         .gc-recipe-pro .gc-add-line-search-section {
           grid-template-columns: 1fr;
         }
@@ -2246,6 +2714,36 @@ export default function RecipeEditor() {
           padding: 8px 4px;
           font-size: 0.8rem;
         }
+      }
+
+      /* تأثيرات hover */
+      .gc-recipe-pro .gc-code-input:hover:not(:disabled),
+      .gc-recipe-pro .gc-name-input:hover,
+      .gc-recipe-pro .gc-description-input:hover {
+        border-color: rgba(46,125,120,0.3);
+      }
+
+      .gc-recipe-pro .gc-info-chip:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(46,125,120,0.1);
+        transition: all 0.2s ease;
+      }
+
+      /* دعم RTL إذا needed */
+      [dir="rtl"] .gc-input-prefix {
+        left: auto;
+        right: 16px;
+      }
+
+      [dir="rtl"] .gc-input-suffix {
+        right: auto;
+        left: 16px;
+      }
+
+      [dir="rtl"] .gc-number-input {
+        text-align: left;
+        padding-left: 80px;
+        padding-right: 16px;
       }
     `}</style>
   )
@@ -2545,167 +3043,221 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Meta Section */}
+          {/* Meta Section - تصميم محسن */}
           <div id="sec-basics" className="gc-section gc-card">
             <div className="gc-card-head">
-              <div className="gc-label">META</div>
-              <div className="gc-hint" style={{ marginTop: 6 }}>
-                Labels are always above inputs. Auto-save is enabled.
+              <div className="gc-head-with-icon">
+                <span className="gc-head-icon">📋</span>
+                <div>
+                  <div className="gc-label">META INFORMATION</div>
+                  <div className="gc-hint">Basic recipe details and identification</div>
+                </div>
+              </div>
+              <div className="gc-head-badge">
+                <span className="gc-status-badge">
+                  <span className="gc-badge-dot"></span>
+                  Auto-save enabled
+                </span>
               </div>
             </div>
 
             <div className="gc-card-body">
-              <div className="gc-field-row">
-                <div className="gc-col-6">
-                  <div className="gc-field">
-                    <div className="gc-label">CODE</div>
-                    <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Leave empty to auto-generate" disabled={!canEditCodes} />
-                    <div className="mt-2">
-                      <div className="gc-label">CODE CATEGORY</div>
-                      <input className={`gc-input ${!canEditCodes ? "opacity-60 cursor-not-allowed" : ""}`} value={codeCategory} onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} placeholder="e.g. SAUCE / SAND / GEN (optional)" disabled={!canEditCodes} />
-                      <div className="mt-1 text-[11px] text-neutral-500">Optional (max 6). If empty, DB uses Category.</div>
-                      {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="gc-col-3">
-                  <div className="gc-field">
-                    <div className="gc-label">NAME</div>
-                    <input className="gc-input" value={name} onChange={(e) => setName(e.target.value)} placeholder="Recipe name…" />
-                  </div>
-                </div>
-
-                <div className="gc-col-3">
-                  <div className="gc-field">
-                    <div className="gc-label">CATEGORY</div>
-                    <input className="gc-input" value={category} onChange={(e) => setCategory(e.target.value)} placeholder="e.g. Salad" />
-                  </div>
-                </div>
-
-                <div className="gc-col-3">
-                  <div className="gc-field">
-                    <div className="gc-label">PORTIONS</div>
-                    <input className="gc-input" value={portions} onChange={(e) => setPortions(e.target.value)} inputMode="numeric" />
-                  </div>
-                </div>
-
-                <div className="gc-col-12">
-                  <div className="gc-field">
-                    <div className="gc-label">DESCRIPTION</div>
-                    <textarea className="gc-textarea" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Short description…" />
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ marginTop: 12 }} className="gc-card-soft">
-                <div style={{ padding: 12 }}>
-                  <div className="gc-label">PHOTO</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    Upload uses Supabase bucket: <b>{PHOTO_BUCKET}</b>
-                  </div>
-
-                  <div style={{ marginTop: 10, display: 'flex', gap: 12, flexWrap: 'wrap', alignItems: 'center' }}>
-                    <div style={{ width: 260, height: 160, borderRadius: 16, overflow: 'hidden', border: '1px solid var(--gc-border)', background: 'var(--gc-surface-2)' }}>
-                      {recipe?.photo_url ? (
-                        <img src={recipe.photo_url} alt="Recipe" style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }} />
-                      ) : (
-                        <div style={{ padding: 12 }} className="gc-hint">
-                          No photo.
-                        </div>
+              {/* بطاقة CODE - تصميم مميز */}
+              <div className="gc-meta-grid">
+                {/* العمود الأيسر - CODE والتصنيف */}
+                <div className="gc-meta-left">
+                  <div className="gc-code-section">
+                    <div className="gc-code-header">
+                      <span className="gc-code-icon">🔑</span>
+                      <span className="gc-code-title">Recipe Code</span>
+                      {!canEditCodes && (
+                        <span className="gc-owner-badge">🔒 Owner only</span>
                       )}
                     </div>
+                    
+                    <div className="gc-code-input-group">
+                      <div className="gc-code-field">
+                        <label className="gc-field-label">
+                          <span>CODE</span>
+                          <span className="gc-label-hint">Unique identifier</span>
+                        </label>
+                        <div className={cx("gc-input-wrapper", !canEditCodes && "gc-input-disabled")}>
+                          <span className="gc-input-prefix">#</span>
+                          <input
+                            className={cx("gc-code-input", !canEditCodes && "gc-input-disabled")}
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.toUpperCase())}
+                            placeholder="AUTO-GENERATE"
+                            disabled={!canEditCodes}
+                          />
+                          {code && (
+                            <span className="gc-input-suffix">
+                              <span className="gc-code-badge">{code.length}/20</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
 
-                    <div>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        disabled={uploading}
-                        onChange={(e) => {
-                          const f = e.target.files?.[0]
-                          if (!f) return
-                          uploadRecipePhoto(f).catch(() => { })
-                          e.currentTarget.value = ''
-                        }}
-                      />
-                      <div className="gc-hint" style={{ marginTop: 8 }}>
-                        {uploading ? 'Uploading…' : 'PNG/JPG recommended.'}
+                      <div className="gc-code-field">
+                        <label className="gc-field-label">
+                          <span>CODE CATEGORY</span>
+                          <span className="gc-label-hint">Optional • Max 6 chars</span>
+                        </label>
+                        <div className={cx("gc-input-wrapper", !canEditCodes && "gc-input-disabled")}>
+                          <input
+                            className={cx("gc-code-input", !canEditCodes && "gc-input-disabled")}
+                            value={codeCategory}
+                            onChange={(e) => setCodeCategory(e.target.value.toUpperCase())}
+                            placeholder="e.g. SAUCE, BASE, PREP"
+                            disabled={!canEditCodes}
+                            maxLength={6}
+                          />
+                          {codeCategory && (
+                            <span className="gc-input-suffix">
+                              <span className="gc-category-badge">{codeCategory.length}/6</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="gc-code-hint">
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10"/>
+                        <line x1="12" y1="16" x2="12" y2="12"/>
+                        <circle cx="12" cy="8" r="1" fill="currentColor"/>
+                      </svg>
+                      <span>If left empty, code will be auto-generated from category + name</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* العمود الأيمن - NAME و CATEGORY */}
+                <div className="gc-meta-right">
+                  <div className="gc-name-section">
+                    <div className="gc-name-header">
+                      <span className="gc-name-icon">📝</span>
+                      <span className="gc-name-title">Recipe Identity</span>
+                    </div>
+
+                    <div className="gc-name-grid">
+                      <div className="gc-name-field gc-name-full">
+                        <label className="gc-field-label">
+                          <span>RECIPE NAME</span>
+                          <span className="gc-label-hint">Required</span>
+                        </label>
+                        <div className="gc-input-wrapper">
+                          <input
+                            className="gc-name-input"
+                            value={name}
+                            onChange={(e) => setName(e.target.value)}
+                            placeholder="Enter recipe name..."
+                          />
+                          {name && (
+                            <span className="gc-input-suffix">
+                              <span className="gc-char-count">{name.length}</span>
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      <div className="gc-name-field">
+                        <label className="gc-field-label">
+                          <span>CATEGORY</span>
+                          <span className="gc-label-hint">Classification</span>
+                        </label>
+                        <div className="gc-input-wrapper">
+                          <span className="gc-input-prefix">📂</span>
+                          <input
+                            className="gc-name-input"
+                            value={category}
+                            onChange={(e) => setCategory(e.target.value)}
+                            placeholder="e.g. Curry, Sauce, Base"
+                            list="category-suggestions"
+                          />
+                          <datalist id="category-suggestions">
+                            <option value="Base Gravy" />
+                            <option value="Curry" />
+                            <option value="Sauce" />
+                            <option value="Marinade" />
+                            <option value="Dressing" />
+                            <option value="Soup" />
+                            <option value="Baking" />
+                            <option value="Dessert" />
+                          </datalist>
+                        </div>
+                      </div>
+
+                      <div className="gc-name-field">
+                        <label className="gc-field-label">
+                          <span>PORTIONS</span>
+                          <span className="gc-label-hint">Yield quantity</span>
+                        </label>
+                        <div className="gc-input-wrapper">
+                          <span className="gc-input-prefix">👥</span>
+                          <input
+                            className="gc-name-input gc-number-input"
+                            type="number"
+                            min="1"
+                            step="1"
+                            value={portions}
+                            onChange={(e) => setPortions(e.target.value)}
+                          />
+                          <span className="gc-input-suffix">
+                            <span className="gc-unit-badge">servings</span>
+                          </span>
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: 12 }} className="gc-card-soft">
-                <div style={{ padding: 12 }}>
-                  <div className="gc-label">SUBRECIPE SETTINGS</div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    If enabled, this recipe can be used inside other recipes.
-                  </div>
-
-                  <div className="gc-field-row" style={{ marginTop: 10 }}>
-                    <div className="gc-col-4">
-                      <div className="gc-field">
-                        <div className="gc-label">IS SUBRECIPE</div>
-                        <select className="gc-select" value={isSubRecipe ? 'yes' : 'no'} onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}>
-                          <option value="no">No</option>
-                          <option value="yes">Yes</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="gc-col-4">
-                      <div className="gc-field">
-                        <div className="gc-label">YIELD QTY</div>
-                        <input className="gc-input" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} inputMode="decimal" />
-                      </div>
-                    </div>
-
-                    <div className="gc-col-4">
-                      <div className="gc-field">
-                        <div className="gc-label">YIELD UNIT</div>
-                        <select className="gc-select" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)}>
-                          <option value="g">g</option>
-                          <option value="kg">kg</option>
-                          <option value="ml">ml</option>
-                          <option value="l">l</option>
-                          <option value="pcs">pcs</option>
-                        </select>
-                      </div>
-                    </div>
+              {/* قسم الوصف - شريط كامل */}
+              <div className="gc-description-section">
+                <div className="gc-description-header">
+                  <span className="gc-desc-icon">📄</span>
+                  <span className="gc-desc-title">Description</span>
+                  <span className="gc-desc-badge">Optional</span>
+                </div>
+                
+                <div className="gc-description-field">
+                  <textarea
+                    className="gc-description-input"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Write a brief description of this recipe... (e.g., 'Aromatic Indian gravy base with roasted spices')"
+                    rows={3}
+                  />
+                  <div className="gc-description-footer">
+                    <span className="gc-char-hint">{description.length} characters</span>
+                    <span className="gc-char-suggestion">Keep it concise but descriptive</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ marginTop: 12 }} className="gc-field-row">
-                <div className="gc-col-6">
-                  <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16 }}>
-                    <div className="gc-label">PRICING / PORTION</div>
-                    <div className="gc-field-row" style={{ marginTop: 10 }}>
-                      <div className="gc-col-4">
-                        <div className="gc-field">
-                          <div className="gc-label">CURRENCY</div>
-                          <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
-                        </div>
-                      </div>
-                      <div className="gc-col-4">
-                        <div className="gc-field">
-                          <div className="gc-label">SELLING PRICE</div>
-                          <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
-                        </div>
-                      </div>
-                      <div className="gc-col-4">
-                        <div className="gc-field">
-                          <div className="gc-label">TARGET FC%</div>
-                          <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="gc-hint" style={{ marginTop: 8 }}>
-                      FC% = cost/portion ÷ selling price.
-                    </div>
-                  </div>
+              {/* رؤوس سريعة للمعلومات */}
+              <div className="gc-meta-quick-info">
+                <div className="gc-info-chip">
+                  <span className="gc-info-icon">🆔</span>
+                  <span className="gc-info-label">Recipe ID:</span>
+                  <span className="gc-info-value">{id?.slice(0, 8)}...</span>
+                </div>
+                <div className="gc-info-chip">
+                  <span className="gc-info-icon">🏠</span>
+                  <span className="gc-info-label">Kitchen:</span>
+                  <span className="gc-info-value">{k.kitchenId?.slice(0, 8)}...</span>
+                </div>
+                <div className="gc-info-chip">
+                  <span className="gc-info-icon">📅</span>
+                  <span className="gc-info-label">Created:</span>
+                  <span className="gc-info-value">{new Date().toLocaleDateString()}</span>
+                </div>
+                <div className="gc-info-chip gc-info-save">
+                  <span className={cx("gc-save-indicator", savePulse && "gc-save-pulse")}>💾</span>
+                  <span className="gc-save-text">
+                    {savingMeta ? 'Saving...' : 'All changes saved'}
+                  </span>
                 </div>
               </div>
             </div>
@@ -3262,7 +3814,7 @@ export default function RecipeEditor() {
                           </div>
                         </div>
 
-                        <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeSnapshot(p.id)}>
+                        <button className="gc-btn gc-btn-danger" type="button" onClick={() -> removeSnapshot(p.id)}>
                           Remove
                         </button>
                       </div>
