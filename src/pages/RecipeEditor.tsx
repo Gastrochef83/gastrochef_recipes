@@ -2741,7 +2741,7 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Meta Section - محسن */}
+          {/* Meta Section - Basic Information */}
           <div id="sec-basics" className="gc-section gc-card">
             <div className="gc-card-head">
               <div className="flex items-center justify-between w-full">
@@ -2775,7 +2775,7 @@ export default function RecipeEditor() {
 
             <div className="gc-card-body">
               <div className="grid-cols-12">
-                {/* العمود الأيسر - CODE و CODE CATEGORY */}
+                {/* Recipe Code Section */}
                 <div className="col-span-6">
                   <div className="gc-meta-card group">
                     <div className="flex items-center gap-3 mb-3">
@@ -2787,7 +2787,7 @@ export default function RecipeEditor() {
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                          Recipe Code
+                          RECIPE CODE
                         </div>
                         <div className="text-[11px] text-neutral-500">
                           Unique identifier for this recipe
@@ -2805,7 +2805,7 @@ export default function RecipeEditor() {
                             className={`gc-input pl-10 ${!canEditCodes ? "opacity-60 cursor-not-allowed bg-neutral-50" : ""}`} 
                             value={code} 
                             onChange={(e) => setCode(e.target.value.toUpperCase())} 
-                            placeholder="e.g. SAUCE-001"
+                            placeholder="PREP-003"
                             disabled={!canEditCodes} 
                           />
                           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
@@ -2823,7 +2823,7 @@ export default function RecipeEditor() {
                             className={`gc-input pl-10 ${!canEditCodes ? "opacity-60 cursor-not-allowed bg-neutral-50" : ""}`} 
                             value={codeCategory} 
                             onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} 
-                            placeholder="e.g. SAUCE / SAND"
+                            placeholder="BASEGR"
                             maxLength={6}
                             disabled={!canEditCodes} 
                           />
@@ -2845,7 +2845,7 @@ export default function RecipeEditor() {
                   </div>
                 </div>
 
-                {/* العمود الأيمن - NAME و CATEGORY و PORTIONS */}
+                {/* Recipe Identity Section */}
                 <div className="col-span-6">
                   <div className="gc-meta-card group">
                     <div className="flex items-center gap-3 mb-3">
@@ -2857,7 +2857,7 @@ export default function RecipeEditor() {
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                          Recipe Identity
+                          RECIPE IDENTITY
                         </div>
                         <div className="text-[11px] text-neutral-500">
                           Basic identification details
@@ -2874,7 +2874,7 @@ export default function RecipeEditor() {
                           className="gc-input" 
                           value={name} 
                           onChange={(e) => setName(e.target.value)} 
-                          placeholder="Enter recipe name..."
+                          placeholder="Chop Masala"
                         />
                       </div>
 
@@ -2910,6 +2910,7 @@ export default function RecipeEditor() {
                               value={portions} 
                               onChange={(e) => setPortions(e.target.value)} 
                               inputMode="numeric"
+                              placeholder="1"
                             />
                             <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
                               👥
@@ -2921,7 +2922,7 @@ export default function RecipeEditor() {
                   </div>
                 </div>
 
-                {/* DESCRIPTION - صف كامل */}
+                {/* Description Section */}
                 <div className="col-span-12">
                   <div className="gc-meta-card">
                     <div className="flex items-center gap-3 mb-3">
@@ -2932,7 +2933,7 @@ export default function RecipeEditor() {
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                          Description
+                          DESCRIPTION
                         </div>
                         <div className="text-[11px] text-neutral-500">
                           Brief overview of the recipe
@@ -2954,7 +2955,7 @@ export default function RecipeEditor() {
                   </div>
                 </div>
 
-                {/* PHOTO بطاقة محسنة */}
+                {/* Recipe Photo Section */}
                 <div className="col-span-12">
                   <div className="gc-meta-card">
                     <div className="flex items-center justify-between mb-4">
@@ -2968,7 +2969,7 @@ export default function RecipeEditor() {
                         </div>
                         <div>
                           <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                            Recipe Photo
+                            RECIPE PHOTO
                           </div>
                           <div className="text-[11px] text-neutral-500">
                             Upload from Supabase bucket: <span className="font-mono">{PHOTO_BUCKET}</span>
@@ -3049,7 +3050,6 @@ export default function RecipeEditor() {
                             className="text-xs text-primary hover:text-primary-dark font-medium"
                             onClick={() => {
                               if (window.confirm('Remove recipe photo?')) {
-                                // يمكن إضافة منطق إزالة الصورة هنا
                                 setRecipe(prev => prev ? { ...prev, photo_url: null } : prev)
                                 showToast('Photo removed')
                               }
@@ -3063,7 +3063,7 @@ export default function RecipeEditor() {
                   </div>
                 </div>
 
-                {/* Subrecipe Settings - محسنة بشكل كبير */}
+                {/* Subrecipe Settings */}
                 <div className="col-span-12">
                   <div className="gc-meta-card">
                     <div className="flex items-center gap-3 mb-4">
@@ -3076,10 +3076,10 @@ export default function RecipeEditor() {
                       </div>
                       <div>
                         <div className="text-xs font-semibold text-secondary-dark uppercase tracking-wider">
-                          Subrecipe Settings
+                          SUBRECIPE SETTINGS
                         </div>
                         <div className="text-[11px] text-neutral-500">
-                          If enabled, this recipe can be used as a component inside other recipes
+                          If enabled, this recipe can be used as a component inside other recipes.
                         </div>
                       </div>
                     </div>
@@ -3096,7 +3096,6 @@ export default function RecipeEditor() {
                               <input
                                 type="radio"
                                 name="isSubRecipe"
-                                value="yes"
                                 checked={isSubRecipe}
                                 onChange={() => setIsSubRecipe(true)}
                                 className="w-4 h-4 text-secondary border-secondary/30 focus:ring-secondary/20"
@@ -3107,7 +3106,6 @@ export default function RecipeEditor() {
                               <input
                                 type="radio"
                                 name="isSubRecipe"
-                                value="no"
                                 checked={!isSubRecipe}
                                 onChange={() => setIsSubRecipe(false)}
                                 className="w-4 h-4 text-secondary border-secondary/30 focus:ring-secondary/20"
@@ -3122,7 +3120,7 @@ export default function RecipeEditor() {
                         </div>
                       </div>
 
-                      {/* YIELD QTY */}
+                      {/* YIELD QUANTITY */}
                       <div className="col-span-6 md:col-span-4">
                         <div className="bg-white rounded-xl p-4 border border-neutral-200 hover:border-secondary/30 transition-colors">
                           <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
@@ -3134,7 +3132,7 @@ export default function RecipeEditor() {
                               inputMode="decimal"
                               value={yieldQty}
                               onChange={(e) => setYieldQty(e.target.value)}
-                              placeholder="0.00"
+                              placeholder="0.0"
                               className="w-full px-4 py-3 text-right text-lg font-mono border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
                               disabled={!isSubRecipe}
                             />
