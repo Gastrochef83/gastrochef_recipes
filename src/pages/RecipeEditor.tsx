@@ -2316,9 +2316,9 @@ export default function RecipeEditor() {
       }
 
       .text-primary { color: var(--primary); }
-      .bg-primary\/10 { background: rgba(46,125,120,0.1); }
-      .bg-primary\/20 { background: rgba(46,125,120,0.2); }
-      .border-primary\/20 { border-color: rgba(46,125,120,0.2); }
+      .bg-primary\\/10 { background: rgba(46,125,120,0.1); }
+      .bg-primary\\/20 { background: rgba(46,125,120,0.2); }
+      .border-primary\\/20 { border-color: rgba(46,125,120,0.2); }
       .from-primary { --tw-gradient-from: var(--primary); }
       .to-primary-dark { --tw-gradient-to: var(--primary-dark); }
 
@@ -2338,7 +2338,7 @@ export default function RecipeEditor() {
       .p-3 { padding: 0.75rem; }
       .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
       .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-      .py-1\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
+      .py-1\\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
       .rounded-lg { border-radius: 0.5rem; }
       .rounded-xl { border-radius: 0.75rem; }
       .rounded-full { border-radius: 9999px; }
@@ -2351,8 +2351,8 @@ export default function RecipeEditor() {
       .text-amber-700 { color: #b45309; }
       .text-xs { font-size: 0.75rem; }
       .text-sm { font-size: 0.875rem; }
-      .text-\[10px\] { font-size: 10px; }
-      .text-\[11px\] { font-size: 11px; }
+      .text-\\[10px\\] { font-size: 10px; }
+      .text-\\[11px\\] { font-size: 11px; }
       .font-semibold { font-weight: 600; }
       .font-bold { font-weight: 700; }
       .font-medium { font-weight: 500; }
@@ -2364,7 +2364,7 @@ export default function RecipeEditor() {
       .h-2 { height: 0.5rem; }
       .h-4 { height: 1rem; }
       .h-8 { height: 2rem; }
-      .min-h-\[80px\] { min-height: 80px; }
+      .min-h-\\[80px\\] { min-height: 80px; }
       .space-y-1 > * + * { margin-top: 0.25rem; }
       .space-y-2 > * + * { margin-top: 0.5rem; }
       .space-y-3 > * + * { margin-top: 0.75rem; }
@@ -3063,70 +3063,149 @@ export default function RecipeEditor() {
                   </div>
                 </div>
 
-                {/* Subrecipe Settings */}
+                {/* Subrecipe Settings - محسنة بشكل كبير */}
                 <div className="col-span-12">
                   <div className="gc-meta-card">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M4 7h16M4 12h16M4 17h10" />
+                          <rect x="14" y="15" width="6" height="6" rx="1" stroke="currentColor" />
+                          <line x1="17" y1="12" x2="17" y2="15" />
                         </svg>
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
+                        <div className="text-xs font-semibold text-secondary-dark uppercase tracking-wider">
                           Subrecipe Settings
                         </div>
                         <div className="text-[11px] text-neutral-500">
-                          If enabled, this recipe can be used inside other recipes
+                          If enabled, this recipe can be used as a component inside other recipes
                         </div>
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                          IS SUBRECIPE
-                        </label>
-                        <select 
-                          className="gc-select" 
-                          value={isSubRecipe ? 'yes' : 'no'} 
-                          onChange={(e) => setIsSubRecipe(e.target.value === 'yes')}
-                        >
-                          <option value="no">No</option>
-                          <option value="yes">Yes</option>
-                        </select>
+                    <div className="grid grid-cols-12 gap-4">
+                      {/* IS SUBRECIPE */}
+                      <div className="col-span-12 md:col-span-4">
+                        <div className="bg-gradient-to-br from-secondary/5 to-transparent rounded-xl p-4 border border-secondary/10">
+                          <label className="block text-[10px] font-bold text-secondary uppercase tracking-wider mb-3">
+                            IS SUBRECIPE
+                          </label>
+                          <div className="flex items-center gap-4">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="isSubRecipe"
+                                value="yes"
+                                checked={isSubRecipe}
+                                onChange={() => setIsSubRecipe(true)}
+                                className="w-4 h-4 text-secondary border-secondary/30 focus:ring-secondary/20"
+                              />
+                              <span className="text-sm font-medium">Yes</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="isSubRecipe"
+                                value="no"
+                                checked={!isSubRecipe}
+                                onChange={() => setIsSubRecipe(false)}
+                                className="w-4 h-4 text-secondary border-secondary/30 focus:ring-secondary/20"
+                              />
+                              <span className="text-sm font-medium">No</span>
+                            </label>
+                          </div>
+                          <div className="mt-2 text-[10px] text-neutral-400 flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 bg-secondary rounded-full" />
+                            {isSubRecipe ? 'Recipe can be used in other recipes' : 'Recipe cannot be used as a subrecipe'}
+                          </div>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                          YIELD QTY
-                        </label>
-                        <input 
-                          className="gc-input" 
-                          value={yieldQty} 
-                          onChange={(e) => setYieldQty(e.target.value)} 
-                          inputMode="decimal" 
-                          placeholder="e.g. 500"
-                        />
+                      {/* YIELD QTY */}
+                      <div className="col-span-6 md:col-span-4">
+                        <div className="bg-white rounded-xl p-4 border border-neutral-200 hover:border-secondary/30 transition-colors">
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                            YIELD QUANTITY
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="text"
+                              inputMode="decimal"
+                              value={yieldQty}
+                              onChange={(e) => setYieldQty(e.target.value)}
+                              placeholder="0.00"
+                              className="w-full px-4 py-3 text-right text-lg font-mono border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all"
+                              disabled={!isSubRecipe}
+                            />
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-sm font-medium text-secondary bg-secondary/10 px-2 py-1 rounded-md">
+                              {yieldUnit}
+                            </div>
+                          </div>
+                          <div className="mt-1.5 text-[10px] text-neutral-400 flex items-center justify-between">
+                            <span>Total yield of this recipe</span>
+                            <span className="text-secondary">Required for subrecipes</span>
+                          </div>
+                        </div>
                       </div>
 
-                      <div>
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                          YIELD UNIT
-                        </label>
-                        <select 
-                          className="gc-select" 
-                          value={yieldUnit} 
-                          onChange={(e) => setYieldUnit(e.target.value as any)}
-                        >
-                          <option value="g">g (gram)</option>
-                          <option value="kg">kg (kilogram)</option>
-                          <option value="ml">ml (milliliter)</option>
-                          <option value="l">l (liter)</option>
-                          <option value="pcs">pcs (pieces)</option>
-                        </select>
+                      {/* YIELD UNIT */}
+                      <div className="col-span-6 md:col-span-4">
+                        <div className="bg-white rounded-xl p-4 border border-neutral-200 hover:border-secondary/30 transition-colors">
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
+                            YIELD UNIT
+                          </label>
+                          <select
+                            value={yieldUnit}
+                            onChange={(e) => setYieldUnit(e.target.value as any)}
+                            className="w-full px-4 py-3 border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all appearance-none bg-white"
+                            style={{
+                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23C17B4A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                              backgroundRepeat: 'no-repeat',
+                              backgroundPosition: 'right 1rem center',
+                              backgroundSize: '1.5rem'
+                            }}
+                            disabled={!isSubRecipe}
+                          >
+                            <option value="g">g (gram)</option>
+                            <option value="kg">kg (kilogram)</option>
+                            <option value="ml">ml (milliliter)</option>
+                            <option value="l">l (liter)</option>
+                            <option value="pcs">pcs (pieces)</option>
+                          </select>
+                          <div className="mt-1.5 text-[10px] text-neutral-400">
+                            Unit of measurement for the yield
+                          </div>
+                        </div>
                       </div>
                     </div>
+
+                    {/* معلومات إضافية عند تفعيل subrecipe */}
+                    {isSubRecipe && (
+                      <div className="mt-4 p-4 bg-secondary/5 rounded-xl border border-secondary/20">
+                        <div className="flex items-start gap-3">
+                          <div className="w-6 h-6 rounded-full bg-secondary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                            <span className="text-secondary text-xs">✓</span>
+                          </div>
+                          <div>
+                            <div className="text-sm font-semibold text-secondary-dark mb-1">
+                              Subrecipe Mode Active
+                            </div>
+                            <div className="text-xs text-neutral-600">
+                              This recipe is now available as a component in other recipes. When used as a subrecipe, 
+                              the system will use the yield quantity ({yieldQty || '0'} {yieldUnit}) to calculate 
+                              the cost and quantity in parent recipes.
+                            </div>
+                            {(!yieldQty || parseFloat(yieldQty) <= 0) && (
+                              <div className="mt-2 flex items-center gap-2 text-amber-600 bg-amber-50 px-3 py-2 rounded-lg">
+                                <span className="text-sm">⚠️</span>
+                                <span className="text-xs font-medium">Please set a valid yield quantity for accurate subrecipe calculations</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
