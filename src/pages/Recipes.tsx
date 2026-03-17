@@ -1,5 +1,5 @@
-// recipes.tsx
-import { useEffect, useMemo, useRef, useState, useCallback, useReducer } from 'react'
+// src/pages/recipes.tsx
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { Toast } from '../components/Toast'
@@ -33,47 +33,20 @@ import {
   Download,
   Upload,
   Copy,
-  Star,
+  Heart,
   Clock,
   Users,
   Scale,
-  Coffee,
-  Soup,
-  Salad,
-  Pizza,
-  Beef,
-  Fish,
-  Egg,
-  Apple,
-  Cookie,
-  Moon,
-  Sun,
-  Bell,
-  BookOpen,
   ChefHat,
-  Heart,
-  Share2,
-  MoreVertical,
+  BookOpen,
   Edit,
-  Lock,
-  Unlock,
-  Cloud,
-  CloudOff,
-  Zap,
-  Award,
   BarChart3,
-  LineChart,
   FileText,
-  Printer,
-  Mail,
-  MessageSquare,
-  ThumbsUp,
-  ThumbsDown,
-  HelpCircle,
   Info,
   AlertTriangle,
   CheckCircle,
-  XCircle
+  XCircle,
+  Star
 } from 'lucide-react'
 
 // ==================== Types ====================
@@ -150,7 +123,6 @@ type RecipeRow = {
   created_by?: string | null
   version?: number
   notes?: string | null
-  allergens?: string[] | null
   dietary_info?: string[] | null
   season?: string[] | null
 }
@@ -182,7 +154,6 @@ type FilterType = {
   categories: string[]
   cuisines: string[]
   dietary: string[]
-  allergens: string[]
   priceRange: [number, number]
   costRange: [number, number]
   marginRange: [number, number]
@@ -232,8 +203,7 @@ function useRecipeCost(recipeId: string, lines: Line[], ingredients: Map<string,
       if (l.line_type === 'group') continue
       
       if (l.line_type === 'subrecipe') {
-        // حساب تكلفة الوصفة الفرعية (يمكن توسيعها)
-        details.laborCost += l.qty * 0.5 // قيمة تقديرية
+        details.laborCost += l.qty * 0.5
         continue
       }
 
@@ -257,9 +227,8 @@ function useRecipeCost(recipeId: string, lines: Line[], ingredients: Map<string,
       totalCost += Number.isFinite(lineCost) ? lineCost : 0
     }
 
-    // إضافة تكاليف إضافية تقديرية
-    details.overheadCost = totalCost * 0.15 // 15% overhead
-    details.packagingCost = totalCost * 0.05 // 5% packaging
+    details.overheadCost = totalCost * 0.15
+    details.packagingCost = totalCost * 0.05
 
     return { 
       cost: totalCost + details.overheadCost + details.packagingCost, 
@@ -283,7 +252,6 @@ function useDebounce<T>(value: T, delay: number): T {
 function useRecipeFilters(recipes: RecipeRow[], filter: FilterType, searchQuery: string) {
   return useMemo(() => {
     return recipes.filter(recipe => {
-      // Search filter
       if (searchQuery) {
         const query = searchQuery.toLowerCase()
         const matches = 
@@ -295,19 +263,16 @@ function useRecipeFilters(recipes: RecipeRow[], filter: FilterType, searchQuery:
         if (!matches) return false
       }
 
-      // Category filter
       if (filter.categories.length > 0 && 
           !filter.categories.includes(recipe.category || '')) {
         return false
       }
 
-      // Cuisine filter
       if (filter.cuisines.length > 0 && 
           !filter.cuisines.includes(recipe.cuisine || '')) {
         return false
       }
 
-      // Dietary filter
       if (filter.dietary.length > 0) {
         const hasDietary = recipe.dietary_info?.some(d => 
           filter.dietary.includes(d)
@@ -315,7 +280,6 @@ function useRecipeFilters(recipes: RecipeRow[], filter: FilterType, searchQuery:
         if (!hasDietary) return false
       }
 
-      // Featured/Favorite filters
       if (filter.isFeatured !== null && recipe.is_featured !== filter.isFeatured) {
         return false
       }
@@ -393,10 +357,10 @@ function formatTime(minutes: number): string {
 
 function getDifficultyColor(difficulty: string): string {
   switch (difficulty) {
-    case 'easy': return 'recipe-difficulty--easy'
-    case 'medium': return 'recipe-difficulty--medium'
-    case 'hard': return 'recipe-difficulty--hard'
-    default: return ''
+    case 'easy': return '#27AE60'
+    case 'medium': return '#F1C40F'
+    case 'hard': return '#E74C3C'
+    default: return '#95A5A6'
   }
 }
 
@@ -421,9 +385,9 @@ const CACHE_KEYS = {
 }
 
 const CACHE_TTL = {
-  COST: 10 * 60 * 1000, // 10 minutes
-  RECIPES: 5 * 60 * 1000, // 5 minutes
-  INGREDIENTS: 15 * 60 * 1000 // 15 minutes
+  COST: 10 * 60 * 1000,
+  RECIPES: 5 * 60 * 1000,
+  INGREDIENTS: 15 * 60 * 1000
 }
 
 class CacheManager {
@@ -496,7 +460,6 @@ function RecipesStyles() {
         --gc-shadow: rgba(0, 0, 0, 0.08);
         --gc-shadow-lg: rgba(0, 0, 0, 0.12);
         
-        /* Spacing */
         --gc-space-xs: 4px;
         --gc-space-sm: 8px;
         --gc-space-md: 12px;
@@ -504,7 +467,6 @@ function RecipesStyles() {
         --gc-space-xl: 24px;
         --gc-space-2xl: 32px;
         
-        /* Typography */
         --gc-font-xs: 0.75rem;
         --gc-font-sm: 0.875rem;
         --gc-font-md: 1rem;
@@ -512,7 +474,6 @@ function RecipesStyles() {
         --gc-font-xl: 1.25rem;
         --gc-font-2xl: 1.5rem;
         
-        /* Border Radius */
         --gc-radius-sm: 4px;
         --gc-radius-md: 8px;
         --gc-radius-lg: 12px;
@@ -520,12 +481,10 @@ function RecipesStyles() {
         --gc-radius-2xl: 24px;
         --gc-radius-full: 9999px;
         
-        /* Transitions */
         --gc-transition-fast: 150ms ease;
         --gc-transition-base: 250ms ease;
         --gc-transition-slow: 350ms ease;
         
-        /* Z-index */
         --gc-z-dropdown: 1000;
         --gc-z-sticky: 1020;
         --gc-z-fixed: 1030;
@@ -536,7 +495,6 @@ function RecipesStyles() {
         --gc-z-toast: 1080;
       }
 
-      /* ===== Dark Mode ===== */
       @media (prefers-color-scheme: dark) {
         :root {
           --gc-background: #1a1f2b;
@@ -980,7 +938,6 @@ function RecipesStyles() {
         border-bottom: none;
       }
 
-      /* Recipe Card */
       .recipe-card {
         background: var(--gc-surface);
         border-radius: var(--gc-radius-xl);
@@ -1116,18 +1073,6 @@ function RecipesStyles() {
         text-transform: capitalize;
       }
 
-      .recipe-difficulty--easy {
-        color: var(--gc-success);
-      }
-
-      .recipe-difficulty--medium {
-        color: var(--gc-warning);
-      }
-
-      .recipe-difficulty--hard {
-        color: var(--gc-danger);
-      }
-
       .recipe-card__body {
         padding: var(--gc-space-lg);
       }
@@ -1240,14 +1185,6 @@ function RecipesStyles() {
         color: var(--gc-danger);
       }
 
-      .metric__trend {
-        font-size: var(--gc-font-xs);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 2px;
-      }
-
       .recipe-card__nutrition {
         display: flex;
         align-items: center;
@@ -1274,22 +1211,6 @@ function RecipesStyles() {
         color: var(--gc-text-light);
         text-transform: uppercase;
         letter-spacing: 0.03em;
-      }
-
-      .recipe-card__allergens {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 4px;
-        margin: var(--gc-space-sm) 0;
-      }
-
-      .allergen-badge {
-        font-size: var(--gc-font-xs);
-        padding: 2px 6px;
-        background: rgba(231, 76, 60, 0.1);
-        color: var(--gc-danger);
-        border-radius: var(--gc-radius-full);
-        font-weight: 600;
       }
 
       .recipe-card__dietary {
@@ -1368,7 +1289,6 @@ function RecipesStyles() {
         color: white;
       }
 
-      /* ===== List View ===== */
       .recipe-list-item {
         background: var(--gc-surface);
         border-radius: var(--gc-radius-lg);
@@ -1443,7 +1363,6 @@ function RecipesStyles() {
         color: var(--gc-secondary);
       }
 
-      /* ===== Loading States ===== */
       .recipes-loading {
         display: flex;
         align-items: center;
@@ -1464,68 +1383,18 @@ function RecipesStyles() {
         to { transform: rotate(360deg); }
       }
 
-      .loading-skeleton {
-        background: linear-gradient(
-          90deg,
-          var(--gc-surface) 25%,
-          var(--gc-surface-hover) 50%,
-          var(--gc-surface) 75%
-        );
-        background-size: 200% 100%;
-        animation: loading 1.5s ease-in-out infinite;
-        border-radius: var(--gc-radius-md);
-      }
-
-      @keyframes loading {
-        0% { background-position: 200% 0; }
-        100% { background-position: -200% 0; }
-      }
-
-      /* ===== Empty State ===== */
-      .recipes-empty {
-        text-align: center;
-        padding: var(--gc-space-2xl);
-        background: var(--gc-surface);
-        border-radius: var(--gc-radius-xl);
-        border: 2px dashed var(--gc-border);
-      }
-
-      .recipes-empty-icon {
-        width: 80px;
-        height: 80px;
-        margin: 0 auto var(--gc-space-lg);
-        background: linear-gradient(135deg, var(--gc-secondary), var(--gc-secondary-light));
-        border-radius: var(--gc-radius-2xl);
+      .recipes-error {
+        background: rgba(231, 76, 60, 0.1);
+        border: 1px solid var(--gc-danger);
+        border-radius: var(--gc-radius-lg);
+        padding: var(--gc-space-md);
+        margin-bottom: var(--gc-space-lg);
         display: flex;
         align-items: center;
-        justify-content: center;
-        color: white;
+        gap: var(--gc-space-sm);
+        color: var(--gc-danger);
       }
 
-      .recipes-empty-title {
-        font-size: var(--gc-font-xl);
-        font-weight: 800;
-        margin-bottom: var(--gc-space-sm);
-        color: var(--gc-text);
-      }
-
-      .recipes-empty-description {
-        color: var(--gc-text-light);
-        margin-bottom: var(--gc-space-xl);
-        max-width: 400px;
-        margin-left: auto;
-        margin-right: auto;
-      }
-
-      .recipes-empty-actions {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: var(--gc-space-md);
-        flex-wrap: wrap;
-      }
-
-      /* ===== Toast Notifications ===== */
       .toast-container {
         position: fixed;
         bottom: var(--gc-space-lg);
@@ -1583,22 +1452,6 @@ function RecipesStyles() {
         flex-shrink: 0;
       }
 
-      .toast--success .toast-icon {
-        color: var(--gc-success);
-      }
-
-      .toast--error .toast-icon {
-        color: var(--gc-danger);
-      }
-
-      .toast--warning .toast-icon {
-        color: var(--gc-warning);
-      }
-
-      .toast--info .toast-icon {
-        color: var(--gc-info);
-      }
-
       .toast-content {
         flex: 1;
       }
@@ -1631,94 +1484,6 @@ function RecipesStyles() {
         color: var(--gc-text);
       }
 
-      /* ===== Modal ===== */
-      .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.5);
-        backdrop-filter: blur(4px);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: var(--gc-z-modal-backdrop);
-        animation: fadeIn 0.2s ease-out;
-      }
-
-      @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-      }
-
-      .modal {
-        background: var(--gc-surface);
-        border-radius: var(--gc-radius-xl);
-        width: 90%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        box-shadow: 0 24px 48px var(--gc-shadow-lg);
-        animation: slideUp 0.3s ease-out;
-      }
-
-      @keyframes slideUp {
-        from {
-          transform: translateY(50px);
-          opacity: 0;
-        }
-        to {
-          transform: translateY(0);
-          opacity: 1;
-        }
-      }
-
-      .modal-header {
-        padding: var(--gc-space-lg);
-        border-bottom: 1px solid var(--gc-border);
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-      }
-
-      .modal-title {
-        font-size: var(--gc-font-lg);
-        font-weight: 800;
-        margin: 0;
-      }
-
-      .modal-close {
-        background: none;
-        border: none;
-        color: var(--gc-text-light);
-        cursor: pointer;
-        padding: 4px;
-        border-radius: var(--gc-radius-sm);
-        display: flex;
-        align-items: center;
-        justify-content:center;
-      }
-
-      .modal-close:hover {
-        background: var(--gc-surface-hover);
-        color: var(--gc-text);
-      }
-
-      .modal-body {
-        padding: var(--gc-space-lg);
-      }
-
-      .modal-footer {
-        padding: var(--gc-space-lg);
-        border-top: 1px solid var(--gc-border);
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: var(--gc-space-sm);
-      }
-
-      /* ===== Responsive Design ===== */
       @media (max-width: 1024px) {
         .recipes-grid--comfortable {
           grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
@@ -1821,14 +1586,8 @@ function RecipesStyles() {
         .recipe-list-item__stats {
           flex-wrap: wrap;
         }
-
-        .modal {
-          width: 95%;
-          margin: var(--gc-space-md);
-        }
       }
 
-      /* ===== Print Styles ===== */
       @media print {
         .recipes-toolbar,
         .recipes-filters,
@@ -1849,7 +1608,6 @@ function RecipesStyles() {
         }
       }
 
-      /* ===== Animations ===== */
       .fade-enter {
         opacity: 0;
       }
@@ -1868,25 +1626,6 @@ function RecipesStyles() {
         transition: opacity var(--gc-transition-base);
       }
 
-      .slide-enter {
-        transform: translateX(100%);
-      }
-
-      .slide-enter-active {
-        transform: translateX(0);
-        transition: transform var(--gc-transition-base);
-      }
-
-      .slide-exit {
-        transform: translateX(0);
-      }
-
-      .slide-exit-active {
-        transform: translateX(-100%);
-        transition: transform var(--gc-transition-base);
-      }
-
-      /* ===== Custom Scrollbar ===== */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
@@ -1904,85 +1643,6 @@ function RecipesStyles() {
       ::-webkit-scrollbar-thumb:hover {
         background: var(--gc-gray-dark);
       }
-
-      /* ===== Utility Classes ===== */
-      .text-primary { color: var(--gc-primary); }
-      .text-secondary { color: var(--gc-secondary); }
-      .text-success { color: var(--gc-success); }
-      .text-warning { color: var(--gc-warning); }
-      .text-danger { color: var(--gc-danger); }
-      .text-info { color: var(--gc-info); }
-      .text-light { color: var(--gc-text-light); }
-
-      .bg-primary { background: var(--gc-primary); }
-      .bg-secondary { background: var(--gc-secondary); }
-      .bg-success { background: var(--gc-success); }
-      .bg-warning { background: var(--gc-warning); }
-      .bg-danger { background: var(--gc-danger); }
-      .bg-info { background: var(--gc-info); }
-
-      .font-xs { font-size: var(--gc-font-xs); }
-      .font-sm { font-size: var(--gc-font-sm); }
-      .font-md { font-size: var(--gc-font-md); }
-      .font-lg { font-size: var(--gc-font-lg); }
-      .font-xl { font-size: var(--gc-font-xl); }
-      .font-2xl { font-size: var(--gc-font-2xl); }
-
-      .font-bold { font-weight: 700; }
-      .font-extrabold { font-weight: 800; }
-      .font-black { font-weight: 900; }
-
-      .mt-1 { margin-top: var(--gc-space-xs); }
-      .mt-2 { margin-top: var(--gc-space-sm); }
-      .mt-3 { margin-top: var(--gc-space-md); }
-      .mt-4 { margin-top: var(--gc-space-lg); }
-      .mt-5 { margin-top: var(--gc-space-xl); }
-
-      .mb-1 { margin-bottom: var(--gc-space-xs); }
-      .mb-2 { margin-bottom: var(--gc-space-sm); }
-      .mb-3 { margin-bottom: var(--gc-space-md); }
-      .mb-4 { margin-bottom: var(--gc-space-lg); }
-      .mb-5 { margin-bottom: var(--gc-space-xl); }
-
-      .p-1 { padding: var(--gc-space-xs); }
-      .p-2 { padding: var(--gc-space-sm); }
-      .p-3 { padding: var(--gc-space-md); }
-      .p-4 { padding: var(--gc-space-lg); }
-      .p-5 { padding: var(--gc-space-xl); }
-
-      .rounded-sm { border-radius: var(--gc-radius-sm); }
-      .rounded-md { border-radius: var(--gc-radius-md); }
-      .rounded-lg { border-radius: var(--gc-radius-lg); }
-      .rounded-xl { border-radius: var(--gc-radius-xl); }
-      .rounded-full { border-radius: var(--gc-radius-full); }
-
-      .shadow-sm { box-shadow: 0 2px 4px var(--gc-shadow); }
-      .shadow-md { box-shadow: 0 4px 6px var(--gc-shadow); }
-      .shadow-lg { box-shadow: 0 8px 16px var(--gc-shadow-lg); }
-      .shadow-xl { box-shadow: 0 16px 24px var(--gc-shadow-lg); }
-
-      .flex { display: flex; }
-      .items-center { align-items: center; }
-      .justify-between { justify-content: space-between; }
-      .justify-center { justify-content: center; }
-      .gap-1 { gap: var(--gc-space-xs); }
-      .gap-2 { gap: var(--gc-space-sm); }
-      .gap-3 { gap: var(--gc-space-md); }
-      .gap-4 { gap: var(--gc-space-lg); }
-
-      .w-full { width: 100%; }
-      .h-full { height: 100%; }
-
-      .cursor-pointer { cursor: pointer; }
-      .select-none { user-select: none; }
-
-      .transition-all { transition: all var(--gc-transition-base); }
-      .transition-transform { transition: transform var(--gc-transition-base); }
-
-      .hover-scale:hover { transform: scale(1.05); }
-      .hover-lift:hover { transform: translateY(-2px); }
-
-      .active-scale:active { transform: scale(0.98); }
     `}</style>
   )
 }
@@ -1996,12 +1656,10 @@ export default function Recipes() {
   const isMgmt = !isKitchen
   const k = useKitchen()
 
-  // Refs
   const mountedRef = useRef(true)
   const searchInputRef = useRef<HTMLInputElement>(null)
   const loadingLinesRef = useRef<Set<string>>(new Set())
 
-  // State
   const [toast, setToast] = useState<{ type: 'success' | 'error' | 'warning' | 'info', message: string } | null>(null)
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
@@ -2024,7 +1682,6 @@ export default function Recipes() {
     categories: [],
     cuisines: [],
     dietary: [],
-    allergens: [],
     priceRange: [0, 1000],
     costRange: [0, 1000],
     marginRange: [0, 100],
@@ -2037,10 +1694,8 @@ export default function Recipes() {
     season: []
   })
 
-  // Debounced search
   const debouncedQ = useDebounce(q, 300)
 
-  // Memoized values
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
     for (const i of ingredients) m.set(i.id, i)
@@ -2115,7 +1770,6 @@ export default function Recipes() {
     }
   }, [recipes, costCache])
 
-  // Effects
   useEffect(() => {
     mountedRef.current = true
     return () => {
@@ -2144,7 +1798,6 @@ export default function Recipes() {
     document.documentElement.setAttribute('data-view', viewMode)
   }, [density, viewMode])
 
-  // Data loading
   const loadAll = useCallback(async (sync = false) => {
     if (!mountedRef.current) return
     
@@ -2156,7 +1809,6 @@ export default function Recipes() {
     setErr(null)
 
     try {
-      // Check cache first
       if (!sync) {
         const cachedRecipes = CacheManager.get<RecipeRow[]>(CACHE_KEYS.RECIPES_CACHE, CACHE_TTL.RECIPES)
         const cachedIngredients = CacheManager.get<Ingredient[]>(CACHE_KEYS.INGREDIENTS_REV, CACHE_TTL.INGREDIENTS)
@@ -2176,7 +1828,7 @@ export default function Recipes() {
         calories,protein_g,carbs_g,fat_g,fiber_g,sugar_g,sodium_mg,
         selling_price,cost_price,currency,target_food_cost_pct,
         minimum_price,recommended_price,created_at,updated_at,created_by,
-        version,notes,allergens,dietary_info,season
+        version,notes,dietary_info,season
       `
 
       const { data: r, error: rErr } = await supabase
@@ -2206,7 +1858,6 @@ export default function Recipes() {
         CacheManager.set(CACHE_KEYS.INGREDIENTS_REV, ingredientsData)
       }
 
-      // Update last sync time
       CacheManager.set(CACHE_KEYS.LAST_SYNC, Date.now())
       
     } catch (e: any) {
@@ -2229,7 +1880,6 @@ export default function Recipes() {
     loadAll().catch(() => {})
   }, [loadAll])
 
-  // Recipe lines loading
   const ensureRecipeLinesLoaded = useCallback(async (ids: string[]) => {
     const need = ids.filter(
       (id) => !recipeLinesCache[id] && !loadingLinesRef.current.has(id)
@@ -2264,7 +1914,6 @@ export default function Recipes() {
     }
   }, [recipeLinesCache])
 
-  // Cost calculation
   const costMemo = useMemo(() => {
     const memo = new Map<string, { cost: number; warnings: string[]; details: CostPoint['details'] }>()
 
@@ -2339,7 +1988,6 @@ export default function Recipes() {
     }
   }, [loading, sortedRecipes, recipeLinesCache, costMemo, ensureRecipeLinesLoaded, costCache])
 
-  // Handlers
   const createNewRecipe = useCallback(async () => {
     if (mountedRef.current) setErr(null)
 
@@ -2363,7 +2011,6 @@ export default function Recipes() {
         cooking_time: 20,
         difficulty: 'medium',
         tags: [],
-        allergens: [],
         dietary_info: [],
         season: [],
         version: 1
@@ -2385,10 +2032,8 @@ export default function Recipes() {
         })
       }
       
-      // Clear cache to force reload
       CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
       
-      // Navigate after a short delay
       setTimeout(() => {
         nav(`/recipe?id=${encodeURIComponent(id)}`)
       }, 500)
@@ -2423,7 +2068,6 @@ export default function Recipes() {
 
       if (error) throw error
 
-      // Duplicate recipe lines
       const lines = recipeLinesCache[recipe.id]
       if (lines && lines.length > 0) {
         await supabase
@@ -2442,7 +2086,6 @@ export default function Recipes() {
           type: 'success',
           message: 'Recipe duplicated successfully'
         })
-        // Refresh data
         loadAll(true)
       }
     } catch (e: any) {
@@ -2577,7 +2220,6 @@ export default function Recipes() {
           message: 'Recipe deleted successfully'
         })
         
-        // Clear cache
         CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
       }
     } catch (e: any) {
@@ -2634,14 +2276,12 @@ export default function Recipes() {
     if (!ok) return
 
     try {
-      // Delete recipe lines first
       const { error: lErr } = await supabase
         .from('recipe_lines')
         .delete()
         .in('recipe_id', selectedIds)
       if (lErr) throw lErr
 
-      // Then delete recipes
       const { error: rErr } = await supabase
         .from('recipes')
         .delete()
@@ -2661,7 +2301,6 @@ export default function Recipes() {
           message: `${selectedIds.length} recipes deleted`
         })
         
-        // Clear cache
         CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
       }
     } catch (e: any) {
@@ -2711,7 +2350,6 @@ export default function Recipes() {
         const text = await file.text()
         const imported = JSON.parse(text)
         
-        // Validate and import logic here
         setToast({
           type: 'info',
           message: `Import feature coming soon`
@@ -2726,7 +2364,6 @@ export default function Recipes() {
     input.click()
   }, [])
 
-  // Render functions
   const renderGridView = () => (
     <div className={`recipes-grid recipes-grid--${density}`}>
       <AnimatePresence>
@@ -2747,7 +2384,6 @@ export default function Recipes() {
               layout
             >
               <div className={`recipe-card ${r.is_featured ? 'recipe-card--featured' : ''} ${r.is_archived ? 'recipe-card--archived' : ''}`}>
-                {/* Badges */}
                 <div className="recipe-card__badge">
                   {r.is_featured && (
                     <span className="recipe-badge recipe-badge--featured">
@@ -2775,7 +2411,6 @@ export default function Recipes() {
                   )}
                 </div>
 
-                {/* Media */}
                 <div className="recipe-card__media">
                   {r.photo_url ? (
                     <img src={r.photo_url} alt={r.name} />
@@ -2803,7 +2438,7 @@ export default function Recipes() {
                       <Clock size={14} />
                       {formatTime(totalTime)}
                     </span>
-                    <span className={`recipe-card__difficulty ${getDifficultyColor(r.difficulty || '')}`}>
+                    <span className="recipe-card__difficulty" style={{ color: getDifficultyColor(r.difficulty || '') }}>
                       {r.difficulty === 'easy' && '😊'}
                       {r.difficulty === 'medium' && '😐'}
                       {r.difficulty === 'hard' && '😅'}
@@ -2812,7 +2447,6 @@ export default function Recipes() {
                   </div>
                 </div>
 
-                {/* Body */}
                 <div className="recipe-card__body">
                   <div className="recipe-card__header">
                     <div>
@@ -2833,7 +2467,6 @@ export default function Recipes() {
                     <p className="recipe-card__description">{r.description}</p>
                   )}
 
-                  {/* Tags */}
                   {r.tags && r.tags.length > 0 && (
                     <div className="recipe-card__tags">
                       {r.tags.slice(0, 3).map(tag => (
@@ -2845,7 +2478,6 @@ export default function Recipes() {
                     </div>
                   )}
 
-                  {/* Dietary Info */}
                   {r.dietary_info && r.dietary_info.length > 0 && (
                     <div className="recipe-card__dietary">
                       {r.dietary_info.map(d => (
@@ -2854,16 +2486,6 @@ export default function Recipes() {
                     </div>
                   )}
 
-                  {/* Allergens */}
-                  {r.allergens && r.allergens.length > 0 && (
-                    <div className="recipe-card__allergens">
-                      {r.allergens.map(a => (
-                        <span key={a} className="allergen-badge">{a}</span>
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Metrics */}
                   <div className="recipe-card__metrics">
                     <div className="metric">
                       <div className="metric__label">Portions</div>
@@ -2883,7 +2505,6 @@ export default function Recipes() {
                     </div>
                   </div>
 
-                  {/* Nutritional Info */}
                   {(r.calories || r.protein_g || r.carbs_g || r.fat_g) && (
                     <div className="recipe-card__nutrition">
                       {r.calories && (
@@ -2913,7 +2534,6 @@ export default function Recipes() {
                     </div>
                   )}
 
-                  {/* Footer */}
                   <div className="recipe-card__footer">
                     <div className="recipe-card__price">
                       {r.selling_price ? formatCurrency(r.selling_price, cur) : 'Price not set'}
@@ -2972,7 +2592,7 @@ export default function Recipes() {
                           type="checkbox"
                           checked={!!selected[r.id]}
                           onChange={() => toggleSelect(r.id)}
-                          style={{ width: 16, height: 16, margin: 0 }}
+                          style={{ width: 16, height: 16, margin: 0, cursor: 'pointer' }}
                         />
                       </label>
                     </div>
@@ -3053,7 +2673,7 @@ export default function Recipes() {
                       type="checkbox"
                       checked={!!selected[r.id]}
                       onChange={() => toggleSelect(r.id)}
-                      style={{ width: 16, height: 16 }}
+                      style={{ width: 16, height: 16, cursor: 'pointer' }}
                     />
                   </label>
                 </div>
@@ -3100,13 +2720,13 @@ export default function Recipes() {
               <td>{formatTime(totalTime)}</td>
               <td>{c ? formatCurrency(c.cpp, cur) : '—'}</td>
               <td>{r.selling_price ? formatCurrency(r.selling_price, cur) : '—'}</td>
-              <td className={c?.fcPct && c.fcPct > 30 ? 'text-danger' : ''}>
+              <td style={{ color: c?.fcPct && c.fcPct > 30 ? 'var(--gc-danger)' : 'inherit' }}>
                 {c?.fcPct ? `${c.fcPct.toFixed(1)}%` : '—'}
               </td>
               <td>{c ? formatCurrency(c.profit, cur) : '—'}</td>
               <td>
-                {r.is_archived && <span className="text-light">Archived</span>}
-                {!r.is_archived && <span className="text-success">Active</span>}
+                {r.is_archived && <span style={{ color: 'var(--gc-text-light)' }}>Archived</span>}
+                {!r.is_archived && <span style={{ color: 'var(--gc-success)' }}>Active</span>}
               </td>
               <td>
                 <div style={{ display: 'flex', gap: 4 }}>
@@ -3118,7 +2738,7 @@ export default function Recipes() {
                       type="checkbox"
                       checked={!!selected[r.id]}
                       onChange={() => toggleSelect(r.id)}
-                      style={{ width: 14, height: 14 }}
+                      style={{ width: 14, height: 14, cursor: 'pointer' }}
                     />
                   </label>
                 </div>
@@ -3130,14 +2750,12 @@ export default function Recipes() {
     </table>
   )
 
-  // Main render
   return (
     <>
       <RecipesStyles />
 
       <div className="recipes-page">
         <div className="recipes-container">
-          {/* Header */}
           <div className="recipes-header">
             <div className="recipes-header-left">
               <div className="recipes-header-icon">
@@ -3194,7 +2812,6 @@ export default function Recipes() {
             </div>
           </div>
 
-          {/* Stats Cards */}
           <div className="recipes-stats">
             <div className="stat-card">
               <div className="stat-card-header">
@@ -3254,7 +2871,6 @@ export default function Recipes() {
             </div>
           </div>
 
-          {/* Toolbar */}
           <div className="recipes-toolbar">
             <div className="recipes-toolbar-row">
               <div className="recipes-search">
@@ -3346,7 +2962,6 @@ export default function Recipes() {
               </div>
             </div>
 
-            {/* Sort Bar */}
             <div style={{ marginTop: 12, display: 'flex', alignItems: 'center', gap: 8 }}>
               <span className="filter-label">Sort by:</span>
               <select
@@ -3382,7 +2997,6 @@ export default function Recipes() {
             </div>
           </div>
 
-          {/* Filters */}
           {showFilters && (
             <motion.div
               className="recipes-filters"
@@ -3392,22 +3006,18 @@ export default function Recipes() {
             >
               <div className="filter-group">
                 <span className="filter-label">Categories</span>
-                {/* Add category filter chips */}
               </div>
               
               <div className="filter-group">
                 <span className="filter-label">Cuisine</span>
-                {/* Add cuisine filter chips */}
               </div>
               
               <div className="filter-group">
                 <span className="filter-label">Dietary</span>
-                {/* Add dietary filter chips */}
               </div>
               
               <div className="filter-group">
                 <span className="filter-label">Difficulty</span>
-                {/* Add difficulty filter chips */}
               </div>
               
               <Button
@@ -3417,7 +3027,6 @@ export default function Recipes() {
                   categories: [],
                   cuisines: [],
                   dietary: [],
-                  allergens: [],
                   priceRange: [0, 1000],
                   costRange: [0, 1000],
                   marginRange: [0, 100],
@@ -3435,18 +3044,16 @@ export default function Recipes() {
             </motion.div>
           )}
 
-          {/* Error Message */}
           {err && (
             <div className="recipes-error">
               <AlertCircle size={20} />
               <span>{err}</span>
-              <button onClick={() => setErr(null)}>
+              <button onClick={() => setErr(null)} style={{ marginLeft: 'auto', background: 'none', border: 'none', color: 'var(--gc-danger)', cursor: 'pointer' }}>
                 <X size={16} />
               </button>
             </div>
           )}
 
-          {/* Loading State */}
           {loading ? (
             <div className="recipes-loading">
               <Loader2 size={48} className="loading-spinner" />
@@ -3504,12 +3111,10 @@ export default function Recipes() {
             />
           ) : (
             <>
-              {/* Results count */}
               <div style={{ marginBottom: 12, color: 'var(--gc-text-light)' }}>
                 Showing {sortedRecipes.length} of {recipes.length} recipes
               </div>
 
-              {/* Recipe Display */}
               {viewMode === 'grid' && renderGridView()}
               {viewMode === 'list' && renderListView()}
               {viewMode === 'table' && renderTableView()}
@@ -3518,7 +3123,6 @@ export default function Recipes() {
         </div>
       </div>
 
-      {/* Toast Container */}
       <div className="toast-container">
         <AnimatePresence>
           {toast && (
