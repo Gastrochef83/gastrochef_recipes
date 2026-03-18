@@ -1,4 +1,3 @@
-// src/pages/Ingredients.tsx
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -6,7 +5,6 @@ import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingred
 import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
-import { motion, AnimatePresence } from 'framer-motion'
 
 type IngredientRow = {
   id: string
@@ -15,10 +13,14 @@ type IngredientRow = {
   name?: string
   category?: string | null
   supplier?: string | null
+
+  // Required (NOT NULL in your DB)
   pack_size?: number | null
   pack_price?: number | null
+
   pack_unit?: string | null
   net_unit_cost?: number | null
+
   is_active?: boolean
   kitchen_id?: string
 }
@@ -48,6 +50,8 @@ function calcNetUnitCost(packPrice: number, packSize: number) {
 }
 
 function sanityFlag(net: number, unit: string) {
+  // Simple heuristics: if cost per "g/ml" is extremely high, probably wrong units.
+  // We keep it gentle; it’s a hint, not a blocker.
   const u = safeUnit(unit)
   if (!Number.isFinite(net) || net <= 0) return { level: 'missing' as const, msg: 'Missing cost' }
 
@@ -63,7 +67,6 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== Modal Component ====================
 function Modal({
   open,
   title,
@@ -76,53 +79,36 @@ function Modal({
   onClose: () => void
 }) {
   if (!open) return null
-  
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div 
-          className="fixed inset-0 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-          <motion.div 
-            className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.3 }}
-          >
-            <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-              <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div>
-                  <div className="gc-label text-primary-600 dark:text-primary-400">INGREDIENT</div>
-                  <div className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">{title}</div>
-                </div>
-                <motion.button 
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
-                  onClick={onClose}
-                  type="button"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </motion.button>
-              </div>
-              <div className="p-6 pt-5 overflow-auto">{children}</div>
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all">
+          <div className="flex items-start justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-8 py-6">
+            <div>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                INGREDIENT
+              </span>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight text-gray-900">{title}</h2>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <button
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              onClick={onClose}
+              type="button"
+            >
+              <span className="sr-only">Close</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-8 py-6">{children}</div>
+        </div>
+      </div>
+    </div>
   )
 }
 
-// ==================== Table Row Component ====================
 const IngredientTableRow = memo(function IngredientTableRow({
   r,
   isDebug,
@@ -140,133 +126,77 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const flag = sanityFlag(net, unit)
 
   return (
-    <motion.tr 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      whileHover={{ backgroundColor: 'rgba(107, 127, 59, 0.02)' }}
-      className={cls(!active && 'opacity-60')}
-    >
-      <td>
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono" title={r.code ?? '—'}>
-          {r.code ? (
-            <>
-              <span className="w-2 h-2 rounded-full bg-primary-500" />
-              {r.code}
-            </>
-          ) : '—'}
-        </span>
-      </td>
-      <td>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900 dark:text-white">{r.name ?? '—'}</span>
-            {!active && (
-              <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full">
-                Inactive
-              </span>
-            )}
-            {flag.level === 'warn' && (
-              <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full flex items-center gap-1">
-                <span>⚠️</span>
-                Unit warning
-              </span>
-            )}
-          </div>
-          {isDebug && <div className="text-xs text-gray-500 dark:text-gray-400">ID: {r.id}</div>}
-          {flag.level === 'warn' && (
-            <div className="text-xs text-amber-600 dark:text-amber-400">{flag.msg}</div>
-          )}
+    <tr className="group transition-colors hover:bg-gray-50">
+      <td className="whitespace-nowrap px-4 py-4 text-sm">
+        <div className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 font-mono text-xs text-gray-700 ring-1 ring-inset ring-gray-500/10">
+          {r.code ?? '—'}
         </div>
       </td>
-      <td className="text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
-      <td className="text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
-      <td className="text-center">
-        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
-          {unit}
-        </span>
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-900">{r.name ?? '—'}</span>
+              {!active && (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                  Inactive
+                </span>
+              )}
+              {flag.level === 'warn' && (
+                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                  Unit warning
+                </span>
+              )}
+            </div>
+            {isDebug && <div className="mt-1 font-mono text-xs text-gray-400">ID: {r.id}</div>}
+            {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-600">{flag.msg}</div>}
+          </div>
+        </div>
       </td>
-      <td className="text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
-      <td className="text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
-      <td>
-        <div className="flex items-center justify-center gap-2">
-          <motion.button 
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
-            type="button" 
+      <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-600">{r.category ?? '—'}</td>
+      <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-sm text-gray-900">
+        {Math.max(1, toNum(r.pack_size, 1))}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">{unit}</td>
+      <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-sm font-medium text-gray-900">
+        {money(toNum(r.pack_price, 0))}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-sm font-medium text-gray-900">
+        {money(net)}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-center text-sm">
+        <div className="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            type="button"
             onClick={() => onEdit(r)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Edit ingredient"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
+            <svg className="mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
             </svg>
-          </motion.button>
-          <motion.button 
-            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
-            type="button" 
+            Edit
+          </button>
+          <button
+            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-red-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-red-50"
+            type="button"
             onClick={() => onHardDelete(r.id)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Delete ingredient"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+            <svg className="mr-1.5 h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
             </svg>
-          </motion.button>
+            Delete
+          </button>
         </div>
       </td>
-    </motion.tr>
+    </tr>
   )
 })
 
-// ==================== Stats Card Component ====================
-const StatsCard = memo(function StatsCard({ 
-  label, 
-  value, 
-  sublabel, 
-  icon,
-  trend 
-}: { 
-  label: string
-  value: string | number
-  sublabel: string
-  icon: ReactNode
-  trend?: { value: number; positive: boolean }
-}) {
-  return (
-    <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
-      whileHover={{ y: -2 }}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {label}
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
-            {trend && (
-              <span className={cls(
-                "text-xs font-medium",
-                trend.positive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-              </span>
-            )}
-          </div>
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sublabel}</div>
-        </div>
-        <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400">
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  )
-})
-
-// ==================== Main Component ====================
 export default function Ingredients() {
   const k = useKitchen()
   const canEditCodes = k.isOwner
@@ -286,9 +216,9 @@ export default function Ingredients() {
       }
       return false
     })()
-  
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
+
   const [rows, setRows] = useState<IngredientRow[]>([])
   const [search, setSearch] = useState('')
   const loc = useLocation()
@@ -332,6 +262,7 @@ export default function Ingredients() {
   // Required fields
   const [fPackSize, setFPackSize] = useState('1')
   const [fPackPrice, setFPackPrice] = useState('0')
+
   const [fPackUnit, setFPackUnit] = useState('g')
   const [fNetUnitCost, setFNetUnitCost] = useState('0')
 
@@ -451,6 +382,7 @@ export default function Ingredients() {
     const items = filtered.length
     const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
     const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
+
     const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
     const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
 
@@ -524,8 +456,10 @@ export default function Ingredients() {
         name,
         category: fCategory.trim() || null,
         supplier: fSupplier.trim() || null,
+
         pack_size: packSize,
         pack_price: packPrice,
+
         pack_unit: unit,
         net_unit_cost: netFinal,
         is_active: true,
@@ -649,154 +583,137 @@ export default function Ingredients() {
     }
   }
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
-  }
-
   return (
-    <motion.div 
-      className="gc-ingredients"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      {/* Header */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
             <div>
-              <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-1">
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
                 INGREDIENTS — PRO
-              </div>
-              <h1 className="text-2xl font-bold mb-1">Database</h1>
-              <p className="text-sm text-white/90">Search, filter, sort, validate costs, and manage ingredients.</p>
+              </span>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900">Database</h1>
+              <p className="mt-2 text-sm text-gray-600">
+                Search, filter, sort, validate costs, and manage ingredients.
+              </p>
               {isDebug && (
-                <div className="mt-3 text-xs text-white/70">Kitchen ID: {kitchenId ?? '—'}</div>
+                <div className="mt-3 font-mono text-xs text-gray-500">Kitchen ID: {kitchenId ?? '—'}</div>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg text-sm text-white cursor-pointer hover:bg-white/20 transition">
-                <input 
-                  type="checkbox" 
-                  checked={showInactive} 
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
                   onChange={(e) => setShowInactive(e.target.checked)}
-                  className="rounded border-white/30 text-primary-600 focus:ring-primary-500"
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600"
                 />
-                <span>Show inactive</span>
+                <span className="text-sm font-medium text-gray-700">Show inactive</span>
               </label>
 
-              <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
-                type="button" 
-                onClick={bulkRecalcNetCosts} 
+              <button
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                type="button"
+                onClick={bulkRecalcNetCosts}
                 disabled={bulkWorking}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
+                <svg className="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
                 {bulkWorking ? 'Working…' : 'Recalc net cost'}
-              </motion.button>
+              </button>
 
-              <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
-                type="button" 
-                onClick={() => bulkSetActive(true)} 
+              <button
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                type="button"
+                onClick={() => bulkSetActive(true)}
                 disabled={bulkWorking}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                Activate
-              </motion.button>
+                <svg className="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Activate all
+              </button>
 
-              <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
-                type="button" 
-                onClick={() => bulkSetActive(false)} 
+              <button
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                type="button"
+                onClick={() => bulkSetActive(false)}
                 disabled={bulkWorking}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                Deactivate
-              </motion.button>
+                <svg className="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Deactivate all
+              </button>
 
-              <motion.button 
-                className="px-5 py-2 bg-white text-primary-700 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition"
-                type="button" 
+              <button
+                className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                type="button"
                 onClick={openCreate}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
               >
-                + Add ingredient
-              </motion.button>
+                <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add ingredient
+              </button>
             </div>
           </div>
-        </div>
-      </motion.div>
 
-      {/* Filters */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Search
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+          {/* Filters */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium uppercase tracking-wide text-gray-500">Search</label>
+              <div className="relative mt-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
                 <input
-                  className="w-full pl-9 pr-9 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                  className="block w-full rounded-lg border-0 bg-white py-3 pl-10 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search ingredients..."
+                  placeholder="Search ingredients (name, code, supplier)…"
                 />
                 {search && (
-                  <button 
-                    type="button" 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3"
                     onClick={() => setSearch('')}
                   >
-                    ×
+                    <span className="sr-only">Clear search</span>
+                    <svg className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                   </button>
                 )}
               </div>
             </div>
 
-            {/* Category Filter */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Category
-              </label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                value={category} 
+              <label className="block text-xs font-medium uppercase tracking-wide text-gray-500">Category</label>
+              <select
+                className="mt-1 block w-full rounded-lg border-0 bg-white py-3 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                value={category}
                 onChange={(e) => setCategory(e.target.value)}
               >
                 <option value="">All categories</option>
                 {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
                 ))}
               </select>
             </div>
 
-            {/* Sort */}
             <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Sort by
-              </label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                value={sortBy} 
+              <label className="block text-xs font-medium uppercase tracking-wide text-gray-500">Sort by</label>
+              <select
+                className="mt-1 block w-full rounded-lg border-0 bg-white py-3 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as any)}
               >
                 <option value="name">Name (A→Z)</option>
@@ -805,370 +722,416 @@ export default function Ingredients() {
               </select>
             </div>
           </div>
-
-          {/* Active filters */}
-          {(search || category) && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
-                {search && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    Search: {search}
-                    <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900">×</button>
-                  </span>
-                )}
-                {category && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    Category: {category}
-                    <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900">×</button>
-                  </span>
-                )}
-                {(search || category) && (
-                  <button 
-                    onClick={() => { setSearch(''); setCategory(''); }}
-                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
         </div>
-      </motion.div>
 
-      {/* Loading/Error */}
-      {loading && (
-        <motion.div variants={itemVariants} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-                <Skeleton className="h-3 w-20 mb-2" />
-                <Skeleton className="h-8 w-24 mb-1" />
-                <Skeleton className="h-3 w-32" />
-              </div>
-            ))}
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <Skeleton className="h-4 w-48 mb-4" />
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 flex-1" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-20" />
+        {/* Loading/Error */}
+        {loading && (
+          <div className="space-y-6">
+            {/* KPI Skeletons */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+                  <Skeleton className="h-4 w-20 rounded" />
+                  <Skeleton className="mt-3 h-8 w-32 rounded-lg" />
+                  <Skeleton className="mt-2 h-3 w-24 rounded" />
                 </div>
               ))}
             </div>
-          </div>
-        </motion.div>
-      )}
 
-      {err && (
-        <motion.div variants={itemVariants} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span className="font-medium">{err}</span>
-          </div>
-        </motion.div>
-      )}
-
-      {/* Body */}
-      {!loading && !err && (
-        <>
-          {/* KPIs */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <StatsCard
-              label="ITEMS"
-              value={stats.items}
-              sublabel="Filtered results"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-            />
-            <StatsCard
-              label="AVG NET UNIT"
-              value={money(stats.avgNet)}
-              sublabel="Average net unit cost"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-            />
-            <StatsCard
-              label="MISSING COST"
-              value={stats.missingCost}
-              sublabel="net_unit_cost = 0"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
-            />
-            <StatsCard
-              label="UNIT WARNINGS"
-              value={stats.warnUnits}
-              sublabel="Possible unit mismatch"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
-            />
-          </motion.div>
-
-          {/* Table */}
-          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-              <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">INGREDIENTS LIST</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click Edit to validate pack + cost.</p>
+            {/* Table Skeleton */}
+            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-32 rounded-lg" />
+                  <Skeleton className="h-8 w-24 rounded-lg" />
+                </div>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-24 rounded" />
+                    <Skeleton className="h-4 flex-1 rounded" />
+                    <Skeleton className="h-4 w-32 rounded" />
+                    <Skeleton className="h-4 w-24 rounded" />
+                  </div>
+                ))}
               </div>
-              <button 
-                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                onClick={load}
-              >
-                Refresh
-              </button>
+            </div>
+          </div>
+        )}
+
+        {err && (
+          <div className="rounded-2xl bg-red-50 p-6 ring-1 ring-inset ring-red-600/20">
+            <div className="flex items-center gap-3">
+              <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-red-800">{err}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Body */}
+        {!loading && !err && (
+          <>
+            {/* KPI Cards */}
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-emerald-50 p-2">
+                    <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">ITEMS</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{stats.items}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Filtered results</p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-blue-50 p-2">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">AVG NET UNIT</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{money(stats.avgNet)}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Average net unit cost</p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-amber-50 p-2">
+                    <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">MISSING COST</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{stats.missingCost}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">net_unit_cost = 0 or empty</p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-purple-50 p-2">
+                    <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">UNIT WARNINGS</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{stats.warnUnits}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Possible unit mismatch</p>
+              </div>
             </div>
 
-            {filtered.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-2xl">
-                  🧂
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {rows.length === 0
-                    ? 'No ingredients yet'
-                    : normalized.length === 0
-                      ? 'No active ingredients'
-                      : 'No ingredients found'}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
-                  {rows.length === 0
-                    ? 'Start your kitchen database by adding your first ingredient.'
-                    : normalized.length === 0
-                      ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them.'
-                      : 'Try adjusting your search or filters.'}
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  {rows.length === 0 ? (
-                    <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition" onClick={openCreate}>
-                      + Add ingredient
-                    </button>
-                  ) : normalized.length === 0 ? (
-                    <>
-                      <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition" onClick={() => setShowInactive(true)}>
-                        Show inactive
-                      </button>
-                      <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" onClick={openCreate}>
-                        + Add ingredient
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition" onClick={() => { setSearch(''); setCategory(''); }}>
-                        Clear filters
-                      </button>
-                      <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" onClick={openCreate}>
-                        + Add ingredient
-                      </button>
-                    </>
-                  )}
+            {/* Table Section */}
+            <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+              <div className="border-b border-gray-200 px-6 py-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                      LIST
+                    </span>
+                    <p className="text-sm text-gray-600">Click Edit to validate pack + cost.</p>
+                  </div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    type="button"
+                    onClick={load}
+                  >
+                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
                 </div>
               </div>
-            ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
-                  <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-700/50">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Unit Cost</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    <AnimatePresence>
+
+              {filtered.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+                    <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                    {rows.length === 0
+                      ? 'No ingredients yet'
+                      : normalized.length === 0
+                        ? 'No active ingredients'
+                        : 'No ingredients found'}
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {rows.length === 0
+                      ? 'Start your kitchen database by adding your first ingredient.'
+                      : normalized.length === 0
+                        ? 'All ingredients are currently inactive. Turn on "Show inactive" to manage them.'
+                        : 'No ingredients match your current search/filters.'}
+                  </p>
+                  <div className="mt-6 flex items-center justify-center gap-3">
+                    {rows.length > 0 && normalized.length === 0 && (
+                      <button
+                        className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+                        onClick={() => setShowInactive(true)}
+                      >
+                        Show inactive
+                      </button>
+                    )}
+                    {(search.trim() || category) && rows.length > 0 && normalized.length > 0 && (
+                      <button
+                        className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+                        onClick={() => {
+                          setSearch('')
+                          setCategory('')
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                    <button
+                      className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                      onClick={openCreate}
+                    >
+                      + Add ingredient
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Code
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Name
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Category
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Pack
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Unit
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Pack Price
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Net Unit Cost
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
                       {filtered.map((r) => (
                         <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
                       ))}
-                    </AnimatePresence>
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </motion.div>
-        </>
-      )}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </>
+        )}
 
-      {/* Modal */}
-      <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
-        <div className="space-y-6">
-          {/* IDENTIFICATION */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">IDENTIFICATION</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CODE</label>
-                <input
-                  className={cls(
-                    "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition",
-                    !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
+        {/* Modal */}
+        <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
+          <div className="space-y-6">
+            {/* IDENTIFICATION */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">IDENTIFICATION</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CODE</label>
+                  <input
+                    className={cls(
+                      "mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6",
+                      !canEditCodes && "bg-gray-50 text-gray-500"
+                    )}
+                    value={fCode}
+                    onChange={(e) => setFCode(e.target.value)}
+                    placeholder="ING-000123 (optional)"
+                    disabled={!canEditCodes}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Must start with ING- if provided</p>
+                  {!canEditCodes && (
+                    <p className="mt-1 text-xs text-amber-600">Code fields are Owner-only.</p>
                   )}
-                  value={fCode}
-                  onChange={(e) => setFCode(e.target.value)}
-                  placeholder="ING-000123"
-                  disabled={!canEditCodes}
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to auto-generate. Must start with ING-</p>
-                {!canEditCodes && <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Code fields are Owner-only.</p>}
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CODE CATEGORY</label>
+                  <input
+                    className={cls(
+                      "mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6",
+                      !canEditCodes && "bg-gray-50 text-gray-500"
+                    )}
+                    value={fCodeCategory}
+                    onChange={(e) => setFCodeCategory(e.target.value)}
+                    placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
+                    disabled={!canEditCodes}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Max 6 chars A–Z/0–9. Suggested: <span className="font-mono">{suggestedCodeCategory}</span>
+                  </p>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CODE CATEGORY</label>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700">NAME</label>
                 <input
-                  className={cls(
-                    "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition",
-                    !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
-                  )}
-                  value={fCodeCategory}
-                  onChange={(e) => setFCodeCategory(e.target.value)}
-                  placeholder={`e.g. ${suggestedCodeCategory}`}
-                  disabled={!canEditCodes}
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional (max 6 chars). If empty, uses Category.</p>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">NAME *</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                  className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
-                  placeholder="e.g. Extra Virgin Olive Oil"
                 />
               </div>
             </div>
-          </div>
 
-          {/* CLASSIFICATION */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">CLASSIFICATION</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CATEGORY</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fCategory}
-                  onChange={(e) => setFCategory(e.target.value)}
-                  placeholder="e.g. Oils & Fats"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">SUPPLIER</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fSupplier}
-                  onChange={(e) => setFSupplier(e.target.value)}
-                  placeholder="e.g. Sysco"
-                />
+            {/* CLASSIFICATION */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">CLASSIFICATION</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CATEGORY</label>
+                  <input
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fCategory}
+                    onChange={(e) => setFCategory(e.target.value)}
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">SUPPLIER</label>
+                  <input
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fSupplier}
+                    onChange={(e) => setFSupplier(e.target.value)}
+                  />
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* PACK */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">PACK</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK SIZE *</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  type="number"
-                  min={1}
-                  step="1"
-                  value={fPackSize}
-                  onChange={(e) => setFPackSize(e.target.value)}
-                />
+            {/* PACK */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">PACK</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">PACK SIZE</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step="1"
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fPackSize}
+                    onChange={(e) => setFPackSize(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Required</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">UNIT</label>
+                  <select
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fPackUnit}
+                    onChange={(e) => setFPackUnit(e.target.value)}
+                  >
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="l">L</option>
+                    <option value="pcs">pcs</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">UNIT *</label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fPackUnit}
-                  onChange={(e) => setFPackUnit(e.target.value)}
+            </div>
+
+            {/* COST */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">COST</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">PACK PRICE</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fPackPrice}
+                    onChange={(e) => setFPackPrice(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Required</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">NET UNIT COST</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fNetUnitCost}
+                    onChange={(e) => setFNetUnitCost(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">If 0 → auto-calculated from pack</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Smart Helpers */}
+            <div className="rounded-xl bg-gray-50 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-600">SMART HELPERS</span>
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                  type="button"
+                  onClick={smartRecalcNetCost}
                 >
-                  <option value="g">g (gram)</option>
-                  <option value="kg">kg (kilogram)</option>
-                  <option value="ml">ml (milliliter)</option>
-                  <option value="l">L (liter)</option>
-                  <option value="pcs">pcs (pieces)</option>
-                </select>
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Recalculate from pack
+                </button>
               </div>
+              <p className="mt-2 text-xs text-gray-500">net = pack_price ÷ pack_size</p>
             </div>
-          </div>
 
-          {/* COST */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">COST</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK PRICE *</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  type="number"
-                  step="0.01"
-                  value={fPackPrice}
-                  onChange={(e) => setFPackPrice(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">NET UNIT COST</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  type="number"
-                  step="0.000001"
-                  value={fNetUnitCost}
-                  onChange={(e) => setFNetUnitCost(e.target.value)}
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">If left 0 → auto-calculated from pack</p>
-              </div>
-            </div>
-          </div>
-
-          {/* Smart Helpers */}
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-            <div className="flex items-center gap-4">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">SMART HELPERS:</span>
+            {/* Actions */}
+            <div className="flex justify-end gap-3 border-t border-gray-200 pt-6">
               <button
-                className="px-3 py-1.5 text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition"
-                onClick={smartRecalcNetCost}
+                className="rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                type="button"
+                onClick={() => setModalOpen(false)}
               >
-                Recalculate net cost from pack
+                Cancel
               </button>
-              <span className="text-xs text-gray-500 dark:text-gray-400">net = pack_price ÷ pack_size</span>
+              <button
+                className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50"
+                type="button"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
+        </Modal>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              onClick={() => setModalOpen(false)}
-            >
-              Cancel
-            </button>
-            <button
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={save}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save'}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
-    </motion.div>
+        <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
+      </div>
+    </div>
   )
 }
