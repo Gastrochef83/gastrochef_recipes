@@ -324,7 +324,7 @@ function RecipesStyles() {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 2rem;
+        margin-bottom: 1.5rem;
         flex-wrap: wrap;
         gap: 1rem;
       }
@@ -332,24 +332,24 @@ function RecipesStyles() {
       .recipes-pro__header-left {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .recipes-pro__header-icon {
-        width: 3.5rem;
-        height: 3.5rem;
-        border-radius: var(--radius-xl);
+        width: 2.5rem;
+        height: 2.5rem;
+        border-radius: var(--radius-lg);
         background: linear-gradient(135deg, var(--primary-500), var(--primary-700));
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 1.5rem;
-        box-shadow: var(--shadow-lg);
+        font-size: 1.25rem;
+        box-shadow: var(--shadow-md);
       }
 
       .recipes-pro__header-title {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 800;
         letter-spacing: -0.02em;
         background: linear-gradient(135deg, var(--primary-600), var(--primary-800));
@@ -359,9 +359,9 @@ function RecipesStyles() {
       }
 
       .recipes-pro__header-subtitle {
-        font-size: 0.875rem;
+        font-size: 0.8rem;
         color: var(--text-secondary);
-        margin-top: 0.25rem;
+        margin-top: 0.125rem;
       }
 
       .recipes-pro__header-actions {
@@ -371,19 +371,20 @@ function RecipesStyles() {
         flex-wrap: wrap;
       }
 
+      /* ===== Stats Cards - مصغرة ===== */
       .recipes-pro__stats {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 1rem;
-        margin-bottom: 2rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        gap: 0.75rem;
+        margin-bottom: 1.5rem;
       }
 
       .stat-card {
         background: var(--bg-primary);
-        border-radius: var(--radius-xl);
+        border-radius: var(--radius-lg);
         border: 1px solid var(--border-color);
-        padding: 1.5rem;
-        box-shadow: var(--shadow-md);
+        padding: 1rem;
+        box-shadow: var(--shadow-sm);
         transition: var(--transition);
         position: relative;
         overflow: hidden;
@@ -395,15 +396,15 @@ function RecipesStyles() {
         top: 0;
         left: 0;
         right: 0;
-        height: 4px;
+        height: 3px;
         background: linear-gradient(90deg, var(--primary-500), var(--primary-600));
         opacity: 0;
         transition: var(--transition);
       }
 
       .stat-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-xl);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-lg);
         border-color: var(--primary-300);
       }
 
@@ -415,11 +416,11 @@ function RecipesStyles() {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 1rem;
+        margin-bottom: 0.5rem;
       }
 
       .stat-card__label {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -427,9 +428,9 @@ function RecipesStyles() {
       }
 
       .stat-card__icon {
-        width: 2.5rem;
-        height: 2.5rem;
-        border-radius: var(--radius-lg);
+        width: 1.75rem;
+        height: 1.75rem;
+        border-radius: var(--radius-md);
         background: var(--primary-50);
         display: flex;
         align-items: center;
@@ -437,16 +438,21 @@ function RecipesStyles() {
         color: var(--primary-600);
       }
 
+      .stat-card__icon svg {
+        width: 1rem;
+        height: 1rem;
+      }
+
       .stat-card__value {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 800;
         color: var(--text-primary);
         line-height: 1.2;
       }
 
       .stat-card__change {
-        font-size: 0.75rem;
-        margin-top: 0.5rem;
+        font-size: 0.65rem;
+        margin-top: 0.25rem;
         display: flex;
         align-items: center;
         gap: 0.25rem;
@@ -461,66 +467,67 @@ function RecipesStyles() {
         color: var(--danger-500);
       }
 
+      /* ===== Toolbar ===== */
       .recipes-pro__toolbar {
         background: var(--bg-primary);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-xl);
         border: 1px solid var(--border-color);
-        padding: 1rem 1.5rem;
-        box-shadow: var(--shadow-md);
-        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1rem;
         display: flex;
         align-items: center;
         justify-content: space-between;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: 0.75rem;
         backdrop-filter: blur(8px);
         background: rgba(255, 255, 255, 0.8);
       }
 
       .recipes-pro__search {
         flex: 1;
-        min-width: 300px;
+        min-width: 250px;
         position: relative;
       }
 
       .recipes-pro__search-icon {
         position: absolute;
-        left: 1rem;
+        left: 0.75rem;
         top: 50%;
         transform: translateY(-50%);
         color: var(--text-tertiary);
-        width: 1.25rem;
-        height: 1.25rem;
+        width: 1rem;
+        height: 1rem;
       }
 
       .recipes-pro__search-input {
         width: 100%;
-        height: 2.75rem;
-        padding: 0 1rem 0 2.75rem;
+        height: 2.25rem;
+        padding: 0 0.75rem 0 2.25rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-color);
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-size: 0.95rem;
+        font-size: 0.85rem;
         transition: var(--transition);
       }
 
       .recipes-pro__search-input:focus {
         outline: none;
         border-color: var(--primary-400);
-        box-shadow: 0 0 0 4px var(--primary-100);
+        box-shadow: 0 0 0 3px var(--primary-100);
       }
 
       .recipes-pro__search-clear {
         position: absolute;
-        right: 1rem;
+        right: 0.75rem;
         top: 50%;
         transform: translateY(-50%);
         background: none;
         border: none;
         color: var(--text-tertiary);
         cursor: pointer;
-        padding: 0.25rem;
+        padding: 0.125rem;
         border-radius: var(--radius-full);
         display: flex;
         align-items: center;
@@ -536,14 +543,15 @@ function RecipesStyles() {
       .recipes-pro__filters-btn {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        height: 2.75rem;
-        padding: 0 1.5rem;
+        gap: 0.375rem;
+        height: 2.25rem;
+        padding: 0 1rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-color);
         background: var(--bg-primary);
         color: var(--text-primary);
         font-weight: 600;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: var(--transition);
         white-space: nowrap;
@@ -564,20 +572,20 @@ function RecipesStyles() {
       .recipes-pro__view-controls {
         display: flex;
         align-items: center;
-        gap: 0.25rem;
+        gap: 0.125rem;
         background: var(--gray-100);
         border-radius: var(--radius-full);
-        padding: 0.25rem;
+        padding: 0.125rem;
         border: 1px solid var(--border-color);
       }
 
       .view-control-btn {
-        padding: 0.5rem 1rem;
+        padding: 0.375rem 0.75rem;
         border-radius: var(--radius-full);
         border: none;
         background: transparent;
         color: var(--text-secondary);
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
         transition: var(--transition);
@@ -593,20 +601,21 @@ function RecipesStyles() {
       .view-control-btn--active {
         background: white;
         color: var(--primary-600);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
       }
 
       .recipes-pro__density-btn {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        height: 2.75rem;
-        padding: 0 1.5rem;
+        gap: 0.375rem;
+        height: 2.25rem;
+        padding: 0 1rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-color);
         background: var(--bg-primary);
         color: var(--text-primary);
         font-weight: 600;
+        font-size: 0.8rem;
         cursor: pointer;
         transition: var(--transition);
         white-space: nowrap;
@@ -620,14 +629,14 @@ function RecipesStyles() {
 
       .recipes-pro__filters {
         background: var(--bg-primary);
-        border-radius: var(--radius-xl);
+        border-radius: var(--radius-lg);
         border: 1px solid var(--border-color);
-        padding: 1rem 1.5rem;
-        box-shadow: var(--shadow-md);
-        margin-bottom: 1.5rem;
+        padding: 0.75rem 1rem;
+        box-shadow: var(--shadow-sm);
+        margin-bottom: 1rem;
         display: flex;
         flex-wrap: wrap;
-        gap: 1rem;
+        gap: 0.75rem;
         align-items: center;
         animation: slideDown 0.2s ease-out;
       }
@@ -646,8 +655,8 @@ function RecipesStyles() {
       .filter-group {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        padding: 0 1rem;
+        gap: 0.375rem;
+        padding: 0 0.75rem;
         border-right: 1px solid var(--border-color);
       }
 
@@ -656,7 +665,7 @@ function RecipesStyles() {
       }
 
       .filter-label {
-        font-size: 0.7rem;
+        font-size: 0.6rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -667,11 +676,11 @@ function RecipesStyles() {
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
-        padding: 0.375rem 0.75rem;
+        padding: 0.25rem 0.5rem;
         border-radius: var(--radius-full);
         background: var(--gray-100);
         border: 1px solid var(--border-color);
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 600;
         color: var(--text-secondary);
         cursor: pointer;
@@ -691,13 +700,13 @@ function RecipesStyles() {
       .recipes-pro__sort {
         display: flex;
         align-items: center;
-        gap: 1rem;
-        padding: 0.5rem 0;
-        margin-bottom: 1rem;
+        gap: 0.75rem;
+        padding: 0.375rem 0;
+        margin-bottom: 0.75rem;
       }
 
       .sort-label {
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -705,18 +714,18 @@ function RecipesStyles() {
       }
 
       .sort-select {
-        padding: 0.5rem 2rem 0.5rem 1rem;
+        padding: 0.375rem 1.5rem 0.375rem 0.75rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-color);
         background: var(--bg-primary);
         color: var(--text-primary);
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
         appearance: none;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
         background-repeat: no-repeat;
-        background-position: right 0.75rem center;
+        background-position: right 0.5rem center;
       }
 
       .sort-select:focus {
@@ -725,9 +734,9 @@ function RecipesStyles() {
       }
 
       .sort-order-btn {
-        padding: 0.5rem;
+        padding: 0.375rem;
         border-radius: var(--radius-full);
-        border: 2px solid var(--border-color);
+        border: 1px solid var(--border-color);
         background: var(--bg-primary);
         color: var(--text-secondary);
         cursor: pointer;
@@ -746,9 +755,9 @@ function RecipesStyles() {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-bottom: 1rem;
+        margin-bottom: 0.75rem;
         color: var(--text-secondary);
-        font-size: 0.875rem;
+        font-size: 0.75rem;
       }
 
       .recipes-pro__results-count {
@@ -758,16 +767,16 @@ function RecipesStyles() {
       .recipes-pro__results-actions {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.375rem;
       }
 
       .bulk-action-btn {
-        padding: 0.375rem 0.75rem;
+        padding: 0.25rem 0.5rem;
         border-radius: var(--radius-full);
         border: 1px solid var(--border-color);
         background: var(--bg-primary);
         color: var(--text-secondary);
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         font-weight: 600;
         cursor: pointer;
         transition: var(--transition);
@@ -790,23 +799,26 @@ function RecipesStyles() {
       }
 
       .recipes-pro__grid--comfortable {
-        grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 0.875rem;
       }
 
       .recipes-pro__grid--dense {
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 0.75rem;
       }
 
       .recipes-pro__grid--compact {
-        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 0.625rem;
       }
 
       .recipe-card {
         background: var(--bg-primary);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-xl);
         border: 1px solid var(--border-color);
         overflow: hidden;
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
         transition: var(--transition);
         position: relative;
         animation: cardAppear 0.3s ease-out;
@@ -824,8 +836,8 @@ function RecipesStyles() {
       }
 
       .recipe-card:hover {
-        transform: translateY(-2px) scale(1.02);
-        box-shadow: var(--shadow-xl);
+        transform: translateY(-1px);
+        box-shadow: var(--shadow-lg);
         border-color: var(--primary-300);
       }
 
@@ -834,7 +846,7 @@ function RecipesStyles() {
         top: 0;
         left: 0;
         bottom: 0;
-        width: 4px;
+        width: 3px;
         background: linear-gradient(180deg, var(--primary-500), var(--primary-600));
         border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
         opacity: 0;
@@ -846,17 +858,17 @@ function RecipesStyles() {
       }
 
       .recipe-card__body {
-        padding: 1.5rem;
+        padding: 1rem;
         display: flex;
         flex-direction: column;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .recipe-card__header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .recipe-card__title-section {
@@ -866,7 +878,7 @@ function RecipesStyles() {
 
       .recipe-card__title {
         margin: 0;
-        font-size: 1.125rem;
+        font-size: 1rem;
         font-weight: 800;
         color: var(--text-primary);
         letter-spacing: -0.02em;
@@ -876,10 +888,10 @@ function RecipesStyles() {
       .recipe-card__category {
         display: flex;
         align-items: center;
-        gap: 0.5rem;
-        margin-top: 0.25rem;
+        gap: 0.375rem;
+        margin-top: 0.125rem;
         color: var(--text-secondary);
-        font-size: 0.75rem;
+        font-size: 0.7rem;
         font-weight: 600;
       }
 
@@ -893,10 +905,10 @@ function RecipesStyles() {
       .badge {
         display: inline-flex;
         align-items: center;
-        gap: 0.25rem;
-        padding: 0.25rem 0.5rem;
+        gap: 0.125rem;
+        padding: 0.2rem 0.4rem;
         border-radius: var(--radius-full);
-        font-size: 0.625rem;
+        font-size: 0.55rem;
         font-weight: 700;
         letter-spacing: 0.03em;
         white-space: nowrap;
@@ -932,21 +944,26 @@ function RecipesStyles() {
         border: 1px solid var(--warning-500);
       }
 
+      .badge svg {
+        width: 8px;
+        height: 8px;
+      }
+
       .recipe-card__meta {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.625rem;
         flex-wrap: wrap;
       }
 
       .meta-item {
         display: flex;
         align-items: center;
-        gap: 0.375rem;
-        padding: 0.25rem 0.75rem;
+        gap: 0.25rem;
+        padding: 0.2rem 0.5rem;
         background: var(--gray-100);
         border-radius: var(--radius-full);
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         font-weight: 600;
         color: var(--text-secondary);
       }
@@ -955,14 +972,20 @@ function RecipesStyles() {
         color: var(--text-tertiary);
       }
 
+      .meta-item__icon svg {
+        width: 12px;
+        height: 12px;
+      }
+
       .recipe-card__description {
         color: var(--text-secondary);
-        font-size: 0.875rem;
-        line-height: 1.5;
+        font-size: 0.75rem;
+        line-height: 1.4;
         display: -webkit-box;
         -webkit-line-clamp: 2;
         -webkit-box-orient: vertical;
         overflow: hidden;
+        margin: 0.125rem 0;
       }
 
       .recipe-card__tags {
@@ -972,8 +995,8 @@ function RecipesStyles() {
       }
 
       .tag {
-        font-size: 0.625rem;
-        padding: 0.125rem 0.5rem;
+        font-size: 0.55rem;
+        padding: 0.1rem 0.375rem;
         background: var(--gray-100);
         border-radius: var(--radius-full);
         color: var(--text-secondary);
@@ -983,14 +1006,14 @@ function RecipesStyles() {
       .recipe-card__metrics {
         display: grid;
         grid-template-columns: repeat(3, 1fr);
-        gap: 0.5rem;
-        margin-top: 0.5rem;
+        gap: 0.375rem;
+        margin-top: 0.25rem;
       }
 
       .metric {
         background: linear-gradient(135deg, var(--gray-50), var(--gray-100));
-        border-radius: var(--radius-lg);
-        padding: 0.75rem;
+        border-radius: var(--radius-md);
+        padding: 0.5rem;
         text-align: center;
         border: 1px solid var(--border-color);
         transition: var(--transition);
@@ -1004,16 +1027,16 @@ function RecipesStyles() {
 
       .metric__label {
         color: var(--text-tertiary);
-        font-size: 0.625rem;
+        font-size: 0.55rem;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         font-weight: 800;
       }
 
       .metric__value {
-        margin-top: 0.25rem;
+        margin-top: 0.125rem;
         color: var(--text-primary);
-        font-size: 0.875rem;
+        font-size: 0.75rem;
         font-weight: 800;
         line-height: 1.2;
       }
@@ -1029,11 +1052,11 @@ function RecipesStyles() {
       .recipe-card__nutrition {
         display: flex;
         align-items: center;
-        gap: 0.75rem;
-        padding: 0.5rem 0;
+        gap: 0.5rem;
+        padding: 0.375rem 0;
         border-top: 1px solid var(--border-color);
         border-bottom: 1px solid var(--border-color);
-        font-size: 0.75rem;
+        font-size: 0.65rem;
       }
 
       .nutrition-item {
@@ -1044,11 +1067,12 @@ function RecipesStyles() {
       .nutrition-value {
         font-weight: 800;
         color: var(--text-primary);
+        font-size: 0.7rem;
       }
 
       .nutrition-label {
         color: var(--text-tertiary);
-        font-size: 0.625rem;
+        font-size: 0.55rem;
         text-transform: uppercase;
         letter-spacing: 0.03em;
       }
@@ -1057,19 +1081,19 @@ function RecipesStyles() {
         display: flex;
         align-items: center;
         justify-content: space-between;
-        margin-top: 0.5rem;
-        gap: 0.5rem;
+        margin-top: 0.25rem;
+        gap: 0.375rem;
         flex-wrap: wrap;
       }
 
       .recipe-card__price {
-        font-size: 1.125rem;
+        font-size: 0.85rem;
         font-weight: 800;
         color: var(--primary-600);
       }
 
       .recipe-card__price small {
-        font-size: 0.75rem;
+        font-size: 0.55rem;
         color: var(--text-tertiary);
         font-weight: 500;
       }
@@ -1081,8 +1105,8 @@ function RecipesStyles() {
       }
 
       .action-btn {
-        width: 2rem;
-        height: 2rem;
+        width: 1.75rem;
+        height: 1.75rem;
         border-radius: var(--radius-md);
         border: 1px solid var(--border-color);
         background: var(--bg-primary);
@@ -1107,16 +1131,21 @@ function RecipesStyles() {
         color: white;
       }
 
+      .action-btn svg {
+        width: 14px;
+        height: 14px;
+      }
+
       .select-btn {
         display: inline-flex;
         align-items: center;
         gap: 0.25rem;
-        padding: 0.375rem 0.75rem;
+        padding: 0.25rem 0.5rem;
         border-radius: var(--radius-md);
         border: 1px dashed var(--border-color);
         background: var(--bg-primary);
         color: var(--text-secondary);
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         font-weight: 600;
         cursor: pointer;
         transition: var(--transition);
@@ -1129,8 +1158,8 @@ function RecipesStyles() {
       }
 
       .select-btn input {
-        width: 1rem;
-        height: 1rem;
+        width: 0.875rem;
+        height: 0.875rem;
         accent-color: var(--primary-500);
         cursor: pointer;
       }
@@ -1143,13 +1172,13 @@ function RecipesStyles() {
 
       .recipe-list-item {
         background: var(--bg-primary);
-        border-radius: var(--radius-xl);
+        border-radius: var(--radius-lg);
         border: 1px solid var(--border-color);
-        padding: 1rem;
+        padding: 0.75rem;
         transition: var(--transition);
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .recipe-list-item:hover {
@@ -1159,15 +1188,15 @@ function RecipesStyles() {
       }
 
       .recipe-list-item__icon {
-        width: 3rem;
-        height: 3rem;
+        width: 2.5rem;
+        height: 2.5rem;
         border-radius: var(--radius-md);
         background: linear-gradient(135deg, var(--primary-500), var(--primary-600));
         display: flex;
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 1.25rem;
+        font-size: 1.125rem;
       }
 
       .recipe-list-item__content {
@@ -1177,30 +1206,31 @@ function RecipesStyles() {
 
       .recipe-list-item__title {
         font-weight: 700;
-        margin-bottom: 0.25rem;
+        margin-bottom: 0.125rem;
         display: flex;
         align-items: center;
-        gap: 0.5rem;
+        gap: 0.375rem;
         flex-wrap: wrap;
+        font-size: 0.85rem;
       }
 
       .recipe-list-item__category {
         color: var(--text-tertiary);
-        font-size: 0.75rem;
+        font-size: 0.65rem;
       }
 
       .recipe-list-item__meta {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
         color: var(--text-secondary);
-        font-size: 0.75rem;
+        font-size: 0.7rem;
       }
 
       .recipe-list-item__stats {
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.75rem;
       }
 
       .recipe-list-item__stat {
@@ -1212,23 +1242,25 @@ function RecipesStyles() {
       .recipe-list-item__price {
         font-weight: 700;
         color: var(--primary-600);
+        font-size: 0.75rem;
       }
 
       .recipes-pro__table {
         width: 100%;
         border-collapse: collapse;
         background: var(--bg-primary);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-xl);
         overflow: hidden;
         border: 1px solid var(--border-color);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
+        font-size: 0.8rem;
       }
 
       .recipes-pro__table th {
         background: var(--gray-100);
-        padding: 1rem;
+        padding: 0.75rem 0.5rem;
         text-align: left;
-        font-size: 0.75rem;
+        font-size: 0.65rem;
         font-weight: 700;
         color: var(--text-tertiary);
         text-transform: uppercase;
@@ -1237,9 +1269,8 @@ function RecipesStyles() {
       }
 
       .recipes-pro__table td {
-        padding: 1rem;
+        padding: 0.75rem 0.5rem;
         border-bottom: 1px solid var(--border-color);
-        font-size: 0.875rem;
         color: var(--text-secondary);
       }
 
@@ -1263,14 +1294,14 @@ function RecipesStyles() {
         justify-content: center;
         min-height: 400px;
         background: var(--bg-primary);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-xl);
         border: 1px solid var(--border-color);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
       }
 
       .loading-spinner {
-        width: 3rem;
-        height: 3rem;
+        width: 2.5rem;
+        height: 2.5rem;
         border: 3px solid var(--border-color);
         border-top-color: var(--primary-500);
         border-radius: 50%;
@@ -1283,22 +1314,16 @@ function RecipesStyles() {
 
       .recipes-pro__error {
         background: var(--danger-50);
-        border: 2px solid var(--danger-500);
-        border-radius: var(--radius-xl);
-        padding: 1rem 1.5rem;
+        border: 1px solid var(--danger-500);
+        border-radius: var(--radius-lg);
+        padding: 0.75rem 1rem;
         color: var(--danger-700);
         font-weight: 600;
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         margin-bottom: 1rem;
-        animation: shake 0.5s ease-out;
-      }
-
-      @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-2px); }
-        20%, 40%, 60%, 80% { transform: translateX(2px); }
+        font-size: 0.85rem;
       }
 
       .recipes-pro__error-close {
@@ -1307,7 +1332,7 @@ function RecipesStyles() {
         border: none;
         color: var(--danger-700);
         cursor: pointer;
-        padding: 0.25rem;
+        padding: 0.125rem;
         border-radius: var(--radius-full);
         display: flex;
         align-items: center;
@@ -1320,21 +1345,22 @@ function RecipesStyles() {
 
       .toast-container {
         position: fixed;
-        bottom: 1.5rem;
-        right: 1.5rem;
+        bottom: 1rem;
+        right: 1rem;
         z-index: 9999;
       }
 
       .toast {
         background: var(--bg-primary);
-        border-radius: var(--radius-xl);
-        padding: 1rem 1.5rem;
-        box-shadow: var(--shadow-xl);
+        border-radius: var(--radius-lg);
+        padding: 0.75rem 1rem;
+        box-shadow: var(--shadow-lg);
         border-left: 4px solid var(--primary-500);
         display: flex;
         align-items: center;
-        gap: 0.75rem;
+        gap: 0.5rem;
         animation: slideIn 0.3s ease-out;
+        font-size: 0.85rem;
       }
 
       @keyframes slideIn {
@@ -1365,7 +1391,7 @@ function RecipesStyles() {
         border: none;
         color: var(--text-tertiary);
         cursor: pointer;
-        padding: 0.25rem;
+        padding: 0.125rem;
         border-radius: var(--radius-full);
         display: flex;
         align-items: center;
@@ -1379,15 +1405,15 @@ function RecipesStyles() {
 
       @media (max-width: 1280px) {
         .recipes-pro__grid--comfortable {
-          grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         }
         
         .recipes-pro__grid--dense {
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
         }
         
         .recipes-pro__grid--compact {
-          grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+          grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
         }
       }
 
@@ -1542,7 +1568,7 @@ function RecipesStyles() {
   )
 }
 
-// ==================== Main Component ====================
+// ==================== باقي الكود (منطق المكون) يبقى كما هو تماماً ====================
 export default function Recipes() {
   const nav = useNavigate()
   const loc = useLocation()
@@ -1722,7 +1748,6 @@ export default function Recipes() {
         }
       }
 
-      // ✅ الأعمدة المؤكدة فقط - تم إزالة allergen_info
       const selectRecipes = `
         id,
         code,
@@ -1769,7 +1794,6 @@ export default function Recipes() {
         CacheManager.set(CACHE_KEYS.RECIPES_CACHE, recipesData)
       }
 
-      // ✅ تم إزالة allergen_info من استعلام ingredients
       const { data: i, error: iErr } = await supabase
         .from('ingredients')
         .select('id,name,pack_unit,net_unit_cost,is_active,category')
@@ -2167,7 +2191,7 @@ export default function Recipes() {
                     <div className="recipe-card__badges">
                       {r.is_featured && (
                         <span className="badge badge--featured">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                           </svg>
                           Featured
@@ -2175,7 +2199,7 @@ export default function Recipes() {
                       )}
                       {r.is_favorite && (
                         <span className="badge badge--favorite">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" strokeWidth="2">
                             <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                           </svg>
                           Favorite
@@ -2183,7 +2207,7 @@ export default function Recipes() {
                       )}
                       {r.is_subrecipe && (
                         <span className="badge badge--subrecipe">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                             <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                           </svg>
@@ -2192,7 +2216,7 @@ export default function Recipes() {
                       )}
                       {r.is_archived && (
                         <span className="badge badge--archived">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <polyline points="21 8 21 21 3 21 3 8" />
                             <rect x="1" y="3" width="22" height="5" rx="2" ry="2" />
                             <line x1="10" y1="12" x2="14" y2="12" />
@@ -2202,7 +2226,7 @@ export default function Recipes() {
                       )}
                       {hasWarning && (
                         <span className="badge badge--warning">
-                          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                             <circle cx="12" cy="12" r="10" />
                             <line x1="12" y1="8" x2="12" y2="12" />
                             <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -2215,25 +2239,25 @@ export default function Recipes() {
 
                   <div className="recipe-card__meta">
                     <div className="meta-item">
-                      <svg className="meta-item__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="meta-item__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="8" r="4" />
                         <path d="M5.37 16c.92-1.52 2.84-2 5.37-2h2.52c2.53 0 4.45.48 5.37 2" />
                       </svg>
-                      <span>{portions} portions</span>
+                      <span>{portions}</span>
                     </div>
                     <div className="meta-item">
-                      <svg className="meta-item__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="meta-item__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                       </svg>
                       <span>{formatTime(totalTime)}</span>
                     </div>
                     <div className="meta-item">
-                      <svg className="meta-item__icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg className="meta-item__icon" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
                         <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
                       </svg>
-                      <span>{r.yield_qty ? `${r.yield_qty} ${r.yield_unit || ''}` : '—'}</span>
+                      <span>{r.yield_qty ? `${r.yield_qty}${r.yield_unit ? ` ${r.yield_unit}` : ''}` : '—'}</span>
                     </div>
                   </div>
 
@@ -2243,7 +2267,7 @@ export default function Recipes() {
 
                   {r.tags && r.tags.length > 0 && (
                     <div className="recipe-card__tags">
-                      {r.tags.slice(0, 5).map(tag => (
+                      {r.tags.slice(0, 3).map(tag => (
                         <span key={tag} className="tag">{tag}</span>
                       ))}
                     </div>
@@ -2251,7 +2275,7 @@ export default function Recipes() {
 
                   <div className="recipe-card__metrics">
                     <div className="metric">
-                      <div className="metric__label">Cost / Portion</div>
+                      <div className="metric__label">Cost</div>
                       <div className="metric__value">
                         {c ? formatCurrency(c.cpp, cur) : '—'}
                       </div>
@@ -2281,13 +2305,13 @@ export default function Recipes() {
                       {r.protein_g && (
                         <div className="nutrition-item">
                           <div className="nutrition-value">{r.protein_g}g</div>
-                          <div className="nutrition-label">Protein</div>
+                          <div className="nutrition-label">Pro</div>
                         </div>
                       )}
                       {r.carbs_g && (
                         <div className="nutrition-item">
                           <div className="nutrition-value">{r.carbs_g}g</div>
-                          <div className="nutrition-label">Carbs</div>
+                          <div className="nutrition-label">Car</div>
                         </div>
                       )}
                       {r.fat_g && (
@@ -2301,13 +2325,7 @@ export default function Recipes() {
 
                   <div className="recipe-card__footer">
                     <div className="recipe-card__price">
-                      {r.selling_price ? formatCurrency(r.selling_price, cur) : 'Price not set'}
-                      {c?.profit && (
-                        <small>
-                          {' '}
-                          (Profit: {formatCurrency(c.profit, cur)})
-                        </small>
-                      )}
+                      {r.selling_price ? formatCurrency(r.selling_price, cur) : '—'}
                     </div>
                     <div className="recipe-card__actions">
                       <button
@@ -2315,7 +2333,7 @@ export default function Recipes() {
                         onClick={() => toggleFavorite(r)}
                         title={r.is_favorite ? 'Remove from favorites' : 'Add to favorites'}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill={r.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill={r.is_favorite ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth="2">
                           <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
                         </svg>
                       </button>
@@ -2324,7 +2342,7 @@ export default function Recipes() {
                         onClick={() => toggleFeatured(r)}
                         title={r.is_featured ? 'Unfeature' : 'Feature'}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                         </svg>
                       </button>
@@ -2333,7 +2351,7 @@ export default function Recipes() {
                         onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}
                         title="Edit"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                         </svg>
                       </button>
@@ -2342,7 +2360,7 @@ export default function Recipes() {
                         onClick={() => toggleArchive(r)}
                         title={r.is_archived ? 'Restore' : 'Archive'}
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="21 8 21 21 3 21 3 8" />
                           <rect x="1" y="3" width="22" height="5" rx="2" ry="2" />
                           <line x1="10" y1="12" x2="14" y2="12" />
@@ -2353,7 +2371,7 @@ export default function Recipes() {
                         onClick={() => deleteOneRecipe(r.id)}
                         title="Delete"
                       >
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <polyline points="3 6 5 6 21 6" />
                           <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
                         </svg>
@@ -2364,7 +2382,7 @@ export default function Recipes() {
                           checked={!!selected[r.id]}
                           onChange={() => toggleSelect(r.id)}
                         />
-                        <span>Select</span>
+                        <span>Sel</span>
                       </label>
                     </div>
                   </div>
@@ -2407,50 +2425,32 @@ export default function Recipes() {
                   <div className="recipe-list-item__title">
                     <span>{r.name}</span>
                     <span className="recipe-list-item__category">{r.category}</span>
-                    {r.is_featured && <span className="badge badge--featured">Featured</span>}
-                    {r.is_favorite && <span className="badge badge--favorite">Favorite</span>}
-                    {r.is_archived && <span className="badge badge--archived">Archived</span>}
                   </div>
                   
                   <div className="recipe-list-item__meta">
                     <span className="recipe-list-item__stat">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="8" r="4" />
                         <path d="M5.37 16c.92-1.52 2.84-2 5.37-2h2.52c2.53 0 4.45.48 5.37 2" />
                       </svg>
-                      {r.portions} portions
+                      {r.portions}
                     </span>
                     <span className="recipe-list-item__stat">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <polyline points="12 6 12 12 16 14" />
                       </svg>
                       {formatTime(totalTime)}
                     </span>
-                    <span className="recipe-list-item__stat">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
-                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
-                      </svg>
-                      {r.yield_qty ? `${r.yield_qty} ${r.yield_unit || ''}` : '—'}
-                    </span>
-                    <span className="recipe-list-item__stat">
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <circle cx="12" cy="12" r="10" />
-                        <line x1="12" y1="6" x2="12" y2="12" />
-                        <line x1="12" y1="16" x2="12.01" y2="16" />
-                      </svg>
-                      {c ? formatCurrency(c.cpp, cur) : '—'} / portion
-                    </span>
                     <span className="recipe-list-item__price">
-                      {r.selling_price ? formatCurrency(r.selling_price, cur) : 'No price'}
+                      {c ? formatCurrency(c.cpp, cur) : '—'}
                     </span>
                   </div>
                 </div>
                 
                 <div className="recipe-card__actions">
                   <button className="action-btn" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                     </svg>
                   </button>
@@ -2474,25 +2474,21 @@ export default function Recipes() {
     <table className="recipes-pro__table">
       <thead>
         <tr>
-          <th>
+          <th style={{ width: 30 }}>
             <input
               type="checkbox"
               checked={selectedIds.length === sortedRecipes.length && sortedRecipes.length > 0}
               onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
-              style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary-500)' }}
             />
           </th>
           <th>Name</th>
           <th>Category</th>
-          <th>Cuisine</th>
           <th>Portions</th>
           <th>Time</th>
-          <th>Cost/Portion</th>
-          <th>Selling Price</th>
+          <th>Cost</th>
+          <th>Price</th>
           <th>FC%</th>
-          <th>Profit</th>
-          <th>Status</th>
-          <th>Actions</th>
+          <th style={{ width: 60 }}></th>
         </tr>
       </thead>
       <tbody>
@@ -2508,31 +2504,19 @@ export default function Recipes() {
                   type="checkbox"
                   checked={!!selected[r.id]}
                   onChange={() => toggleSelect(r.id)}
-                  style={{ width: '1rem', height: '1rem', accentColor: 'var(--primary-500)' }}
                 />
               </td>
-              <td>
-                <strong>{r.name}</strong>
-                {r.is_featured && <span className="badge badge--featured">★</span>}
-              </td>
+              <td><strong>{r.name}</strong></td>
               <td>{r.category || '—'}</td>
-              <td>{r.cuisine || '—'}</td>
               <td>{r.portions}</td>
               <td>{formatTime(totalTime)}</td>
               <td>{c ? formatCurrency(c.cpp, cur) : '—'}</td>
               <td>{r.selling_price ? formatCurrency(r.selling_price, cur) : '—'}</td>
-              <td style={{ color: c?.fcPct && c.fcPct > 30 ? 'var(--danger-500)' : 'var(--success-500)' }}>
-                {c?.fcPct ? `${c.fcPct.toFixed(1)}%` : '—'}
-              </td>
-              <td>{c ? formatCurrency(c.profit, cur) : '—'}</td>
-              <td>
-                {r.is_archived && <span className="badge badge--archived">Archived</span>}
-                {!r.is_archived && <span className="badge badge--success">Active</span>}
-              </td>
+              <td>{c?.fcPct ? `${c.fcPct.toFixed(1)}%` : '—'}</td>
               <td>
                 <div className="table-actions">
                   <button className="action-btn" onClick={() => nav(`/recipe?id=${encodeURIComponent(r.id)}`)}>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
                     </svg>
                   </button>
@@ -2565,16 +2549,16 @@ export default function Recipes() {
             </div>
 
             <div className="recipes-pro__header-actions">
-              <Button onClick={createNewRecipe}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+              <Button size="small" onClick={createNewRecipe}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.25rem' }}>
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
-                New Recipe
+                New
               </Button>
 
-              <Button variant="secondary" onClick={() => loadAll(true)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
+              <Button size="small" variant="secondary" onClick={() => loadAll(true)}>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.25rem' }}>
                   <path d="M23 4v6h-6" />
                   <path d="M1 20v-6h6" />
                   <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -2582,27 +2566,8 @@ export default function Recipes() {
                 Sync
               </Button>
 
-              <Button variant="secondary" onClick={() => setShowArchived(!showArchived)}>
-                {showArchived ? (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="9" y1="9" x2="15" y2="15" />
-                      <line x1="15" y1="9" x2="9" y2="15" />
-                    </svg>
-                    Hide Archived
-                  </>
-                ) : (
-                  <>
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ marginRight: '0.5rem' }}>
-                      <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-                      <line x1="3" y1="9" x2="21" y2="9" />
-                      <line x1="3" y1="15" x2="21" y2="15" />
-                      <line x1="9" y1="21" x2="9" y2="9" />
-                    </svg>
-                    Show Archived
-                  </>
-                )}
+              <Button size="small" variant="secondary" onClick={() => setShowArchived(!showArchived)}>
+                {showArchived ? 'Hide' : 'Show'}
               </Button>
             </div>
           </div>
@@ -2612,7 +2577,7 @@ export default function Recipes() {
               <div className="stat-card__header">
                 <span className="stat-card__label">Total Recipes</span>
                 <div className="stat-card__icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M4 7h16M4 12h16M4 17h10" />
                   </svg>
                 </div>
@@ -2627,14 +2592,14 @@ export default function Recipes() {
               <div className="stat-card__header">
                 <span className="stat-card__label">Featured</span>
                 <div className="stat-card__icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
                   </svg>
                 </div>
               </div>
               <div className="stat-card__value">{stats.featured}</div>
               <div className="stat-card__change">
-                <span>{stats.favorites} favorites</span>
+                <span>{stats.favorites} fav</span>
               </div>
             </div>
 
@@ -2642,7 +2607,7 @@ export default function Recipes() {
               <div className="stat-card__header">
                 <span className="stat-card__label">Avg Cost</span>
                 <div className="stat-card__icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <circle cx="12" cy="12" r="10" />
                     <line x1="12" y1="6" x2="12" y2="12" />
                     <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -2661,7 +2626,7 @@ export default function Recipes() {
               <div className="stat-card__header">
                 <span className="stat-card__label">Avg Margin</span>
                 <div className="stat-card__icon">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="12" y1="20" x2="12" y2="10" />
                     <line x1="18" y1="20" x2="18" y2="4" />
                     <line x1="6" y1="20" x2="6" y2="16" />
@@ -2672,14 +2637,14 @@ export default function Recipes() {
                 {formatPercentage(stats.avgMargin)}
               </div>
               <div className="stat-card__change">
-                <span className="stat-card__change--negative">↓ {stats.archived} archived</span>
+                <span className="stat-card__change--negative">↓ {stats.archived}</span>
               </div>
             </div>
           </div>
 
           <div className="recipes-pro__toolbar">
             <div className="recipes-pro__search">
-              <svg className="recipes-pro__search-icon" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg className="recipes-pro__search-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="11" cy="11" r="8" />
                 <line x1="21" y1="21" x2="16.65" y2="16.65" />
               </svg>
@@ -2687,14 +2652,14 @@ export default function Recipes() {
                 className="recipes-pro__search-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search by name, category, cuisine, tags..."
+                placeholder="Search..."
               />
               {q && (
                 <button
                   className="recipes-pro__search-clear"
                   onClick={() => setQ('')}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -2706,7 +2671,7 @@ export default function Recipes() {
               className={`recipes-pro__filters-btn ${showFilters ? 'recipes-pro__filters-btn--active' : ''}`}
               onClick={() => setShowFilters(!showFilters)}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <polygon points="22 3 2 3 10 13 10 21 14 18 14 13 22 3" />
               </svg>
               Filters
@@ -2717,7 +2682,7 @@ export default function Recipes() {
                 className={`view-control-btn ${viewMode === 'grid' ? 'view-control-btn--active' : ''}`}
                 onClick={() => setViewMode('grid')}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="7" height="7" />
                   <rect x="14" y="3" width="7" height="7" />
                   <rect x="3" y="14" width="7" height="7" />
@@ -2729,7 +2694,7 @@ export default function Recipes() {
                 className={`view-control-btn ${viewMode === 'list' ? 'view-control-btn--active' : ''}`}
                 onClick={() => setViewMode('list')}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="8" y1="6" x2="21" y2="6" />
                   <line x1="8" y1="12" x2="21" y2="12" />
                   <line x1="8" y1="18" x2="21" y2="18" />
@@ -2743,7 +2708,7 @@ export default function Recipes() {
                 className={`view-control-btn ${viewMode === 'table' ? 'view-control-btn--active' : ''}`}
                 onClick={() => setViewMode('table')}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                   <line x1="3" y1="9" x2="21" y2="9" />
                   <line x1="3" y1="15" x2="21" y2="15" />
@@ -2760,13 +2725,11 @@ export default function Recipes() {
                 setDensity(next)
               }}
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <rect x="3" y="3" width="18" height="18" rx="2" />
                 <line x1="9" y1="3" x2="9" y2="21" />
               </svg>
-              {density === 'comfortable' && 'Comfort'}
-              {density === 'dense' && 'Dense'}
-              {density === 'compact' && 'Compact'}
+              {density === 'comfortable' ? 'Comfort' : density === 'dense' ? 'Dense' : 'Compact'}
             </button>
           </div>
 
@@ -2780,7 +2743,6 @@ export default function Recipes() {
               <div className="filter-group">
                 <span className="filter-label">Category</span>
                 <button className="filter-chip filter-chip--active">All</button>
-                <button className="filter-chip">Appetizer</button>
                 <button className="filter-chip">Main</button>
                 <button className="filter-chip">Dessert</button>
               </div>
@@ -2791,14 +2753,6 @@ export default function Recipes() {
                 <button className="filter-chip">Medium</button>
                 <button className="filter-chip">Hard</button>
               </div>
-              
-              <div className="filter-group">
-                <span className="filter-label">Status</span>
-                <button className="filter-chip filter-chip--active">All</button>
-                <button className="filter-chip">Active</button>
-                <button className="filter-chip">Featured</button>
-                <button className="filter-chip">Favorite</button>
-              </div>
 
               <Button variant="ghost" size="small" onClick={() => setFilters({
                 categories: [],
@@ -2808,7 +2762,7 @@ export default function Recipes() {
                 isFavorite: null,
                 isSubrecipe: null
               })}>
-                Clear all
+                Clear
               </Button>
             </motion.div>
           )}
@@ -2824,30 +2778,18 @@ export default function Recipes() {
               <option value="category">Category</option>
               <option value="price">Price</option>
               <option value="cost">Cost</option>
-              <option value="margin">Margin</option>
-              <option value="date">Date</option>
             </select>
             <button
               className="sort-order-btn"
               onClick={() => setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc')}
             >
-              {sortOrder === 'asc' ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="19" x2="12" y2="5" />
-                  <polyline points="5 12 12 5 19 12" />
-                </svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <polyline points="19 12 12 19 5 12" />
-                </svg>
-              )}
+              {sortOrder === 'asc' ? '↑' : '↓'}
             </button>
           </div>
 
           <div className="recipes-pro__results-info">
             <span className="recipes-pro__results-count">
-              Showing {sortedRecipes.length} of {recipes.length} recipes
+              {sortedRecipes.length} of {recipes.length}
             </span>
             {selectedIds.length > 0 && (
               <div className="recipes-pro__results-actions">
@@ -2855,21 +2797,20 @@ export default function Recipes() {
                 <button className="bulk-action-btn" onClick={bulkArchive}>Archive</button>
                 <button className="bulk-action-btn bulk-action-btn--danger" onClick={bulkDelete}>Delete</button>
                 <button className="bulk-action-btn" onClick={clearSelection}>Clear</button>
-                <button className="bulk-action-btn" onClick={selectAll}>Select all</button>
               </div>
             )}
           </div>
 
           {err && (
             <div className="recipes-pro__error">
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
               <span>{err}</span>
               <button className="recipes-pro__error-close" onClick={() => setErr(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -2889,21 +2830,21 @@ export default function Recipes() {
                   : showArchivedEmptyHint
                     ? 'Only archived recipes found'
                     : hasSearch
-                      ? 'No recipes match your search'
+                      ? 'No matches'
                       : 'No recipes to show'
               }
               description={
                 !hasAnyRecipes
-                  ? 'Create your first recipe to start costing and kitchen operations.'
+                  ? 'Create your first recipe.'
                   : showArchivedEmptyHint
-                    ? 'All recipes are archived right now. You can show them or create a new one.'
+                    ? 'Show archived or create new.'
                     : hasSearch
-                      ? 'Try a different search term or clear the search.'
-                      : 'Create a new recipe to get started.'
+                      ? 'Try another search.'
+                      : 'Create a new recipe.'
               }
               primaryAction={{
                 label: !hasAnyRecipes
-                  ? 'Create first recipe'
+                  ? 'Create first'
                   : showArchivedEmptyHint
                     ? 'Show archived'
                     : hasSearch
@@ -2926,7 +2867,7 @@ export default function Recipes() {
                 },
               }}
               secondaryAction={{
-                label: !hasAnyRecipes ? 'Add ingredient' : 'Browse ingredients',
+                label: !hasAnyRecipes ? 'Add ingredient' : 'Browse',
                 onClick: !hasAnyRecipes ? () => nav('/ingredients') : () => nav('/ingredients'),
               }}
               icon="🍳"
@@ -2951,30 +2892,13 @@ export default function Recipes() {
           >
             <div className={`toast toast--${toast.type}`}>
               <div className="toast-icon">
-                {toast.type === 'success' && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-                    <polyline points="22 4 12 14.01 9 11.01" />
-                  </svg>
-                )}
-                {toast.type === 'error' && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                )}
-                {toast.type === 'info' && (
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <circle cx="12" cy="12" r="10" />
-                    <line x1="12" y1="16" x2="12" y2="12" />
-                    <line x1="12" y1="8" x2="12.01" y2="8" />
-                  </svg>
-                )}
+                {toast.type === 'success' && '✓'}
+                {toast.type === 'error' && '✗'}
+                {toast.type === 'info' && 'ℹ'}
               </div>
               <div className="toast-message">{toast.message}</div>
               <button className="toast-close" onClick={() => setToast(null)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
