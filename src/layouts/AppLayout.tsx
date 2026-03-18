@@ -54,99 +54,32 @@ function loadGlobalDensity(): 'comfort' | 'cozy' | 'compact' {
 function AppLayoutStyles() {
   return (
     <style>{`
-      /* ===== CSS Variables ===== */
+      /* ===== CSS Variables - باستخدام المتغيرات الأصلية ===== */
       .gc-root {
-        --primary-50: #f0f9ff;
-        --primary-100: #e0f2fe;
-        --primary-200: #bae6fd;
-        --primary-300: #7dd3fc;
-        --primary-400: #38bdf8;
-        --primary-500: #0ea5e9;
-        --primary-600: #0284c7;
-        --primary-700: #0369a1;
-        --primary-800: #075985;
-        --primary-900: #0c4a6e;
-        
-        --secondary-50: #fef3c7;
-        --secondary-500: #f59e0b;
-        --secondary-700: #b45309;
-        
-        --success-50: #f0fdf4;
-        --success-500: #22c55e;
-        --success-700: #15803d;
-        
-        --danger-50: #fef2f2;
-        --danger-500: #ef4444;
-        --danger-700: #b91c1c;
-        
-        --warning-50: #fffbeb;
-        --warning-500: #f59e0b;
-        --warning-700: #b45309;
-        
-        --gray-50: #f9fafb;
-        --gray-100: #f3f4f6;
-        --gray-200: #e5e7eb;
-        --gray-300: #d1d5db;
-        --gray-400: #9ca3af;
-        --gray-500: #6b7280;
-        --gray-600: #4b5563;
-        --gray-700: #374151;
-        --gray-800: #1f2937;
-        --gray-900: #111827;
-        
-        --bg-primary: #ffffff;
-        --bg-secondary: var(--gray-50);
-        --bg-sidebar: #ffffff;
-        --text-primary: var(--gray-900);
-        --text-secondary: var(--gray-600);
-        --text-tertiary: var(--gray-400);
-        --border-color: var(--gray-200);
-        
-        --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-        --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-        --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-        --shadow-xl: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
-        
-        --radius-sm: 0.375rem;
-        --radius-md: 0.5rem;
-        --radius-lg: 0.75rem;
-        --radius-xl: 1rem;
-        --radius-2xl: 1.5rem;
-        --radius-full: 9999px;
-        
-        --transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-        --sidebar-width: 280px;
-        --topbar-height: 64px;
+        --gc-soft: #7A857F;
+        --gc-muted: #5F6B66;
+        --gc-text: #1F2326;
+        --gc-bg: #F5F7FA;
+        --gc-card-bg: #FFFFFF;
+        --gc-border: rgba(11,18,32,.08);
+        --gc-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.05);
       }
 
       @media (prefers-color-scheme: dark) {
         .gc-root {
-          --bg-primary: var(--gray-800);
-          --bg-secondary: var(--gray-900);
-          --bg-sidebar: var(--gray-800);
-          --text-primary: var(--gray-100);
-          --text-secondary: var(--gray-300);
-          --text-tertiary: var(--gray-500);
-          --border-color: var(--gray-700);
+          --gc-soft: #9AA8B9;
+          --gc-muted: #7F8C8D;
+          --gc-text: #F1F5F9;
+          --gc-bg: #1E293B;
+          --gc-card-bg: #334155;
+          --gc-border: #475569;
         }
-      }
-
-      .gc-kitchen {
-        --mode-primary: var(--secondary-500);
-        --mode-primary-light: var(--secondary-50);
-        --mode-gradient: linear-gradient(135deg, var(--secondary-500), var(--secondary-700));
-      }
-
-      .gc-mgmt {
-        --mode-primary: var(--primary-500);
-        --mode-primary-light: var(--primary-50);
-        --mode-gradient: linear-gradient(135deg, var(--primary-500), var(--primary-700));
       }
 
       .gc-root {
         min-height: 100vh;
-        background: var(--bg-secondary);
-        color: var(--text-primary);
+        background: var(--gc-bg);
+        color: var(--gc-text);
         font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
       }
 
@@ -155,18 +88,19 @@ function AppLayoutStyles() {
         min-height: 100vh;
       }
 
+      /* ===== Sidebar ===== */
       .gc-side {
-        width: var(--sidebar-width);
-        background: var(--bg-sidebar);
-        border-right: 1px solid var(--border-color);
-        box-shadow: var(--shadow-lg);
+        width: 280px;
+        background: var(--gc-card-bg);
+        border-right: 1px solid var(--gc-border);
+        box-shadow: var(--gc-shadow);
         position: fixed;
         top: 0;
         left: 0;
         bottom: 0;
         overflow-y: auto;
         z-index: 50;
-        transition: var(--transition);
+        transition: transform 0.3s ease;
       }
 
       .gc-side-card {
@@ -186,13 +120,12 @@ function AppLayoutStyles() {
       .gc-brand-mark {
         width: 2.5rem;
         height: 2.5rem;
-        border-radius: var(--radius-lg);
-        background: var(--mode-gradient);
+        border-radius: 0.75rem;
+        background: linear-gradient(135deg, #748d3f, #97ab62);
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        box-shadow: var(--shadow-md);
       }
 
       .gc-brand-mark img {
@@ -205,18 +138,16 @@ function AppLayoutStyles() {
         font-size: 1.25rem;
         font-weight: 800;
         letter-spacing: -0.02em;
-        color: var(--text-primary);
+        color: var(--gc-text);
       }
 
       .gc-brand-accent {
-        background: var(--mode-gradient);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
+        color: #748d3f;
       }
 
       .gc-brand-sub {
         font-size: 0.75rem;
-        color: var(--text-secondary);
+        color: var(--gc-soft);
         margin-top: 0.125rem;
       }
 
@@ -231,7 +162,7 @@ function AppLayoutStyles() {
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
-        color: var(--text-tertiary);
+        color: var(--gc-soft);
         padding: 0 0.5rem;
       }
 
@@ -239,39 +170,34 @@ function AppLayoutStyles() {
         display: flex;
         gap: 0.25rem;
         padding: 0.25rem;
-        background: var(--gray-100);
-        border-radius: var(--radius-full);
-        border: 1px solid var(--border-color);
+        background: var(--gc-bg);
+        border-radius: 9999px;
+        border: 1px solid var(--gc-border);
       }
 
       .gc-mode-seg {
         flex: 1;
         padding: 0.5rem 0.75rem;
-        border-radius: var(--radius-full);
+        border-radius: 9999px;
         border: none;
         background: transparent;
-        color: var(--text-secondary);
+        color: var(--gc-soft);
         font-size: 0.875rem;
         font-weight: 600;
         cursor: pointer;
-        transition: var(--transition);
+        transition: all 0.2s ease;
         white-space: nowrap;
-      }
-
-      .gc-mode-seg:hover {
-        color: var(--mode-primary);
-        background: rgba(255, 255, 255, 0.8);
       }
 
       .gc-mode-seg.is-active {
         background: white;
-        color: var(--mode-primary);
-        box-shadow: var(--shadow-md);
+        color: #1F2326;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
       }
 
       .gc-hint {
         font-size: 0.75rem;
-        color: var(--text-secondary);
+        color: var(--gc-soft);
         padding: 0 0.5rem;
         line-height: 1.5;
       }
@@ -287,51 +213,32 @@ function AppLayoutStyles() {
         align-items: center;
         gap: 0.75rem;
         padding: 0.625rem 1rem;
-        border-radius: var(--radius-lg);
-        color: var(--text-secondary);
+        border-radius: 0.75rem;
+        color: var(--gc-soft);
         font-weight: 600;
         text-decoration: none;
-        transition: var(--transition);
-        position: relative;
-        overflow: hidden;
-      }
-
-      .gc-nav-item::before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        width: 3px;
-        background: var(--mode-gradient);
-        border-radius: 0 var(--radius-full) var(--radius-full) 0;
-        transform: translateX(-100%);
-        transition: var(--transition);
+        transition: all 0.2s ease;
       }
 
       .gc-nav-item:hover {
-        background: var(--gray-100);
-        color: var(--mode-primary);
+        background: var(--gc-bg);
+        color: #748d3f;
         transform: translateX(4px);
       }
 
       .gc-nav-item.is-active {
-        background: var(--mode-primary-light);
-        color: var(--mode-primary);
+        background: rgba(116, 141, 63, 0.1);
+        color: #748d3f;
         font-weight: 700;
-      }
-
-      .gc-nav-item.is-active::before {
-        transform: translateX(0);
       }
 
       .gc-tip {
         font-size: 0.75rem;
         padding: 0.75rem 1rem;
-        background: var(--gray-100);
-        border-radius: var(--radius-lg);
-        color: var(--text-secondary);
-        border-left: 3px solid var(--mode-primary);
+        background: var(--gc-bg);
+        border-radius: 0.75rem;
+        color: var(--gc-soft);
+        border-left: 3px solid #748d3f;
         line-height: 1.5;
       }
 
@@ -341,50 +248,44 @@ function AppLayoutStyles() {
         justify-content: center;
         gap: 0.5rem;
         padding: 0.625rem 1rem;
-        border-radius: var(--radius-lg);
+        border-radius: 0.75rem;
         font-weight: 600;
         font-size: 0.875rem;
         cursor: pointer;
-        transition: var(--transition);
+        transition: all 0.2s ease;
         border: none;
         width: 100%;
       }
 
       .gc-btn-danger {
-        background: var(--danger-500);
+        background: #dc2626;
         color: white;
       }
 
       .gc-btn-danger:hover:not(:disabled) {
-        background: #dc2626;
+        background: #b91c1c;
         transform: translateY(-1px);
-        box-shadow: var(--shadow-lg);
+        box-shadow: 0 4px 6px -2px rgba(220, 38, 38, 0.3);
       }
 
       .gc-main {
         flex: 1;
-        margin-left: var(--sidebar-width);
+        margin-left: 280px;
         min-height: 100vh;
-        background: var(--bg-secondary);
+        background: var(--gc-bg);
       }
 
       .gc-topbar {
         position: sticky;
         top: 0;
         z-index: 40;
-        background: var(--bg-primary);
-        border-bottom: 1px solid var(--border-color);
-        box-shadow: var(--shadow-sm);
-        backdrop-filter: blur(8px);
-        background: rgba(255, 255, 255, 0.8);
-      }
-
-      .gc-dark .gc-topbar {
-        background: rgba(31, 41, 55, 0.8);
+        background: var(--gc-card-bg);
+        border-bottom: 1px solid var(--gc-border);
+        box-shadow: var(--gc-shadow);
       }
 
       .gc-topbar-pill {
-        height: var(--topbar-height);
+        height: 64px;
         padding: 0 1.5rem;
         display: grid;
         grid-template-columns: auto 1fr auto;
@@ -401,39 +302,34 @@ function AppLayoutStyles() {
       .gc-topbar-logo {
         height: 2rem;
         width: auto;
-        display: none;
-      }
-
-      .gc-topbar-logo--mark {
-        display: block;
       }
 
       .gc-topbar-kitchen {
         font-size: 0.875rem;
         font-weight: 600;
-        color: var(--text-secondary);
+        color: var(--gc-soft);
         padding: 0.25rem 0.75rem;
-        background: var(--gray-100);
-        border-radius: var(--radius-full);
-        border: 1px solid var(--border-color);
+        background: var(--gc-bg);
+        border-radius: 9999px;
+        border: 1px solid var(--gc-border);
       }
 
       .gc-live-dot {
         width: 0.5rem;
         height: 0.5rem;
-        border-radius: var(--radius-full);
-        background: var(--success-500);
+        border-radius: 9999px;
+        background: #22c55e;
         box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.2);
         animation: pulse 2s infinite;
       }
 
       .gc-live-dot.is-error {
-        background: var(--danger-500);
+        background: #ef4444;
         box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
       }
 
       .gc-live-dot.is-saving {
-        background: var(--warning-500);
+        background: #f59e0b;
         animation: pulse 1s infinite;
       }
 
@@ -459,29 +355,29 @@ function AppLayoutStyles() {
         align-items: center;
         gap: 0.25rem;
         padding: 0.25rem 0.75rem;
-        border-radius: var(--radius-full);
-        background: var(--gray-100);
-        border: 1px solid var(--border-color);
+        border-radius: 9999px;
+        background: var(--gc-bg);
+        border: 1px solid var(--gc-border);
         font-size: 0.75rem;
-        color: var(--text-secondary);
+        color: var(--gc-soft);
       }
 
       .gc-autosave.is-saving {
-        background: var(--warning-50);
-        color: var(--warning-500);
-        border-color: var(--warning-500);
+        background: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+        border-color: #f59e0b;
       }
 
       .gc-autosave.is-saved {
-        background: var(--success-50);
-        color: var(--success-500);
-        border-color: var(--success-500);
+        background: rgba(34, 197, 94, 0.1);
+        color: #22c55e;
+        border-color: #22c55e;
       }
 
       .gc-autosave.is-error {
-        background: var(--danger-50);
-        color: var(--danger-500);
-        border-color: var(--danger-500);
+        background: rgba(239, 68, 68, 0.1);
+        color: #ef4444;
+        border-color: #ef4444;
       }
 
       .gc-autosave-icon {
@@ -491,23 +387,23 @@ function AppLayoutStyles() {
 
       .gc-kbd-btn {
         padding: 0.375rem 0.75rem;
-        border-radius: var(--radius-md);
-        border: 1px solid var(--border-color);
-        background: var(--gray-100);
-        color: var(--text-secondary);
+        border-radius: 0.5rem;
+        border: 1px solid var(--gc-border);
+        background: var(--gc-bg);
+        color: var(--gc-soft);
         font-size: 0.75rem;
         font-weight: 600;
         cursor: pointer;
-        transition: var(--transition);
+        transition: all 0.2s ease;
         display: flex;
         align-items: center;
         justify-content: center;
       }
 
       .gc-kbd-btn:hover {
-        background: var(--gray-200);
-        color: var(--text-primary);
-        border-color: var(--mode-primary);
+        background: var(--gc-card-bg);
+        color: var(--gc-text);
+        border-color: #748d3f;
       }
 
       .gc-user-menu {
@@ -527,30 +423,29 @@ function AppLayoutStyles() {
         align-items: center;
         gap: 0.5rem;
         padding: 0.25rem 0.5rem 0.25rem 0.25rem;
-        border-radius: var(--radius-full);
-        border: 1px solid var(--border-color);
-        background: var(--gray-100);
+        border-radius: 9999px;
+        border: 1px solid var(--gc-border);
+        background: var(--gc-bg);
         cursor: pointer;
-        transition: var(--transition);
+        transition: all 0.2s ease;
       }
 
       .gc-user-trigger-btn:hover {
-        background: var(--gray-200);
-        border-color: var(--mode-primary);
+        background: var(--gc-card-bg);
+        border-color: #748d3f;
       }
 
       .gc-avatar {
         width: 2rem;
         height: 2rem;
-        border-radius: var(--radius-full);
-        background: var(--mode-gradient);
+        border-radius: 9999px;
+        background: linear-gradient(135deg, #748d3f, #97ab62);
         color: white;
         display: flex;
         align-items: center;
         justify-content: center;
         font-weight: 700;
         font-size: 0.875rem;
-        box-shadow: var(--shadow-md);
       }
 
       .gc-avatar--lg {
@@ -560,7 +455,7 @@ function AppLayoutStyles() {
       }
 
       .gc-user-mini {
-        color: var(--text-secondary);
+        color: var(--gc-soft);
         font-size: 0.75rem;
       }
 
@@ -569,10 +464,10 @@ function AppLayoutStyles() {
         top: calc(100% + 0.5rem);
         right: 0;
         width: 280px;
-        background: var(--bg-primary);
-        border-radius: var(--radius-xl);
-        border: 1px solid var(--border-color);
-        box-shadow: var(--shadow-xl);
+        background: var(--gc-card-bg);
+        border-radius: 1rem;
+        border: 1px solid var(--gc-border);
+        box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
         overflow: hidden;
         z-index: 100;
         animation: slideDown 0.2s ease-out;
@@ -591,12 +486,8 @@ function AppLayoutStyles() {
 
       .gc-user-header {
         padding: 1rem;
-        background: var(--gray-50);
-        border-bottom: 1px solid var(--border-color);
-      }
-
-      .gc-dark .gc-user-header {
-        background: var(--gray-700);
+        background: var(--gc-bg);
+        border-bottom: 1px solid var(--gc-border);
       }
 
       .gc-user-header-row {
@@ -612,13 +503,13 @@ function AppLayoutStyles() {
 
       .gc-user-name {
         font-weight: 700;
-        color: var(--text-primary);
+        color: var(--gc-text);
         margin-bottom: 0.125rem;
       }
 
       .gc-user-sub {
         font-size: 0.75rem;
-        color: var(--text-secondary);
+        color: var(--gc-soft);
       }
 
       .gc-actions-item {
@@ -627,31 +518,31 @@ function AppLayoutStyles() {
         text-align: left;
         background: none;
         border: none;
-        color: var(--text-primary);
+        color: var(--gc-text);
         font-size: 0.875rem;
         cursor: pointer;
-        transition: var(--transition);
+        transition: all 0.2s ease;
       }
 
       .gc-actions-item:hover {
-        background: var(--gray-100);
-        color: var(--mode-primary);
+        background: var(--gc-bg);
+        color: #748d3f;
         padding-left: 1.5rem;
       }
 
       .gc-actions-danger {
-        color: var(--danger-500);
+        color: #ef4444;
         font-weight: 600;
       }
 
       .gc-actions-danger:hover {
-        background: var(--danger-50);
-        color: var(--danger-700);
+        background: rgba(239, 68, 68, 0.1);
+        color: #dc2626;
       }
 
       .gc-menu-divider {
         height: 1px;
-        background: var(--border-color);
+        background: var(--gc-border);
         margin: 0.25rem 0;
       }
 
@@ -699,7 +590,6 @@ function AppLayoutStyles() {
       @media (max-width: 768px) {
         .gc-side {
           transform: translateX(-100%);
-          transition: transform 0.3s ease;
         }
 
         .gc-side.is-open {
@@ -720,6 +610,10 @@ function AppLayoutStyles() {
 
         .gc-content {
           padding: 1rem;
+        }
+
+        .gc-mobile-menu-toggle {
+          display: flex !important;
         }
       }
 
@@ -986,7 +880,7 @@ export default function AppLayout() {
     <>
       <AppLayoutStyles />
 
-      <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
+      <div className={cx('gc-root', dark && 'gc-dark')}>
         <div className="gc-shell">
           {/* Mobile Menu Toggle */}
           <button
@@ -1000,11 +894,11 @@ export default function AppLayout() {
               display: 'none',
               width: '3rem',
               height: '3rem',
-              borderRadius: 'var(--radius-full)',
-              background: 'var(--mode-gradient)',
+              borderRadius: '9999px',
+              background: '#748d3f',
               color: 'white',
               border: 'none',
-              boxShadow: 'var(--shadow-lg)',
+              boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
               cursor: 'pointer',
               alignItems: 'center',
               justifyContent: 'center'
@@ -1049,7 +943,7 @@ export default function AppLayout() {
                 transition={{ duration: 0.3, delay: 0.1 }}
               >
                 <div className="gc-label">MODE</div>
-                <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')} role="tablist" aria-label="Mode">
+                <div className="gc-mode-switch" role="tablist" aria-label="Mode">
                   <button
                     className={cx('gc-mode-seg', isKitchen && 'is-active')}
                     type="button"
@@ -1146,7 +1040,7 @@ export default function AppLayout() {
               <div className="gc-topbar-pill">
                 <div className="gc-topbar-left">
                   <img
-                    className="gc-topbar-logo gc-topbar-logo--mark"
+                    className="gc-topbar-logo"
                     src={brandLogo}
                     alt="GastroChef"
                     onError={(e) => {
@@ -1311,14 +1205,6 @@ export default function AppLayout() {
           </main>
         </div>
       </div>
-
-      <style>{`
-        @media (max-width: 768px) {
-          .gc-mobile-menu-toggle {
-            display: flex !important;
-          }
-        }
-      `}</style>
     </>
   )
 }
