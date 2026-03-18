@@ -80,25 +80,35 @@ function Modal({
 }) {
   if (!open) return null
   return (
-    <div className="fixed inset-0 z-50">
-      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
-      <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2">
-        <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col">
-          <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-black/10">
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-full items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
+        <div className="relative w-full max-w-3xl transform overflow-hidden rounded-2xl bg-white shadow-2xl transition-all">
+          <div className="flex items-start justify-between border-b border-gray-100 bg-gradient-to-r from-gray-50 to-white px-8 py-6">
             <div>
-              <div className="gc-label">INGREDIENT</div>
-              <div className="mt-1 text-xl font-extrabold">{title}</div>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                INGREDIENT
+              </span>
+              <h2 className="mt-3 text-2xl font-bold tracking-tight text-gray-900">{title}</h2>
             </div>
-            <button className="gc-btn gc-btn-ghost" onClick={onClose} type="button">
-              Close
+            <button
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-600"
+              onClick={onClose}
+              type="button"
+            >
+              <span className="sr-only">Close</span>
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
             </button>
           </div>
-          <div className="p-6 pt-5 overflow-auto">{children}</div>
+          <div className="max-h-[calc(90vh-120px)] overflow-y-auto px-8 py-6">{children}</div>
         </div>
       </div>
     </div>
   )
 }
+
 const IngredientTableRow = memo(function IngredientTableRow({
   r,
   isDebug,
@@ -116,44 +126,69 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const flag = sanityFlag(net, unit)
 
   return (
-    <tr>
-      <td className="text-xs text-neutral-600">
-        <span className="gc-ing-codepill" title={r.code ?? '—'}>
-          <span className="gc-mono">{r.code ?? '—'}</span>
-        </span>
-      </td>
-      <td>
-        <div className="font-semibold flex flex-wrap items-center gap-2">
-          <span>{r.name ?? '—'}</span>
-
-          {!active && (
-            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
-          )}
-
-          {/* Intentionally hide "Missing cost" badge to reduce visual clutter (user request).
-              Cost issues are still visible via the Net Unit Cost column and diagnostics. */}
-
-          {flag.level === 'warn' && (
-            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
-          )}
+    <tr className="group transition-colors hover:bg-gray-50">
+      <td className="whitespace-nowrap px-4 py-4 text-sm">
+        <div className="inline-flex items-center rounded-full bg-gray-100 px-3 py-1 font-mono text-xs text-gray-700 ring-1 ring-inset ring-gray-500/10">
+          {r.code ?? '—'}
         </div>
-        {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
-        {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
       </td>
-
-      <td>{r.category ?? '—'}</td>
-      <td className="gc-td-center">{Math.max(1, toNum(r.pack_size, 1))}</td>
-      <td className="gc-td-center">{unit}</td>
-      <td className="gc-td-center font-semibold">{money(toNum(r.pack_price, 0))}</td>
-      <td className="gc-td-center font-semibold">{money(net)}</td>
-
-      <td className="gc-td-center whitespace-nowrap">
-        <div className="gc-cell-actions">
-          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
+      <td className="px-4 py-4">
+        <div className="flex items-center gap-3">
+          <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700">
+            <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-medium text-gray-900">{r.name ?? '—'}</span>
+              {!active && (
+                <span className="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600">
+                  Inactive
+                </span>
+              )}
+              {flag.level === 'warn' && (
+                <span className="inline-flex items-center rounded-full bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-600/20">
+                  Unit warning
+                </span>
+              )}
+            </div>
+            {isDebug && <div className="mt-1 font-mono text-xs text-gray-400">ID: {r.id}</div>}
+            {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-600">{flag.msg}</div>}
+          </div>
+        </div>
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-sm text-gray-600">{r.category ?? '—'}</td>
+      <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-sm text-gray-900">
+        {Math.max(1, toNum(r.pack_size, 1))}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-center text-sm text-gray-600">{unit}</td>
+      <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-sm font-medium text-gray-900">
+        {money(toNum(r.pack_price, 0))}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-center font-mono text-sm font-medium text-gray-900">
+        {money(net)}
+      </td>
+      <td className="whitespace-nowrap px-4 py-4 text-center text-sm">
+        <div className="flex items-center justify-end gap-2 opacity-0 transition-opacity group-hover:opacity-100">
+          <button
+            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+            type="button"
+            onClick={() => onEdit(r)}
+          >
+            <svg className="mr-1.5 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+            </svg>
             Edit
           </button>
-
-          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
+          <button
+            className="inline-flex items-center rounded-lg bg-white px-3 py-2 text-sm font-medium text-red-600 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-red-50"
+            type="button"
+            onClick={() => onHardDelete(r.id)}
+          >
+            <svg className="mr-1.5 h-4 w-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
             Delete
           </button>
         </div>
@@ -161,7 +196,6 @@ const IngredientTableRow = memo(function IngredientTableRow({
     </tr>
   )
 })
-
 
 export default function Ingredients() {
   const k = useKitchen()
@@ -500,7 +534,6 @@ export default function Ingredients() {
     await load()
   }
 
-
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
     const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
@@ -551,634 +584,554 @@ export default function Ingredients() {
   }
 
   return (
-    <div className="gc-ingredients space-y-6">
-      {/* Header */}
-      <div className="gc-card p-6 gc-page-header">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <div className="gc-label">INGREDIENTS — PRO</div>
-            <div className="mt-2 text-2xl font-extrabold">Database</div>
-            <div className="mt-2 text-sm text-neutral-600">Search, filter, sort, validate costs, and manage ingredients.</div>
-            {isDebug && (
-              <div className="mt-3 text-xs text-neutral-500">Kitchen ID: {kitchenId ?? '—'}</div>
-            )}
-          </div>
-
-          <div className="flex flex-wrap items-center gap-3">
-            <label className="flex items-center gap-2 text-sm text-neutral-700">
-              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
-              Show inactive
-            </label>
-
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={bulkRecalcNetCosts} disabled={bulkWorking}>
-              {bulkWorking ? 'Working…' : 'Recalc net cost (filtered)'}
-            </button>
-
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => bulkSetActive(true)} disabled={bulkWorking}>
-              Activate (filtered)
-            </button>
-
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => bulkSetActive(false)} disabled={bulkWorking}>
-              Deactivate (filtered)
-            </button>
-
-            <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
-              + Add ingredient
-            </button>
-          </div>
-        </div>
-
-        
-        {/* Filters */}
-        <div className="mt-4 gc-ing-toolbar">
-          <div className="gc-ing-search">
-            <div className="gc-ing-toolbar-label">Search</div>
-            <div className="gc-ing-search-control">
-              <span className="gc-ing-search-icon" aria-hidden="true">🔍</span>
-              <input
-                className="gc-input gc-ing-search-input"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search ingredients (name, code, supplier)…"
-              />
-              {search && (
-                <button type="button" className="gc-ing-clear" onClick={() => setSearch('')} aria-label="Clear search">
-                  ×
-                </button>
+    <div className="min-h-screen bg-gray-50/50">
+      <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        {/* Header Section */}
+        <div className="mb-8">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                INGREDIENTS — PRO
+              </span>
+              <h1 className="mt-4 text-3xl font-bold tracking-tight text-gray-900">Database</h1>
+              <p className="mt-2 text-sm text-gray-600">
+                Search, filter, sort, validate costs, and manage ingredients.
+              </p>
+              {isDebug && (
+                <div className="mt-3 font-mono text-xs text-gray-500">Kitchen ID: {kitchenId ?? '—'}</div>
               )}
             </div>
-          </div>
 
-          <div className="gc-ing-filter">
-            <div className="gc-ing-toolbar-label">Category</div>
-            <select className="gc-input gc-ing-select" value={category} onChange={(e) => setCategory(e.target.value)}>
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c} value={c}>
-                  {c}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="flex items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={showInactive}
+                  onChange={(e) => setShowInactive(e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300 text-emerald-600 focus:ring-emerald-600"
+                />
+                <span className="text-sm font-medium text-gray-700">Show inactive</span>
+              </label>
 
-          <div className="gc-ing-filter">
-            <div className="gc-ing-toolbar-label">Sort</div>
-            <select className="gc-input gc-ing-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
-              <option value="name">Name (A→Z)</option>
-              <option value="cost">Net Unit Cost (High→Low)</option>
-              <option value="pack_price">Pack Price (High→Low)</option>
-            </select>
-          </div>
-        </div>
+              <button
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                type="button"
+                onClick={bulkRecalcNetCosts}
+                disabled={bulkWorking}
+              >
+                <svg className="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                {bulkWorking ? 'Working…' : 'Recalc net cost'}
+              </button>
 
+              <button
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                type="button"
+                onClick={() => bulkSetActive(true)}
+                disabled={bulkWorking}
+              >
+                <svg className="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                </svg>
+                Activate all
+              </button>
 
-      </div>
-      {/* Loading/Error */}
-      {loading && (
-        <div className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-4">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="gc-card p-5">
-                <Skeleton className="h-3 w-28 rounded-md" />
-                <div className="mt-3">
-                  <Skeleton className="h-8 w-28 rounded-lg" />
-                </div>
-                <div className="mt-2">
-                  <Skeleton className="h-3 w-32 rounded-md" />
-                </div>
-              </div>
-            ))}
-          </div>
+              <button
+                className="inline-flex items-center rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 disabled:opacity-50"
+                type="button"
+                onClick={() => bulkSetActive(false)}
+                disabled={bulkWorking}
+              >
+                <svg className="mr-2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+                Deactivate all
+              </button>
 
-          <div className="gc-card p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <Skeleton className="h-10 w-full rounded-xl md:w-[420px]" />
-              <div className="flex items-center gap-2">
-                <Skeleton className="h-10 w-28 rounded-xl" />
-                <Skeleton className="h-10 w-28 rounded-xl" />
-                <Skeleton className="h-10 w-28 rounded-xl" />
-              </div>
-            </div>
-          </div>
-
-          <div className="gc-card p-5">
-            <Skeleton className="h-4 w-48 rounded-md" />
-            <div className="mt-4 space-y-3">
-              <div className="flex items-center justify-between gap-3">
-                <Skeleton className="h-4 w-20 rounded-md" />
-                <Skeleton className="h-4 w-48 rounded-md" />
-                <Skeleton className="h-4 w-32 rounded-md" />
-                <Skeleton className="h-4 w-24 rounded-md" />
-              </div>
-              {Array.from({ length: 8 }).map((_, r) => (
-                <div key={r} className="flex items-center justify-between gap-3">
-                  <Skeleton className="h-4 w-20 rounded-md" />
-                  <Skeleton className="h-4 w-1/2 rounded-md" />
-                  <Skeleton className="h-4 w-32 rounded-md" />
-                  <Skeleton className="h-4 w-24 rounded-md" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {err && (
-        <div className="gc-card p-6">
-          <div className="gc-label">ERROR</div>
-          <div className="mt-2 text-sm text-red-600">{err}</div>
-        </div>
-      )}
-
-      {/* Body */}
-      {!loading && !err && (
-        <>
-          {/* KPIs */}
-          <div className="grid gap-4 md:grid-cols-4">
-            <div className="gc-card p-5">
-              <div className="gc-label">ITEMS</div>
-              <div className="mt-2 text-2xl font-extrabold">{stats.items}</div>
-              <div className="mt-1 text-xs text-neutral-500">Filtered results</div>
-            </div>
-
-            <div className="gc-card p-5">
-              <div className="gc-label">AVG NET UNIT</div>
-              <div className="mt-2 text-2xl font-extrabold">{money(stats.avgNet)}</div>
-              <div className="mt-1 text-xs text-neutral-500">Average net unit cost</div>
-            </div>
-
-            <div className="gc-card p-5">
-              <div className="gc-label">MISSING COST</div>
-              <div className="mt-2 text-2xl font-extrabold">{stats.missingCost}</div>
-              <div className="mt-1 text-xs text-neutral-500">net_unit_cost = 0 or empty</div>
-            </div>
-
-            <div className="gc-card p-5">
-              <div className="gc-label">UNIT WARNINGS</div>
-              <div className="mt-2 text-2xl font-extrabold">{stats.warnUnits}</div>
-              <div className="mt-1 text-xs text-neutral-500">Possible unit mismatch</div>
-            </div>
-          </div>
-
-{/* List */}
-          <div className="gc-card p-6">
-            <style>{`
-
-              /* ===== GastroChef: Ingredients Search UX (SaaS) — scoped + safe ===== */
-              .gc-ing-toolbar{
-                display:flex;
-                flex-wrap:wrap;
-                gap:12px;
-                align-items:flex-end;
-              }
-              .gc-ing-toolbar-label{
-                font-size:11px;
-                letter-spacing:.08em;
-                text-transform:uppercase;
-                color:rgba(107,122,114,.95);
-                font-weight:600;
-                margin-bottom:6px;
-              }
-              .gc-ing-search{
-                flex:1 1 340px;
-                min-width:280px;
-              }
-              .gc-ing-filter{
-                flex:0 1 240px;
-                min-width:200px;
-              }
-              .gc-ing-search-control{
-                position:relative;
-              }
-              .gc-ing-search-icon{
-                position:absolute;
-                left:12px;
-                top:50%;
-                transform:translateY(-50%);
-                opacity:.75;
-                font-size:14px;
-                pointer-events:none;
-              }
-              .gc-ing-search-input{
-                padding-left:36px !important;
-                padding-right:36px !important;
-              }
-              .gc-ing-select{
-                width:100%;
-              }
-              .gc-ing-clear{
-                position:absolute;
-                right:10px;
-                top:50%;
-                transform:translateY(-50%);
-                width:26px;
-                height:26px;
-                border-radius:999px;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                font-size:18px;
-                line-height:1;
-                opacity:.7;
-              }
-              .gc-ing-clear:hover{ opacity:1; }
-              .gc-ing-clear:focus{ outline:none; }
-              @media (max-width: 768px){
-                .gc-ing-filter{ flex:1 1 220px; }
-              }
-
-
-              /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
-              .gc-data-table-wrap{
-                max-width:100%;
-                overflow-x:auto;
-                -webkit-overflow-scrolling:touch;
-                padding-bottom:4px;
-              }
-              .gc-data-table-wrap .gc-ing-pro-table{
-                width:100%;
-                min-width:980px;
-                margin:0 auto;
-                border-collapse:separate;
-                border-spacing:0;
-                table-layout:auto;
-              }
-
-              /* header (NON-sticky by request) */
-              .gc-data-table-wrap .gc-ing-pro-table thead th{
-                position:static;
-                background:#f4f6f5;
-                color:#6b7a72;
-                font-size:12px;
-                letter-spacing:.04em;
-                font-weight:600;
-                border-bottom:1px solid rgba(0,0,0,0.08);
-              }
-
-              .gc-data-table-wrap .gc-ing-pro-table th,
-              .gc-data-table-wrap .gc-ing-pro-table td{
-                padding:14px 14px;
-                border-bottom:1px solid rgba(0,0,0,0.06);
-                vertical-align:middle;
-                text-align:center;
-              }
-
-              /* body text */
-              .gc-data-table-wrap .gc-ing-pro-table td{
-                font-size:14px;
-                color:#2f3a35;
-              }
-
-              /* subtle vertical gridlines (SaaS-soft) */
-              .gc-data-table-wrap .gc-ing-pro-table th + th,
-              .gc-data-table-wrap .gc-ing-pro-table td + td{
-                border-left:1px solid rgba(0,0,0,0.045);
-              }
-
-              /* zebra */
-              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(odd) td{
-                background:rgba(0,0,0,0.00);
-              }
-              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(even) td{
-                background:rgba(0,0,0,0.012);
-              }
-
-              /* hover (soft neutral) */
-              .gc-data-table-wrap .gc-ing-pro-table tbody tr:hover td{
-                background:#eef3f1;
-              }
-
-              /* numeric alignment (still centered per your preference) */
-              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
-              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
-                text-align:center;
-                font-variant-numeric:tabular-nums;
-              }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
-              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
-                text-align:center;
-              }
-
-              /* code pill (smaller + calmer) */
-              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill{
-                display:inline-flex;
-                align-items:center;
-                gap:6px;
-                max-width:100%;
-                padding:4px 10px;
-                border-radius:999px;
-                border:1px solid rgba(0,0,0,0.08);
-                background:#f1f4f3;
-                box-shadow:none;
-                font-size:12px;
-                line-height:1;
-                white-space:nowrap;
-                overflow:hidden;
-                text-overflow:ellipsis;
-              }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill .gc-mono{
-                font-size:12px;
-              }
-
-              /* make "Name" feel premium without changing alignment */
-              .gc-data-table-wrap .gc-ing-pro-table td.gc-col-name{
-                font-weight:500;
-              }
-
-              /* actions */
-              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions{
-                display:flex;
-                justify-content:center;
-                gap:10px;
-                white-space:nowrap;
-              }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn{
-                height:32px;
-                padding:0 12px;
-                border-radius:999px;
-                border:1px solid rgba(0,0,0,0.08);
-                background:rgba(255,255,255,0.90);
-              }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn:hover{
-                background:rgba(0,0,0,0.04);
-              }
-
-              /* column sizing */
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-code{ width: 110px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-pack{ width: 70px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-unit{ width: 80px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-packprice{ width: 120px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-netunit{ width: 130px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 150px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 220px; }
-              .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
-              /* ===== GastroChef: Add Ingredient Modal PRO UX (scoped) ===== */
-              .gc-add-ingredient-modal .gc-form-section{
-                margin-top: 2px;
-                padding-top: 6px;
-              }
-              .gc-add-ingredient-modal .gc-form-section-title{
-                font-size: 11px;
-                letter-spacing: .10em;
-                text-transform: uppercase;
-                font-weight: 700;
-                color: rgba(55, 65, 81, .75);
-                padding: 8px 2px 2px 2px;
-                border-top: 1px solid rgba(15, 23, 42, .08);
-              }
-              .gc-add-ingredient-modal .gc-form-section:first-of-type .gc-form-section-title{
-                border-top: none;
-                padding-top: 0;
-              }
-              .gc-add-ingredient-modal .gc-label{
-                letter-spacing: .06em;
-              }
-`}</style>
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="gc-label">LIST</div>
-                <div className="mt-1 text-sm text-neutral-600">Click Edit to validate pack + cost.</div>
-              </div>
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
-                Refresh
+              <button
+                className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2"
+                type="button"
+                onClick={openCreate}
+              >
+                <svg className="mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                </svg>
+                Add ingredient
               </button>
             </div>
+          </div>
 
-            {filtered.length === 0 ? (
-              <div className="mt-4">
-                <div className="rounded-2xl border border-black/5 bg-white p-6">
-                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                    <div className="flex items-start gap-4">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/5 text-xl" aria-hidden>
-                        🧂
-                      </div>
-                      <div>
-                        <div className="text-base font-semibold text-neutral-900">
-                          {rows.length === 0
-                            ? 'No ingredients yet'
-                            : normalized.length === 0
-                              ? 'No active ingredients'
-                              : (search.trim() || category ? 'No ingredients found' : 'No results found')}
-                        </div>
-                        <div className="mt-1 text-sm text-neutral-600">
-                          {rows.length === 0
-                            ? 'Start your kitchen database by adding your first ingredient. This powers costing, yields, and recipe accuracy.'
-                            : normalized.length === 0
-                              ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them, or add a new one.'
-                              : (search.trim() || category
-                              ? 'No ingredients match your current search/filters. Try clearing them, or add a new ingredient.'
-                              : 'Try adjusting your search, category, or inactive filter to find what you need.')}
-                        </div>
+          {/* Filters */}
+          <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium uppercase tracking-wide text-gray-500">Search</label>
+              <div className="relative mt-1">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  </svg>
+                </div>
+                <input
+                  className="block w-full rounded-lg border-0 bg-white py-3 pl-10 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search ingredients (name, code, supplier)…"
+                />
+                {search && (
+                  <button
+                    type="button"
+                    className="absolute inset-y-0 right-0 flex items-center pr-3"
+                    onClick={() => setSearch('')}
+                  >
+                    <span className="sr-only">Clear search</span>
+                    <svg className="h-4 w-4 text-gray-400 hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            </div>
 
-                        {(search.trim() || category) && rows.length > 0 && normalized.length > 0 ? (
-                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-neutral-600">
-                            {search.trim() ? (
-                              <span className="rounded-full bg-neutral-100 px-2 py-1">
-                                Search: <span className="gc-mono">{search.trim()}</span>
-                              </span>
-                            ) : null}
-                            {category ? (
-                              <span className="rounded-full bg-neutral-100 px-2 py-1">
-                                Category: <span className="gc-mono">{category}</span>
-                              </span>
-                            ) : null}
-                          </div>
-                        ) : null}
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-gray-500">Category</label>
+              <select
+                className="mt-1 block w-full rounded-lg border-0 bg-white py-3 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+              >
+                <option value="">All categories</option>
+                {categories.map((c) => (
+                  <option key={c} value={c}>
+                    {c}
+                  </option>
+                ))}
+              </select>
+            </div>
 
-                        {rows.length > 0 && normalized.length > 0 ? (
-                          <div className="mt-3 text-xs text-neutral-500">
-                            Tip: clear filters to return to the full list.
-                          </div>
-                        ) : null}
-                      </div>
-                    </div>
+            <div>
+              <label className="block text-xs font-medium uppercase tracking-wide text-gray-500">Sort by</label>
+              <select
+                className="mt-1 block w-full rounded-lg border-0 bg-white py-3 pl-3 pr-10 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value as any)}
+              >
+                <option value="name">Name (A→Z)</option>
+                <option value="cost">Net Unit Cost (High→Low)</option>
+                <option value="pack_price">Pack Price (High→Low)</option>
+              </select>
+            </div>
+          </div>
+        </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      {rows.length === 0 ? (
-                        <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
-                          + Add ingredient
-                        </button>
-                      ) : normalized.length === 0 ? (
-                        <>
-                          <button className="gc-btn gc-btn-primary" type="button" onClick={() => setShowInactive(true)}>
-                            Show inactive
-                          </button>
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
-                            + Add ingredient
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            className="gc-btn gc-btn-primary"
-                            type="button"
-                            onClick={() => {
-                              setSearch('')
-                              setCategory('')
-                            }}
-                          >
-                            Clear filters
-                          </button>
-                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
-                            + Add ingredient
-                          </button>
-                        </>
-                      )}
+        {/* Loading/Error */}
+        {loading && (
+          <div className="space-y-6">
+            {/* KPI Skeletons */}
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+                  <Skeleton className="h-4 w-20 rounded" />
+                  <Skeleton className="mt-3 h-8 w-32 rounded-lg" />
+                  <Skeleton className="mt-2 h-3 w-24 rounded" />
+                </div>
+              ))}
+            </div>
 
-                      <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
-                        Refresh
+            {/* Table Skeleton */}
+            <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Skeleton className="h-8 w-32 rounded-lg" />
+                  <Skeleton className="h-8 w-24 rounded-lg" />
+                </div>
+                {Array.from({ length: 8 }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4">
+                    <Skeleton className="h-4 w-24 rounded" />
+                    <Skeleton className="h-4 flex-1 rounded" />
+                    <Skeleton className="h-4 w-32 rounded" />
+                    <Skeleton className="h-4 w-24 rounded" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {err && (
+          <div className="rounded-2xl bg-red-50 p-6 ring-1 ring-inset ring-red-600/20">
+            <div className="flex items-center gap-3">
+              <svg className="h-5 w-5 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <span className="text-sm font-medium text-red-800">{err}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Body */}
+        {!loading && !err && (
+          <>
+            {/* KPI Cards */}
+            <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-emerald-50 p-2">
+                    <svg className="h-5 w-5 text-emerald-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">ITEMS</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{stats.items}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Filtered results</p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-blue-50 p-2">
+                    <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">AVG NET UNIT</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{money(stats.avgNet)}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Average net unit cost</p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-amber-50 p-2">
+                    <svg className="h-5 w-5 text-amber-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">MISSING COST</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{stats.missingCost}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">net_unit_cost = 0 or empty</p>
+              </div>
+
+              <div className="rounded-2xl bg-white p-6 shadow-sm ring-1 ring-gray-900/5 transition-all hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <div className="rounded-lg bg-purple-50 p-2">
+                    <svg className="h-5 w-5 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wide text-gray-500">UNIT WARNINGS</span>
+                </div>
+                <div className="mt-3">
+                  <span className="text-3xl font-bold text-gray-900">{stats.warnUnits}</span>
+                </div>
+                <p className="mt-1 text-xs text-gray-500">Possible unit mismatch</p>
+              </div>
+            </div>
+
+            {/* Table Section */}
+            <div className="rounded-2xl bg-white shadow-sm ring-1 ring-gray-900/5">
+              <div className="border-b border-gray-200 px-6 py-5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 ring-1 ring-inset ring-emerald-600/20">
+                      LIST
+                    </span>
+                    <p className="text-sm text-gray-600">Click Edit to validate pack + cost.</p>
+                  </div>
+                  <button
+                    className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                    type="button"
+                    onClick={load}
+                  >
+                    <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    Refresh
+                  </button>
+                </div>
+              </div>
+
+              {filtered.length === 0 ? (
+                <div className="px-6 py-12 text-center">
+                  <div className="mx-auto flex h-24 w-24 items-center justify-center rounded-full bg-gray-100">
+                    <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                    </svg>
+                  </div>
+                  <h3 className="mt-4 text-lg font-semibold text-gray-900">
+                    {rows.length === 0
+                      ? 'No ingredients yet'
+                      : normalized.length === 0
+                        ? 'No active ingredients'
+                        : 'No ingredients found'}
+                  </h3>
+                  <p className="mt-2 text-sm text-gray-600">
+                    {rows.length === 0
+                      ? 'Start your kitchen database by adding your first ingredient.'
+                      : normalized.length === 0
+                        ? 'All ingredients are currently inactive. Turn on "Show inactive" to manage them.'
+                        : 'No ingredients match your current search/filters.'}
+                  </p>
+                  <div className="mt-6 flex items-center justify-center gap-3">
+                    {rows.length > 0 && normalized.length === 0 && (
+                      <button
+                        className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+                        onClick={() => setShowInactive(true)}
+                      >
+                        Show inactive
                       </button>
-                    </div>
+                    )}
+                    {(search.trim() || category) && rows.length > 0 && normalized.length > 0 && (
+                      <button
+                        className="inline-flex items-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-emerald-700"
+                        onClick={() => {
+                          setSearch('')
+                          setCategory('')
+                        }}
+                      >
+                        Clear filters
+                      </button>
+                    )}
+                    <button
+                      className="inline-flex items-center rounded-lg bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                      onClick={openCreate}
+                    >
+                      + Add ingredient
+                    </button>
                   </div>
                 </div>
-              </div>
-            ) : (
-              <div className="mt-4 gc-data-table-wrap">
-                <table className="gc-data-table gc-ing-pro-table text-sm">
-                  <thead>
-                    <tr>
-                      <th className="gc-col-code">Code</th>
-                      <th className="gc-col-name">Name</th>
-                      <th className="gc-col-category">Category</th>
-                      <th className={cls('gc-th-center', 'gc-col-pack')}>Pack</th>
-                      <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
-                      <th className={cls('gc-th-center', 'gc-col-packprice')}>Pack Price</th>
-                      <th className={cls('gc-th-center', 'gc-col-netunit')}>Net Unit Cost</th>
-                      <th className={cls('gc-th-center', 'gc-col-actions')}>Actions</th>
-                    </tr>
-                  </thead>
-
-                  <tbody className="align-top">
-                    {filtered.map((r) => (
-                      <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </>
-      )}
-
-      {/* Modal */}
-      <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
-        <div className="gc-add-ingredient-modal gc-form-grid cols-2">
-          {/* IDENTIFICATION */}
-          <div className="span-2 gc-form-section">
-            <div className="gc-form-section-title">IDENTIFICATION</div>
-          </div>
-
-          <div>
-            <div className="gc-label">CODE</div>
-            <input
-              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
-              value={fCode}
-              onChange={(e) => setFCode(e.target.value)}
-              placeholder="ING-000123 (optional)"
-              disabled={!canEditCodes}
-            />
-            <div className="mt-1 text-[11px] text-neutral-500">Leave empty to auto-generate. If provided, must start with ING-</div>
-            {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
-          </div>
-
-          <div>
-            <div className="gc-label">CODE CATEGORY</div>
-            <input
-              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
-              value={fCodeCategory}
-              onChange={(e) => setFCodeCategory(e.target.value)}
-              placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
-              disabled={!canEditCodes}
-            />
-            <div className="mt-1 text-[11px] text-neutral-500">
-              Optional (up to 6 chars A–Z/0–9). If empty, DB uses Category (suggested: <span className="font-mono">{suggestedCodeCategory}</span>).
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Code
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Name
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-left text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Category
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Pack
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Unit
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Pack Price
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-center text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Net Unit Cost
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right text-xs font-medium uppercase tracking-wide text-gray-500">
+                          Actions
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200 bg-white">
+                      {filtered.map((r) => (
+                        <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
-          </div>
+          </>
+        )}
 
-          <div className="span-2">
-            <div className="gc-label">NAME</div>
-            <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
-          </div>
+        {/* Modal */}
+        <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
+          <div className="space-y-6">
+            {/* IDENTIFICATION */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">IDENTIFICATION</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CODE</label>
+                  <input
+                    className={cls(
+                      "mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6",
+                      !canEditCodes && "bg-gray-50 text-gray-500"
+                    )}
+                    value={fCode}
+                    onChange={(e) => setFCode(e.target.value)}
+                    placeholder="ING-000123 (optional)"
+                    disabled={!canEditCodes}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Must start with ING- if provided</p>
+                  {!canEditCodes && (
+                    <p className="mt-1 text-xs text-amber-600">Code fields are Owner-only.</p>
+                  )}
+                </div>
 
-          {/* CLASSIFICATION */}
-          <div className="span-2 gc-form-section">
-            <div className="gc-form-section-title">CLASSIFICATION</div>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CODE CATEGORY</label>
+                  <input
+                    className={cls(
+                      "mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6",
+                      !canEditCodes && "bg-gray-50 text-gray-500"
+                    )}
+                    value={fCodeCategory}
+                    onChange={(e) => setFCodeCategory(e.target.value)}
+                    placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
+                    disabled={!canEditCodes}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Max 6 chars A–Z/0–9. Suggested: <span className="font-mono">{suggestedCodeCategory}</span>
+                  </p>
+                </div>
+              </div>
 
-          <div>
-            <div className="gc-label">CATEGORY</div>
-            <input className="gc-input mt-2 w-full" value={fCategory} onChange={(e) => setFCategory(e.target.value)} />
-          </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700">NAME</label>
+                <input
+                  className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                  value={fName}
+                  onChange={(e) => setFName(e.target.value)}
+                />
+              </div>
+            </div>
 
-          <div>
-            <div className="gc-label">SUPPLIER</div>
-            <input className="gc-input mt-2 w-full" value={fSupplier} onChange={(e) => setFSupplier(e.target.value)} />
-          </div>
+            {/* CLASSIFICATION */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">CLASSIFICATION</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">CATEGORY</label>
+                  <input
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fCategory}
+                    onChange={(e) => setFCategory(e.target.value)}
+                  />
+                </div>
 
-          {/* PACK */}
-          <div className="span-2 gc-form-section">
-            <div className="gc-form-section-title">PACK</div>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">SUPPLIER</label>
+                  <input
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fSupplier}
+                    onChange={(e) => setFSupplier(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
 
-          <div>
-            <div className="gc-label">PACK SIZE</div>
-            <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={fPackSize} onChange={(e) => setFPackSize(e.target.value)} />
-            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
-          </div>
+            {/* PACK */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">PACK</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">PACK SIZE</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step="1"
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fPackSize}
+                    onChange={(e) => setFPackSize(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Required</p>
+                </div>
 
-          <div>
-            <div className="gc-label">UNIT</div>
-            <select className="gc-input mt-2 w-full" value={fPackUnit} onChange={(e) => setFPackUnit(e.target.value)}>
-              <option value="g">g</option>
-              <option value="kg">kg</option>
-              <option value="ml">ml</option>
-              <option value="l">L</option>
-              <option value="pcs">pcs</option>
-            </select>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">UNIT</label>
+                  <select
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fPackUnit}
+                    onChange={(e) => setFPackUnit(e.target.value)}
+                  >
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="l">L</option>
+                    <option value="pcs">pcs</option>
+                  </select>
+                </div>
+              </div>
+            </div>
 
-          {/* COST */}
-          <div className="span-2 gc-form-section">
-            <div className="gc-form-section-title">COST</div>
-          </div>
+            {/* COST */}
+            <div>
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-gray-500">COST</h3>
+              <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">PACK PRICE</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fPackPrice}
+                    onChange={(e) => setFPackPrice(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">Required</p>
+                </div>
 
-          <div>
-            <div className="gc-label">PACK PRICE</div>
-            <input className="gc-input mt-2 w-full" type="number" step="0.01" value={fPackPrice} onChange={(e) => setFPackPrice(e.target.value)} />
-            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
-          </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">NET UNIT COST</label>
+                  <input
+                    type="number"
+                    step="0.000001"
+                    className="mt-1 block w-full rounded-lg border-0 py-2.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-emerald-600 sm:text-sm sm:leading-6"
+                    value={fNetUnitCost}
+                    onChange={(e) => setFNetUnitCost(e.target.value)}
+                  />
+                  <p className="mt-1 text-xs text-gray-500">If 0 → auto-calculated from pack</p>
+                </div>
+              </div>
+            </div>
 
-          <div>
-            <div className="gc-label">NET UNIT COST</div>
-            <input className="gc-input mt-2 w-full" type="number" step="0.000001" value={fNetUnitCost} onChange={(e) => setFNetUnitCost(e.target.value)} />
-            <div className="mt-1 text-xs text-neutral-500">If left 0 → auto-calculated from pack.</div>
-          </div>
+            {/* Smart Helpers */}
+            <div className="rounded-xl bg-gray-50 p-4">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-600">SMART HELPERS</span>
+                <button
+                  className="inline-flex items-center gap-2 rounded-lg bg-white px-3 py-2 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                  type="button"
+                  onClick={smartRecalcNetCost}
+                >
+                  <svg className="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                  </svg>
+                  Recalculate from pack
+                </button>
+              </div>
+              <p className="mt-2 text-xs text-gray-500">net = pack_price ÷ pack_size</p>
+            </div>
 
-          {/* Smart helpers */}
-          <div className="md:col-span-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
-            <div className="text-xs font-semibold text-neutral-600">SMART HELPERS</div>
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button className="gc-btn gc-btn-ghost" type="button" onClick={smartRecalcNetCost}>
-                Recalculate net cost from pack
+            {/* Actions */}
+            <div className="flex justify-end gap-3 border-t border-gray-200 pt-6">
+              <button
+                className="rounded-lg bg-white px-4 py-2.5 text-sm font-medium text-gray-700 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50"
+                type="button"
+                onClick={() => setModalOpen(false)}
+              >
+                Cancel
               </button>
-              <div className="text-xs text-neutral-500 flex items-center">
-                net = pack_price ÷ pack_size
-              </div>
+              <button
+                className="rounded-lg bg-emerald-600 px-4 py-2.5 text-sm font-medium text-white shadow-sm hover:bg-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2 disabled:opacity-50"
+                type="button"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : 'Save'}
+              </button>
             </div>
           </div>
+        </Modal>
 
-          <div className="md:col-span-2 flex justify-end gap-2">
-            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setModalOpen(false)}>
-              Cancel
-            </button>
-            <button className="gc-btn gc-btn-primary" type="button" onClick={save} disabled={saving}>
-              {saving ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
+        <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
+      </div>
     </div>
   )
 }
