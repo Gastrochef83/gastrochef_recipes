@@ -88,16 +88,17 @@ export default function AppLayout() {
 
   const [online, setOnline] = useState(navigator.onLine)
   const [loading, setLoading] = useState(false)
-  const [recentItems, setRecentItems] = useState<Array<{ id: string; name: string; type: string; time: string }>>([])
+  const [recentItems, setRecentItems] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
   const [showNotifications, setShowNotifications] = useState(false)
-  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; read: boolean }>>([
-    { id: '1', message: 'Recipe "Pasta" was updated', read: false },
-    { id: '2', message: 'New ingredient added', read: true },
-    { id: '3', message: 'Cost analysis completed', read: false }
+  const [notifications, setNotifications] = useState<Array<{ id: string; message: string; read: boolean; path?: string }>>([
+    { id: '1', message: 'Recipe "Pasta" was updated', read: false, path: '/recipes' },
+    { id: '2', message: 'New ingredient added', read: true, path: '/ingredients' },
+    { id: '3', message: 'Cost analysis completed', read: false, path: '/dashboard' }
   ])
   const [density, setDensityState] = useState<'comfort' | 'cozy' | 'compact'>(loadGlobalDensity)
   const [quickSearch, setQuickSearch] = useState('')
   const [showQuickSearch, setShowQuickSearch] = useState(false)
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
 
   // وقت اليوم
   const timeBased = getTimeBasedColor()
@@ -122,9 +123,34 @@ export default function AppLayout() {
       const saved = localStorage.getItem('gc_recent_items')
       if (saved) {
         setRecentItems(JSON.parse(saved))
+      } else {
+        // بيانات افتراضية
+        setRecentItems([
+          { id: '1', name: 'Pasta Carbonara', type: 'recipe', path: '/recipe?id=1' },
+          { id: '2', name: 'Tomato Sauce', type: 'ingredient', path: '/ingredients' }
+        ])
       }
     } catch {}
   }, [])
+
+  // تحديث البحث الفوري
+  useEffect(() => {
+    if (quickSearch.trim() === '') {
+      setSearchResults([])
+      return
+    }
+
+    const results = [
+      ...ingredientIndex
+        .filter(i => i.name.toLowerCase().includes(quickSearch.toLowerCase()))
+        .map(i => ({ id: i.id, name: i.name, type: 'ingredient', path: '/ingredients' })),
+      ...recipeIndex
+        .filter(r => r.name.toLowerCase().includes(quickSearch.toLowerCase()))
+        .map(r => ({ id: r.id, name: r.name, type: 'recipe', path: '/recipes' }))
+    ].slice(0, 5)
+    
+    setSearchResults(results)
+  }, [quickSearch, ingredientIndex, recipeIndex])
 
   const isPrintRoute = useMemo(() => {
     const path = (loc.pathname || '').toLowerCase()
@@ -322,7 +348,7 @@ export default function AppLayout() {
     }
   }
 
-  function closeMenu() {
+  function closeAllMenus() {
     if (menuRef.current) menuRef.current.open = false
     if (recentMenuRef.current) recentMenuRef.current.open = false
     if (notificationsRef.current) notificationsRef.current.open = false
@@ -505,7 +531,6 @@ export default function AppLayout() {
       border-radius: 4px;
       display: inline-block;
       margin-left: 4px;
-      animation: pulse 2s infinite;
     }
     
     .progress-bar {
@@ -517,6 +542,19 @@ export default function AppLayout() {
       background: linear-gradient(90deg, #6B7F3B, #1F7A78);
       transform-origin: left;
       z-index: 100;
+    }
+    
+    /* أنماط القوائم المنسدلة */
+    .gc-actions-menu summary::-webkit-details-marker {
+      display: none;
+    }
+    
+    .gc-actions-menu summary {
+      list-style: none;
+    }
+    
+    .gc-actions-menu[open] summary {
+      background: rgba(107, 127, 59, 0.05);
     }
     
     /* تحسينات للشاشات الصغيرة */
@@ -647,13 +685,19 @@ export default function AppLayout() {
                     }}
                     style={{ height: 32, width: 'auto' }}
                   />
-                  <div className="gc-topbar-kitchen" title={k.error ? `Kitchen error: ${k.error}` : kitchenLabel} style={{
-                    padding: '4px 12px',
-                    background: 'rgba(107, 127, 59, 0.1)',
-                    borderRadius: 20,
-                    fontSize: 13,
-                    fontWeight: 600
-                  }}>
+                  <div 
+                    className="gc-topbar-kitchen" 
+                    title={k.error ? `Kitchen error: ${k.error}` : kitchenLabel}
+                    style={{
+                      padding: '4px 12px',
+                      background: 'rgba(107, 127, 59, 0.1)',
+                      borderRadius: 20,
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: 'pointer'
+                    }}
+                    onClick={() => navigate('/dashboard')}
+                  >
                     {k.error ? 'Kitchen error' : kitchenLabel}
                   </div>
                   
@@ -730,11 +774,7 @@ export default function AppLayout() {
                 <div className="gc-topbar-right" style={{ display: "flex", flexDirection: "row", flexWrap: "nowrap", alignItems: "center", justifyContent: "flex-end", gap: 8, whiteSpace: "nowrap" }}>
                   
                   {/* Quick Search */}
-                  <motion.div
-                    initial={false}
-                    animate={{ width: showQuickSearch ? 200 : 120 }}
-                    style={{ position: 'relative' }}
-                  >
+                  <div style={{ position: 'relative' }}>
                     <input
                       ref={searchInputRef}
                       type="text"
@@ -743,9 +783,11 @@ export default function AppLayout() {
                       value={quickSearch}
                       onChange={(e) => setQuickSearch(e.target.value)}
                       onFocus={() => setShowQuickSearch(true)}
-                      onBlur={() => setShowQuickSearch(false)}
+                      onBlur={() => {
+                        setTimeout(() => setShowQuickSearch(false), 200)
+                      }}
                     />
-                    {quickSearch && (
+                    {showQuickSearch && searchResults.length > 0 && (
                       <div style={{
                         position: 'absolute',
                         top: '100%',
@@ -759,33 +801,42 @@ export default function AppLayout() {
                         padding: 8,
                         zIndex: 1000
                       }}>
-                        {ingredientIndex.filter(i => i.name.toLowerCase().includes(quickSearch.toLowerCase())).slice(0, 3).map(ing => (
+                        {searchResults.map(result => (
                           <button
-                            key={ing.id}
-                            style={{ width: '100%', textAlign: 'left', padding: 8, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}
-                            onClick={() => navigate('/ingredients')}
+                            key={`${result.type}-${result.id}`}
+                            style={{ 
+                              width: '100%', 
+                              textAlign: 'left', 
+                              padding: '8px 10px', 
+                              borderRadius: 8, 
+                              border: 'none', 
+                              background: 'transparent', 
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8
+                            }}
+                            onClick={() => {
+                              navigate(result.path)
+                              setQuickSearch('')
+                              setShowQuickSearch(false)
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(107,127,59,0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                           >
-                            <span style={{ fontSize: 12 }}>🥗 {ing.name}</span>
-                          </button>
-                        ))}
-                        {recipeIndex.filter(r => r.name.toLowerCase().includes(quickSearch.toLowerCase())).slice(0, 3).map(rec => (
-                          <button
-                            key={rec.id}
-                            style={{ width: '100%', textAlign: 'left', padding: 8, borderRadius: 8, border: 'none', background: 'transparent', cursor: 'pointer' }}
-                            onClick={() => navigate('/recipes')}
-                          >
-                            <span style={{ fontSize: 12 }}>📝 {rec.name}</span>
+                            <span style={{ fontSize: 16 }}>{result.type === 'ingredient' ? '🥗' : '📝'}</span>
+                            <span style={{ fontSize: 12 }}>{result.name}</span>
                           </button>
                         ))}
                       </div>
                     )}
-                  </motion.div>
+                  </div>
 
-                  {/* Quick Actions */}
+                  {/* Quick Actions - New Recipe */}
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <button
                       className="gc-icon-btn"
-                      onClick={() => navigate('/recipes/new')}
+                      onClick={() => navigate('/recipe')}
                       style={{
                         width: 36,
                         height: 36,
@@ -803,10 +854,11 @@ export default function AppLayout() {
                     </button>
                   </motion.div>
 
+                  {/* Quick Actions - New Ingredient */}
                   <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                     <button
                       className="gc-icon-btn"
-                      onClick={() => navigate('/ingredients/new')}
+                      onClick={() => navigate('/ingredients')}
                       style={{
                         width: 36,
                         height: 36,
@@ -851,8 +903,12 @@ export default function AppLayout() {
                     </button>
                   </motion.div>
 
-                  {/* Notifications */}
-                  <details ref={notificationsRef} className="gc-actions-menu" style={{ position: 'relative' }}>
+                  {/* Notifications Dropdown */}
+                  <details 
+                    ref={notificationsRef} 
+                    className="gc-actions-menu" 
+                    style={{ position: 'relative', display: 'inline-block' }}
+                  >
                     <summary style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -872,57 +928,75 @@ export default function AppLayout() {
                       )}
                     </summary>
                     
-                    <div style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: '100%',
-                      width: 280,
-                      background: 'white',
-                      borderRadius: 16,
-                      border: '1px solid rgba(107,127,59,0.2)',
-                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                      padding: 12,
-                      marginTop: 8,
-                      zIndex: 1000
-                    }}>
-                      <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--gc-muted)', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
-                        <span>NOTIFICATIONS</span>
-                        {unreadCount > 0 && (
-                          <button 
-                            style={{ background: 'none', border: 'none', fontSize: 10, color: 'var(--gc-brand-olive)', cursor: 'pointer' }}
-                            onClick={() => setNotifications(notifications.map(n => ({ ...n, read: true })))}
-                          >
-                            Mark all read
-                          </button>
-                        )}
-                      </div>
-                      {notifications.map(n => (
-                        <div
-                          key={n.id}
-                          style={{
-                            padding: '8px 10px',
-                            borderRadius: 10,
-                            background: n.read ? 'transparent' : 'rgba(107,127,59,0.05)',
-                            marginBottom: 4,
-                            cursor: 'pointer',
-                            fontSize: 12,
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: 8
-                          }}
-                          onClick={() => {
-                            setNotifications(notifications.map(n => n.id === n.id ? { ...n, read: true } : n))
-                          }}
-                        >
-                          <span style={{ fontSize: 14 }}>{n.read ? '📨' : '📬'}</span>
-                          <span style={{ flex: 1 }}>{n.message}</span>
+                    {notificationsRef.current?.open && (
+                      <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 'calc(100% + 8px)',
+                        width: 280,
+                        background: 'white',
+                        borderRadius: 16,
+                        border: '1px solid rgba(107,127,59,0.2)',
+                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
+                        padding: 12,
+                        zIndex: 1000,
+                        animation: 'slideDown 0.2s ease-out'
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--gc-muted)', marginBottom: 8, display: 'flex', justifyContent: 'space-between' }}>
+                          <span>NOTIFICATIONS</span>
+                          {unreadCount > 0 && (
+                            <button 
+                              style={{ background: 'none', border: 'none', fontSize: 10, color: 'var(--gc-brand-olive)', cursor: 'pointer' }}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                setNotifications(notifications.map(n => ({ ...n, read: true })))
+                              }}
+                            >
+                              Mark all read
+                            </button>
+                          )}
                         </div>
-                      ))}
-                    </div>
+                        {notifications.map(n => (
+                          <div
+                            key={n.id}
+                            style={{
+                              padding: '8px 10px',
+                              borderRadius: 10,
+                              background: n.read ? 'transparent' : 'rgba(107,127,59,0.05)',
+                              marginBottom: 4,
+                              cursor: 'pointer',
+                              fontSize: 12,
+                              display: 'flex',
+                              alignItems: 'center',
+                              gap: 8
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setNotifications(notifications.map(notif => 
+                                notif.id === n.id ? { ...notif, read: true } : notif
+                              ))
+                              if (n.path) {
+                                navigate(n.path)
+                                if (notificationsRef.current) notificationsRef.current.open = false
+                              }
+                            }}
+                          >
+                            <span style={{ fontSize: 14 }}>{n.read ? '📨' : '📬'}</span>
+                            <span style={{ flex: 1 }}>{n.message}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </details>
 
-                  {/* Recent Items */}
-                  <details ref={recentMenuRef} className="gc-actions-menu" style={{ position: 'relative' }}>
+                  {/* Recent Items Dropdown */}
+                  <details 
+                    ref={recentMenuRef} 
+                    className="gc-actions-menu" 
+                    style={{ position: 'relative', display: 'inline-block' }}
+                  >
                     <summary style={{
                       display: 'flex',
                       alignItems: 'center',
@@ -941,35 +1015,55 @@ export default function AppLayout() {
                       <span style={{ fontSize: 10 }}>▼</span>
                     </summary>
                     
-                    <div style={{
-                      position: 'absolute',
-                      right: 0,
-                      top: '100%',
-                      width: 240,
-                      background: 'white',
-                      borderRadius: 16,
-                      border: '1px solid rgba(107,127,59,0.2)',
-                      boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                      padding: 8,
-                      marginTop: 4,
-                      zIndex: 1000
-                    }}>
-                      <div style={{ fontSize: 11, color: 'var(--gc-muted)', marginBottom: 8, padding: '0 4px' }}>RECENT ITEMS</div>
-                      <button style={{ width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>📝</span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: 12 }}>Pasta Carbonara</div>
-                          <div style={{ fontSize: 10, color: 'var(--gc-muted)' }}>2 hours ago</div>
-                        </div>
-                      </button>
-                      <button style={{ width: '100%', textAlign: 'left', padding: '8px 10px', borderRadius: 10, border: 'none', background: 'transparent', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <span style={{ fontSize: 16 }}>🥗</span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ fontWeight: 600, fontSize: 12 }}>Tomato Sauce</div>
-                          <div style={{ fontSize: 10, color: 'var(--gc-muted)' }}>Yesterday</div>
-                        </div>
-                      </button>
-                    </div>
+                    {recentMenuRef.current?.open && (
+                      <div style={{
+                        position: 'absolute',
+                        right: 0,
+                        top: 'calc(100% + 8px)',
+                        width: 240,
+                        background: 'white',
+                        borderRadius: 16,
+                        border: '1px solid rgba(107,127,59,0.2)',
+                        boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
+                        padding: 8,
+                        zIndex: 1000,
+                        animation: 'slideDown 0.2s ease-out'
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                      >
+                        <div style={{ fontSize: 11, color: 'var(--gc-muted)', marginBottom: 8, padding: '0 4px' }}>RECENT ITEMS</div>
+                        {recentItems.map((item, index) => (
+                          <button 
+                            key={index}
+                            style={{ 
+                              width: '100%', 
+                              textAlign: 'left', 
+                              padding: '8px 10px', 
+                              borderRadius: 10, 
+                              border: 'none', 
+                              background: 'transparent', 
+                              cursor: 'pointer', 
+                              display: 'flex', 
+                              alignItems: 'center', 
+                              gap: 8,
+                              marginTop: index > 0 ? 4 : 0
+                            }}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              navigate(item.path)
+                              if (recentMenuRef.current) recentMenuRef.current.open = false
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = 'rgba(107,127,59,0.1)'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <span style={{ fontSize: 16 }}>{item.type === 'recipe' ? '📝' : '🥗'}</span>
+                            <div style={{ flex: 1 }}>
+                              <div style={{ fontWeight: 600, fontSize: 12 }}>{item.name}</div>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    )}
                   </details>
 
                   {/* Autosave */}
@@ -1143,7 +1237,7 @@ export default function AppLayout() {
                               type="button"
                               onClick={() => {
                                 setDark((v) => !v)
-                                closeMenu()
+                                if (menuRef.current) menuRef.current.open = false
                               }}
                               style={{
                                 width: '100%',
@@ -1171,8 +1265,8 @@ export default function AppLayout() {
                               className="gc-actions-item"
                               type="button"
                               onClick={async () => {
-                                closeMenu()
                                 await k.refresh().catch(() => {})
+                                if (menuRef.current) menuRef.current.open = false
                               }}
                               style={{
                                 width: '100%',
@@ -1200,7 +1294,6 @@ export default function AppLayout() {
                               className="gc-actions-item gc-actions-danger"
                               type="button"
                               onClick={async () => {
-                                closeMenu()
                                 await handleLogout()
                               }}
                               disabled={loggingOut}
