@@ -1,4 +1,4 @@
-// src/pages/Dashboard.tsx
+// src/pages/Dashboard.tsx (محدث - أحجام أصغر)
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -384,13 +384,13 @@ export default function Dashboard() {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1
+        staggerChildren: 0.05
       }
     }
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0 }
   }
 
@@ -400,60 +400,62 @@ export default function Dashboard() {
       initial="hidden"
       animate="visible"
       variants={containerVariants}
+      style={{ padding: 'var(--gc-16)' }}
     >
-      {/* Header with Gradient */}
+      {/* Header */}
       <motion.div variants={itemVariants}>
         <div className="gc-card gc-page-header" style={{ 
           background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)',
           color: 'white',
-          border: 'none'
+          border: 'none',
+          padding: 'var(--gc-16)'
         }}>
-          <div className="gc-card-body">
-            <div className="gc-label" style={{ color: 'rgba(255,255,255,0.8)' }}>DASHBOARD</div>
-            <div className="gc-page-title" style={{ color: 'white', fontSize: '2rem' }}>Kitchen Overview</div>
-            <div className="gc-hint" style={{ color: 'rgba(255,255,255,0.9)', marginTop: 'var(--gc-8)' }}>
+          <div className="gc-card-body" style={{ padding: 0 }}>
+            <div className="gc-label" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '10px' }}>DASHBOARD</div>
+            <div className="gc-page-title" style={{ color: 'white', fontSize: '20px', fontWeight: 800 }}>Kitchen Overview</div>
+            <div className="gc-hint" style={{ color: 'rgba(255,255,255,0.9)', marginTop: '4px', fontSize: '12px' }}>
               Your kitchen snapshot: recipes, ingredients, and cost diagnostics.
             </div>
           </div>
         </div>
       </motion.div>
 
-      {/* Continue Cooking Card with Hover Effect */}
+      {/* Continue Cooking Card */}
       <motion.div variants={itemVariants}>
         <div className="gc-card is-interactive" style={{ 
-          marginTop: 'var(--gc-16)',
-          background: 'linear-gradient(135deg, var(--gc-card) 0%, var(--gc-card-2) 100%)',
-          border: '1px solid var(--gc-border)',
-          boxShadow: 'var(--gc-shadow)'
+          marginTop: '12px',
+          padding: '12px'
         }}>
-          <div className="gc-card-body" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 'var(--gc-12)' }}>
+          <div className="gc-card-body" style={{ padding: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 'var(--gc-fs-xl)' }}>Continue Cooking</div>
-              <div className="gc-hint" style={{ marginTop: 'var(--gc-4)' }}>
+              <div style={{ fontWeight: 700, fontSize: '14px' }}>Continue Cooking</div>
+              <div className="gc-hint" style={{ marginTop: '2px', fontSize: '12px' }}>
                 {lastId ? (
                   <>
-                    Jump back to <span style={{ fontWeight: 800, color: 'var(--gc-brand-olive)' }}>{lastName || 'your last recipe'}</span>.
+                    Jump back to <span style={{ fontWeight: 700, color: 'var(--gc-brand-olive)' }}>{lastName || 'your last recipe'}</span>.
                   </>
                 ) : (
                   <>Open Recipes and start cooking.</>
                 )}
               </div>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gc-8)' }}>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                 <Button
                   variant="primary"
+                  size="small"
                   onClick={() => {
                     if (lastId) nav(`/cook?id=${encodeURIComponent(lastId)}`)
                     else nav('/recipes')
                   }}
+                  style={{ fontSize: '12px', padding: '6px 12px' }}
                 >
                   Continue Cooking 🍳
                 </Button>
               </motion.div>
               {lastId ? (
-                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                  <Button variant="ghost" onClick={() => nav(`/recipe?id=${encodeURIComponent(lastId)}`)}>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button variant="ghost" size="small" onClick={() => nav(`/recipe?id=${encodeURIComponent(lastId)}`)} style={{ fontSize: '12px', padding: '6px 12px' }}>
                     Open Editor
                   </Button>
                 </motion.div>
@@ -463,67 +465,47 @@ export default function Dashboard() {
         </div>
       </motion.div>
 
-      {/* Skeleton Loading with Pulse Animation */}
+      {/* Skeleton Loading */}
       {loading && (
         <motion.div 
           variants={containerVariants}
-          style={{ marginTop: 'var(--gc-16)' }}
+          style={{ marginTop: '16px' }}
         >
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--gc-16)' }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px' }}>
             {Array.from({ length: 4 }).map((_, i) => (
               <motion.div
                 key={i}
                 variants={itemVariants}
-                className="gc-card is-interactive"
+                className="gc-card"
+                style={{ padding: '12px' }}
                 animate={{ opacity: [0.5, 1, 0.5] }}
                 transition={{ duration: 1.5, repeat: Infinity }}
               >
-                <div className="gc-card-body">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gc-12)' }}>
-                    <div className="skeleton" style={{ width: 40, height: 40, borderRadius: 'var(--gc-radius)' }} />
-                    <div className="skeleton" style={{ width: 112, height: 16 }} />
+                <div className="gc-card-body" style={{ padding: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <div className="skeleton" style={{ width: 32, height: 32, borderRadius: '8px' }} />
+                    <div className="skeleton" style={{ width: 80, height: 12 }} />
                   </div>
-                  <div style={{ marginTop: 'var(--gc-12)' }}>
-                    <div className="skeleton" style={{ width: 112, height: 32 }} />
-                    <div style={{ marginTop: 'var(--gc-8)' }}>
-                      <div className="skeleton" style={{ width: 96, height: 12 }} />
+                  <div style={{ marginTop: '8px' }}>
+                    <div className="skeleton" style={{ width: 60, height: 20 }} />
+                    <div style={{ marginTop: '4px' }}>
+                      <div className="skeleton" style={{ width: 50, height: 10 }} />
                     </div>
                   </div>
                 </div>
               </motion.div>
             ))}
           </div>
-
-          <motion.div 
-            variants={itemVariants}
-            className="gc-card is-interactive" 
-            style={{ marginTop: 'var(--gc-16)' }}
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-          >
-            <div className="gc-card-body">
-              <div className="skeleton" style={{ width: 224, height: 16 }} />
-              <div style={{ marginTop: 'var(--gc-16)' }}>
-                {Array.from({ length: 5 }).map((_, r) => (
-                  <div key={r} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: r === 0 ? 0 : 'var(--gc-12)' }}>
-                    <div className="skeleton" style={{ width: '40%', height: 16 }} />
-                    <div className="skeleton" style={{ width: 112, height: 16 }} />
-                    <div className="skeleton" style={{ width: 112, height: 16 }} />
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.div>
         </motion.div>
       )}
 
-      {/* Error State with Shake Animation */}
+      {/* Error State */}
       {err && (
         <motion.div 
           variants={itemVariants}
-          style={{ marginTop: 'var(--gc-16)' }}
-          animate={{ x: [0, -10, 10, -10, 10, 0] }}
-          transition={{ duration: 0.5 }}
+          style={{ marginTop: '12px' }}
+          animate={{ x: [0, -5, 5, -5, 5, 0] }}
+          transition={{ duration: 0.4 }}
         >
           <ErrorState
             title="We couldn't load your dashboard"
@@ -538,17 +520,17 @@ export default function Dashboard() {
       {/* Main Content */}
       {!loading && !err && (
         <>
-          {/* Empty States with Animation */}
+          {/* Empty States */}
           <AnimatePresence>
             {activeRecipes.length === 0 && activeIngredientsCount === 0 && (
               <motion.div 
                 key="empty1"
                 variants={itemVariants}
-                style={{ marginTop: 'var(--gc-16)' }}
+                style={{ marginTop: '16px' }}
               >
                 <EmptyState
                   title="Your kitchen is ready"
-                  description="Add a few ingredients, then create your first recipe. This dashboard will instantly show cost insights."
+                  description="Add a few ingredients, then create your first recipe."
                   primaryAction={{
                     label: 'Add Ingredient',
                     onClick: () => nav('/ingredients')
@@ -566,11 +548,11 @@ export default function Dashboard() {
               <motion.div 
                 key="empty2"
                 variants={itemVariants}
-                style={{ marginTop: 'var(--gc-16)' }}
+                style={{ marginTop: '16px' }}
               >
                 <EmptyState
                   title="Create your first recipe"
-                  description="You already have ingredients. Now create a recipe and the dashboard will show costs, food cost %, and margins."
+                  description="You already have ingredients. Now create a recipe."
                   primaryAction={{
                     label: 'Create Recipe',
                     onClick: () => nav('/recipes')
@@ -588,11 +570,11 @@ export default function Dashboard() {
               <motion.div 
                 key="empty3"
                 variants={itemVariants}
-                style={{ marginTop: 'var(--gc-16)' }}
+                style={{ marginTop: '16px' }}
               >
                 <EmptyState
                   title="Add ingredients to unlock costing"
-                  description="Recipes are ready, but ingredient costs are missing. Add ingredients (with pack size + price) to see accurate cost insights."
+                  description="Recipes are ready, but ingredient costs are missing."
                   primaryAction={{
                     label: 'Add Ingredient',
                     onClick: () => nav('/ingredients')
@@ -607,59 +589,53 @@ export default function Dashboard() {
             )}
           </AnimatePresence>
 
-          {/* Warning Card with Pulse Animation */}
+          {/* Warning Card */}
           {hasOutliers && (
             <motion.div 
               variants={itemVariants}
-              className="gc-card is-interactive" 
-              style={{ marginTop: 'var(--gc-16)' }}
+              className="gc-card" 
+              style={{ marginTop: '12px', padding: '12px' }}
               animate={{ 
-                boxShadow: ['0 0 0 0 rgba(245, 158, 11, 0.4)', '0 0 0 10px rgba(245, 158, 11, 0)', '0 0 0 0 rgba(245, 158, 11, 0)']
+                boxShadow: ['0 0 0 0 rgba(245, 158, 11, 0.3)', '0 0 0 3px rgba(245, 158, 11, 0)', '0 0 0 0 rgba(245, 158, 11, 0)']
               }}
-              transition={{ duration: 2, repeat: Infinity }}
+              transition={{ duration: 1.5, repeat: Infinity }}
             >
-              <div className="gc-card-body">
-                <div className="gc-label" style={{ color: 'var(--gc-warn)' }}>⚠️ WARNING</div>
-                <div className="gc-hint" style={{ marginTop: 'var(--gc-8)', color: 'var(--gc-warn)' }}>
-                  Some recipe costs are extremely high. This is usually caused by an incorrect{' '}
-                  <span style={{ fontWeight: 800 }}>pack_unit</span> or <span style={{ fontWeight: 800 }}>net_unit_cost</span>{' '}
-                  (e.g., cost per kg but pack_unit set to g).
+              <div className="gc-card-body" style={{ padding: 0 }}>
+                <div className="gc-label" style={{ color: 'var(--gc-warn)', fontSize: '10px' }}>⚠️ WARNING</div>
+                <div className="gc-hint" style={{ marginTop: '4px', color: 'var(--gc-warn)', fontSize: '12px' }}>
+                  Some recipe costs are extremely high. Check pack_unit and net_unit_cost.
                 </div>
               </div>
             </motion.div>
           )}
 
-          {/* KPI Grid with Stagger Animation */}
+          {/* KPI Grid */}
           <motion.div 
             variants={containerVariants}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--gc-16)', marginTop: 'var(--gc-16)' }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginTop: '16px' }}
           >
             {[
               { icon: '🍳', label: 'RECIPES', value: activeRecipes.length, sub: 'Active' },
               { icon: '🧩', label: 'SUB-RECIPES', value: subRecipeCount, sub: 'Active' },
               { icon: '🧂', label: 'INGREDIENTS', value: activeIngredientsCount, sub: 'Active' },
-              { icon: '💵', label: 'AVG COST / PORTION', value: money(avgCostPerPortion), sub: 'Across active recipes' }
+              { icon: '💵', label: 'AVG COST', value: money(avgCostPerPortion), sub: 'Per portion' }
             ].map((item, index) => (
               <motion.div
                 key={index}
                 variants={itemVariants}
-                whileHover={{ scale: 1.05, y: -5 }}
-                className="gc-card is-interactive"
-                style={{
-                  background: 'linear-gradient(135deg, var(--gc-card) 0%, var(--gc-card-2) 100%)',
-                  border: '1px solid var(--gc-border)',
-                  boxShadow: 'var(--gc-shadow)'
-                }}
+                whileHover={{ y: -2 }}
+                className="gc-card"
+                style={{ padding: '12px' }}
               >
-                <div className="gc-card-body">
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gc-8)' }}>
-                    <span style={{ fontSize: 32 }}>{item.icon}</span>
-                    <div className="gc-label">{item.label}</div>
+                <div className="gc-card-body" style={{ padding: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                    <span style={{ fontSize: '20px' }}>{item.icon}</span>
+                    <div className="gc-label" style={{ fontSize: '9px' }}>{item.label}</div>
                   </div>
-                  <div style={{ fontSize: 32, fontWeight: 950, marginTop: 'var(--gc-8)', color: 'var(--gc-brand-olive)' }}>
+                  <div style={{ fontSize: '18px', fontWeight: 800, color: 'var(--gc-brand-olive)' }}>
                     {item.value}
                   </div>
-                  <div className="gc-hint" style={{ marginTop: 'var(--gc-4)' }}>{item.sub}</div>
+                  <div className="gc-hint" style={{ marginTop: '2px', fontSize: '10px' }}>{item.sub}</div>
                 </div>
               </motion.div>
             ))}
@@ -668,91 +644,93 @@ export default function Dashboard() {
           {/* Second Row */}
           <motion.div 
             variants={containerVariants}
-            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 'var(--gc-16)', marginTop: 'var(--gc-16)' }}
+            style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '10px', marginTop: '10px' }}
           >
             <motion.div
               variants={itemVariants}
-              whileHover={{ scale: 1.02, y: -5 }}
-              className="gc-card is-interactive"
-              style={{ gridColumn: 'span 2', background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)', color: 'white', border: 'none' }}
+              whileHover={{ y: -2 }}
+              className="gc-card"
+              style={{ gridColumn: 'span 2', padding: '12px', background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)', color: 'white' }}
             >
-              <div className="gc-card-body">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gc-8)' }}>
-                  <span style={{ fontSize: 32 }}>∑</span>
-                  <div className="gc-label" style={{ color: 'rgba(255,255,255,0.8)' }}>TOTAL ACTIVE COST</div>
+              <div className="gc-card-body" style={{ padding: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '20px' }}>∑</span>
+                  <div className="gc-label" style={{ color: 'rgba(255,255,255,0.8)', fontSize: '9px' }}>TOTAL ACTIVE COST</div>
                 </div>
-                <div style={{ fontSize: 36, fontWeight: 950, marginTop: 'var(--gc-8)', color: 'white' }}>
+                <div style={{ fontSize: '18px', fontWeight: 800, color: 'white' }}>
                   {money(totalActiveCost)}
                 </div>
-                <div className="gc-hint" style={{ marginTop: 'var(--gc-4)', color: 'rgba(255,255,255,0.9)' }}>Sum of all active recipe totals</div>
+                <div className="gc-hint" style={{ marginTop: '2px', color: 'rgba(255,255,255,0.9)', fontSize: '10px' }}>Sum of all active recipes</div>
               </div>
             </motion.div>
 
             <motion.div
               variants={itemVariants}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="gc-card is-interactive"
+              whileHover={{ y: -2 }}
+              className="gc-card"
+              style={{ padding: '12px' }}
             >
-              <div className="gc-card-body">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gc-8)' }}>
-                  <span style={{ fontSize: 32 }}>🟢</span>
-                  <div className="gc-label">CHEAPEST RECIPE</div>
+              <div className="gc-card-body" style={{ padding: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '20px' }}>🟢</span>
+                  <div className="gc-label" style={{ fontSize: '9px' }}>CHEAPEST</div>
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 950, marginTop: 'var(--gc-8)', color: 'var(--gc-success)' }}>
-                  {cheapestRecipe?.name ?? '—'}
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gc-success)' }}>
+                  {cheapestRecipe?.name?.length > 15 ? cheapestRecipe.name.substring(0, 12) + '...' : cheapestRecipe?.name ?? '—'}
                 </div>
-                <div className="gc-hint" style={{ marginTop: 'var(--gc-4)' }}>{money(cheapestRecipe?.total ?? 0)}</div>
+                <div className="gc-hint" style={{ marginTop: '2px', fontSize: '10px' }}>{money(cheapestRecipe?.total ?? 0)}</div>
               </div>
             </motion.div>
 
             <motion.div
               variants={itemVariants}
-              whileHover={{ scale: 1.05, y: -5 }}
-              className="gc-card is-interactive"
+              whileHover={{ y: -2 }}
+              className="gc-card"
+              style={{ padding: '12px' }}
             >
-              <div className="gc-card-body">
-                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--gc-8)' }}>
-                  <span style={{ fontSize: 32 }}>🔴</span>
-                  <div className="gc-label">MOST EXPENSIVE</div>
+              <div className="gc-card-body" style={{ padding: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '6px' }}>
+                  <span style={{ fontSize: '20px' }}>🔴</span>
+                  <div className="gc-label" style={{ fontSize: '9px' }}>MOST EXPENSIVE</div>
                 </div>
-                <div style={{ fontSize: 24, fontWeight: 950, marginTop: 'var(--gc-8)', color: 'var(--gc-danger)' }}>
-                  {mostExpensiveRecipe?.name ?? '—'}
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--gc-danger)' }}>
+                  {mostExpensiveRecipe?.name?.length > 15 ? mostExpensiveRecipe.name.substring(0, 12) + '...' : mostExpensiveRecipe?.name ?? '—'}
                 </div>
-                <div className="gc-hint" style={{ marginTop: 'var(--gc-4)' }}>{money(mostExpensiveRecipe?.total ?? 0)}</div>
+                <div className="gc-hint" style={{ marginTop: '2px', fontSize: '10px' }}>{money(mostExpensiveRecipe?.total ?? 0)}</div>
               </div>
             </motion.div>
           </motion.div>
 
           {/* Top 5 Table */}
-          <motion.div variants={itemVariants} className="gc-card is-interactive" style={{ marginTop: 'var(--gc-16)' }}>
-            <div className="gc-card-body">
-              <div className="gc-label">🏆 TOP 5 RECIPES BY TOTAL COST</div>
-              <div className="gc-data-table-wrap" style={{ marginTop: 'var(--gc-12)' }}>
-                <table className="gc-data-table">
+          <motion.div variants={itemVariants} className="gc-card" style={{ marginTop: '16px', padding: '12px' }}>
+            <div className="gc-card-body" style={{ padding: 0 }}>
+              <div className="gc-label" style={{ fontSize: '10px', marginBottom: '8px' }}>🏆 TOP 5 RECIPES</div>
+              <div className="gc-data-table-wrap" style={{ maxHeight: '200px', overflowY: 'auto' }}>
+                <table className="gc-data-table" style={{ fontSize: '12px' }}>
                   <thead>
                     <tr>
-                      <th>Recipe</th>
-                      <th className="gc-th-right">Total</th>
-                      <th className="gc-th-right">Cost/Portion</th>
+                      <th style={{ fontSize: '10px', padding: '6px' }}>Recipe</th>
+                      <th className="gc-th-right" style={{ fontSize: '10px', padding: '6px' }}>Total</th>
+                      <th className="gc-th-right" style={{ fontSize: '10px', padding: '6px' }}>Cost/Portion</th>
                     </tr>
                   </thead>
                   <tbody>
                     {top5.map((x, index) => (
                       <motion.tr 
                         key={x.id}
-                        initial={{ opacity: 0, x: -20 }}
+                        initial={{ opacity: 0, x: -10 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: index * 0.1 }}
-                        whileHover={{ backgroundColor: 'var(--gc-brand-olive-100)', scale: 1.01 }}
+                        transition={{ delay: index * 0.05 }}
+                        whileHover={{ backgroundColor: 'var(--gc-brand-olive-100)' }}
                       >
-                        <td style={{ fontWeight: 800 }}>
+                        <td style={{ fontSize: '11px', fontWeight: 500, padding: '6px' }}>
                           {index === 0 && '🥇 '}
                           {index === 1 && '🥈 '}
                           {index === 2 && '🥉 '}
-                          {x.name}
+                          {x.name.length > 20 ? x.name.substring(0, 17) + '...' : x.name}
                         </td>
-                        <td className="gc-td-right" style={{ color: 'var(--gc-brand-olive)', fontWeight: 800 }}>{money(x.total)}</td>
-                        <td className="gc-td-right">{money(x.cpp)}</td>
+                        <td className="gc-td-right" style={{ fontSize: '11px', fontWeight: 600, color: 'var(--gc-brand-olive)', padding: '6px' }}>{money(x.total)}</td>
+                        <td className="gc-td-right" style={{ fontSize: '11px', padding: '6px' }}>{money(x.cpp)}</td>
                       </motion.tr>
                     ))}
                   </tbody>
@@ -762,24 +740,24 @@ export default function Dashboard() {
           </motion.div>
 
           {/* Diagnostics */}
-          <motion.div variants={itemVariants} className="gc-card is-interactive" style={{ marginTop: 'var(--gc-16)' }}>
-            <div className="gc-card-body">
-              <div className="gc-label">🔍 DIAGNOSTICS</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 'var(--gc-12)', marginTop: 'var(--gc-8)' }}>
+          <motion.div variants={itemVariants} className="gc-card" style={{ marginTop: '12px', padding: '12px' }}>
+            <div className="gc-card-body" style={{ padding: 0 }}>
+              <div className="gc-label" style={{ fontSize: '10px', marginBottom: '8px' }}>🔍 DIAGNOSTICS</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
                 {[
                   { label: 'Unit mismatches', value: diag.unitMismatchCount, color: 'var(--gc-warn)' },
-                  { label: 'Missing yield (sub-recipes)', value: subRecipesMissingYield.length, color: 'var(--gc-danger)' },
-                  { label: 'Ingredients missing cost', value: ingredientsUsedMissingCost, color: 'var(--gc-danger)' }
+                  { label: 'Missing yield', value: subRecipesMissingYield.length, color: 'var(--gc-danger)' },
+                  { label: 'Missing cost', value: ingredientsUsedMissingCost, color: 'var(--gc-danger)' }
                 ].map((item, index) => (
                   <motion.div 
                     key={index}
                     className="gc-card-soft"
-                    whileHover={{ scale: 1.02, y: -5 }}
-                    style={{ cursor: 'pointer' }}
+                    whileHover={{ y: -2 }}
+                    style={{ padding: '8px' }}
                   >
-                    <div className="gc-card-body">
-                      <div className="gc-hint" style={{ fontWeight: 800 }}>{item.label}</div>
-                      <div style={{ fontSize: 36, fontWeight: 950, marginTop: 'var(--gc-4)', color: item.color }}>
+                    <div className="gc-card-body" style={{ padding: 0 }}>
+                      <div className="gc-hint" style={{ fontWeight: 600, fontSize: '9px', marginBottom: '2px' }}>{item.label}</div>
+                      <div style={{ fontSize: '18px', fontWeight: 800, color: item.color }}>
                         {item.value}
                       </div>
                     </div>
