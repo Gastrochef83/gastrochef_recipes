@@ -94,14 +94,14 @@ function Modal({
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", duration: 0.3 }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
+            <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
               <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <div>
-                  <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider">INGREDIENT</div>
+                  <div className="gc-label text-primary-600 dark:text-primary-400">INGREDIENT</div>
                   <div className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">{title}</div>
                 </div>
                 <motion.button 
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400"
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
                   onClick={onClose}
                   type="button"
                   whileHover={{ scale: 1.1 }}
@@ -147,8 +147,8 @@ const IngredientTableRow = memo(function IngredientTableRow({
       whileHover={{ backgroundColor: 'rgba(107, 127, 59, 0.02)' }}
       className={cls(!active && 'opacity-60')}
     >
-      <td className="px-4 py-3">
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono text-gray-700 dark:text-gray-300">
+      <td>
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono" title={r.code ?? '—'}>
           {r.code ? (
             <>
               <span className="w-2 h-2 rounded-full bg-primary-500" />
@@ -157,7 +157,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
           ) : '—'}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td>
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-900 dark:text-white">{r.name ?? '—'}</span>
@@ -179,16 +179,16 @@ const IngredientTableRow = memo(function IngredientTableRow({
           )}
         </div>
       </td>
-      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
-      <td className="px-4 py-3 text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
-      <td className="px-4 py-3 text-center">
+      <td className="text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
+      <td className="text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="text-center">
         <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
           {unit}
         </span>
       </td>
-      <td className="px-4 py-3 text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
-      <td className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
-      <td className="px-4 py-3">
+      <td className="text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
+      <td className="text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
+      <td>
         <div className="flex items-center justify-center gap-2">
           <motion.button 
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
@@ -227,17 +227,13 @@ const StatsCard = memo(function StatsCard({
   value, 
   sublabel, 
   icon,
-  iconBg,
-  badge,
-  footnote
+  trend 
 }: { 
   label: string
   value: string | number
   sublabel: string
   icon: ReactNode
-  iconBg: string
-  badge?: { text: string; color: string }
-  footnote?: string
+  trend?: { value: number; positive: boolean }
 }) {
   return (
     <motion.div 
@@ -245,33 +241,24 @@ const StatsCard = memo(function StatsCard({
       whileHover={{ y: -2 }}
     >
       <div className="flex items-start justify-between">
-        <div className="flex-1">
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+        <div>
+          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
             {label}
           </div>
-          <div className="mt-2 flex items-baseline gap-2 flex-wrap">
+          <div className="mt-2 flex items-baseline gap-2">
             <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
-            {badge && (
+            {trend && (
               <span className={cls(
-                "text-xs font-medium px-2 py-0.5 rounded-full",
-                badge.color === 'amber' && "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400",
-                badge.color === 'blue' && "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400",
-                badge.color === 'green' && "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400",
-                badge.color === 'purple' && "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400",
+                "text-xs font-medium",
+                trend.positive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
               )}>
-                {badge.text}
+                {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
               </span>
             )}
           </div>
           <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sublabel}</div>
-          {footnote && (
-            <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">{footnote}</div>
-          )}
         </div>
-        <div className={cls(
-          "w-10 h-10 rounded-lg flex items-center justify-center",
-          iconBg
-        )}>
+        <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400">
           {icon}
         </div>
       </div>
@@ -463,10 +450,11 @@ export default function Ingredients() {
   const stats = useMemo(() => {
     const items = filtered.length
     const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
+    const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
     const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
     const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
 
-    return { items, avgNet, missingCost, warnUnits }
+    return { items, avgNet, maxPack, missingCost, warnUnits }
   }, [filtered])
 
   const openCreate = () => {
@@ -677,13 +665,13 @@ export default function Ingredients() {
 
   return (
     <motion.div 
-      className="space-y-6"
+      className="gc-ingredients"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       {/* Header */}
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} className="mb-6">
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -756,17 +744,18 @@ export default function Ingredients() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div variants={itemVariants}>
+      <motion.div variants={itemVariants} className="mb-6">
         <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {/* Search */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                🔍 SEARCH
+                Search
               </label>
               <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                 <input
-                  className="w-full pl-3 pr-8 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                  className="w-full pl-9 pr-9 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search ingredients..."
@@ -774,7 +763,7 @@ export default function Ingredients() {
                 {search && (
                   <button 
                     type="button" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     onClick={() => setSearch('')}
                   >
                     ×
@@ -786,10 +775,10 @@ export default function Ingredients() {
             {/* Category Filter */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                📂 CATEGORY
+                Category
               </label>
               <select 
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
                 value={category} 
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -803,10 +792,10 @@ export default function Ingredients() {
             {/* Sort */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                📊 SORT BY
+                Sort by
               </label>
               <select 
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
                 value={sortBy} 
                 onChange={(e) => setSortBy(e.target.value as any)}
               >
@@ -824,13 +813,13 @@ export default function Ingredients() {
                 <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
                 {search && (
                   <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    <span>🔍</span> {search}
+                    Search: {search}
                     <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900">×</button>
                   </span>
                 )}
                 {category && (
                   <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    <span>📂</span> {category}
+                    Category: {category}
                     <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900">×</button>
                   </span>
                 )}
@@ -892,73 +881,33 @@ export default function Ingredients() {
       {/* Body */}
       {!loading && !err && (
         <>
-          {/* KPIs - نسخة مطورة مع أيقونات واضحة */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            {/* ITEMS */}
+          {/* KPIs */}
+          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <StatsCard
-              label="📦 ITEMS"
+              label="ITEMS"
               value={stats.items}
               sublabel="Filtered results"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-              }
-              iconBg="bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400"
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
             />
-
-            {/* AVG NET UNIT */}
             <StatsCard
-              label="💰 AVG NET UNIT"
+              label="AVG NET UNIT"
               value={money(stats.avgNet)}
               sublabel="Average net unit cost"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="6" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              }
-              iconBg="bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400"
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
             />
-
-            {/* MISSING COST */}
             <StatsCard
-              label="⚠️ MISSING COST"
+              label="MISSING COST"
               value={stats.missingCost}
-              sublabel="Need pricing"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
-              }
-              iconBg="bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400"
-              badge={stats.missingCost > 0 ? { 
-                text: `${((stats.missingCost / stats.items) * 100).toFixed(0)}% of total`, 
-                color: 'amber' 
-              } : undefined}
-              footnote={stats.missingCost > 0 ? `${stats.missingCost} ingredient${stats.missingCost > 1 ? 's' : ''} need price` : undefined}
+              sublabel="net_unit_cost = 0"
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+              trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
             />
-
-            {/* UNIT WARNINGS */}
             <StatsCard
-              label="🔍 UNIT WARNINGS"
+              label="UNIT WARNINGS"
               value={stats.warnUnits}
               sublabel="Possible unit mismatch"
-              icon={
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                </svg>
-              }
-              iconBg="bg-purple-50 dark:bg-purple-900/20 text-purple-600 dark:text-purple-400"
-              badge={stats.warnUnits > 0 ? { 
-                text: `${((stats.warnUnits / stats.items) * 100).toFixed(0)}% of total`, 
-                color: 'purple' 
-              } : undefined}
-              footnote={stats.warnUnits > 0 ? "Check unit consistency" : undefined}
+              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+              trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
             />
           </motion.div>
 
@@ -966,20 +915,13 @@ export default function Ingredients() {
           <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
-                  <span>📋</span> INGREDIENTS LIST
-                </h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">INGREDIENTS LIST</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click Edit to validate pack + cost.</p>
               </div>
               <button 
-                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition flex items-center gap-1"
+                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
                 onClick={load}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M23 4v6h-6" />
-                  <path d="M1 20v-6h6" />
-                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                </svg>
                 Refresh
               </button>
             </div>
@@ -1063,9 +1005,7 @@ export default function Ingredients() {
         <div className="space-y-6">
           {/* IDENTIFICATION */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-              <span>🆔</span> IDENTIFICATION
-            </h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">IDENTIFICATION</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CODE</label>
@@ -1112,9 +1052,7 @@ export default function Ingredients() {
 
           {/* CLASSIFICATION */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-              <span>📂</span> CLASSIFICATION
-            </h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">CLASSIFICATION</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CATEGORY</label>
@@ -1139,9 +1077,7 @@ export default function Ingredients() {
 
           {/* PACK */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-              <span>📦</span> PACK
-            </h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">PACK</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK SIZE *</label>
@@ -1173,9 +1109,7 @@ export default function Ingredients() {
 
           {/* COST */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
-              <span>💰</span> COST
-            </h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">COST</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK PRICE *</label>
@@ -1203,10 +1137,8 @@ export default function Ingredients() {
 
           {/* Smart Helpers */}
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-            <div className="flex items-center gap-4 flex-wrap">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">
-                <span>⚡</span> SMART HELPERS:
-              </span>
+            <div className="flex items-center gap-4">
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">SMART HELPERS:</span>
               <button
                 className="px-3 py-1.5 text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition"
                 onClick={smartRecalcNetCost}
