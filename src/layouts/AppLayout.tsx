@@ -8,7 +8,7 @@ import { useAutosave } from '../contexts/AutosaveContext'
 import CommandPalette, { type CommandItem } from '../components/CommandPalette'
 import { motion, AnimatePresence } from 'framer-motion'
 
-// استيراد أنماط التصميم
+// استيراد أنماط التصميم فقط (بدون إعادة تعريف)
 import '../styles/tokens.css'
 import '../styles/globals.css'
 
@@ -270,165 +270,53 @@ export default function AppLayout() {
     )
   }
 
-  const navItems = [
-    { 
-      to: '/dashboard', 
-      icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6', 
-      label: 'Dashboard',
-      emoji: '📊'
-    },
-    { 
-      to: '/ingredients', 
-      icon: 'M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2M12 7a4 4 0 100-8 4 4 0 000 8z', 
-      label: 'Ingredients',
-      emoji: '🥗'
-    },
-    { 
-      to: '/recipes', 
-      icon: 'M4 7h16M4 12h16M4 17h10', 
-      label: 'Recipes',
-      emoji: '📝'
-    },
-    { 
-      to: '/settings', 
-      icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z', 
-      label: 'Settings',
-      emoji: '⚙️'
-    }
-  ]
-
   return (
     <>
       <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
         <div className="gc-shell">
-          {/* Mobile Menu Toggle */}
-          <motion.button
+          {/* Mobile Menu Toggle - باستخدام الأنماط الموجودة فقط */}
+          <button
             className="gc-mobile-menu-toggle"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            style={{
-              position: 'fixed',
-              bottom: '20px',
-              right: '20px',
-              zIndex: 60,
-              display: 'none',
-              width: '48px',
-              height: '48px',
-              borderRadius: '24px',
-              background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)',
-              color: 'white',
-              border: 'none',
-              boxShadow: '0 10px 25px -5px rgba(0,0,0,0.2)',
-              cursor: 'pointer',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
+            aria-label="Toggle menu"
           >
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="12" x2="21" y2="12" />
               <line x1="3" y1="6" x2="21" y2="6" />
               <line x1="3" y1="18" x2="21" y2="18" />
             </svg>
-          </motion.button>
+          </button>
 
-          {/* Sidebar */}
-          <aside className={cx('gc-side', isSidebarOpen && 'is-open')} style={{
-            width: '260px',
-            background: 'white',
-            borderRight: '1px solid var(--gc-border)',
-            boxShadow: '4px 0 20px rgba(0,0,0,0.02)',
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            bottom: 0,
-            overflowY: 'auto',
-            zIndex: 50,
-            transition: 'transform 0.3s ease'
-          }}>
-            <div style={{ padding: '24px 16px', display: 'flex', flexDirection: 'column', height: '100%' }}>
+          {/* Sidebar - باستخدام كلاسات globals.css فقط */}
+          <aside className={cx('gc-side', isSidebarOpen && 'is-open')}>
+            <div className="gc-side-card">
               {/* Brand */}
-              <motion.div 
-                className="gc-brand"
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3 }}
-                style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '32px' }}
-              >
-                <div style={{
-                  width: '44px',
-                  height: '44px',
-                  borderRadius: '14px',
-                  background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                  boxShadow: '0 6px 12px rgba(107,127,59,0.2)'
-                }}>
+              <div className="gc-brand">
+                <div className="gc-brand-mark" aria-hidden="true">
                   <img
                     src={brandLogo}
                     alt=""
                     onError={(e) => {
                       ;(e.currentTarget as HTMLImageElement).src = brandFallback
                     }}
-                    style={{ width: '28px', height: '28px', objectFit: 'contain' }}
                   />
                 </div>
                 <div>
-                  <h2 style={{ fontSize: '18px', fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--gc-text)' }}>
-                    Gastro<span style={{ color: 'var(--gc-brand-olive)' }}>Chef</span>
-                  </h2>
-                  <p style={{ fontSize: '12px', color: 'var(--gc-muted)', marginTop: '2px' }}>{kitchenLabel}</p>
+                  <div className="gc-brand-name">
+                    Gastro<span className="gc-brand-accent">Chef</span>
+                  </div>
+                  <div className="gc-brand-sub">{kitchenLabel}</div>
                 </div>
-              </motion.div>
+              </div>
 
-              {/* Mode Switch */}
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                style={{ marginBottom: '24px' }}
-              >
-                <div className="gc-label" style={{ fontSize: '10px', marginBottom: '8px' }}>MODE</div>
-                <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')} style={{
-                  display: 'flex',
-                  gap: '4px',
-                  padding: '4px',
-                  background: 'var(--gc-bg)',
-                  borderRadius: '30px',
-                  border: '1px solid var(--gc-border)',
-                  position: 'relative'
-                }}>
-                  <div style={{
-                    position: 'absolute',
-                    top: '4px',
-                    bottom: '4px',
-                    left: isKitchen ? '4px' : 'calc(50% + 2px)',
-                    width: 'calc(50% - 4px)',
-                    background: 'white',
-                    borderRadius: '26px',
-                    boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                    transition: 'left 0.2s ease'
-                  }} />
+              {/* Mode Switch - باستخدام الأنماط الموجودة */}
+              <div className="gc-side-block">
+                <div className="gc-label">MODE</div>
+                <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')}>
                   <button
                     className={cx('gc-mode-seg', isKitchen && 'is-active')}
                     type="button"
                     onClick={() => setMode('kitchen')}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: '26px',
-                      border: 'none',
-                      background: 'transparent',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: isKitchen ? 'var(--gc-brand-olive)' : 'var(--gc-muted)',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      zIndex: 1,
-                      transition: 'color 0.2s ease'
-                    }}
                   >
                     Kitchen
                   </button>
@@ -436,217 +324,82 @@ export default function AppLayout() {
                     className={cx('gc-mode-seg', isMgmt && 'is-active')}
                     type="button"
                     onClick={() => setMode('mgmt')}
-                    style={{
-                      flex: 1,
-                      padding: '8px 12px',
-                      borderRadius: '26px',
-                      border: 'none',
-                      background: 'transparent',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      color: isMgmt ? 'var(--gc-brand-olive)' : 'var(--gc-muted)',
-                      cursor: 'pointer',
-                      position: 'relative',
-                      zIndex: 1,
-                      transition: 'color 0.2s ease'
-                    }}
                   >
                     Mgmt
                   </button>
                 </div>
-                <p className="gc-hint" style={{ fontSize: '11px', marginTop: '6px', color: 'var(--gc-muted)' }}>
-                  {isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}
-                </p>
-              </motion.div>
+                <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
+              </div>
 
-              {/* Navigation */}
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.2 }}
-                style={{ flex: 1 }}
-              >
-                <div className="gc-label" style={{ fontSize: '10px', marginBottom: '8px' }}>NAVIGATION</div>
-                <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                  {navItems.map(item => (
-                    <NavLink
-                      key={item.to}
-                      to={item.to}
-                      className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}
-                      style={({ isActive }) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
-                        padding: '10px 12px',
-                        borderRadius: '12px',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        textDecoration: 'none',
-                        color: isActive ? 'var(--gc-brand-olive)' : 'var(--gc-text)',
-                        background: isActive ? 'rgba(107,127,59,0.08)' : 'transparent',
-                        transition: 'all 0.2s ease'
-                      })}
-                    >
-                      <span style={{ fontSize: '18px' }}>{item.emoji}</span>
-                      <span>{item.label}</span>
-                    </NavLink>
-                  ))}
+              {/* Navigation - باستخدام كلاسات globals.css */}
+              <div className="gc-side-block">
+                <div className="gc-label">NAVIGATION</div>
+                <nav className="gc-nav">
+                  <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Ingredients
+                  </NavLink>
+                  <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Recipes
+                  </NavLink>
+                  <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Settings
+                  </NavLink>
                 </nav>
+                <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
+              </div>
 
-                <div className="gc-tip" style={{
-                  fontSize: '11px',
-                  padding: '12px',
-                  background: 'var(--gc-bg)',
-                  borderRadius: '12px',
-                  color: 'var(--gc-muted)',
-                  borderLeft: '3px solid var(--gc-brand-olive)',
-                  marginTop: '24px'
-                }}>
-                  Tip: Kitchen for cooking · Mgmt for costing & pricing.
-                </div>
-              </motion.div>
-
-              {/* Logout Button */}
-              <motion.div 
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: 0.3 }}
-                style={{ marginTop: '20px' }}
-              >
-                <motion.button
+              {/* Logout Button - باستخدام الأنماط الموجودة */}
+              <div className="gc-side-block">
+                <button
                   className="gc-btn gc-btn-danger"
+                  type="button"
                   onClick={handleLogout}
                   disabled={loggingOut}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={{
-                    width: '100%',
-                    padding: '10px 16px',
-                    borderRadius: '12px',
-                    border: 'none',
-                    background: loggingOut ? 'var(--gc-muted)' : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                    color: 'white',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    cursor: loggingOut ? 'not-allowed' : 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '8px',
-                    opacity: loggingOut ? 0.7 : 1
-                  }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4M16 17l5-5-5-5M21 12H9" />
-                  </svg>
-                  <span>{loggingOut ? 'Logging out…' : 'Log out'}</span>
-                </motion.button>
-              </motion.div>
+                  {loggingOut ? 'Logging out…' : 'Log out'}
+                </button>
+              </div>
             </div>
           </aside>
 
           {/* Main Content */}
-          <main className="gc-main" style={{
-            flex: 1,
-            marginLeft: '260px',
-            minHeight: '100vh',
-            background: 'var(--gc-bg)'
-          }}>
-            {/* Topbar */}
-            <div className="gc-topbar" style={{
-              position: 'sticky',
-              top: 0,
-              zIndex: 40,
-              background: 'rgba(255,255,255,0.8)',
-              backdropFilter: 'blur(10px)',
-              borderBottom: '1px solid var(--gc-border)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
-            }}>
-              <div className="gc-topbar-pill" style={{
-                height: '64px',
-                padding: '0 24px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between'
-              }}>
-                <div className="gc-topbar-left" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+          <main className="gc-main">
+            {/* Topbar - باستخدام كلاسات globals.css فقط */}
+            <div className="gc-topbar">
+              <div className="gc-topbar-pill">
+                <div className="gc-topbar-left">
                   <img
-                    className="gc-topbar-logo"
+                    className="gc-topbar-logo gc-topbar-logo--mark"
                     src={brandLogo}
                     alt="GastroChef"
                     onError={(e) => {
                       ;(e.currentTarget as HTMLImageElement).src = brandFallback
                     }}
-                    style={{ height: '32px', width: 'auto' }}
                   />
-                  <div className="gc-topbar-kitchen" style={{
-                    padding: '4px 12px',
-                    background: 'var(--gc-bg)',
-                    borderRadius: '30px',
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: 'var(--gc-text)',
-                    border: '1px solid var(--gc-border)'
-                  }}>
+                  <div className="gc-topbar-kitchen" title={k.error ? `Kitchen error: ${k.error}` : kitchenLabel}>
                     {k.error ? 'Kitchen error' : kitchenLabel}
                   </div>
-                  <motion.span
+                  <span
                     className={cx('gc-live-dot', a.status === 'error' && 'is-error', a.status === 'saving' && 'is-saving')}
-                    animate={{
-                      scale: a.status === 'saving' ? [1, 1.2, 1] : 1,
-                    }}
-                    transition={{
-                      duration: 1,
-                      repeat: a.status === 'saving' ? Infinity : 0,
-                    }}
-                    style={{
-                      width: '8px',
-                      height: '8px',
-                      borderRadius: '50%',
-                      background: a.status === 'error' ? '#ef4444' : a.status === 'saving' ? '#f59e0b' : '#10b981',
-                      boxShadow: a.status === 'error' ? '0 0 0 3px rgba(239,68,68,0.1)' : 
-                                 a.status === 'saving' ? '0 0 0 3px rgba(245,158,11,0.1)' : 
-                                 '0 0 0 3px rgba(16,185,129,0.1)'
-                    }}
+                    aria-hidden="true"
                   />
                   <span className="gc-sr-only">{title}</span>
                 </div>
 
-                <div className="gc-topbar-right" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                  {/* Autosave Indicator */}
-                  <motion.div
+                <div className="gc-topbar-spacer" aria-hidden="true" />
+
+                <div className="gc-topbar-right">
+                  {/* Autosave - باستخدام الأنماط الموجودة */}
+                  <div
                     className={cx(
                       'gc-autosave',
                       a.status === 'saving' && 'is-saving',
                       a.status === 'saved' && 'is-saved',
                       a.status === 'error' && 'is-error'
                     )}
-                    animate={{
-                      scale: a.status === 'saving' ? [1, 1.05, 1] : 1,
-                    }}
-                    transition={{
-                      duration: 1,
-                      repeat: a.status === 'saving' ? Infinity : 0,
-                    }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '4px 12px',
-                      borderRadius: '30px',
-                      background: a.status === 'saved' ? 'rgba(16,185,129,0.1)' : 
-                                  a.status === 'saving' ? 'rgba(245,158,11,0.1)' : 
-                                  a.status === 'error' ? 'rgba(239,68,68,0.1)' : 'var(--gc-bg)',
-                      border: '1px solid',
-                      borderColor: a.status === 'saved' ? 'rgba(16,185,129,0.3)' : 
-                                   a.status === 'saving' ? 'rgba(245,158,11,0.3)' : 
-                                   a.status === 'error' ? 'rgba(239,68,68,0.3)' : 'var(--gc-border)',
-                      fontSize: '12px',
-                      fontWeight: 600,
-                      color: a.status === 'saved' ? '#10b981' : 
-                             a.status === 'saving' ? '#f59e0b' : 
-                             a.status === 'error' ? '#ef4444' : 'var(--gc-muted)',
-                    }}
                     aria-live="polite"
                     title={
                       a.status === 'saving'
@@ -658,84 +411,40 @@ export default function AppLayout() {
                             : 'All changes saved'
                     }
                   >
-                    <span className="gc-autosave-icon" style={{ fontSize: '14px' }}>
-                      {a.status === 'saving' ? '⏳' : a.status === 'error' ? '⚠️' : '✓'}
+                    <span className="gc-autosave-icon" aria-hidden="true">
+                      {a.status === 'saving' ? '•' : a.status === 'error' ? '!' : '✓'}
                     </span>
-                    <span>
+                    <span className="gc-sr-only">
                       {a.status === 'saving'
-                        ? 'Saving...'
+                        ? 'Saving'
                         : a.status === 'saved'
                           ? 'Saved'
                           : a.status === 'error'
-                            ? (a.message || 'Error')
-                            : 'Saved'}
+                            ? (a.message || 'Save issue')
+                            : 'All changes saved'}
                     </span>
-                  </motion.div>
+                  </div>
 
-                  {/* Command Palette Button */}
-                  <motion.button
+                  {/* Command Palette Button - باستخدام الأنماط الموجودة */}
+                  <button
                     type="button"
                     className="gc-kbd-btn"
                     aria-label="Command palette"
                     title="Quick actions (Ctrl/⌘ + K)"
                     onClick={() => setPaletteOpen(true)}
-                    whileHover={{ scale: 1.05, backgroundColor: 'rgba(107,127,59,0.1)' }}
-                    whileTap={{ scale: 0.95 }}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px',
-                      padding: '6px 12px',
-                      borderRadius: '30px',
-                      border: '1px solid var(--gc-border)',
-                      background: 'white',
-                      fontSize: '11px',
-                      fontWeight: 600,
-                      color: 'var(--gc-text)',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.02)'
-                    }}
                   >
-                    <span style={{ 
-                      background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)', 
-                      color: 'white', 
-                      padding: '2px 6px', 
-                      borderRadius: '6px', 
-                      fontSize: '10px',
-                      fontWeight: 700
-                    }}>⌘</span>
-                    <span>K</span>
-                  </motion.button>
+                    <span aria-hidden="true">⌘K</span>
+                  </button>
 
-                  {/* User Menu */}
+                  {/* User Menu - باستخدام الأنماط الموجودة */}
                   <details ref={menuRef} className="gc-actions-menu gc-user-menu">
-                    <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" style={{ 
-                      display: 'flex', 
-                      alignItems: 'center', 
-                      gap: '8px', 
-                      padding: '4px 4px 4px 8px',
-                      borderRadius: '30px',
-                      border: '1px solid var(--gc-border)',
-                      background: 'white',
-                      cursor: 'pointer',
-                      boxShadow: '0 2px 4px rgba(0,0,0,0.02)',
-                      listStyle: 'none'
-                    }}>
-                      <span className="gc-avatar" style={{
-                        width: '32px',
-                        height: '32px',
-                        borderRadius: '16px',
-                        background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        color: 'white',
-                        fontWeight: 700,
-                        fontSize: '12px'
-                      }}>
+                    <summary className="gc-actions-trigger gc-user-trigger gc-user-trigger-btn" aria-label="User menu">
+                      <span className="gc-avatar" aria-hidden="true">
                         {avatarText}
                       </span>
-                      <span className="gc-user-mini" style={{ fontSize: '10px', color: 'var(--gc-muted)' }}>▼</span>
+                      <span className="gc-user-mini" aria-hidden="true">
+                        ▾
+                      </span>
                     </summary>
 
                     <AnimatePresence>
@@ -746,142 +455,57 @@ export default function AppLayout() {
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          style={{
-                            position: 'absolute',
-                            right: 0,
-                            top: 'calc(100% + 8px)',
-                            width: '260px',
-                            background: 'white',
-                            borderRadius: '16px',
-                            border: '1px solid var(--gc-border)',
-                            boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1)',
-                            overflow: 'hidden',
-                            zIndex: 1000
-                          }}
                         >
-                          {/* User Header */}
-                          <div style={{
-                            padding: '16px',
-                            background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-                            borderBottom: '1px solid var(--gc-border)'
-                          }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                              <span style={{
-                                width: '40px',
-                                height: '40px',
-                                borderRadius: '20px',
-                                background: 'linear-gradient(135deg, var(--gc-brand-olive) 0%, var(--gc-brand-teal) 100%)',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                color: 'white',
-                                fontWeight: 700,
-                                fontSize: '14px'
-                              }}>
+                          <div className="gc-user-header">
+                            <div className="gc-user-header-row">
+                              <span className="gc-avatar gc-avatar--lg" aria-hidden="true">
                                 {avatarText}
                               </span>
-                              <div>
-                                <div style={{ fontWeight: 700, fontSize: '14px' }}>{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
-                                <div style={{ fontSize: '12px', color: 'var(--gc-muted)' }}>{k.profile?.role || 'Owner'}</div>
+                              <div className="gc-user-meta">
+                                <div className="gc-user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
+                                <div className="gc-user-sub">{(k.profile?.role || 'Owner')} • {k.error ? 'Kitchen error' : kitchenLabel}</div>
                               </div>
                             </div>
                           </div>
 
-                          {/* Menu Items */}
-                          <div style={{ padding: '8px' }}>
-                            <motion.button
-                              className="gc-actions-item"
-                              type="button"
-                              onClick={() => {
-                                setDark((v) => !v)
-                                closeMenu()
-                              }}
-                              whileHover={{ x: 4 }}
-                              style={{
-                                width: '100%',
-                                padding: '10px 12px',
-                                textAlign: 'left',
-                                background: 'none',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                color: 'var(--gc-text)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                              }}
-                            >
-                              <span style={{ fontSize: '16px' }}>{dark ? '☀️' : '🌙'}</span>
-                              {dark ? 'Light Mode' : 'Dark Mode'}
-                            </motion.button>
+                          <button
+                            className="gc-actions-item"
+                            type="button"
+                            onClick={() => {
+                              setDark((v) => !v)
+                              closeMenu()
+                            }}
+                          >
+                            {dark ? 'Light Mode' : 'Dark Mode'}
+                          </button>
 
-                            <div style={{ height: '1px', background: 'var(--gc-border)', margin: '4px 0' }} />
+                          <div className="gc-menu-divider" role="separator" aria-hidden="true" />
+                          
+                          <button
+                            className="gc-actions-item"
+                            type="button"
+                            onClick={async () => {
+                              closeMenu()
+                              await k.refresh().catch(() => {})
+                            }}
+                          >
+                            Refresh kitchen
+                          </button>
 
-                            <motion.button
-                              className="gc-actions-item"
-                              type="button"
-                              onClick={async () => {
-                                closeMenu()
-                                await k.refresh().catch(() => {})
-                              }}
-                              whileHover={{ x: 4 }}
-                              style={{
-                                width: '100%',
-                                padding: '10px 12px',
-                                textAlign: 'left',
-                                background: 'none',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                color: 'var(--gc-text)',
-                                cursor: 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px'
-                              }}
-                            >
-                              <span style={{ fontSize: '16px' }}>🔄</span>
-                              Refresh kitchen
-                            </motion.button>
+                          <div className="gc-menu-divider" role="separator" aria-hidden="true" />
 
-                            <div style={{ height: '1px', background: 'var(--gc-border)', margin: '4px 0' }} />
-
-                            <motion.button
-                              className="gc-actions-item gc-actions-danger"
-                              type="button"
-                              onClick={async () => {
-                                closeMenu()
-                                await handleLogout()
-                              }}
-                              disabled={loggingOut}
-                              whileHover={{ x: 4 }}
-                              style={{
-                                width: '100%',
-                                padding: '10px 12px',
-                                textAlign: 'left',
-                                background: 'none',
-                                border: 'none',
-                                borderRadius: '10px',
-                                fontSize: '13px',
-                                fontWeight: 600,
-                                color: loggingOut ? 'var(--gc-muted)' : '#ef4444',
-                                cursor: loggingOut ? 'not-allowed' : 'pointer',
-                                transition: 'all 0.2s',
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                opacity: loggingOut ? 0.7 : 1
-                              }}
-                            >
-                              <span style={{ fontSize: '16px' }}>🚪</span>
-                              {loggingOut ? 'Logging out...' : 'Log out'}
-                            </motion.button>
-                          </div>
+                          <button
+                            className="gc-actions-item gc-actions-danger"
+                            type="button"
+                            onClick={async () => {
+                              closeMenu()
+                              await handleLogout()
+                            }}
+                            disabled={loggingOut}
+                            aria-disabled={loggingOut}
+                          >
+                            {loggingOut ? 'Logging out…' : 'Log out'}
+                          </button>
                         </motion.div>
                       )}
                     </AnimatePresence>
@@ -892,7 +516,7 @@ export default function AppLayout() {
 
             <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commands} />
 
-            <div className="gc-content" style={{ padding: '24px' }}>
+            <div className="gc-content">
               <div className="gc-page">
                 <Outlet />
               </div>
@@ -901,10 +525,25 @@ export default function AppLayout() {
         </div>
       </div>
 
+      {/* إضافة CSS صغير فقط للـ mobile menu toggle */}
       <style>{`
         @media (max-width: 768px) {
           .gc-mobile-menu-toggle {
             display: flex !important;
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 48px;
+            height: 48px;
+            border-radius: 24px;
+            background: var(--gc-accent);
+            color: white;
+            border: none;
+            box-shadow: var(--gc-shadow);
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            z-index: 60;
           }
           .gc-side {
             transform: translateX(-100%);
@@ -915,21 +554,6 @@ export default function AppLayout() {
           }
           .gc-main {
             margin-left: 0 !important;
-          }
-        }
-        
-        @media (max-width: 640px) {
-          .gc-topbar-pill {
-            padding: 0 16px !important;
-          }
-          .gc-topbar-kitchen {
-            display: none !important;
-          }
-          .gc-autosave span:not(.gc-autosave-icon) {
-            display: none !important;
-          }
-          .gc-autosave {
-            padding: 4px 8px !important;
           }
         }
       `}</style>
