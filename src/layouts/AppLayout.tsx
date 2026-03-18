@@ -1,12 +1,11 @@
 // src/layouts/AppLayout.tsx
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useMode } from '../lib/mode'
 import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import CommandPalette, { type CommandItem } from '../components/CommandPalette'
-import { motion, AnimatePresence } from 'framer-motion'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -27,12 +26,17 @@ function initialsFrom(emailOrName: string) {
 
 function clearAppCaches() {
   try {
+    // mode UI
     localStorage.removeItem('gc-mode')
+    // cost cache in Recipes page
     localStorage.removeItem('gc_v5_cost_cache_v1')
+    // kitchen profile cache
     clearKitchenCache()
+    // keep other app localStorage keys unless known safe
     sessionStorage.clear()
   } catch {}
 }
+
 
 function applyGlobalDensity(density: 'comfort' | 'cozy' | 'compact') {
   try {
@@ -42,13 +46,23 @@ function applyGlobalDensity(density: 'comfort' | 'cozy' | 'compact') {
 
 function loadGlobalDensity(): 'comfort' | 'cozy' | 'compact' {
   try {
+    // New unified key
     const v = localStorage.getItem('gc_density')
     if (v === 'compact' || v === 'cozy' || v === 'comfort') return v
+    // Legacy keys
     const v2 = localStorage.getItem('gc_v5_density')
     if (v2 === 'dense') return 'compact'
     if (v2 === 'comfortable') return 'comfort'
   } catch {}
   return 'comfort'
+}
+
+function saveGlobalDensity(density: 'comfort' | 'cozy' | 'compact') {
+  try {
+    localStorage.setItem('gc_density', density)
+    // Keep legacy compatibility
+    localStorage.setItem('gc_v5_density', density === 'compact' ? 'dense' : 'comfortable')
+  } catch {}
 }
 
 export default function AppLayout() {
@@ -57,8 +71,11 @@ export default function AppLayout() {
   const a = useAutosave()
 
   const navigate = useNavigate()
+
   const loc = useLocation()
 
+  // HashRouter-safe print detection
+  // - In HashRouter, loc.pathname is often '/', and the real route is in loc.hash.
   const isPrintRoute = useMemo(() => {
     const path = (loc.pathname || '').toLowerCase()
     const hash = (loc.hash || '').toLowerCase()
@@ -68,13 +85,13 @@ export default function AppLayout() {
   const [dark, setDark] = useState(false)
   const [loggingOut, setLoggingOut] = useState(false)
   const [userEmail, setUserEmail] = useState<string>('')
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false)
 
-  useEffect(() => {
-    const d = loadGlobalDensity()
-    applyGlobalDensity(d)
-  }, [])
 
+// Global density (UI-only). Keeps spacing consistent across pages.
+useEffect(() => {
+  const d = loadGlobalDensity()
+  applyGlobalDensity(d)
+}, [])
   const menuRef = useRef<HTMLDetailsElement | null>(null)
   const [paletteOpen, setPaletteOpen] = useState(false)
   const [ingredientIndex, setIngredientIndex] = useState<Array<{ id: string; name: string; code?: string | null }>>([])
@@ -83,6 +100,8 @@ export default function AppLayout() {
   useEffect(() => {
     let cancelled = false
 
+    // Build lightweight indexes for global search in the command palette.
+    // NOTE: This is intentionally best-effort; failures must never break the app.
     async function loadIndexes() {
       try {
         const { data } = await supabase
@@ -127,6 +146,7 @@ export default function AppLayout() {
     }
   }, [])
 
+  // Command palette can be opened from anywhere via Ctrl/⌘+K (see CommandPalette)
   useEffect(() => {
     const fn = () => setPaletteOpen(true)
     window.addEventListener('gc:open-command-palette', fn as any)
@@ -134,9 +154,11 @@ export default function AppLayout() {
   }, [])
 
   const base = (import.meta as any).env?.BASE_URL || '/'
+  // ✅ BRAND LOCK: use the SAME logo asset everywhere (login/sidebar/topbar)
   const brandLogo = `${base}gastrochef-logo.png`
   const brandFallback = `${base}gastrochef-icon-512.png`
 
+  // Always keep user email in sync (login/logout/switch)
   useEffect(() => {
     let alive = true
 
@@ -173,7 +195,61 @@ export default function AppLayout() {
     return 'Dashboard'
   }, [loc.pathname, loc.hash])
 
-  const handleLogout = useCallback(async () => {
+  const commands: CommandItem[] = useMemo(
+    () => [
+      { id: 'go-dashboard', label: 'Go to Dashboard', kbd: 'G D', run: () => navigate('/dashboard') },
+      { id: 'go-recipes', label: 'Go to Recipes', kbd: 'G R', run: () => navigate('/recipes') },
+      { id: 'go-ingredients', label: 'Go to Ingredients', kbd: 'G I', run: () => navigate('/ingredients') },
+      { id: 'go-recipe', label: 'Open Recipe Editor', kbd: 'G E', run: () => navigate('/recipe') },
+      { id: 'go-cook', label: 'Open Cook Mode', kbd: 'G C', run: () => navigate('/cook') },
+      { id: 'go-print', label: 'Open Print', kbd: 'G P', run: () => navigate('/print') },
+      { id: 'go-settings', label: 'Go to Settings', kbd: 'G S', run: () => navigate('/settings') },
+      
+      // ——— Global Search (Ingredients / Recipes) ———
+      ...ingredientIndex.map((ing) => ({
+        id: `ing-${ing.id}`,
+        label: `Ingredient: ${ing.name}${ing.code ? ` (${ing.code})` : ''}`,
+        kbd: '⏎',
+        run: () => {
+          navigate('/ingredients')
+        },
+      })),
+      ...recipeIndex.map((r) => ({
+        id: `rec-${r.id}`,
+        label: `Recipe: ${r.name}`,
+        kbd: '⏎',
+        run: () => {
+          navigate('/recipes')
+        },
+      })),
+{
+        id: 'toggle-theme',
+        label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode',
+        kbd: 'T',
+        run: () => setDark((v) => !v),
+      },
+      {
+        id: 'refresh-kitchen',
+        label: 'Refresh kitchen',
+        kbd: 'R',
+        run: async () => {
+          await k.refresh().catch(() => {})
+        },
+      },
+      {
+        id: 'logout',
+        label: 'Log out',
+        kbd: 'L',
+        danger: true,
+        run: async () => {
+          await handleLogout()
+        },
+      },
+    ],
+    [navigate, dark, k, handleLogout, ingredientIndex, recipeIndex]
+  )
+
+  async function handleLogout() {
     if (loggingOut) return
     setLoggingOut(true)
 
@@ -189,45 +265,7 @@ export default function AppLayout() {
     } finally {
       window.location.assign(`${base}#/login`)
     }
-  }, [base, loggingOut, setMode])
-
-  const commands: CommandItem[] = useMemo(
-    () => {
-      const cmds: CommandItem[] = [
-        { id: 'go-dashboard', label: 'Go to Dashboard', kbd: 'G D', run: () => navigate('/dashboard') },
-        { id: 'go-recipes', label: 'Go to Recipes', kbd: 'G R', run: () => navigate('/recipes') },
-        { id: 'go-ingredients', label: 'Go to Ingredients', kbd: 'G I', run: () => navigate('/ingredients') },
-        { id: 'go-recipe', label: 'Open Recipe Editor', kbd: 'G E', run: () => navigate('/recipe') },
-        { id: 'go-cook', label: 'Open Cook Mode', kbd: 'G C', run: () => navigate('/cook') },
-        { id: 'go-print', label: 'Open Print', kbd: 'G P', run: () => navigate('/print') },
-        { id: 'go-settings', label: 'Go to Settings', kbd: 'G S', run: () => navigate('/settings') },
-        { id: 'toggle-theme', label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode', kbd: 'T', run: () => setDark((v) => !v) },
-        { id: 'refresh-kitchen', label: 'Refresh kitchen', kbd: 'R', run: async () => { await k.refresh().catch(() => {}) } },
-        { id: 'logout', label: 'Log out', kbd: 'L', danger: true, run: async () => { await handleLogout() } },
-      ]
-
-      ingredientIndex.forEach((ing) => {
-        cmds.push({
-          id: `ing-${ing.id}`,
-          label: `Ingredient: ${ing.name}${ing.code ? ` (${ing.code})` : ''}`,
-          kbd: '⏎',
-          run: () => { navigate('/ingredients') },
-        })
-      })
-
-      recipeIndex.forEach((r) => {
-        cmds.push({
-          id: `rec-${r.id}`,
-          label: `Recipe: ${r.name}`,
-          kbd: '⏎',
-          run: () => { navigate('/recipes') },
-        })
-      })
-
-      return cmds
-    },
-    [navigate, dark, k, handleLogout, ingredientIndex, recipeIndex]
-  )
+  }
 
   function closeMenu() {
     if (menuRef.current) menuRef.current.open = false
@@ -236,6 +274,7 @@ export default function AppLayout() {
   const avatarText = initialsFrom(userEmail || 'GastroChef')
   const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
 
+  // Print route: minimal layout only
   if (isPrintRoute) {
     return (
       <div className={cx('gc-root', dark && 'gc-dark', 'gc-print-route')}>
@@ -419,7 +458,9 @@ export default function AppLayout() {
                           <div className="gc-user-sub">{(k.profile?.role || 'Owner')} • {k.error ? 'Kitchen error' : kitchenLabel}</div>
                         </div>
                       </div>
+                      {/* Billion UI: keep email out of the always-visible menu header (reduces clutter) */}
                     </div>
+
 
                     <button
                       className="gc-actions-item"
