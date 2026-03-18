@@ -756,6 +756,7 @@ export default function Ingredients() {
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                 <input
                   className="w-full pl-9 pr-9 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                  style={{ color: '#000000' }}
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                   placeholder="Search for a product"
