@@ -94,14 +94,14 @@ function Modal({
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", duration: 0.3 }}
           >
-            <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
               <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <div>
-                  <div className="gc-label text-primary-600 dark:text-primary-400">INGREDIENT</div>
+                  <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider">INGREDIENT</div>
                   <div className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">{title}</div>
                 </div>
                 <motion.button 
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400"
                   onClick={onClose}
                   type="button"
                   whileHover={{ scale: 1.1 }}
@@ -144,11 +144,11 @@ const IngredientTableRow = memo(function IngredientTableRow({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      whileHover={{ backgroundColor: 'rgba(107, 127, 59, 0.02)' }}
+      whileHover={{ backgroundColor: 'rgba(0, 0, 0, 0.02)' }}
       className={cls(!active && 'opacity-60')}
     >
-      <td>
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono" title={r.code ?? '—'}>
+      <td className="px-4 py-3">
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono text-gray-700 dark:text-gray-300" title={r.code ?? '—'}>
           {r.code ? (
             <>
               <span className="w-2 h-2 rounded-full bg-primary-500" />
@@ -157,7 +157,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
           ) : '—'}
         </span>
       </td>
-      <td>
+      <td className="px-4 py-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-900 dark:text-white">{r.name ?? '—'}</span>
@@ -179,16 +179,16 @@ const IngredientTableRow = memo(function IngredientTableRow({
           )}
         </div>
       </td>
-      <td className="text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
-      <td className="text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
-      <td className="text-center">
+      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
+      <td className="px-4 py-3 text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="px-4 py-3 text-center">
         <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
           {unit}
         </span>
       </td>
-      <td className="text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
-      <td className="text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
-      <td>
+      <td className="px-4 py-3 text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
+      <td className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
+      <td className="px-4 py-3">
         <div className="flex items-center justify-center gap-2">
           <motion.button 
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
@@ -665,39 +665,39 @@ export default function Ingredients() {
 
   return (
     <motion.div 
-      className="gc-ingredients"
+      className="gc-ingredients max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex flex-wrap items-start justify-between gap-4">
+      <motion.div variants={itemVariants} className="mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-sm border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
             <div>
-              <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-1">
+              <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-2">
                 INGREDIENTS — PRO
               </div>
-              <h1 className="text-2xl font-bold mb-1">Database</h1>
-              <p className="text-sm text-white/90">Search, filter, sort, validate costs, and manage ingredients.</p>
+              <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Database</h1>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Search, filter, sort, validate costs, and manage ingredients.</p>
               {isDebug && (
-                <div className="mt-3 text-xs text-white/70">Kitchen ID: {kitchenId ?? '—'}</div>
+                <div className="mt-3 text-xs text-gray-500 dark:text-gray-500">Kitchen ID: {kitchenId ?? '—'}</div>
               )}
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg text-sm text-white cursor-pointer hover:bg-white/20 transition">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
                 <input 
                   type="checkbox" 
                   checked={showInactive} 
                   onChange={(e) => setShowInactive(e.target.checked)}
-                  className="rounded border-white/30 text-primary-600 focus:ring-primary-500"
+                  className="rounded border-gray-400 text-primary-600 focus:ring-primary-500"
                 />
                 <span>Show inactive</span>
               </label>
 
               <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 type="button" 
                 onClick={bulkRecalcNetCosts} 
                 disabled={bulkWorking}
@@ -708,7 +708,7 @@ export default function Ingredients() {
               </motion.button>
 
               <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 type="button" 
                 onClick={() => bulkSetActive(true)} 
                 disabled={bulkWorking}
@@ -719,7 +719,7 @@ export default function Ingredients() {
               </motion.button>
 
               <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
+                className="px-4 py-2 bg-gray-100 dark:bg-gray-700 rounded-xl text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-all"
                 type="button" 
                 onClick={() => bulkSetActive(false)} 
                 disabled={bulkWorking}
@@ -730,7 +730,7 @@ export default function Ingredients() {
               </motion.button>
 
               <motion.button 
-                className="px-5 py-2 bg-white text-primary-700 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition"
+                className="px-5 py-2 bg-primary-600 text-white rounded-xl text-sm font-semibold shadow-sm hover:bg-primary-700 hover:shadow-md transition-all"
                 type="button" 
                 onClick={openCreate}
                 whileHover={{ scale: 1.02 }}
@@ -744,9 +744,9 @@ export default function Ingredients() {
       </motion.div>
 
       {/* Filters */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <motion.div variants={itemVariants} className="mb-8">
+        <div className="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {/* Search */}
             <div>
               <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
@@ -755,11 +755,10 @@ export default function Ingredients() {
               <div className="relative">
                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
                 <input
-                  className="w-full pl-9 pr-9 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  style={{ color: '#000000' }}
+                  className="w-full pl-10 pr-10 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search for a product"
+                  placeholder="Search ingredients or suppliers..."
                 />
                 {search && (
                   <button 
@@ -779,7 +778,7 @@ export default function Ingredients() {
                 Category
               </label>
               <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
                 value={category} 
                 onChange={(e) => setCategory(e.target.value)}
               >
@@ -796,7 +795,7 @@ export default function Ingredients() {
                 Sort by
               </label>
               <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
+                className="w-full px-4 py-2.5 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
                 value={sortBy} 
                 onChange={(e) => setSortBy(e.target.value as any)}
               >
@@ -809,17 +808,17 @@ export default function Ingredients() {
 
           {/* Active filters */}
           {(search || category) && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+            <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
                 {search && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
+                  <span className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
                     Search: {search}
                     <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900">×</button>
                   </span>
                 )}
                 {category && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
+                  <span className="px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
                     Category: {category}
                     <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900">×</button>
                   </span>
@@ -883,7 +882,7 @@ export default function Ingredients() {
       {!loading && !err && (
         <>
           {/* KPIs */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
             <StatsCard
               label="ITEMS"
               value={stats.items}
@@ -914,13 +913,13 @@ export default function Ingredients() {
 
           {/* Table */}
           <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="px-6 py-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gray-50 dark:bg-gray-800/50">
               <div>
                 <h2 className="text-sm font-semibold text-gray-900 dark:text-white">INGREDIENTS LIST</h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click Edit to validate pack + cost.</p>
               </div>
               <button 
-                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 rounded-lg transition"
                 onClick={load}
               >
                 Refresh
@@ -928,8 +927,8 @@ export default function Ingredients() {
             </div>
 
             {filtered.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-2xl">
+              <div className="p-12 text-center">
+                <div className="w-20 h-20 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-3xl">
                   🧂
                 </div>
                 <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
