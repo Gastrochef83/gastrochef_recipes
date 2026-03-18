@@ -6,7 +6,7 @@ import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
 
-// أيقونات مبسطة
+// ========== الأيقونات الموحدة ==========
 const Icons = {
   search: "M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z",
   plus: "M12 4v16m8-8H4",
@@ -19,6 +19,7 @@ const Icons = {
   check: "M5 13l4 4L19 7"
 }
 
+// ========== الأنواع ==========
 type IngredientRow = {
   id: string
   code?: string | null
@@ -34,6 +35,7 @@ type IngredientRow = {
   kitchen_id?: string
 }
 
+// ========== الدوال المساعدة ==========
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
@@ -58,7 +60,7 @@ function calcNetUnitCost(packPrice: number, packSize: number) {
   return pp / ps
 }
 
-// بطاقة إحصائية مبسطة
+// ========== بطاقة إحصائية ==========
 const StatCard = ({ label, value, icon, color = 'blue' }: { label: string; value: string | number; icon: string; color?: string }) => (
   <div className="bg-white rounded-xl p-5 border border-gray-100 hover:border-gray-200 transition-colors">
     <div className="flex items-center justify-between">
@@ -75,7 +77,7 @@ const StatCard = ({ label, value, icon, color = 'blue' }: { label: string; value
   </div>
 )
 
-// صف الجدول المبسط
+// ========== صف الجدول ==========
 const IngredientRow = memo(function IngredientRow({
   item,
   onEdit,
@@ -140,7 +142,7 @@ const IngredientRow = memo(function IngredientRow({
   )
 })
 
-// نافذة منبثقة بسيطة
+// ========== نافذة منبثقة بسيطة ==========
 const SimpleModal = ({ isOpen, onClose, title, children }: { isOpen: boolean; onClose: () => void; title: string; children: ReactNode }) => {
   if (!isOpen) return null
   
@@ -168,11 +170,13 @@ const SimpleModal = ({ isOpen, onClose, title, children }: { isOpen: boolean; on
   )
 }
 
+// ========== المكون الرئيسي ==========
 export default function Ingredients() {
   const k = useKitchen()
   const canEditCodes = k.isOwner
   const isDebug = import.meta.env.DEV || new URLSearchParams(window.location.search).has('debug')
   
+  // ========== State ==========
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [items, setItems] = useState<IngredientRow[]>([])
@@ -199,6 +203,7 @@ export default function Ingredients() {
   // Toast
   const [toast, setToast] = useState<{ message: string; type: 'success' | 'error' } | null>(null)
 
+  // ========== دوال تحميل البيانات ==========
   const loadKitchen = async () => {
     const { data } = await supabase.rpc('current_kitchen_id')
     setKitchenId(data as string)
@@ -230,7 +235,7 @@ export default function Ingredients() {
     loadItems()
   }, [])
 
-  // فلترة وتصفية
+  // ========== فلترة وتصفية ==========
   const filteredItems = useMemo(() => {
     let filtered = items.filter(item => showInactive ? true : item.is_active !== false)
     
@@ -250,13 +255,13 @@ export default function Ingredients() {
     return filtered
   }, [items, search, categoryFilter, showInactive])
 
-  // الفئات المتاحة
+  // ========== الفئات المتاحة ==========
   const categories = useMemo(() => {
     const cats = new Set(items.map(i => i.category).filter(Boolean))
     return Array.from(cats).sort()
   }, [items])
 
-  // إحصائيات
+  // ========== إحصائيات ==========
   const stats = useMemo(() => {
     const total = filteredItems.length
     const avgCost = filteredItems.reduce((sum, i) => sum + toNum(i.net_unit_cost, 0), 0) / (total || 1)
@@ -264,6 +269,7 @@ export default function Ingredients() {
     return { total, avgCost, missingCost }
   }, [filteredItems])
 
+  // ========== دوال الفتح والإغلاق ==========
   const openCreateModal = () => {
     setEditingItem(null)
     setFormName('')
@@ -290,6 +296,7 @@ export default function Ingredients() {
     setModalOpen(true)
   }
 
+  // ========== دوال الحفظ والحذف ==========
   const handleSave = async () => {
     if (!formName.trim()) {
       setToast({ message: 'Name is required', type: 'error' })
@@ -312,10 +319,12 @@ export default function Ingredients() {
       }
 
       if (editingItem) {
-        await supabase.from('ingredients').update(payload).eq('id', editingItem.id)
+        const { error } = await supabase.from('ingredients').update(payload).eq('id', editingItem.id)
+        if (error) throw error
         setToast({ message: 'Ingredient updated', type: 'success' })
       } else {
-        await supabase.from('ingredients').insert(payload)
+        const { error } = await supabase.from('ingredients').insert(payload)
+        if (error) throw error
         setToast({ message: 'Ingredient created', type: 'success' })
       }
       
@@ -332,7 +341,8 @@ export default function Ingredients() {
     if (!confirm('Delete this ingredient?')) return
     
     try {
-      await supabase.from('ingredients').delete().eq('id', id)
+      const { error } = await supabase.from('ingredients').delete().eq('id', id)
+      if (error) throw error
       setToast({ message: 'Ingredient deleted', type: 'success' })
       loadItems()
     } catch (err: any) {
@@ -340,10 +350,12 @@ export default function Ingredients() {
     }
   }
 
+  // ========== الواجهة ==========
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header بسيط */}
+        
+        {/* ===== Header ===== */}
         <div className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Ingredients</h1>
@@ -360,7 +372,7 @@ export default function Ingredients() {
           </button>
         </div>
 
-        {/* Search and Filters */}
+        {/* ===== Search and Filters ===== */}
         <div className="bg-white rounded-xl border border-gray-200 p-4 mb-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="flex-1 relative">
@@ -399,7 +411,7 @@ export default function Ingredients() {
           </div>
         </div>
 
-        {/* Stats بطاقات بسيطة */}
+        {/* ===== Stats Cards ===== */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
           <StatCard 
             label="Total items" 
@@ -421,19 +433,25 @@ export default function Ingredients() {
           />
         </div>
 
-        {/* Table */}
-        {loading ? (
+        {/* ===== Loading State ===== */}
+        {loading && (
           <div className="bg-white rounded-xl border border-gray-200 p-4">
             <Skeleton className="h-8 w-full mb-4" />
             {[...Array(5)].map((_, i) => (
               <Skeleton key={i} className="h-12 w-full mb-2" />
             ))}
           </div>
-        ) : error ? (
+        )}
+
+        {/* ===== Error State ===== */}
+        {error && (
           <div className="bg-red-50 rounded-xl p-4 text-red-600 text-sm">
             {error}
           </div>
-        ) : (
+        )}
+
+        {/* ===== Table ===== */}
+        {!loading && !error && (
           <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
@@ -472,15 +490,16 @@ export default function Ingredients() {
           </div>
         )}
 
-        {/* Modal بسيط */}
+        {/* ===== Modal ===== */}
         <SimpleModal
           isOpen={modalOpen}
           onClose={() => setModalOpen(false)}
           title={editingItem ? 'Edit ingredient' : 'New ingredient'}
         >
           <div className="space-y-4">
+            {/* Name */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Name</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Name *</label>
               <input
                 type="text"
                 value={formName}
@@ -490,6 +509,7 @@ export default function Ingredients() {
               />
             </div>
             
+            {/* Category & Supplier */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
@@ -513,6 +533,20 @@ export default function Ingredients() {
               </div>
             </div>
 
+            {/* Code (اختياري) */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Code (optional)</label>
+              <input
+                type="text"
+                value={formCode}
+                onChange={(e) => setFormCode(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors"
+                placeholder="e.g., ING-001"
+                disabled={!canEditCodes}
+              />
+            </div>
+
+            {/* Pack Size & Unit */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Pack size</label>
@@ -532,15 +566,16 @@ export default function Ingredients() {
                   onChange={(e) => setFormPackUnit(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors"
                 >
-                  <option value="g">g</option>
-                  <option value="kg">kg</option>
-                  <option value="ml">ml</option>
-                  <option value="l">L</option>
-                  <option value="pcs">pcs</option>
+                  <option value="g">grams (g)</option>
+                  <option value="kg">kilograms (kg)</option>
+                  <option value="ml">milliliters (ml)</option>
+                  <option value="l">liters (L)</option>
+                  <option value="pcs">pieces (pcs)</option>
                 </select>
               </div>
             </div>
 
+            {/* Pack Price & Net Cost */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Pack price ($)</label>
@@ -563,10 +598,12 @@ export default function Ingredients() {
                   onChange={(e) => setFormNetCost(e.target.value)}
                   className="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-gray-400 transition-colors"
                 />
+                <p className="text-xs text-gray-400 mt-1">Auto-calculated if 0</p>
               </div>
             </div>
 
-            <div className="flex justify-end gap-3 pt-4">
+            {/* Form Actions */}
+            <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">
               <button
                 onClick={() => setModalOpen(false)}
                 className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-100 rounded-lg transition-colors"
@@ -584,13 +621,21 @@ export default function Ingredients() {
           </div>
         </SimpleModal>
 
-        {/* Toast بسيط */}
+        {/* ===== Toast Notification ===== */}
         {toast && (
           <div className={cls(
-            "fixed bottom-4 right-4 px-4 py-2 rounded-lg text-sm text-white shadow-lg",
+            "fixed bottom-4 right-4 px-4 py-2 rounded-lg text-sm text-white shadow-lg animate-slide-up",
             toast.type === 'success' ? 'bg-green-600' : 'bg-red-600'
           )}>
             {toast.message}
+            <button 
+              onClick={() => setToast(null)}
+              className="ml-3 hover:opacity-80"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={Icons.close} />
+              </svg>
+            </button>
           </div>
         )}
       </div>
