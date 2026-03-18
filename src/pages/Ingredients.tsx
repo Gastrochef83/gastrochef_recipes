@@ -94,14 +94,14 @@ function Modal({
             exit={{ scale: 0.9, opacity: 0 }}
             transition={{ type: "spring", duration: 0.3 }}
           >
-            <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200 dark:border-gray-700">
               <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
                 <div>
-                  <div className="gc-label text-primary-600 dark:text-primary-400">INGREDIENT</div>
+                  <div className="text-xs font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider">INGREDIENT</div>
                   <div className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">{title}</div>
                 </div>
                 <motion.button 
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
+                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 dark:text-gray-400"
                   onClick={onClose}
                   type="button"
                   whileHover={{ scale: 1.1 }}
@@ -147,8 +147,8 @@ const IngredientTableRow = memo(function IngredientTableRow({
       whileHover={{ backgroundColor: 'rgba(107, 127, 59, 0.02)' }}
       className={cls(!active && 'opacity-60')}
     >
-      <td>
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono" title={r.code ?? '—'}>
+      <td className="px-4 py-3">
+        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono text-gray-700 dark:text-gray-300">
           {r.code ? (
             <>
               <span className="w-2 h-2 rounded-full bg-primary-500" />
@@ -157,7 +157,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
           ) : '—'}
         </span>
       </td>
-      <td>
+      <td className="px-4 py-3">
         <div className="flex flex-col gap-1">
           <div className="flex items-center gap-2">
             <span className="font-semibold text-gray-900 dark:text-white">{r.name ?? '—'}</span>
@@ -179,16 +179,16 @@ const IngredientTableRow = memo(function IngredientTableRow({
           )}
         </div>
       </td>
-      <td className="text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
-      <td className="text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
-      <td className="text-center">
+      <td className="px-4 py-3 text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
+      <td className="px-4 py-3 text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="px-4 py-3 text-center">
         <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
           {unit}
         </span>
       </td>
-      <td className="text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
-      <td className="text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
-      <td>
+      <td className="px-4 py-3 text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
+      <td className="px-4 py-3 text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
+      <td className="px-4 py-3">
         <div className="flex items-center justify-center gap-2">
           <motion.button 
             className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
@@ -218,51 +218,6 @@ const IngredientTableRow = memo(function IngredientTableRow({
         </div>
       </td>
     </motion.tr>
-  )
-})
-
-// ==================== Stats Card Component ====================
-const StatsCard = memo(function StatsCard({ 
-  label, 
-  value, 
-  sublabel, 
-  icon,
-  trend 
-}: { 
-  label: string
-  value: string | number
-  sublabel: string
-  icon: ReactNode
-  trend?: { value: number; positive: boolean }
-}) {
-  return (
-    <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
-      whileHover={{ y: -2 }}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {label}
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
-            {trend && (
-              <span className={cls(
-                "text-xs font-medium",
-                trend.positive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-              </span>
-            )}
-          </div>
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sublabel}</div>
-        </div>
-        <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400">
-          {icon}
-        </div>
-      </div>
-    </motion.div>
   )
 })
 
@@ -450,11 +405,10 @@ export default function Ingredients() {
   const stats = useMemo(() => {
     const items = filtered.length
     const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
-    const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
     const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
     const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
 
-    return { items, avgNet, maxPack, missingCost, warnUnits }
+    return { items, avgNet, missingCost, warnUnits }
   }, [filtered])
 
   const openCreate = () => {
@@ -665,13 +619,13 @@ export default function Ingredients() {
 
   return (
     <motion.div 
-      className="gc-ingredients"
+      className="space-y-6"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
       {/* Header */}
-      <motion.div variants={itemVariants} className="mb-6">
+      <motion.div variants={itemVariants}>
         <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 rounded-2xl p-6 text-white shadow-lg">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
@@ -743,97 +697,119 @@ export default function Ingredients() {
         </div>
       </motion.div>
 
-      {/* Filters */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Search
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input
-                  className="w-full pl-9 pr-9 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search ingredients..."
-                />
-                {search && (
-                  <button 
-                    type="button" 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    onClick={() => setSearch('')}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Category
-              </label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                value={category} 
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="">All categories</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Sort by
-              </label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value as any)}
-              >
-                <option value="name">Name (A→Z)</option>
-                <option value="cost">Net Unit Cost (High→Low)</option>
-                <option value="pack_price">Pack Price (High→Low)</option>
-              </select>
+      {/* Filters - القسم المطلوب تحسين وضوحه */}
+      <motion.div variants={itemVariants}>
+        <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+          {/* عنوان القسم - لجعله أكثر وضوحاً */}
+          <div className="px-4 py-2 bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+            <div className="flex items-center gap-2">
+              <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">🔍 SEARCH & FILTERS</span>
+              <span className="text-[10px] text-gray-500 dark:text-gray-400">(Refine your ingredient list)</span>
             </div>
           </div>
 
-          {/* Active filters */}
-          {(search || category) && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
-                {search && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    Search: {search}
-                    <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900">×</button>
-                  </span>
-                )}
-                {category && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    Category: {category}
-                    <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900">×</button>
-                  </span>
-                )}
-                {(search || category) && (
-                  <button 
-                    onClick={() => { setSearch(''); setCategory(''); }}
-                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    Clear all
-                  </button>
-                )}
+          {/* محتوى الفلاتر */}
+          <div className="p-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Search */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  SEARCH
+                </label>
+                <div className="relative">
+                  <input
+                    className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white placeholder-gray-500 dark:placeholder-gray-400 focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition text-sm"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search by name or supplier..."
+                  />
+                  {search && (
+                    <button 
+                      type="button" 
+                      className="absolute right-2 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-100 dark:bg-gray-600 rounded-full"
+                      onClick={() => setSearch('')}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Category Filter */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  CATEGORY
+                </label>
+                <select 
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition text-sm appearance-none cursor-pointer"
+                  value={category} 
+                  onChange={(e) => setCategory(e.target.value)}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.75rem center',
+                    backgroundSize: '1rem'
+                  }}
+                >
+                  <option value="">All categories</option>
+                  {categories.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Sort */}
+              <div className="space-y-1">
+                <label className="block text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
+                  SORT BY
+                </label>
+                <select 
+                  className="w-full px-3 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition text-sm appearance-none cursor-pointer"
+                  value={sortBy} 
+                  onChange={(e) => setSortBy(e.target.value as any)}
+                  style={{
+                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236B7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                    backgroundRepeat: 'no-repeat',
+                    backgroundPosition: 'right 0.75rem center',
+                    backgroundSize: '1rem'
+                  }}
+                >
+                  <option value="name">Name (A→Z)</option>
+                  <option value="cost">Net Unit Cost (High→Low)</option>
+                  <option value="pack_price">Pack Price (High→Low)</option>
+                </select>
               </div>
             </div>
-          )}
+
+            {/* Active filters */}
+            {(search || category) && (
+              <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-medium text-gray-500 dark:text-gray-400">Active filters:</span>
+                  {search && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-md">
+                      <span>Search: "{search}"</span>
+                      <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900 font-bold">×</button>
+                    </span>
+                  )}
+                  {category && (
+                    <span className="inline-flex items-center gap-1 px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-md">
+                      <span>Category: {category}</span>
+                      <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900 font-bold">×</button>
+                    </span>
+                  )}
+                  {(search || category) && (
+                    <button 
+                      onClick={() => { setSearch(''); setCategory(''); }}
+                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline"
+                    >
+                      Clear all
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </motion.div>
 
@@ -882,46 +858,127 @@ export default function Ingredients() {
       {!loading && !err && (
         <>
           {/* KPIs */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <StatsCard
-              label="ITEMS"
-              value={stats.items}
-              sublabel="Filtered results"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-            />
-            <StatsCard
-              label="AVG NET UNIT"
-              value={money(stats.avgNet)}
-              sublabel="Average net unit cost"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-            />
-            <StatsCard
-              label="MISSING COST"
-              value={stats.missingCost}
-              sublabel="net_unit_cost = 0"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
-            />
-            <StatsCard
-              label="UNIT WARNINGS"
-              value={stats.warnUnits}
-              sublabel="Possible unit mismatch"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
-            />
+          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* ITEMS */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <span>📦</span> ITEMS
+                  </div>
+                  <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{stats.items}</div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Filtered results</div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* AVG NET UNIT */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <span>💰</span> AVG NET UNIT
+                  </div>
+                  <div className="mt-2 text-2xl font-bold text-gray-900 dark:text-white">{money(stats.avgNet)}</div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Average net unit cost</div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-green-50 dark:bg-green-900/20 flex items-center justify-center text-green-600 dark:text-green-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="6" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+              </div>
+            </div>
+
+            {/* MISSING COST */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <span>⚠️</span> MISSING COST
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.missingCost}</span>
+                    {stats.missingCost > 0 && (
+                      <span className="text-xs font-medium px-2 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full">
+                        {((stats.missingCost / stats.items) * 100).toFixed(0)}% of total
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Need pricing</div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-amber-50 dark:bg-amber-900/20 flex items-center justify-center text-amber-600 dark:text-amber-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="10" />
+                    <line x1="12" y1="8" x2="12" y2="12" />
+                    <line x1="12" y1="16" x2="12.01" y2="16" />
+                  </svg>
+                </div>
+              </div>
+              {stats.missingCost > 0 && (
+                <div className="mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  {stats.missingCost} ingredient{stats.missingCost > 1 ? 's' : ''} need price
+                </div>
+              )}
+            </div>
+
+            {/* UNIT WARNINGS */}
+            <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm">
+              <div className="flex items-start justify-between">
+                <div>
+                  <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider flex items-center gap-1">
+                    <span>🔍</span> UNIT WARNINGS
+                  </div>
+                  <div className="mt-2 flex items-baseline gap-2">
+                    <span className="text-2xl font-bold text-gray-900 dark:text-white">{stats.warnUnits}</span>
+                    {stats.warnUnits > 0 && (
+                      <span className="text-xs font-medium px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded-full">
+                        {((stats.warnUnits / stats.items) * 100).toFixed(0)}% of total
+                      </span>
+                    )}
+                  </div>
+                  <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">Possible unit mismatch</div>
+                </div>
+                <div className="w-10 h-10 rounded-lg bg-purple-50 dark:bg-purple-900/20 flex items-center justify-center text-purple-600 dark:text-purple-400">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+                  </svg>
+                </div>
+              </div>
+              {stats.warnUnits > 0 && (
+                <div className="mt-2 text-xs text-purple-600 dark:text-purple-400">
+                  Check unit consistency
+                </div>
+              )}
+            </div>
           </motion.div>
 
           {/* Table */}
           <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
             <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">INGREDIENTS LIST</h2>
+                <h2 className="text-sm font-semibold text-gray-900 dark:text-white flex items-center gap-2">
+                  <span>📋</span> INGREDIENTS LIST
+                </h2>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click Edit to validate pack + cost.</p>
               </div>
               <button 
-                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
+                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition flex items-center gap-1"
                 onClick={load}
               >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M23 4v6h-6" />
+                  <path d="M1 20v-6h6" />
+                  <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                </svg>
                 Refresh
               </button>
             </div>
@@ -1005,7 +1062,9 @@ export default function Ingredients() {
         <div className="space-y-6">
           {/* IDENTIFICATION */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">IDENTIFICATION</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+              <span>🆔</span> IDENTIFICATION
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CODE</label>
@@ -1052,7 +1111,9 @@ export default function Ingredients() {
 
           {/* CLASSIFICATION */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">CLASSIFICATION</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+              <span>📂</span> CLASSIFICATION
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CATEGORY</label>
@@ -1077,7 +1138,9 @@ export default function Ingredients() {
 
           {/* PACK */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">PACK</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+              <span>📦</span> PACK
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK SIZE *</label>
@@ -1109,7 +1172,9 @@ export default function Ingredients() {
 
           {/* COST */}
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">COST</h3>
+            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1">
+              <span>💰</span> COST
+            </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK PRICE *</label>
@@ -1137,8 +1202,10 @@ export default function Ingredients() {
 
           {/* Smart Helpers */}
           <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-            <div className="flex items-center gap-4">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">SMART HELPERS:</span>
+            <div className="flex items-center gap-4 flex-wrap">
+              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1">
+                <span>⚡</span> SMART HELPERS:
+              </span>
               <button
                 className="px-3 py-1.5 text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition"
                 onClick={smartRecalcNetCost}
