@@ -79,20 +79,22 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const loc = useLocation()
 
-  // State للإشعارات والعناصر الأخيرة
+  // State للإشعارات
   const [notifications, setNotifications] = useState<Array<{ id: string; message: string; read: boolean; path: string }>>([
-    { id: '1', message: 'New recipe added: Pasta Carbonara', read: false, path: '/recipes' },
-    { id: '2', message: 'Ingredient stock low: Tomatoes', read: false, path: '/ingredients' },
-    { id: '3', message: 'Cost analysis completed', read: true, path: '/dashboard' }
+    { id: '1', message: 'Welcome to GastroChef!', read: false, path: '/dashboard' }
   ])
 
-  const [recentItems, setRecentItems] = useState<Array<{ id: string; name: string; type: 'recipe' | 'ingredient'; path: string }>>([
-    { id: '1', name: 'Pasta Carbonara', type: 'recipe', path: '/recipe?id=1' },
-    { id: '2', name: 'Tomato Sauce', type: 'ingredient', path: '/ingredients' },
-    { id: '3', name: 'Chicken Soup', type: 'recipe', path: '/recipe?id=2' }
-  ])
+  // State للعناصر الأخيرة الحقيقية
+  const [recentItems, setRecentItems] = useState<Array<{ 
+    id: string; 
+    name: string; 
+    type: 'recipe' | 'ingredient'; 
+    path: string;
+    action: string;
+    created_at: string;
+  }>>([])
 
-  // State للقوائم المنسدلة
+  const [loadingRecent, setLoadingRecent] = useState(false)
   const [showUserMenu, setShowUserMenu] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
   const [showRecent, setShowRecent] = useState(false)
@@ -104,7 +106,79 @@ export default function AppLayout() {
   const notificationsButtonRef = useRef<HTMLButtonElement>(null)
   const recentButtonRef = useRef<HTMLButtonElement>(null)
 
-  // إغلاق القوائم عند النقر خارجها
+  // ========== دالة لجلب العناصر الأخيرة من Supabase ==========
+  const fetchRecentItems = useCallback(async () => {
+    try {
+      setLoadingRecent(true)
+      
+      // جلب آخر 5 نشاطات للمستخدم الحالي من قاعدة البيانات
+      // ملاحظة: هذا يفترض وجود جدول recent_activities
+      // إذا لم يكن موجوداً، سنستخدم بيانات من recipes و ingredients مباشرة
+      
+      // محاولة جلب من جدول recent_activities أولاً
+      try {
+        const { data, error } = await supabase
+          .from('recent_activities')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(5)
+
+        if (!error && data && data.length > 0) {
+          setRecentItems(data.map(item => ({
+            id: item.item_id,
+            name: item.item_name,
+            type: item.item_type,
+            path: item.item_path,
+            action: item.action,
+            created_at: item.created_at
+          })))
+          return
+        }
+      } catch (e) {
+        // تجاهل الخطأ إذا كان الجدول غير موجود
+      }
+
+      // إذا لم ينجح، نجلب آخر الوصفات المحدثة
+      const { data: recipes, error: recipesError } = await supabase
+        .from('recipes')
+        .select('id, name, updated_at')
+        .order('updated_at', { ascending: false })
+        .limit(3)
+
+      if (!recipesError && recipes) {
+        const recipeItems = recipes.map(r => ({
+          id: r.id,
+          name: r.name,
+          type: 'recipe' as const,
+          path: `/recipe?id=${r.id}`,
+          action: 'updated',
+          created_at: r.updated_at || new Date().toISOString()
+        }))
+        setRecentItems(recipeItems)
+      }
+
+    } catch (error) {
+      console.error('Error fetching recent items:', error)
+    } finally {
+      setLoadingRecent(false)
+    }
+  }, [])
+
+  // ========== جلب العناصر الأخيرة عند تحميل الصفحة ==========
+  useEffect(() => {
+    fetchRecentItems()
+  }, [fetchRecentItems])
+
+  // ========== تحديث القائمة كل دقيقة ==========
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchRecentItems()
+    }, 60000) // كل 60 ثانية
+
+    return () => clearInterval(interval)
+  }, [fetchRecentItems])
+
+  // ========== إغلاق القوائم عند النقر خارجها ==========
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node) &&
@@ -311,7 +385,6 @@ export default function AppLayout() {
 
   // ========== أنماط CSS المحسنة ==========
   const styles = `
-    /* الهيدر */
     .gc-topbar-pill {
       height: 56px;
       background: rgba(255, 255, 255, 0.9);
@@ -341,7 +414,6 @@ export default function AppLayout() {
       color: var(--gc-text);
     }
 
-    /* الأزرار */
     .header-btn {
       display: flex;
       align-items: center;
@@ -363,14 +435,18 @@ export default function AppLayout() {
       transform: translateY(-1px);
     }
 
+    .header-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
     .header-btn-icon {
-      width: 28px;
-      height: 28px;
+      width: 32px;
+      height: 32px;
       padding: 0;
       justify-content: center;
     }
 
-    /* مؤشر الحفظ */
     .autosave-indicator {
       display: flex;
       align-items: center;
@@ -397,12 +473,11 @@ export default function AppLayout() {
       color: #ef4444;
     }
 
-    /* القوائم المنسدلة */
     .dropdown-menu {
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
-      width: 280px;
+      width: 300px;
       background: white;
       border-radius: 16px;
       border: 1px solid rgba(107, 127, 59, 0.2);
@@ -429,7 +504,7 @@ export default function AppLayout() {
     }
 
     .dropdown-header {
-      padding: 16px;
+      padding: 12px 16px;
       background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
       border-bottom: 1px solid rgba(107, 127, 59, 0.1);
     }
@@ -484,7 +559,6 @@ export default function AppLayout() {
       border: 2px solid white;
     }
 
-    /* مؤشر الحالة */
     .status-dot {
       width: 8px;
       height: 8px;
@@ -507,7 +581,6 @@ export default function AppLayout() {
       }
     }
 
-    /* تحسينات للشاشات الصغيرة */
     @media (max-width: 768px) {
       .gc-topbar-pill {
         height: 52px;
@@ -532,6 +605,10 @@ export default function AppLayout() {
       
       .header-btn {
         padding: 6px 8px;
+      }
+
+      .dropdown-menu {
+        width: 280px;
       }
     }
 
@@ -651,7 +728,7 @@ export default function AppLayout() {
           </aside>
 
           <main className="gc-main">
-            {/* الهيدر المحسن - جميع الأزرار تعمل */}
+            {/* الهيدر المحسن - جميع الأزرار تعمل والعناصر تظهر فقط عند النقر */}
             <div className="gc-topbar" aria-label="Top bar">
               <div className="gc-topbar-pill" style={{ display: "grid", gridTemplateColumns: "auto 1fr auto", alignItems: "center" }}>
                 <div className="gc-topbar-left" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -698,36 +775,60 @@ export default function AppLayout() {
                     </span>
                   </motion.div>
 
-                  {/* Recent Items Button */}
+                  {/* Recent Items Button - يعرض بيانات حقيقية من قاعدة البيانات */}
                   <div style={{ position: 'relative' }}>
                     <button
                       ref={recentButtonRef}
                       className="header-btn header-btn-icon"
                       onClick={() => setShowRecent(!showRecent)}
                       title="Recent items"
+                      disabled={loadingRecent}
                     >
-                      <span>🕒</span>
+                      <span>{loadingRecent ? '⏳' : '🕒'}</span>
                     </button>
                     
                     {showRecent && (
                       <div ref={recentRef} className="dropdown-menu">
                         <div className="dropdown-header">
-                          <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>RECENT ITEMS</span>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: '#6b7280' }}>RECENTLY UPDATED</span>
                         </div>
-                        <div style={{ padding: 8 }}>
-                          {recentItems.map((item, index) => (
-                            <button
-                              key={index}
-                              className="dropdown-item"
-                              onClick={() => {
-                                navigate(item.path)
-                                setShowRecent(false)
-                              }}
-                            >
-                              <span>{item.type === 'recipe' ? '📝' : '🥗'}</span>
-                              <span>{item.name}</span>
-                            </button>
-                          ))}
+                        <div style={{ padding: 8, maxHeight: 300, overflowY: 'auto' }}>
+                          {recentItems.length > 0 ? (
+                            recentItems.map((item, index) => (
+                              <button
+                                key={`${item.id}-${index}`}
+                                className="dropdown-item"
+                                onClick={() => {
+                                  navigate(item.path)
+                                  setShowRecent(false)
+                                }}
+                              >
+                                <span style={{ fontSize: 16 }}>
+                                  {item.type === 'recipe' ? '📝' : '🥗'}
+                                </span>
+                                <div style={{ flex: 1, textAlign: 'left' }}>
+                                  <div style={{ fontWeight: 600, fontSize: 13 }}>{item.name}</div>
+                                  <div style={{ fontSize: 10, color: '#6b7280', marginTop: 2 }}>
+                                    {item.type === 'recipe' ? 'Recipe' : 'Ingredient'}
+                                    {' • '}
+                                    {new Date(item.created_at).toLocaleDateString('en-US', { 
+                                      month: 'short', 
+                                      day: 'numeric'
+                                    })}
+                                  </div>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div style={{ 
+                              padding: '20px', 
+                              textAlign: 'center', 
+                              color: '#6b7280',
+                              fontSize: 12 
+                            }}>
+                              No recent items
+                            </div>
+                          )}
                         </div>
                       </div>
                     )}
@@ -820,7 +921,7 @@ export default function AppLayout() {
                     </button>
                     
                     {showUserMenu && (
-                      <div ref={userMenuRef} className="dropdown-menu">
+                      <div ref={userMenuRef} className="dropdown-menu" style={{ width: 260 }}>
                         <div className="dropdown-header">
                           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                             <span style={{
