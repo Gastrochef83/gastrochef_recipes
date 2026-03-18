@@ -1,4 +1,3 @@
-// src/pages/Ingredients.tsx
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -6,7 +5,6 @@ import { invalidateIngredientsCache, primeIngredientsCache } from '../lib/ingred
 import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
-import { motion, AnimatePresence } from 'framer-motion'
 
 type IngredientRow = {
   id: string
@@ -15,10 +13,14 @@ type IngredientRow = {
   name?: string
   category?: string | null
   supplier?: string | null
+
+  // Required (NOT NULL in your DB)
   pack_size?: number | null
   pack_price?: number | null
+
   pack_unit?: string | null
   net_unit_cost?: number | null
+
   is_active?: boolean
   kitchen_id?: string
 }
@@ -48,6 +50,8 @@ function calcNetUnitCost(packPrice: number, packSize: number) {
 }
 
 function sanityFlag(net: number, unit: string) {
+  // Simple heuristics: if cost per "g/ml" is extremely high, probably wrong units.
+  // We keep it gentle; it’s a hint, not a blocker.
   const u = safeUnit(unit)
   if (!Number.isFinite(net) || net <= 0) return { level: 'missing' as const, msg: 'Missing cost' }
 
@@ -63,7 +67,6 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== Modal Component ====================
 function Modal({
   open,
   title,
@@ -76,53 +79,26 @@ function Modal({
   onClose: () => void
 }) {
   if (!open) return null
-  
   return (
-    <AnimatePresence>
-      {open && (
-        <motion.div 
-          className="fixed inset-0 z-50"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-          <motion.div 
-            className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2"
-            initial={{ scale: 0.9, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.9, opacity: 0 }}
-            transition={{ type: "spring", duration: 0.3 }}
-          >
-            <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col overflow-hidden">
-              <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-gray-200 dark:border-gray-700">
-                <div>
-                  <div className="gc-label text-primary-600 dark:text-primary-400">INGREDIENT</div>
-                  <div className="mt-1 text-xl font-extrabold text-gray-900 dark:text-white">{title}</div>
-                </div>
-                <motion.button 
-                  className="w-8 h-8 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center"
-                  onClick={onClose}
-                  type="button"
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </motion.button>
-              </div>
-              <div className="p-6 pt-5 overflow-auto">{children}</div>
+    <div className="fixed inset-0 z-50">
+      <div className="absolute inset-0 bg-black/40" onClick={onClose} />
+      <div className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2">
+        <div className="gc-card shadow-2xl max-h-[90vh] flex flex-col">
+          <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-black/10">
+            <div>
+              <div className="gc-label">INGREDIENT</div>
+              <div className="mt-1 text-xl font-extrabold">{title}</div>
             </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            <button className="gc-btn gc-btn-ghost" onClick={onClose} type="button">
+              Close
+            </button>
+          </div>
+          <div className="p-6 pt-5 overflow-auto">{children}</div>
+        </div>
+      </div>
+    </div>
   )
 }
-
-// ==================== Table Row Component ====================
 const IngredientTableRow = memo(function IngredientTableRow({
   r,
   isDebug,
@@ -140,133 +116,53 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const flag = sanityFlag(net, unit)
 
   return (
-    <motion.tr 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-      whileHover={{ backgroundColor: 'rgba(107, 127, 59, 0.02)' }}
-      className={cls(!active && 'opacity-60')}
-    >
-      <td>
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-gray-100 dark:bg-gray-700 text-xs font-mono" title={r.code ?? '—'}>
-          {r.code ? (
-            <>
-              <span className="w-2 h-2 rounded-full bg-primary-500" />
-              {r.code}
-            </>
-          ) : '—'}
+    <tr>
+      <td className="text-xs text-neutral-600">
+        <span className="gc-ing-codepill" title={r.code ?? '—'}>
+          <span className="gc-mono">{r.code ?? '—'}</span>
         </span>
       </td>
       <td>
-        <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900 dark:text-white">{r.name ?? '—'}</span>
-            {!active && (
-              <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full">
-                Inactive
-              </span>
-            )}
-            {flag.level === 'warn' && (
-              <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full flex items-center gap-1">
-                <span>⚠️</span>
-                Unit warning
-              </span>
-            )}
-          </div>
-          {isDebug && <div className="text-xs text-gray-500 dark:text-gray-400">ID: {r.id}</div>}
+        <div className="font-semibold flex flex-wrap items-center gap-2">
+          <span>{r.name ?? '—'}</span>
+
+          {!active && (
+            <span className="rounded-full bg-neutral-100 px-2 py-0.5 text-xs text-neutral-600">Inactive</span>
+          )}
+
+          {/* Intentionally hide "Missing cost" badge to reduce visual clutter (user request).
+              Cost issues are still visible via the Net Unit Cost column and diagnostics. */}
+
           {flag.level === 'warn' && (
-            <div className="text-xs text-amber-600 dark:text-amber-400">{flag.msg}</div>
+            <span className="rounded-full bg-amber-50 px-2 py-0.5 text-xs text-amber-700">Unit warning</span>
           )}
         </div>
+        {isDebug && <div className="text-xs text-neutral-500">ID: {r.id}</div>}
+        {flag.level === 'warn' && <div className="mt-1 text-xs text-amber-700">{flag.msg}</div>}
       </td>
-      <td className="text-gray-600 dark:text-gray-300">{r.category ?? '—'}</td>
-      <td className="text-center font-mono text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</td>
-      <td className="text-center">
-        <span className="px-2 py-1 bg-gray-100 dark:bg-gray-700 rounded-full text-xs font-medium text-gray-700 dark:text-gray-300">
-          {unit}
-        </span>
-      </td>
-      <td className="text-center font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</td>
-      <td className="text-center font-semibold text-gray-900 dark:text-white">{money(net)}</td>
-      <td>
-        <div className="flex items-center justify-center gap-2">
-          <motion.button 
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-300"
-            type="button" 
-            onClick={() => onEdit(r)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Edit ingredient"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
-            </svg>
-          </motion.button>
-          <motion.button 
-            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400"
-            type="button" 
-            onClick={() => onHardDelete(r.id)}
-            whileHover={{ scale: 1.1 }}
-            whileTap={{ scale: 0.9 }}
-            title="Delete ingredient"
-          >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <polyline points="3 6 5 6 21 6" />
-              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-            </svg>
-          </motion.button>
+
+      <td>{r.category ?? '—'}</td>
+      <td className="gc-td-center">{Math.max(1, toNum(r.pack_size, 1))}</td>
+      <td className="gc-td-center">{unit}</td>
+      <td className="gc-td-center font-semibold">{money(toNum(r.pack_price, 0))}</td>
+      <td className="gc-td-center font-semibold">{money(net)}</td>
+
+      <td className="gc-td-center whitespace-nowrap">
+        <div className="gc-cell-actions">
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onEdit(r)}>
+            Edit
+          </button>
+
+          <button className="gc-btn gc-btn-ghost" type="button" onClick={() => onHardDelete(r.id)}>
+            Delete
+          </button>
         </div>
       </td>
-    </motion.tr>
+    </tr>
   )
 })
 
-// ==================== Stats Card Component ====================
-const StatsCard = memo(function StatsCard({ 
-  label, 
-  value, 
-  sublabel, 
-  icon,
-  trend 
-}: { 
-  label: string
-  value: string | number
-  sublabel: string
-  icon: ReactNode
-  trend?: { value: number; positive: boolean }
-}) {
-  return (
-    <motion.div 
-      className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-all"
-      whileHover={{ y: -2 }}
-    >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-            {label}
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-gray-900 dark:text-white">{value}</span>
-            {trend && (
-              <span className={cls(
-                "text-xs font-medium",
-                trend.positive ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
-              )}>
-                {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-              </span>
-            )}
-          </div>
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sublabel}</div>
-        </div>
-        <div className="w-10 h-10 rounded-lg bg-primary-50 dark:bg-primary-900/20 flex items-center justify-center text-primary-600 dark:text-primary-400">
-          {icon}
-        </div>
-      </div>
-    </motion.div>
-  )
-})
 
-// ==================== Main Component ====================
 export default function Ingredients() {
   const k = useKitchen()
   const canEditCodes = k.isOwner
@@ -286,9 +182,9 @@ export default function Ingredients() {
       }
       return false
     })()
-  
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
+
   const [rows, setRows] = useState<IngredientRow[]>([])
   const [search, setSearch] = useState('')
   const loc = useLocation()
@@ -332,6 +228,7 @@ export default function Ingredients() {
   // Required fields
   const [fPackSize, setFPackSize] = useState('1')
   const [fPackPrice, setFPackPrice] = useState('0')
+
   const [fPackUnit, setFPackUnit] = useState('g')
   const [fNetUnitCost, setFNetUnitCost] = useState('0')
 
@@ -451,6 +348,7 @@ export default function Ingredients() {
     const items = filtered.length
     const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
     const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
+
     const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
     const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
 
@@ -524,8 +422,10 @@ export default function Ingredients() {
         name,
         category: fCategory.trim() || null,
         supplier: fSupplier.trim() || null,
+
         pack_size: packSize,
         pack_price: packPrice,
+
         pack_unit: unit,
         net_unit_cost: netFinal,
         is_active: true,
@@ -600,6 +500,7 @@ export default function Ingredients() {
     await load()
   }
 
+
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
     const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
@@ -649,526 +550,635 @@ export default function Ingredients() {
     }
   }
 
-  // Animation variants
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: { staggerChildren: 0.05 }
-    }
-  }
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 10 },
-    visible: { opacity: 1, y: 0 }
-  }
-
   return (
-    <motion.div 
-      className="gc-ingredients"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
+    <div className="gc-ingredients space-y-6">
       {/* Header */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-gradient-to-r from-primary-600 to-primary-700 dark:from-primary-700 dark:to-primary-800 rounded-2xl p-6 text-white shadow-lg">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <div className="text-xs font-semibold text-white/80 uppercase tracking-wider mb-1">
-                INGREDIENTS — PRO
-              </div>
-              <h1 className="text-2xl font-bold mb-1">Database</h1>
-              <p className="text-sm text-white/90">Search, filter, sort, validate costs, and manage ingredients.</p>
-              {isDebug && (
-                <div className="mt-3 text-xs text-white/70">Kitchen ID: {kitchenId ?? '—'}</div>
+      <div className="gc-card p-6 gc-page-header !bg-white text-gray-900">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="gc-label !text-teal-700">INGREDIENTS — PRO</div>
+            <div className="mt-2 text-2xl font-extrabold text-gray-900">Database</div>
+            <div className="mt-2 text-sm text-gray-600">Search, filter, sort, validate costs, and manage ingredients.</div>
+            {isDebug && (
+              <div className="mt-3 text-xs text-gray-500">Kitchen ID: {kitchenId ?? '—'}</div>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3">
+            <label className="flex items-center gap-2 text-sm text-gray-700">
+              <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} />
+              Show inactive
+            </label>
+
+            <button className="gc-btn gc-btn-ghost !text-gray-700" type="button" onClick={bulkRecalcNetCosts} disabled={bulkWorking}>
+              {bulkWorking ? 'Working…' : 'Recalc net cost (filtered)'}
+            </button>
+
+            <button className="gc-btn gc-btn-ghost !text-gray-700" type="button" onClick={() => bulkSetActive(true)} disabled={bulkWorking}>
+              Activate (filtered)
+            </button>
+
+            <button className="gc-btn gc-btn-ghost !text-gray-700" type="button" onClick={() => bulkSetActive(false)} disabled={bulkWorking}>
+              Deactivate (filtered)
+            </button>
+
+            <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
+              + Add ingredient
+            </button>
+          </div>
+        </div>
+
+        
+        {/* Filters */}
+        <div className="mt-4 gc-ing-toolbar">
+          <div className="gc-ing-search">
+            <div className="gc-ing-toolbar-label">Search</div>
+            <div className="gc-ing-search-control">
+              <span className="gc-ing-search-icon" aria-hidden="true">🔍</span>
+              <input
+                className="gc-input gc-ing-search-input"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ingredients (name, code, supplier)…"
+              />
+              {search && (
+                <button type="button" className="gc-ing-clear" onClick={() => setSearch('')} aria-label="Clear search">
+                  ×
+                </button>
               )}
             </div>
-
-            <div className="flex flex-wrap items-center gap-2">
-              <label className="flex items-center gap-2 px-3 py-2 bg-white/10 rounded-lg text-sm text-white cursor-pointer hover:bg-white/20 transition">
-                <input 
-                  type="checkbox" 
-                  checked={showInactive} 
-                  onChange={(e) => setShowInactive(e.target.checked)}
-                  className="rounded border-white/30 text-primary-600 focus:ring-primary-500"
-                />
-                <span>Show inactive</span>
-              </label>
-
-              <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
-                type="button" 
-                onClick={bulkRecalcNetCosts} 
-                disabled={bulkWorking}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                {bulkWorking ? 'Working…' : 'Recalc net cost'}
-              </motion.button>
-
-              <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
-                type="button" 
-                onClick={() => bulkSetActive(true)} 
-                disabled={bulkWorking}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Activate
-              </motion.button>
-
-              <motion.button 
-                className="px-4 py-2 bg-white/10 rounded-lg text-sm font-medium hover:bg-white/20 transition"
-                type="button" 
-                onClick={() => bulkSetActive(false)} 
-                disabled={bulkWorking}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                Deactivate
-              </motion.button>
-
-              <motion.button 
-                className="px-5 py-2 bg-white text-primary-700 rounded-lg text-sm font-semibold shadow-md hover:shadow-lg transition"
-                type="button" 
-                onClick={openCreate}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                + Add ingredient
-              </motion.button>
-            </div>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Filters */}
-      <motion.div variants={itemVariants} className="mb-6">
-        <div className="bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700 shadow-sm">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Search */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Search
-              </label>
-              <div className="relative">
-                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
-                <input
-                  className="w-full pl-9 pr-9 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search ingredients..."
-                />
-                {search && (
-                  <button 
-                    type="button" 
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
-                    onClick={() => setSearch('')}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Category Filter */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Category
-              </label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                value={category} 
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="">All categories</option>
-                {categories.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
-
-            {/* Sort */}
-            <div>
-              <label className="block text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                Sort by
-              </label>
-              <select 
-                className="w-full px-3 py-2 border border-gray-200 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                value={sortBy} 
-                onChange={(e) => setSortBy(e.target.value as any)}
-              >
-                <option value="name">Name (A→Z)</option>
-                <option value="cost">Net Unit Cost (High→Low)</option>
-                <option value="pack_price">Pack Price (High→Low)</option>
-              </select>
-            </div>
           </div>
 
-          {/* Active filters */}
-          {(search || category) && (
-            <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
-                {search && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    Search: {search}
-                    <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900">×</button>
-                  </span>
-                )}
-                {category && (
-                  <span className="px-2 py-1 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-full flex items-center gap-1">
-                    Category: {category}
-                    <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900">×</button>
-                  </span>
-                )}
-                {(search || category) && (
-                  <button 
-                    onClick={() => { setSearch(''); setCategory(''); }}
-                    className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-                  >
-                    Clear all
-                  </button>
-                )}
-              </div>
-            </div>
-          )}
-        </div>
-      </motion.div>
+          <div className="gc-ing-filter">
+            <div className="gc-ing-toolbar-label">Category</div>
+            <select className="gc-input gc-ing-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+              <option value="">All categories</option>
+              {categories.map((c) => (
+                <option key={c} value={c}>
+                  {c}
+                </option>
+              ))}
+            </select>
+          </div>
 
+          <div className="gc-ing-filter">
+            <div className="gc-ing-toolbar-label">Sort</div>
+            <select className="gc-input gc-ing-select" value={sortBy} onChange={(e) => setSortBy(e.target.value as any)}>
+              <option value="name">Name (A→Z)</option>
+              <option value="cost">Net Unit Cost (High→Low)</option>
+              <option value="pack_price">Pack Price (High→Low)</option>
+            </select>
+          </div>
+        </div>
+
+
+      </div>
       {/* Loading/Error */}
       {loading && (
-        <motion.div variants={itemVariants} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-4">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-                <Skeleton className="h-3 w-20 mb-2" />
-                <Skeleton className="h-8 w-24 mb-1" />
-                <Skeleton className="h-3 w-32" />
+              <div key={i} className="gc-card p-5">
+                <Skeleton className="h-3 w-28 rounded-md" />
+                <div className="mt-3">
+                  <Skeleton className="h-8 w-28 rounded-lg" />
+                </div>
+                <div className="mt-2">
+                  <Skeleton className="h-3 w-32 rounded-md" />
+                </div>
               </div>
             ))}
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-xl p-5 border border-gray-200 dark:border-gray-700">
-            <Skeleton className="h-4 w-48 mb-4" />
-            <div className="space-y-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4">
-                  <Skeleton className="h-4 w-16" />
-                  <Skeleton className="h-4 flex-1" />
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-4 w-20" />
+
+          <div className="gc-card p-5">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <Skeleton className="h-10 w-full rounded-xl md:w-[420px]" />
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-10 w-28 rounded-xl" />
+                <Skeleton className="h-10 w-28 rounded-xl" />
+                <Skeleton className="h-10 w-28 rounded-xl" />
+              </div>
+            </div>
+          </div>
+
+          <div className="gc-card p-5">
+            <Skeleton className="h-4 w-48 rounded-md" />
+            <div className="mt-4 space-y-3">
+              <div className="flex items-center justify-between gap-3">
+                <Skeleton className="h-4 w-20 rounded-md" />
+                <Skeleton className="h-4 w-48 rounded-md" />
+                <Skeleton className="h-4 w-32 rounded-md" />
+                <Skeleton className="h-4 w-24 rounded-md" />
+              </div>
+              {Array.from({ length: 8 }).map((_, r) => (
+                <div key={r} className="flex items-center justify-between gap-3">
+                  <Skeleton className="h-4 w-20 rounded-md" />
+                  <Skeleton className="h-4 w-1/2 rounded-md" />
+                  <Skeleton className="h-4 w-32 rounded-md" />
+                  <Skeleton className="h-4 w-24 rounded-md" />
                 </div>
               ))}
             </div>
           </div>
-        </motion.div>
+        </div>
       )}
 
       {err && (
-        <motion.div variants={itemVariants} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-xl p-4">
-          <div className="flex items-center gap-2 text-red-700 dark:text-red-400">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span className="font-medium">{err}</span>
-          </div>
-        </motion.div>
+        <div className="gc-card p-6">
+          <div className="gc-label">ERROR</div>
+          <div className="mt-2 text-sm text-red-600">{err}</div>
+        </div>
       )}
 
       {/* Body */}
       {!loading && !err && (
         <>
           {/* KPIs */}
-          <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <StatsCard
-              label="ITEMS"
-              value={stats.items}
-              sublabel="Filtered results"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-            />
-            <StatsCard
-              label="AVG NET UNIT"
-              value={money(stats.avgNet)}
-              sublabel="Average net unit cost"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-            />
-            <StatsCard
-              label="MISSING COST"
-              value={stats.missingCost}
-              sublabel="net_unit_cost = 0"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
-            />
-            <StatsCard
-              label="UNIT WARNINGS"
-              value={stats.warnUnits}
-              sublabel="Possible unit mismatch"
-              icon={<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
-            />
-          </motion.div>
+          <div className="grid gap-4 md:grid-cols-4">
+            <div className="gc-card p-5">
+              <div className="gc-label">ITEMS</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.items}</div>
+              <div className="mt-1 text-xs text-neutral-500">Filtered results</div>
+            </div>
 
-          {/* Table */}
-          <motion.div variants={itemVariants} className="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
-            <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
+            <div className="gc-card p-5">
+              <div className="gc-label">AVG NET UNIT</div>
+              <div className="mt-2 text-2xl font-extrabold">{money(stats.avgNet)}</div>
+              <div className="mt-1 text-xs text-neutral-500">Average net unit cost</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-label">MISSING COST</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.missingCost}</div>
+              <div className="mt-1 text-xs text-neutral-500">net_unit_cost = 0 or empty</div>
+            </div>
+
+            <div className="gc-card p-5">
+              <div className="gc-label">UNIT WARNINGS</div>
+              <div className="mt-2 text-2xl font-extrabold">{stats.warnUnits}</div>
+              <div className="mt-1 text-xs text-neutral-500">Possible unit mismatch</div>
+            </div>
+          </div>
+
+{/* List */}
+          <div className="gc-card p-6">
+            <style>{`
+
+              /* ===== GastroChef: Ingredients Search UX (SaaS) — scoped + safe ===== */
+              .gc-ing-toolbar{
+                display:flex;
+                flex-wrap:wrap;
+                gap:12px;
+                align-items:flex-end;
+              }
+              .gc-ing-toolbar-label{
+                font-size:11px;
+                letter-spacing:.08em;
+                text-transform:uppercase;
+                color:rgba(107,122,114,.95);
+                font-weight:600;
+                margin-bottom:6px;
+              }
+              .gc-ing-search{
+                flex:1 1 340px;
+                min-width:280px;
+              }
+              .gc-ing-filter{
+                flex:0 1 240px;
+                min-width:200px;
+              }
+              .gc-ing-search-control{
+                position:relative;
+              }
+              .gc-ing-search-icon{
+                position:absolute;
+                left:12px;
+                top:50%;
+                transform:translateY(-50%);
+                opacity:.75;
+                font-size:14px;
+                pointer-events:none;
+              }
+              .gc-ing-search-input{
+                padding-left:36px !important;
+                padding-right:36px !important;
+              }
+              .gc-ing-select{
+                width:100%;
+              }
+              .gc-ing-clear{
+                position:absolute;
+                right:10px;
+                top:50%;
+                transform:translateY(-50%);
+                width:26px;
+                height:26px;
+                border-radius:999px;
+                display:flex;
+                align-items:center;
+                justify-content:center;
+                font-size:18px;
+                line-height:1;
+                opacity:.7;
+              }
+              .gc-ing-clear:hover{ opacity:1; }
+              .gc-ing-clear:focus{ outline:none; }
+              @media (max-width: 768px){
+                .gc-ing-filter{ flex:1 1 220px; }
+              }
+
+
+              /* ===== GastroChef: Ingredients Table PRO (SaaS Style) — scoped + safe ===== */
+              .gc-data-table-wrap{
+                max-width:100%;
+                overflow-x:auto;
+                -webkit-overflow-scrolling:touch;
+                padding-bottom:4px;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table{
+                width:100%;
+                min-width:980px;
+                margin:0 auto;
+                border-collapse:separate;
+                border-spacing:0;
+                table-layout:auto;
+              }
+
+              /* header (NON-sticky by request) */
+              .gc-data-table-wrap .gc-ing-pro-table thead th{
+                position:static;
+                background:#f4f6f5;
+                color:#6b7a72;
+                font-size:12px;
+                letter-spacing:.04em;
+                font-weight:600;
+                border-bottom:1px solid rgba(0,0,0,0.08);
+              }
+
+              .gc-data-table-wrap .gc-ing-pro-table th,
+              .gc-data-table-wrap .gc-ing-pro-table td{
+                padding:14px 14px;
+                border-bottom:1px solid rgba(0,0,0,0.06);
+                vertical-align:middle;
+                text-align:center;
+              }
+
+              /* body text */
+              .gc-data-table-wrap .gc-ing-pro-table td{
+                font-size:14px;
+                color:#2f3a35;
+              }
+
+              /* subtle vertical gridlines (SaaS-soft) */
+              .gc-data-table-wrap .gc-ing-pro-table th + th,
+              .gc-data-table-wrap .gc-ing-pro-table td + td{
+                border-left:1px solid rgba(0,0,0,0.045);
+              }
+
+              /* zebra */
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(odd) td{
+                background:rgba(0,0,0,0.00);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:nth-child(even) td{
+                background:rgba(0,0,0,0.012);
+              }
+
+              /* hover (soft neutral) */
+              .gc-data-table-wrap .gc-ing-pro-table tbody tr:hover td{
+                background:#eef3f1;
+              }
+
+              /* numeric alignment (still centered per your preference) */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
+                text-align:center;
+                font-variant-numeric:tabular-nums;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-td-center,
+              .gc-data-table-wrap .gc-ing-pro-table .gc-th-center{
+                text-align:center;
+              }
+
+              /* code pill (smaller + calmer) */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill{
+                display:inline-flex;
+                align-items:center;
+                gap:6px;
+                max-width:100%;
+                padding:4px 10px;
+                border-radius:999px;
+                border:1px solid rgba(0,0,0,0.08);
+                background:#f1f4f3;
+                box-shadow:none;
+                font-size:12px;
+                line-height:1;
+                white-space:nowrap;
+                overflow:hidden;
+                text-overflow:ellipsis;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-ing-codepill .gc-mono{
+                font-size:12px;
+              }
+
+              /* make "Name" feel premium without changing alignment */
+              .gc-data-table-wrap .gc-ing-pro-table td.gc-col-name{
+                font-weight:500;
+              }
+
+              /* actions */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions{
+                display:flex;
+                justify-content:center;
+                gap:10px;
+                white-space:nowrap;
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn{
+                height:32px;
+                padding:0 12px;
+                border-radius:999px;
+                border:1px solid rgba(0,0,0,0.08);
+                background:rgba(255,255,255,0.90);
+              }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-cell-actions .gc-btn:hover{
+                background:rgba(0,0,0,0.04);
+              }
+
+              /* column sizing */
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-code{ width: 110px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-pack{ width: 70px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-unit{ width: 80px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-packprice{ width: 120px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-netunit{ width: 130px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-actions{ width: 150px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-name{ width: 220px; }
+              .gc-data-table-wrap .gc-ing-pro-table .gc-col-category{ width: 160px; }
+              /* ===== GastroChef: Add Ingredient Modal PRO UX (scoped) ===== */
+              .gc-add-ingredient-modal .gc-form-section{
+                margin-top: 2px;
+                padding-top: 6px;
+              }
+              .gc-add-ingredient-modal .gc-form-section-title{
+                font-size: 11px;
+                letter-spacing: .10em;
+                text-transform: uppercase;
+                font-weight: 700;
+                color: rgba(55, 65, 81, .75);
+                padding: 8px 2px 2px 2px;
+                border-top: 1px solid rgba(15, 23, 42, .08);
+              }
+              .gc-add-ingredient-modal .gc-form-section:first-of-type .gc-form-section-title{
+                border-top: none;
+                padding-top: 0;
+              }
+              .gc-add-ingredient-modal .gc-label{
+                letter-spacing: .06em;
+              }
+`}</style>
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-sm font-semibold text-gray-900 dark:text-white">INGREDIENTS LIST</h2>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Click Edit to validate pack + cost.</p>
+                <div className="gc-label">LIST</div>
+                <div className="mt-1 text-sm text-neutral-600">Click Edit to validate pack + cost.</div>
               </div>
-              <button 
-                className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition"
-                onClick={load}
-              >
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
                 Refresh
               </button>
             </div>
 
             {filtered.length === 0 ? (
-              <div className="p-8 text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 dark:bg-gray-700 rounded-2xl flex items-center justify-center text-2xl">
-                  🧂
-                </div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                  {rows.length === 0
-                    ? 'No ingredients yet'
-                    : normalized.length === 0
-                      ? 'No active ingredients'
-                      : 'No ingredients found'}
-                </h3>
-                <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-6">
-                  {rows.length === 0
-                    ? 'Start your kitchen database by adding your first ingredient.'
-                    : normalized.length === 0
-                      ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them.'
-                      : 'Try adjusting your search or filters.'}
-                </p>
-                <div className="flex flex-wrap items-center justify-center gap-3">
-                  {rows.length === 0 ? (
-                    <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition" onClick={openCreate}>
-                      + Add ingredient
-                    </button>
-                  ) : normalized.length === 0 ? (
-                    <>
-                      <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition" onClick={() => setShowInactive(true)}>
-                        Show inactive
+              <div className="mt-4">
+                <div className="rounded-2xl border border-black/5 bg-white p-6">
+                  <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-black/5 text-xl" aria-hidden>
+                        🧂
+                      </div>
+                      <div>
+                        <div className="text-base font-semibold text-neutral-900">
+                          {rows.length === 0
+                            ? 'No ingredients yet'
+                            : normalized.length === 0
+                              ? 'No active ingredients'
+                              : (search.trim() || category ? 'No ingredients found' : 'No results found')}
+                        </div>
+                        <div className="mt-1 text-sm text-neutral-600">
+                          {rows.length === 0
+                            ? 'Start your kitchen database by adding your first ingredient. This powers costing, yields, and recipe accuracy.'
+                            : normalized.length === 0
+                              ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them, or add a new one.'
+                              : (search.trim() || category
+                              ? 'No ingredients match your current search/filters. Try clearing them, or add a new ingredient.'
+                              : 'Try adjusting your search, category, or inactive filter to find what you need.')}
+                        </div>
+
+                        {(search.trim() || category) && rows.length > 0 && normalized.length > 0 ? (
+                          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-neutral-600">
+                            {search.trim() ? (
+                              <span className="rounded-full bg-neutral-100 px-2 py-1">
+                                Search: <span className="gc-mono">{search.trim()}</span>
+                              </span>
+                            ) : null}
+                            {category ? (
+                              <span className="rounded-full bg-neutral-100 px-2 py-1">
+                                Category: <span className="gc-mono">{category}</span>
+                              </span>
+                            ) : null}
+                          </div>
+                        ) : null}
+
+                        {rows.length > 0 && normalized.length > 0 ? (
+                          <div className="mt-3 text-xs text-neutral-500">
+                            Tip: clear filters to return to the full list.
+                          </div>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {rows.length === 0 ? (
+                        <button className="gc-btn gc-btn-primary" type="button" onClick={openCreate}>
+                          + Add ingredient
+                        </button>
+                      ) : normalized.length === 0 ? (
+                        <>
+                          <button className="gc-btn gc-btn-primary" type="button" onClick={() => setShowInactive(true)}>
+                            Show inactive
+                          </button>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
+                            + Add ingredient
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            className="gc-btn gc-btn-primary"
+                            type="button"
+                            onClick={() => {
+                              setSearch('')
+                              setCategory('')
+                            }}
+                          >
+                            Clear filters
+                          </button>
+                          <button className="gc-btn gc-btn-ghost" type="button" onClick={openCreate}>
+                            + Add ingredient
+                          </button>
+                        </>
+                      )}
+
+                      <button className="gc-btn gc-btn-ghost" type="button" onClick={load}>
+                        Refresh
                       </button>
-                      <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" onClick={openCreate}>
-                        + Add ingredient
-                      </button>
-                    </>
-                  ) : (
-                    <>
-                      <button className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition" onClick={() => { setSearch(''); setCategory(''); }}>
-                        Clear filters
-                      </button>
-                      <button className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition" onClick={openCreate}>
-                        + Add ingredient
-                      </button>
-                    </>
-                  )}
+                    </div>
+                  </div>
                 </div>
               </div>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="w-full min-w-[1000px]">
+              <div className="mt-4 gc-data-table-wrap">
+                <table className="gc-data-table gc-ing-pro-table text-sm">
                   <thead>
-                    <tr className="bg-gray-50 dark:bg-gray-700/50">
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Unit Cost</th>
-                      <th className="px-4 py-3 text-center text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    <tr>
+                      <th className="gc-col-code">Code</th>
+                      <th className="gc-col-name">Name</th>
+                      <th className="gc-col-category">Category</th>
+                      <th className={cls('gc-th-center', 'gc-col-pack')}>Pack</th>
+                      <th className={cls('gc-th-center', 'gc-col-unit')}>Unit</th>
+                      <th className={cls('gc-th-center', 'gc-col-packprice')}>Pack Price</th>
+                      <th className={cls('gc-th-center', 'gc-col-netunit')}>Net Unit Cost</th>
+                      <th className={cls('gc-th-center', 'gc-col-actions')}>Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    <AnimatePresence>
-                      {filtered.map((r) => (
-                        <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
-                      ))}
-                    </AnimatePresence>
+
+                  <tbody className="align-top">
+                    {filtered.map((r) => (
+                      <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
+                    ))}
                   </tbody>
                 </table>
               </div>
             )}
-          </motion.div>
+          </div>
         </>
       )}
 
       {/* Modal */}
       <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'Add Ingredient'} onClose={() => setModalOpen(false)}>
-        <div className="space-y-6">
+        <div className="gc-add-ingredient-modal gc-form-grid cols-2">
           {/* IDENTIFICATION */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">IDENTIFICATION</div>
+          </div>
+
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">IDENTIFICATION</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CODE</label>
-                <input
-                  className={cls(
-                    "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition",
-                    !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
-                  )}
-                  value={fCode}
-                  onChange={(e) => setFCode(e.target.value)}
-                  placeholder="ING-000123"
-                  disabled={!canEditCodes}
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Leave empty to auto-generate. Must start with ING-</p>
-                {!canEditCodes && <p className="mt-1 text-xs text-amber-600 dark:text-amber-400">Code fields are Owner-only.</p>}
-              </div>
+            <div className="gc-label">CODE</div>
+            <input
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
+              value={fCode}
+              onChange={(e) => setFCode(e.target.value)}
+              placeholder="ING-000123 (optional)"
+              disabled={!canEditCodes}
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">Leave empty to auto-generate. If provided, must start with ING-</div>
+            {!canEditCodes && <div className="mt-1 text-[11px] text-amber-700">Code fields are Owner-only.</div>}
+          </div>
 
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CODE CATEGORY</label>
-                <input
-                  className={cls(
-                    "w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition",
-                    !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-800"
-                  )}
-                  value={fCodeCategory}
-                  onChange={(e) => setFCodeCategory(e.target.value)}
-                  placeholder={`e.g. ${suggestedCodeCategory}`}
-                  disabled={!canEditCodes}
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">Optional (max 6 chars). If empty, uses Category.</p>
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">NAME *</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fName}
-                  onChange={(e) => setFName(e.target.value)}
-                  placeholder="e.g. Extra Virgin Olive Oil"
-                />
-              </div>
+          <div>
+            <div className="gc-label">CODE CATEGORY</div>
+            <input
+              className={cls("gc-input mt-2 w-full", !canEditCodes && "opacity-60 cursor-not-allowed")}
+              value={fCodeCategory}
+              onChange={(e) => setFCodeCategory(e.target.value)}
+              placeholder={`e.g. ${suggestedCodeCategory} (optional)`}
+              disabled={!canEditCodes}
+            />
+            <div className="mt-1 text-[11px] text-neutral-500">
+              Optional (up to 6 chars A–Z/0–9). If empty, DB uses Category (suggested: <span className="font-mono">{suggestedCodeCategory}</span>).
             </div>
+          </div>
+
+          <div className="span-2">
+            <div className="gc-label">NAME</div>
+            <input className="gc-input mt-2 w-full" value={fName} onChange={(e) => setFName(e.target.value)} />
           </div>
 
           {/* CLASSIFICATION */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">CLASSIFICATION</div>
+          </div>
+
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">CLASSIFICATION</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">CATEGORY</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fCategory}
-                  onChange={(e) => setFCategory(e.target.value)}
-                  placeholder="e.g. Oils & Fats"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">SUPPLIER</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fSupplier}
-                  onChange={(e) => setFSupplier(e.target.value)}
-                  placeholder="e.g. Sysco"
-                />
-              </div>
-            </div>
+            <div className="gc-label">CATEGORY</div>
+            <input className="gc-input mt-2 w-full" value={fCategory} onChange={(e) => setFCategory(e.target.value)} />
+          </div>
+
+          <div>
+            <div className="gc-label">SUPPLIER</div>
+            <input className="gc-input mt-2 w-full" value={fSupplier} onChange={(e) => setFSupplier(e.target.value)} />
           </div>
 
           {/* PACK */}
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">PACK</div>
+          </div>
+
           <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">PACK</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK SIZE *</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  type="number"
-                  min={1}
-                  step="1"
-                  value={fPackSize}
-                  onChange={(e) => setFPackSize(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">UNIT *</label>
-                <select
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  value={fPackUnit}
-                  onChange={(e) => setFPackUnit(e.target.value)}
-                >
-                  <option value="g">g (gram)</option>
-                  <option value="kg">kg (kilogram)</option>
-                  <option value="ml">ml (milliliter)</option>
-                  <option value="l">L (liter)</option>
-                  <option value="pcs">pcs (pieces)</option>
-                </select>
-              </div>
-            </div>
+            <div className="gc-label">PACK SIZE</div>
+            <input className="gc-input mt-2 w-full" type="number" min={1} step="1" value={fPackSize} onChange={(e) => setFPackSize(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
+          </div>
+
+          <div>
+            <div className="gc-label">UNIT</div>
+            <select className="gc-input mt-2 w-full" value={fPackUnit} onChange={(e) => setFPackUnit(e.target.value)}>
+              <option value="g">g</option>
+              <option value="kg">kg</option>
+              <option value="ml">ml</option>
+              <option value="l">L</option>
+              <option value="pcs">pcs</option>
+            </select>
           </div>
 
           {/* COST */}
-          <div>
-            <h3 className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">COST</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">PACK PRICE *</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  type="number"
-                  step="0.01"
-                  value={fPackPrice}
-                  onChange={(e) => setFPackPrice(e.target.value)}
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">NET UNIT COST</label>
-                <input
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition"
-                  type="number"
-                  step="0.000001"
-                  value={fNetUnitCost}
-                  onChange={(e) => setFNetUnitCost(e.target.value)}
-                />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">If left 0 → auto-calculated from pack</p>
-              </div>
-            </div>
+          <div className="span-2 gc-form-section">
+            <div className="gc-form-section-title">COST</div>
           </div>
 
-          {/* Smart Helpers */}
-          <div className="bg-gray-50 dark:bg-gray-700/50 rounded-xl p-4">
-            <div className="flex items-center gap-4">
-              <span className="text-xs font-semibold text-gray-600 dark:text-gray-300">SMART HELPERS:</span>
-              <button
-                className="px-3 py-1.5 text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition"
-                onClick={smartRecalcNetCost}
-              >
+          <div>
+            <div className="gc-label">PACK PRICE</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.01" value={fPackPrice} onChange={(e) => setFPackPrice(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">Required (NOT NULL)</div>
+          </div>
+
+          <div>
+            <div className="gc-label">NET UNIT COST</div>
+            <input className="gc-input mt-2 w-full" type="number" step="0.000001" value={fNetUnitCost} onChange={(e) => setFNetUnitCost(e.target.value)} />
+            <div className="mt-1 text-xs text-neutral-500">If left 0 → auto-calculated from pack.</div>
+          </div>
+
+          {/* Smart helpers */}
+          <div className="md:col-span-2 rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+            <div className="text-xs font-semibold text-neutral-600">SMART HELPERS</div>
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button className="gc-btn gc-btn-ghost" type="button" onClick={smartRecalcNetCost}>
                 Recalculate net cost from pack
               </button>
-              <span className="text-xs text-gray-500 dark:text-gray-400">net = pack_price ÷ pack_size</span>
+              <div className="text-xs text-neutral-500 flex items-center">
+                net = pack_price ÷ pack_size
+              </div>
             </div>
           </div>
 
-          {/* Actions */}
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <button
-              className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition"
-              onClick={() => setModalOpen(false)}
-            >
+          <div className="md:col-span-2 flex justify-end gap-2">
+            <button className="gc-btn gc-btn-ghost" type="button" onClick={() => setModalOpen(false)}>
               Cancel
             </button>
-            <button
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              onClick={save}
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save'}
+            <button className="gc-btn gc-btn-primary" type="button" onClick={save} disabled={saving}>
+              {saving ? 'Saving…' : 'Save'}
             </button>
           </div>
         </div>
       </Modal>
 
       <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
-    </motion.div>
+    </div>
   )
 }
