@@ -63,6 +63,31 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
+// ==================== Unit Badge Component ====================
+const UnitBadge = ({ unit }: { unit: string }) => {
+  const unitSymbols: Record<string, string> = {
+    g: 'g',
+    kg: 'kg',
+    ml: 'ml',
+    l: 'L',
+    pcs: 'pcs'
+  }
+
+  return (
+    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-mono font-medium bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+      {unitSymbols[unit] || unit}
+    </span>
+  )
+}
+
+// ==================== PriceWithUnit Component ====================
+const PriceWithUnit = ({ price, unit }: { price: number; unit: string }) => (
+  <span className="inline-flex items-center gap-1">
+    <span className="font-mono">{money(price)}</span>
+    <UnitBadge unit={unit} />
+  </span>
+)
+
 // ==================== Modal Component ====================
 function Modal({
   open,
@@ -88,14 +113,14 @@ function Modal({
         >
           <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px]" onClick={onClose} />
           <motion.div 
-            className="absolute left-1/2 top-1/2 w-[min(480px,96vw)] -translate-x-1/2 -translate-y-1/2"
+            className="absolute left-1/2 top-1/2 w-[min(500px,96vw)] -translate-x-1/2 -translate-y-1/2"
             initial={{ scale: 0.98, opacity: 0, y: 5 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.98, opacity: 0, y: 5 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
             <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
+              <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-gray-800">
                 <h2 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h2>
                 <motion.button 
                   className="w-6 h-6 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
@@ -110,7 +135,7 @@ function Modal({
                   </svg>
                 </motion.button>
               </div>
-              <div className="p-4 max-h-[calc(90vh-8rem)] overflow-auto custom-scrollbar">
+              <div className="p-5 max-h-[calc(90vh-8rem)] overflow-auto custom-scrollbar">
                 {children}
               </div>
             </div>
@@ -123,14 +148,14 @@ function Modal({
 
 // ==================== Form Section Component ====================
 const FormSection = ({ title, children }: { title?: string; children: ReactNode }) => (
-  <div className="space-y-3">
+  <div className="space-y-4">
     {title && (
       <div className="flex items-center gap-2">
         <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">{title}</span>
         <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
       </div>
     )}
-    <div className="space-y-3">
+    <div className="space-y-4">
       {children}
     </div>
   </div>
@@ -217,19 +242,19 @@ const IngredientTableRow = memo(function IngredientTableRow({
       <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400">
         {r.category ?? '—'}
       </td>
-      <td className="px-3 py-2.5 text-xs text-gray-900 dark:text-white font-mono text-center">
-        {Math.max(1, toNum(r.pack_size, 1))}
-      </td>
       <td className="px-3 py-2.5 text-center">
-        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded">
-          {unit}
+        <span className="text-xs font-mono text-gray-900 dark:text-white">
+          {Math.max(1, toNum(r.pack_size, 1))}
         </span>
       </td>
-      <td className="px-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white text-right">
-        {money(toNum(r.pack_price, 0))}
+      <td className="px-3 py-2.5 text-center">
+        <UnitBadge unit={unit} />
       </td>
-      <td className="px-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white text-right">
-        {money(net)}
+      <td className="px-3 py-2.5 text-right">
+        <PriceWithUnit price={toNum(r.pack_price, 0)} unit={unit} />
+      </td>
+      <td className="px-3 py-2.5 text-right">
+        <PriceWithUnit price={net} unit={unit} />
       </td>
       <td className="px-3 py-2.5">
         <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -282,6 +307,38 @@ const Metric = memo(function Metric({
     </div>
   )
 })
+
+// ==================== UnitSelector Component ====================
+const UnitSelector = ({ value, onChange }: { value: string; onChange: (unit: string) => void }) => {
+  const units = [
+    { value: 'g', label: 'g', full: 'gram' },
+    { value: 'kg', label: 'kg', full: 'kilogram' },
+    { value: 'ml', label: 'ml', full: 'milliliter' },
+    { value: 'l', label: 'L', full: 'liter' },
+    { value: 'pcs', label: 'pcs', full: 'pieces' },
+  ]
+
+  return (
+    <div className="flex gap-1 p-1 bg-gray-100 dark:bg-gray-800 rounded-lg">
+      {units.map((unit) => (
+        <button
+          key={unit.value}
+          type="button"
+          onClick={() => onChange(unit.value)}
+          className={cls(
+            "flex-1 px-2 py-1.5 text-xs font-mono rounded transition-all",
+            value === unit.value
+              ? "bg-white dark:bg-gray-700 text-blue-600 dark:text-blue-400 shadow-sm"
+              : "text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-300"
+          )}
+          title={unit.full}
+        >
+          {unit.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
 // ==================== Main Component ====================
 export default function Ingredients() {
@@ -507,7 +564,7 @@ export default function Ingredients() {
     const pp = Math.max(0, toNum(fPackPrice, 0))
     const net = calcNetUnitCost(pp, ps)
     setFNetUnitCost(String(Math.round(net * 1000000) / 1000000))
-    showToast('Net Unit Cost recalculated from Pack')
+    showToast('Net unit cost recalculated from pack')
   }
 
   const save = async () => {
@@ -619,7 +676,7 @@ export default function Ingredients() {
 
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
-    const ok = confirm(`Recalculate net_unit_cost from pack_price/pack_size for ${filtered.length} items?`)
+    const ok = confirm(`Recalculate net unit cost from pack price/size for ${filtered.length} items?`)
     if (!ok) return
 
     setBulkWorking(true)
@@ -934,9 +991,9 @@ export default function Ingredients() {
           </motion.div>
         )}
 
-        {/* Modal - مع حل مشكلة التكرار */}
+        {/* Modal - مع حل مشكلة الوحدات */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
-          <div className="space-y-4">
+          <div className="space-y-5">
             {/* Basic Info */}
             <FormSection>
               <FormField label="Name" required>
@@ -968,7 +1025,7 @@ export default function Ingredients() {
               </div>
             </FormSection>
 
-            {/* Code Section - حل المشكلة: دمج الحقلين في مجموعة واحدة مع تسمية واضحة */}
+            {/* Code Section */}
             <FormSection title="Code (optional)">
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Code" hint="ING-000123">
@@ -1001,63 +1058,92 @@ export default function Ingredients() {
               )}
             </FormSection>
 
-            {/* Pack & Cost */}
+            {/* Pack & Cost - مع حل مشكلة الوحدات */}
             <FormSection title="Pack & Cost">
+              {/* Unit Selector - واضح في الأعلى */}
+              <div className="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-lg">
+                <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 mb-2">
+                  Select unit for all measurements
+                </label>
+                <UnitSelector value={fPackUnit} onChange={setFPackUnit} />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Pack size" required>
-                  <input
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-                    type="number"
-                    min={1}
-                    step="1"
-                    value={fPackSize}
-                    onChange={(e) => setFPackSize(e.target.value)}
-                  />
+                  <div className="relative">
+                    <input
+                      className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                      type="number"
+                      min={1}
+                      step="1"
+                      value={fPackSize}
+                      onChange={(e) => setFPackSize(e.target.value)}
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-mono">
+                      {fPackUnit}
+                    </span>
+                  </div>
                 </FormField>
                 <FormField label="Unit" required>
-                  <select
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-                    value={fPackUnit}
-                    onChange={(e) => setFPackUnit(e.target.value)}
-                  >
-                    <option value="g">g (gram)</option>
-                    <option value="kg">kg (kilogram)</option>
-                    <option value="ml">ml (milliliter)</option>
-                    <option value="l">L (liter)</option>
-                    <option value="pcs">pcs (pieces)</option>
-                  </select>
+                  <div className="h-full flex items-center">
+                    <span className="text-sm font-mono text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-3 py-2 rounded-md border border-gray-200 dark:border-gray-700 w-full">
+                      {fPackUnit}
+                    </span>
+                  </div>
                 </FormField>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <FormField label="Pack price" required>
-                  <input
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-                    type="number"
-                    step="0.01"
-                    value={fPackPrice}
-                    onChange={(e) => setFPackPrice(e.target.value)}
-                  />
-                </FormField>
-                <FormField label="Net unit cost" hint="auto-calc if 0">
-                  <div className="flex gap-2">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
                     <input
-                      className="flex-1 px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors font-mono"
+                      className="w-full pl-7 pr-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                      type="number"
+                      step="0.01"
+                      value={fPackPrice}
+                      onChange={(e) => setFPackPrice(e.target.value)}
+                    />
+                  </div>
+                </FormField>
+                <FormField label="Unit price" hint={`per ${fPackUnit}`}>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-xs">$</span>
+                    <input
+                      className="w-full pl-7 pr-12 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
-                    <motion.button
-                      className="px-2 py-2 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors whitespace-nowrap"
-                      onClick={smartRecalcNetCost}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      Recalc
-                    </motion.button>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500">
+                      /{fPackUnit}
+                    </span>
                   </div>
                 </FormField>
+              </div>
+
+              {/* Cost Preview - يظهر العلاقة بين القيم */}
+              {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
+                <div className="bg-blue-50 dark:bg-blue-500/5 p-3 rounded-lg border border-blue-100 dark:border-blue-500/20">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-blue-700 dark:text-blue-400">Calculation preview:</span>
+                    <span className="font-mono text-blue-900 dark:text-blue-300">
+                      ${parseFloat(fPackPrice)} ÷ {parseFloat(fPackSize)} {fPackUnit} = ${(parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4)} /{fPackUnit}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              <div className="flex justify-end">
+                <motion.button
+                  className="px-3 py-1.5 text-xs font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors"
+                  onClick={smartRecalcNetCost}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  Recalculate unit price
+                </motion.button>
               </div>
             </FormSection>
 
@@ -1078,7 +1164,7 @@ export default function Ingredients() {
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {saving ? 'Saving...' : 'Save'}
+                {saving ? 'Saving...' : 'Save ingredient'}
               </motion.button>
             </div>
           </div>
