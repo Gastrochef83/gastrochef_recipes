@@ -134,49 +134,38 @@ const Icons = {
     </svg>
   ),
   forge: (props: any) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <path d="M4 8 L8 4 L16 4 L20 8 L20 16 L16 20 L8 20 L4 16 L4 8" />
-      <circle cx="12" cy="12" r="4" />
+      <circle cx="12" cy="12" r="4" fill="currentColor" />
     </svg>
   ),
 }
 
-// ==================== GastroChef Forge Color Palette ====================
+// ==================== GastroChef Forge Premium Color Palette ====================
 const colors = {
   forge: {
-    50: '#f2f6ed',
-    100: '#e0e9d4',
-    200: '#c2d1a9',
-    300: '#a3b97e',
-    400: '#85a153',
-    500: '#2C5F2D', // Forge Olive primary
-    600: '#234c24',
-    700: '#1b391c',
-    800: '#122613',
-    900: '#091309',
+    500: '#2C5530', // Deep Forge Olive - primary
+    600: '#234425',
+    700: '#1A331C',
+    800: '#112212',
   },
-  bronze: {
-    500: '#B78C5A', // Burnished Bronze accent
-    600: '#9e7548',
-    700: '#855e3a',
-  },
-  graphite: '#1E1E1E', // Graphite Charcoal for strong text
-  stoneIvory: '#F8F5F0', // Base background
-  warmWhite: '#FFFFFF', // Pure warm white for surfaces
-  smokedTeal: '#3A6B6F', // Refined secondary accent
-  oxideRed: '#A63D40', // Destructive actions
-  amberSpice: '#C17B3A', // Warnings
-  border: '#E0D9D0', // Rich border definition
-  lightBorder: '#ECE7E0', // Secondary borders
+  smokedTeal: '#3D6B6F', // Smoked Teal - secondary accent
+  bronze: '#B78C5A', // Burnished Bronze - premium accent
+  stoneIvory: '#F2EFE8', // Stone Ivory - background
+  warmWhite: '#FFFFFF', // Pure Warm White - surfaces
+  graphite: '#1E1E1E', // Graphite Charcoal - text
+  oxideRed: '#A63D40', // Oxide Red - destructive
+  amberSpice: '#C17B3A', // Amber Spice - warning
+  border: '#D4CDC2', // Rich border definition
+  lightBorder: '#E8E2D8', // Light border
   text: {
     primary: '#1E1E1E',
     secondary: '#4A4A4A',
     tertiary: '#6B6B6B',
-    light: '#FFFFFF',
   }
 }
 
-// ==================== Unit Badge - Forge Style ====================
+// ==================== Unit Badge - Forge Premium ====================
 const UnitBadge = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
@@ -187,13 +176,13 @@ const UnitBadge = ({ unit }: { unit: string }) => {
   }
 
   return (
-    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-bold text-forge-700 bg-forge-50 border border-forge-200 rounded-md">
+    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-bold text-forge-700 bg-forge-50 border border-forge-200 rounded">
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== Price Display - Forge Style ====================
+// ==================== Price Display - Forge Premium ====================
 const PriceDisplay = ({ amount, unit }: { amount: number; unit: string }) => (
   <div className="flex items-center justify-end gap-2">
     <span className="font-mono text-sm font-bold text-graphite">
@@ -261,7 +250,7 @@ function Modal({
   )
 }
 
-// ==================== Form Field - Forge Clarity ====================
+// ==================== Form Field - Forge ====================
 const FormField = ({
   label,
   required,
@@ -279,7 +268,7 @@ const FormField = ({
         {label}
         {required && <span className="text-oxideRed ml-1">*</span>}
       </label>
-      {hint && <span className="text-xs text-text-tertiary">{hint}</span>}
+      {hint && <span className="text-xs font-medium text-text-tertiary">{hint}</span>}
     </div>
     {children}
   </div>
@@ -421,9 +410,9 @@ const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: bool
     <h3 className="text-xl font-bold text-graphite mb-2">
       {hasFilters ? 'No matching ingredients' : 'No ingredients yet'}
     </h3>
-    <p className="text-base text-text-secondary max-w-sm mx-auto mb-8">
+    <p className="text-base font-medium text-text-secondary max-w-sm mx-auto mb-8">
       {hasFilters
-        ? 'Try adjusting your search or filters.'
+        ? 'Try adjusting your search or filters to find what you need.'
         : 'Add your first ingredient to start building your kitchen database.'}
     </p>
     <button
@@ -836,11 +825,11 @@ export default function Ingredients() {
   return (
     <div className="min-h-screen bg-stoneIvory">
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Header - Forge Powerful */}
+        {/* Header - Forge Premium */}
         <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-forge-500 rounded-xl flex items-center justify-center text-white shadow-lg">
-              <Icons.forge width={28} height={28} />
+            <div className="w-14 h-14 bg-forge-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+              <Icons.forge width={32} height={32} />
             </div>
             <div>
               <h1 className="text-3xl font-bold text-graphite tracking-tight">Ingredients</h1>
