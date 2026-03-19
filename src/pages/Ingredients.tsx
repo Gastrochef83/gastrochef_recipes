@@ -86,37 +86,56 @@ function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-gradient-to-br from-gray-900/60 to-gray-900/80 backdrop-blur-md" onClick={onClose} />
+          <div className="absolute inset-0 bg-black/80 backdrop-blur-xl" onClick={onClose} />
           <motion.div 
-            className="absolute left-1/2 top-1/2 w-[min(900px,92vw)] -translate-x-1/2 -translate-y-1/2"
-            initial={{ scale: 0.9, opacity: 0, y: -20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ type: "spring", damping: 25, stiffness: 300 }}
+            className="absolute left-1/2 top-1/2 w-[min(1000px,96vw)] -translate-x-1/2 -translate-y-1/2"
+            initial={{ scale: 0.95, opacity: 0, rotateX: -15 }}
+            animate={{ scale: 1, opacity: 1, rotateX: 0 }}
+            exit={{ scale: 0.95, opacity: 0, rotateX: 15 }}
+            transition={{ type: "spring", damping: 30, stiffness: 400 }}
           >
-            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-h-[90vh] flex flex-col overflow-hidden border border-gray-200/50 dark:border-gray-700/50">
-              <div className="flex items-start justify-between gap-4 p-6 pb-4 border-b border-gray-100 dark:border-gray-700/50 bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800">
-                <div>
-                  <div className="inline-flex items-center gap-2 text-xs font-semibold text-primary-600 dark:text-primary-400 uppercase tracking-wider mb-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-primary-500"></span>
-                    INGREDIENT {editingId ? 'EDITOR' : 'CREATOR'}
+            <div className="relative">
+              {/* Animated background gradient */}
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl animate-pulse"></div>
+              
+              {/* Main modal content */}
+              <div className="relative bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-white/20 dark:border-gray-800/50 overflow-hidden backdrop-blur-xl">
+                {/* Dynamic gradient header */}
+                <div className="absolute top-0 left-0 right-0 h-32 bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 opacity-90"></div>
+                <div className="absolute top-0 left-0 right-0 h-32 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white/30 to-transparent"></div>
+                
+                {/* Content */}
+                <div className="relative z-10">
+                  <div className="flex items-start justify-between gap-4 p-8 pb-4">
+                    <div>
+                      <div className="inline-flex items-center gap-2 mb-2">
+                        <span className="relative flex h-3 w-3">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                        </span>
+                        <span className="text-sm font-bold text-white/90 uppercase tracking-[0.3em]">INGREDIENT STUDIO</span>
+                      </div>
+                      <h2 className="text-4xl font-black text-white">{title}</h2>
+                    </div>
+                    <motion.button 
+                      className="w-12 h-12 rounded-2xl bg-white/10 backdrop-blur-md hover:bg-white/20 flex items-center justify-center text-white border border-white/20"
+                      onClick={onClose}
+                      type="button"
+                      whileHover={{ scale: 1.1, rotate: 90 }}
+                      whileTap={{ scale: 0.9 }}
+                    >
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <line x1="18" y1="6" x2="6" y2="18" />
+                        <line x1="6" y1="6" x2="18" y2="18" />
+                      </svg>
+                    </motion.button>
                   </div>
-                  <div className="text-2xl font-bold text-gray-900 dark:text-white">{title}</div>
+                  
+                  <div className="p-8 pt-4 max-h-[70vh] overflow-auto custom-scrollbar bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl">
+                    {children}
+                  </div>
                 </div>
-                <motion.button 
-                  className="w-10 h-10 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors"
-                  onClick={onClose}
-                  type="button"
-                  whileHover={{ scale: 1.1, rotate: 90 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </motion.button>
               </div>
-              <div className="p-6 pt-5 overflow-auto custom-scrollbar">{children}</div>
             </div>
           </motion.div>
         </motion.div>
@@ -144,79 +163,91 @@ const IngredientTableRow = memo(function IngredientTableRow({
 
   return (
     <motion.tr 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -10 }}
-      whileHover={{ backgroundColor: 'rgba(107, 127, 59, 0.03)' }}
+      initial={{ opacity: 0, x: -20 }}
+      animate={{ opacity: 1, x: 0 }}
+      exit={{ opacity: 0, x: 20 }}
+      whileHover={{ 
+        backgroundColor: 'rgba(99, 102, 241, 0.05)',
+        transition: { duration: 0.2 }
+      }}
       className={cls(
-        'group transition-colors',
-        !active && 'opacity-60'
+        'group relative cursor-pointer transition-colors',
+        !active && 'opacity-40'
       )}
     >
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-primary-500/50 group-hover:bg-primary-500 transition-colors"></span>
-          <span className="inline-flex items-center px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-700/50 text-xs font-mono text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600" title={r.code ?? '—'}>
+      {/* Animated selection indicator */}
+      <td className="absolute left-0 top-0 bottom-0 w-1 bg-gradient-to-b from-indigo-500 to-purple-500 scale-y-0 group-hover:scale-y-100 transition-transform origin-top"></td>
+      
+      <td className="px-6 py-4">
+        <div className="flex items-center gap-3">
+          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-indigo-500 to-purple-500 group-hover:scale-150 transition-transform"></div>
+          <span className="font-mono text-sm font-medium text-gray-900 dark:text-white bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-xl border border-gray-200 dark:border-gray-700">
             {r.code ? (
-              <>
-                <span className="w-1.5 h-1.5 rounded-full bg-primary-500 mr-1.5"></span>
+              <span className="flex items-center gap-2">
+                <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
                 {r.code}
-              </>
+              </span>
             ) : '—'}
           </span>
         </div>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-6 py-4">
         <div className="flex flex-col gap-1">
-          <div className="flex items-center gap-2">
-            <span className="font-semibold text-gray-900 dark:text-white">{r.name ?? '—'}</span>
+          <div className="flex items-center gap-3">
+            <span className="font-bold text-gray-900 dark:text-white text-lg tracking-tight">{r.name ?? '—'}</span>
             {!active && (
-              <span className="px-2 py-0.5 text-xs bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 rounded-full">
-                Inactive
+              <span className="px-3 py-1 text-xs font-bold bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-full uppercase tracking-wider">
+                DRAFT
               </span>
             )}
             {flag.level === 'warn' && (
-              <span className="px-2 py-0.5 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full flex items-center gap-1">
-                <span className="text-amber-500">⚠️</span>
-                Unit warning
+              <span className="px-3 py-1 text-xs font-bold bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full flex items-center gap-1 uppercase tracking-wider">
+                <span className="text-amber-500 text-base">⚠</span>
+                ATTENTION
               </span>
             )}
           </div>
-          {isDebug && <div className="text-xs text-gray-500 dark:text-gray-400 font-mono">ID: {r.id}</div>}
+          {isDebug && (
+            <div className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-2 py-1 rounded-lg inline-block">
+              ID: {r.id.slice(0, 8)}...
+            </div>
+          )}
           {flag.level === 'warn' && (
-            <div className="text-xs text-amber-600 dark:text-amber-400">{flag.msg}</div>
+            <div className="text-xs text-amber-600 dark:text-amber-400 font-medium mt-1">{flag.msg}</div>
           )}
         </div>
       </td>
-      <td className="px-4 py-3">
-        <span className="text-gray-600 dark:text-gray-300">{r.category ?? '—'}</span>
+      <td className="px-6 py-4">
+        <span className="text-gray-600 dark:text-gray-300 font-medium">{r.category ?? '—'}</span>
       </td>
-      <td className="px-4 py-3 text-center">
-        <span className="font-mono font-medium text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</span>
+      <td className="px-6 py-4 text-center">
+        <span className="font-mono font-bold text-gray-900 dark:text-white text-lg">{Math.max(1, toNum(r.pack_size, 1))}</span>
       </td>
-      <td className="px-4 py-3 text-center">
-        <span className="inline-flex px-2.5 py-1 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs font-medium text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600">
+      <td className="px-6 py-4 text-center">
+        <span className="inline-flex px-4 py-2 bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-2xl text-sm font-bold text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
           {unit}
         </span>
       </td>
-      <td className="px-4 py-3 text-center">
-        <span className="font-semibold text-primary-600 dark:text-primary-400">{money(toNum(r.pack_price, 0))}</span>
+      <td className="px-6 py-4 text-center">
+        <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600 dark:from-indigo-400 dark:to-purple-400">
+          {money(toNum(r.pack_price, 0))}
+        </span>
       </td>
-      <td className="px-4 py-3 text-center">
-        <div className="flex items-center justify-center gap-1">
-          <span className="font-semibold text-gray-900 dark:text-white">{money(net)}</span>
+      <td className="px-6 py-4 text-center">
+        <div className="flex items-center justify-center gap-2">
+          <span className="font-black text-gray-900 dark:text-white text-lg">{money(net)}</span>
           {flag.level === 'warn' && (
-            <span className="text-amber-500 text-xs" title={flag.msg}>⚠️</span>
+            <span className="text-amber-500 text-sm font-bold" title={flag.msg}>⚠</span>
           )}
         </div>
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-center gap-1">
+      <td className="px-6 py-4">
+        <div className="flex items-center justify-center gap-2">
           <motion.button 
-            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-600 dark:text-gray-400 hover:text-primary-600 dark:hover:text-primary-400 transition-colors"
+            className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-indigo-600 dark:hover:text-indigo-400 border border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all"
             type="button" 
             onClick={() => onEdit(r)}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.9 }}
             title="Edit ingredient"
           >
@@ -225,10 +256,10 @@ const IngredientTableRow = memo(function IngredientTableRow({
             </svg>
           </motion.button>
           <motion.button 
-            className="p-2 rounded-lg hover:bg-red-50 dark:hover:bg-red-900/20 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 transition-colors"
+            className="p-3 rounded-2xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 border border-gray-200 dark:border-gray-700 hover:border-rose-300 dark:hover:border-rose-700 transition-all"
             type="button" 
             onClick={() => onHardDelete(r.id)}
-            whileHover={{ scale: 1.1 }}
+            whileHover={{ scale: 1.1, rotate: -5 }}
             whileTap={{ scale: 0.9 }}
             title="Delete ingredient"
           >
@@ -249,41 +280,55 @@ const StatsCard = memo(function StatsCard({
   value, 
   sublabel, 
   icon,
-  trend 
+  trend,
+  gradient = 'from-indigo-500 to-purple-500'
 }: { 
   label: string
   value: string | number
   sublabel: string
   icon: ReactNode
   trend?: { value: number; positive: boolean }
+  gradient?: string
 }) {
   return (
     <motion.div 
-      className="group bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-xl transition-all duration-300"
+      className="group relative overflow-hidden"
       whileHover={{ y: -4 }}
+      transition={{ type: "spring", stiffness: 400, damping: 30 }}
     >
-      <div className="flex items-start justify-between">
-        <div>
-          <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
-            {label}
+      {/* Animated background gradient */}
+      <div className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 group-hover:opacity-5 transition-opacity duration-500 rounded-3xl`}></div>
+      
+      {/* Card content */}
+      <div className="relative bg-white dark:bg-gray-900 rounded-3xl p-6 border border-gray-200 dark:border-gray-800 shadow-xl hover:shadow-2xl transition-shadow">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-indigo-500/5 to-purple-500/5 rounded-full blur-2xl group-hover:scale-150 transition-transform"></div>
+        
+        <div className="relative z-10">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <div className="text-xs font-black text-gray-400 dark:text-gray-500 uppercase tracking-[0.2em] mb-2">
+                {label}
+              </div>
+              <div className="flex items-baseline gap-3">
+                <span className="text-4xl font-black text-gray-900 dark:text-white tracking-tight">{value}</span>
+                {trend && (
+                  <span className={cls(
+                    "px-2 py-1 text-xs font-bold rounded-lg",
+                    trend.positive 
+                      ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30" 
+                      : "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30"
+                  )}>
+                    {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
+                  </span>
+                )}
+              </div>
+            </div>
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all">
+              {icon}
+            </div>
           </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            <span className="text-3xl font-bold text-gray-900 dark:text-white">{value}</span>
-            {trend && (
-              <span className={cls(
-                "px-1.5 py-0.5 text-xs font-medium rounded",
-                trend.positive 
-                  ? "text-green-700 dark:text-green-400 bg-green-50 dark:bg-green-900/20" 
-                  : "text-red-700 dark:text-red-400 bg-red-50 dark:bg-red-900/20"
-              )}>
-                {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-              </span>
-            )}
-          </div>
-          <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{sublabel}</div>
-        </div>
-        <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/20 dark:to-primary-800/20 flex items-center justify-center text-primary-600 dark:text-primary-400 group-hover:scale-110 transition-transform">
-          {icon}
+          <div className="text-sm text-gray-500 dark:text-gray-400 font-medium">{sublabel}</div>
         </div>
       </div>
     </motion.div>
@@ -678,99 +723,141 @@ export default function Ingredients() {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.08 }
+      transition: { 
+        staggerChildren: 0.05,
+        delayChildren: 0.1
+      }
     }
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 15 },
-    visible: { opacity: 1, y: 0 }
+    hidden: { opacity: 0, y: 20 },
+    visible: { 
+      opacity: 1, 
+      y: 0,
+      transition: { type: "spring", stiffness: 300, damping: 25 }
+    }
   }
 
   return (
     <motion.div 
-      className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 p-6"
+      className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
-      <div className="max-w-7xl mx-auto">
+      {/* Dynamic background grid */}
+      <div className="fixed inset-0 z-0">
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_#6366f1_0%,_transparent_50%),_radial-gradient(ellipse_at_bottom_left,_#a855f7_0%,_transparent_50%)] opacity-5"></div>
+        <div className="absolute inset-0" style={{ 
+          backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%236366f1' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+          backgroundSize: '30px 30px'
+        }}></div>
+      </div>
+
+      <div className="relative z-10 max-w-7xl mx-auto p-8">
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <div className="relative overflow-hidden bg-gradient-to-br from-primary-600 via-primary-700 to-primary-800 dark:from-primary-800 dark:via-primary-900 dark:to-primary-900 rounded-3xl p-8 text-white shadow-2xl">
-            {/* Decorative elements */}
-            <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-20 -mt-20"></div>
-            <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/5 rounded-full blur-2xl -ml-10 -mb-10"></div>
+        <motion.div variants={itemVariants} className="mb-12">
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 p-1 shadow-2xl">
+            {/* Animated border */}
+            <div className="absolute inset-0 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 animate-pulse"></div>
             
-            <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
-              <div>
-                <div className="inline-flex items-center gap-2 text-sm font-semibold text-white/80 uppercase tracking-wider mb-3 bg-white/10 px-3 py-1 rounded-full">
-                  <span className="w-2 h-2 rounded-full bg-white"></span>
-                  INGREDIENT DATABASE
-                </div>
-                <h1 className="text-4xl font-bold mb-2 tracking-tight">Inventory Management</h1>
-                <p className="text-lg text-white/90 max-w-2xl">Search, filter, sort, validate costs, and manage your kitchen ingredients with precision.</p>
-                {isDebug && (
-                  <div className="mt-4 inline-flex items-center gap-2 text-xs bg-white/10 px-3 py-1.5 rounded-lg text-white/70">
-                    <span className="w-1.5 h-1.5 rounded-full bg-white/50"></span>
-                    Kitchen ID: {kitchenId ?? '—'}
+            {/* Main content */}
+            <div className="relative bg-white/10 backdrop-blur-xl rounded-2xl p-8">
+              {/* Floating elements */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-20 -mt-20 animate-pulse"></div>
+              <div className="absolute bottom-0 left-0 w-48 h-48 bg-white/10 rounded-full blur-2xl -ml-10 -mb-10"></div>
+              
+              <div className="relative z-10 flex flex-wrap items-start justify-between gap-6">
+                <div>
+                  <div className="flex items-center gap-3 mb-4">
+                    <div className="relative">
+                      <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md flex items-center justify-center">
+                        <svg className="w-6 h-6 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                          <circle cx="12" cy="7" r="4" />
+                        </svg>
+                      </div>
+                      <div className="absolute -top-1 -right-1 w-3 h-3">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-3 w-3 bg-white"></span>
+                      </div>
+                    </div>
+                    <div>
+                      <h1 className="text-5xl font-black text-white tracking-tight">Ingredients</h1>
+                      <p className="text-lg text-white/80 mt-1">Studio · Database · Management</p>
+                    </div>
                   </div>
-                )}
-              </div>
+                  
+                  {isDebug && (
+                    <div className="inline-flex items-center gap-2 px-4 py-2 bg-black/20 backdrop-blur-md rounded-2xl text-white/90 text-sm font-mono">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                      Kitchen ID: {kitchenId?.slice(0, 8) ?? '—'}...
+                    </div>
+                  )}
+                </div>
 
-              <div className="flex flex-wrap items-center gap-2 bg-white/10 backdrop-blur-sm rounded-2xl p-2">
-                <label className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm text-white cursor-pointer hover:bg-white/20 transition-all">
-                  <input 
-                    type="checkbox" 
-                    checked={showInactive} 
-                    onChange={(e) => setShowInactive(e.target.checked)}
-                    className="rounded border-white/30 bg-white/10 text-primary-600 focus:ring-white"
-                  />
-                  <span>Show inactive</span>
-                </label>
+                <div className="flex flex-wrap items-center gap-3">
+                  <label className="flex items-center gap-3 px-5 py-3 bg-white/10 backdrop-blur-md rounded-2xl text-white cursor-pointer hover:bg-white/20 transition-all border border-white/20">
+                    <input 
+                      type="checkbox" 
+                      checked={showInactive} 
+                      onChange={(e) => setShowInactive(e.target.checked)}
+                      className="w-5 h-5 rounded-lg border-white/30 bg-white/10 text-indigo-600 focus:ring-white"
+                    />
+                    <span className="font-medium">Show drafts</span>
+                  </label>
 
-                <motion.button 
-                  className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-all disabled:opacity-50"
-                  type="button" 
-                  onClick={bulkRecalcNetCosts} 
-                  disabled={bulkWorking}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {bulkWorking ? 'Working…' : 'Recalc net cost'}
-                </motion.button>
+                  <motion.button 
+                    className="px-5 py-3 bg-white/10 backdrop-blur-md rounded-2xl text-sm font-medium hover:bg-white/20 transition-all border border-white/20 disabled:opacity-50 flex items-center gap-2"
+                    type="button" 
+                    onClick={bulkRecalcNetCosts} 
+                    disabled={bulkWorking}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                    {bulkWorking ? 'Processing...' : 'Recalc net'}
+                  </motion.button>
 
-                <motion.button 
-                  className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-all disabled:opacity-50"
-                  type="button" 
-                  onClick={() => bulkSetActive(true)} 
-                  disabled={bulkWorking}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Activate
-                </motion.button>
+                  <motion.button 
+                    className="px-5 py-3 bg-white/10 backdrop-blur-md rounded-2xl text-sm font-medium hover:bg-white/20 transition-all border border-white/20 disabled:opacity-50"
+                    type="button" 
+                    onClick={() => bulkSetActive(true)} 
+                    disabled={bulkWorking}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Activate
+                  </motion.button>
 
-                <motion.button 
-                  className="px-4 py-2 bg-white/10 rounded-xl text-sm font-medium hover:bg-white/20 transition-all disabled:opacity-50"
-                  type="button" 
-                  onClick={() => bulkSetActive(false)} 
-                  disabled={bulkWorking}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Deactivate
-                </motion.button>
+                  <motion.button 
+                    className="px-5 py-3 bg-white/10 backdrop-blur-md rounded-2xl text-sm font-medium hover:bg-white/20 transition-all border border-white/20 disabled:opacity-50"
+                    type="button" 
+                    onClick={() => bulkSetActive(false)} 
+                    disabled={bulkWorking}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Draft
+                  </motion.button>
 
-                <motion.button 
-                  className="px-6 py-2 bg-white text-primary-700 rounded-xl text-sm font-semibold shadow-lg hover:shadow-xl transition-all"
-                  type="button" 
-                  onClick={openCreate}
-                  whileHover={{ scale: 1.02, y: -1 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  + Add ingredient
-                </motion.button>
+                  <motion.button 
+                    className="px-6 py-3 bg-white text-indigo-600 rounded-2xl text-sm font-bold shadow-xl hover:shadow-2xl transition-all flex items-center gap-2"
+                    type="button" 
+                    onClick={openCreate}
+                    whileHover={{ scale: 1.02, y: -1 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    New ingredient
+                  </motion.button>
+                </div>
               </div>
             </div>
           </div>
@@ -778,109 +865,128 @@ export default function Ingredients() {
 
         {/* Filters */}
         <motion.div variants={itemVariants} className="mb-8">
-          <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl p-6 border border-gray-200/50 dark:border-gray-700/50 shadow-lg">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Search */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                  Search
-                </label>
-                <div className="relative group">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary-500 transition-colors">🔍</span>
-                  <input
-                    className="w-full pl-11 pr-10 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search by name or supplier..."
-                  />
-                  {search && (
-                    <button 
-                      type="button" 
-                      className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
-                      onClick={() => setSearch('')}
+          <div className="relative group">
+            {/* Animated border */}
+            <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-3xl opacity-0 group-hover:opacity-100 blur transition duration-500"></div>
+            
+            <div className="relative bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-800">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {/* Search */}
+                <div>
+                  <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    Search
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400">🔍</span>
+                    <input
+                      className="w-full pl-11 pr-12 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      placeholder="Search ingredients..."
+                    />
+                    {search && (
+                      <motion.button 
+                        type="button" 
+                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-gray-200 dark:bg-gray-700 rounded-full w-6 h-6 flex items-center justify-center"
+                        onClick={() => setSearch('')}
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        ×
+                      </motion.button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Category Filter */}
+                <div>
+                  <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    Category
+                  </label>
+                  <div className="relative">
+                    <select 
+                      className="w-full px-4 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all appearance-none text-lg"
+                      value={category} 
+                      onChange={(e) => setCategory(e.target.value)}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 1rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                        paddingRight: '3rem'
+                      }}
                     >
-                      ×
-                    </button>
-                  )}
+                      <option value="">All categories</option>
+                      {categories.map((c) => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Sort */}
+                <div>
+                  <label className="block text-xs font-black text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-3">
+                    Sort by
+                  </label>
+                  <div className="relative">
+                    <select 
+                      className="w-full px-4 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all appearance-none text-lg"
+                      value={sortBy} 
+                      onChange={(e) => setSortBy(e.target.value as any)}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 1rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                        paddingRight: '3rem'
+                      }}
+                    >
+                      <option value="name">Name (A → Z)</option>
+                      <option value="cost">Net Unit Cost (High → Low)</option>
+                      <option value="pack_price">Pack Price (High → Low)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
 
-              {/* Category Filter */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                  Category
-                </label>
-                <select 
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all appearance-none"
-                  value={category} 
-                  onChange={(e) => setCategory(e.target.value)}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7F3B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 1rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em',
-                    paddingRight: '2.5rem'
-                  }}
+              {/* Active filters */}
+              {(search || category) && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-4 pt-4 border-t-2 border-gray-200 dark:border-gray-700"
                 >
-                  <option value="">All categories</option>
-                  {categories.map((c) => (
-                    <option key={c} value={c}>{c}</option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Sort */}
-              <div>
-                <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                  Sort by
-                </label>
-                <select 
-                  className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all appearance-none"
-                  value={sortBy} 
-                  onChange={(e) => setSortBy(e.target.value as any)}
-                  style={{
-                    backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7F3B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                    backgroundPosition: 'right 1rem center',
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '1.5em 1.5em',
-                    paddingRight: '2.5rem'
-                  }}
-                >
-                  <option value="name">Name (A → Z)</option>
-                  <option value="cost">Net Unit Cost (High → Low)</option>
-                  <option value="pack_price">Pack Price (High → Low)</option>
-                </select>
-              </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold text-gray-500 dark:text-gray-400 uppercase tracking-wider">Active:</span>
+                    {search && (
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 text-sm font-bold rounded-xl border border-indigo-200 dark:border-indigo-800">
+                        <span>🔍</span>
+                        {search}
+                        <button onClick={() => setSearch('')} className="ml-1 hover:text-indigo-900 dark:hover:text-indigo-300">×</button>
+                      </span>
+                    )}
+                    {category && (
+                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 text-sm font-bold rounded-xl border border-indigo-200 dark:border-indigo-800">
+                        <span>📁</span>
+                        {category}
+                        <button onClick={() => setCategory('')} className="ml-1 hover:text-indigo-900 dark:hover:text-indigo-300">×</button>
+                      </span>
+                    )}
+                    {(search || category) && (
+                      <motion.button 
+                        onClick={() => { setSearch(''); setCategory(''); }}
+                        className="px-4 py-2 text-sm font-bold text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white underline underline-offset-4"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Clear all
+                      </motion.button>
+                    )}
+                  </div>
+                </motion.div>
+              )}
             </div>
-
-            {/* Active filters */}
-            {(search || category) && (
-              <div className="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs text-gray-500 dark:text-gray-400">Active filters:</span>
-                  {search && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-lg border border-primary-200 dark:border-primary-800">
-                      Search: {search}
-                      <button onClick={() => setSearch('')} className="ml-1 hover:text-primary-900 dark:hover:text-primary-300">×</button>
-                    </span>
-                  )}
-                  {category && (
-                    <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-primary-50 dark:bg-primary-900/20 text-primary-700 dark:text-primary-400 text-xs rounded-lg border border-primary-200 dark:border-primary-800">
-                      Category: {category}
-                      <button onClick={() => setCategory('')} className="ml-1 hover:text-primary-900 dark:hover:text-primary-300">×</button>
-                    </span>
-                  )}
-                  {(search || category) && (
-                    <button 
-                      onClick={() => { setSearch(''); setCategory(''); }}
-                      className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 underline underline-offset-2"
-                    >
-                      Clear all
-                    </button>
-                  )}
-                </div>
-              </div>
-            )}
           </div>
         </motion.div>
 
@@ -889,22 +995,22 @@ export default function Ingredients() {
           <motion.div variants={itemVariants} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
+                <div key={i} className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-800">
                   <Skeleton className="h-4 w-20 mb-3" />
-                  <Skeleton className="h-8 w-32 mb-2" />
-                  <Skeleton className="h-3 w-40" />
+                  <Skeleton className="h-10 w-32 mb-2" />
+                  <Skeleton className="h-4 w-40" />
                 </div>
               ))}
             </div>
-            <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700">
-              <Skeleton className="h-5 w-48 mb-6" />
+            <div className="bg-white dark:bg-gray-900 rounded-2xl p-6 shadow-xl border border-gray-200 dark:border-gray-800">
+              <Skeleton className="h-6 w-48 mb-6" />
               <div className="space-y-4">
                 {Array.from({ length: 5 }).map((_, i) => (
                   <div key={i} className="flex items-center gap-6">
-                    <Skeleton className="h-4 w-20" />
-                    <Skeleton className="h-4 flex-1" />
-                    <Skeleton className="h-4 w-28" />
-                    <Skeleton className="h-4 w-24" />
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-5 flex-1" />
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-5 w-28" />
                   </div>
                 ))}
               </div>
@@ -913,16 +1019,15 @@ export default function Ingredients() {
         )}
 
         {err && (
-          <motion.div variants={itemVariants} className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-2xl p-6">
-            <div className="flex items-center gap-3 text-red-700 dark:text-red-400">
-              <div className="w-10 h-10 rounded-xl bg-red-100 dark:bg-red-900/40 flex items-center justify-center">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <line x1="12" y1="8" x2="12" y2="12" />
-                  <line x1="12" y1="16" x2="12.01" y2="16" />
-                </svg>
+          <motion.div variants={itemVariants} className="bg-rose-50 dark:bg-rose-950/30 border-2 border-rose-200 dark:border-rose-800 rounded-2xl p-8">
+            <div className="flex items-center gap-4 text-rose-700 dark:text-rose-400">
+              <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center text-2xl">
+                ⚠️
               </div>
-              <span className="font-medium">{err}</span>
+              <div>
+                <h3 className="text-lg font-black mb-1">Error loading ingredients</h3>
+                <p className="text-sm font-medium">{err}</p>
+              </div>
             </div>
           </motion.div>
         )}
@@ -936,150 +1041,168 @@ export default function Ingredients() {
                 label="ITEMS"
                 value={stats.items}
                 sublabel="Filtered results"
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
+                gradient="from-indigo-500 to-purple-500"
+                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
               />
               <StatsCard
                 label="AVG NET UNIT"
                 value={money(stats.avgNet)}
                 sublabel="Average net unit cost"
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+                gradient="from-purple-500 to-pink-500"
+                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
               />
               <StatsCard
                 label="MISSING COST"
                 value={stats.missingCost}
                 sublabel="net_unit_cost = 0"
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+                gradient="from-pink-500 to-rose-500"
+                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
                 trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
               />
               <StatsCard
                 label="UNIT WARNINGS"
                 value={stats.warnUnits}
                 sublabel="Possible unit mismatch"
-                icon={<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
+                gradient="from-rose-500 to-orange-500"
+                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
                 trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
               />
             </motion.div>
 
             {/* Table */}
-            <motion.div variants={itemVariants} className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-2xl border border-gray-200/50 dark:border-gray-700/50 shadow-xl overflow-hidden">
-              <div className="p-6 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white dark:from-gray-800/50 dark:to-gray-800">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <h2 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">INGREDIENTS LIST</h2>
-                    <span className="px-2 py-0.5 bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-400 text-xs rounded-full">
-                      {filtered.length} items
-                    </span>
+            <motion.div variants={itemVariants} className="relative group">
+              {/* Animated border */}
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-3xl opacity-0 group-hover:opacity-100 blur-xl transition duration-500"></div>
+              
+              <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-xl rounded-2xl border-2 border-gray-200 dark:border-gray-800 shadow-2xl overflow-hidden">
+                <div className="p-6 border-b-2 border-gray-200 dark:border-gray-800 flex items-center justify-between bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/20 dark:to-purple-950/20">
+                  <div>
+                    <div className="flex items-center gap-3 mb-1">
+                      <h2 className="text-sm font-black text-gray-900 dark:text-white uppercase tracking-[0.2em]">INGREDIENTS LIST</h2>
+                      <span className="px-3 py-1 bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 text-xs font-black rounded-full">
+                        {filtered.length} items
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 font-medium">Click edit to validate pack + cost</p>
                   </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">Click Edit to validate pack + cost.</p>
+                  <motion.button 
+                    className="px-5 py-3 bg-white dark:bg-gray-800 rounded-xl text-sm font-bold text-gray-700 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 border-2 border-gray-200 dark:border-gray-700 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all flex items-center gap-2"
+                    onClick={load}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
+                    </svg>
+                    Refresh
+                  </motion.button>
                 </div>
-                <motion.button 
-                  className="px-4 py-2 text-sm text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-xl transition-all flex items-center gap-2"
-                  onClick={load}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                  </svg>
-                  Refresh
-                </motion.button>
-              </div>
 
-              {filtered.length === 0 ? (
-                <div className="p-12 text-center">
-                  <div className="w-20 h-20 mx-auto mb-6 bg-gradient-to-br from-gray-100 to-gray-200 dark:from-gray-700 dark:to-gray-600 rounded-3xl flex items-center justify-center text-3xl">
-                    🧂
-                  </div>
-                  <h3 className="text-xl font-semibold text-gray-900 dark:text-white mb-3">
-                    {rows.length === 0
-                      ? 'No ingredients yet'
-                      : normalized.length === 0
-                        ? 'No active ingredients'
-                        : 'No ingredients found'}
-                  </h3>
-                  <p className="text-sm text-gray-500 dark:text-gray-400 max-w-md mx-auto mb-8">
-                    {rows.length === 0
-                      ? 'Start your kitchen database by adding your first ingredient.'
-                      : normalized.length === 0
-                        ? 'All ingredients are currently inactive. Turn on “Show inactive” to manage them.'
-                        : 'Try adjusting your search or filters.'}
-                  </p>
-                  <div className="flex flex-wrap items-center justify-center gap-3">
-                    {rows.length === 0 ? (
-                      <motion.button 
-                        className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
-                        onClick={openCreate}
-                        whileHover={{ scale: 1.02, y: -1 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        + Add ingredient
-                      </motion.button>
-                    ) : normalized.length === 0 ? (
-                      <>
+                {filtered.length === 0 ? (
+                  <div className="p-16 text-center">
+                    <motion.div 
+                      initial={{ scale: 0 }}
+                      animate={{ scale: 1 }}
+                      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                      className="w-28 h-28 mx-auto mb-8 bg-gradient-to-br from-indigo-100 to-purple-100 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-3xl flex items-center justify-center text-5xl border-2 border-indigo-200 dark:border-indigo-800"
+                    >
+                      🧂
+                    </motion.div>
+                    <h3 className="text-3xl font-black text-gray-900 dark:text-white mb-3 tracking-tight">
+                      {rows.length === 0
+                        ? 'No ingredients yet'
+                        : normalized.length === 0
+                          ? 'No active ingredients'
+                          : 'No ingredients found'}
+                    </h3>
+                    <p className="text-lg text-gray-500 dark:text-gray-400 max-w-lg mx-auto mb-8 font-medium">
+                      {rows.length === 0
+                        ? 'Start your kitchen database by adding your first ingredient.'
+                        : normalized.length === 0
+                          ? 'All ingredients are currently in draft. Turn on “Show drafts” to manage them.'
+                          : 'Try adjusting your search or filters.'}
+                    </p>
+                    <div className="flex flex-wrap items-center justify-center gap-4">
+                      {rows.length === 0 ? (
                         <motion.button 
-                          className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
-                          onClick={() => setShowInactive(true)}
+                          className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-lg font-bold shadow-2xl hover:shadow-3xl transition-all flex items-center gap-3"
+                          onClick={openCreate}
                           whileHover={{ scale: 1.02, y: -1 }}
                           whileTap={{ scale: 0.98 }}
                         >
-                          Show inactive
+                          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                            <line x1="12" y1="5" x2="12" y2="19" />
+                            <line x1="5" y1="12" x2="19" y2="12" />
+                          </svg>
+                          Add ingredient
                         </motion.button>
-                        <motion.button 
-                          className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-                          onClick={openCreate}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          + Add ingredient
-                        </motion.button>
-                      </>
-                    ) : (
-                      <>
-                        <motion.button 
-                          className="px-6 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all"
-                          onClick={() => { setSearch(''); setCategory(''); }}
-                          whileHover={{ scale: 1.02, y: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          Clear filters
-                        </motion.button>
-                        <motion.button 
-                          className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
-                          onClick={openCreate}
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          + Add ingredient
-                        </motion.button>
-                      </>
-                    )}
+                      ) : normalized.length === 0 ? (
+                        <>
+                          <motion.button 
+                            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-lg font-bold shadow-2xl hover:shadow-3xl transition-all"
+                            onClick={() => setShowInactive(true)}
+                            whileHover={{ scale: 1.02, y: -1 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            Show drafts
+                          </motion.button>
+                          <motion.button 
+                            className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-2xl text-lg font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                            onClick={openCreate}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            + Add ingredient
+                          </motion.button>
+                        </>
+                      ) : (
+                        <>
+                          <motion.button 
+                            className="px-8 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-2xl text-lg font-bold shadow-2xl hover:shadow-3xl transition-all"
+                            onClick={() => { setSearch(''); setCategory(''); }}
+                            whileHover={{ scale: 1.02, y: -1 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            Clear filters
+                          </motion.button>
+                          <motion.button 
+                            className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-2xl text-lg font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition-all"
+                            onClick={openCreate}
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                          >
+                            + Add ingredient
+                          </motion.button>
+                        </>
+                      )}
+                    </div>
                   </div>
-                </div>
-              ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full min-w-[1000px]">
-                    <thead>
-                      <tr className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Code</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Pack</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Unit</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Net Unit Cost</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                      <AnimatePresence>
-                        {filtered.map((r) => (
-                          <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
-                        ))}
-                      </AnimatePresence>
-                    </tbody>
-                  </table>
-                </div>
-              )}
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[1200px]">
+                      <thead>
+                        <tr className="bg-gray-50 dark:bg-gray-800/50 border-b-2 border-gray-200 dark:border-gray-700">
+                          <th className="px-6 py-5 text-left text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Code</th>
+                          <th className="px-6 py-5 text-left text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Name</th>
+                          <th className="px-6 py-5 text-left text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Category</th>
+                          <th className="px-6 py-5 text-center text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Pack</th>
+                          <th className="px-6 py-5 text-center text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Unit</th>
+                          <th className="px-6 py-5 text-center text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Pack Price</th>
+                          <th className="px-6 py-5 text-center text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Net Unit Cost</th>
+                          <th className="px-6 py-5 text-center text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-[0.2em]">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-gray-200 dark:divide-gray-800">
+                        <AnimatePresence>
+                          {filtered.map((r) => (
+                            <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
+                          ))}
+                        </AnimatePresence>
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
             </motion.div>
           </>
         )}
@@ -1089,46 +1212,56 @@ export default function Ingredients() {
           <div className="space-y-8">
             {/* IDENTIFICATION */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full"></div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">IDENTIFICATION</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-indigo-500 to-purple-500 rounded-full"></div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-wider">IDENTIFICATION</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">CODE</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    CODE
+                  </label>
                   <input
                     className={cls(
-                      "w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all",
-                      !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                      "w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg",
+                      !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
                     placeholder="ING-000123"
                     disabled={!canEditCodes}
                   />
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Leave empty to auto-generate. Must start with ING-</p>
-                  {!canEditCodes && <p className="mt-2 text-xs text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 rounded-lg">Code fields are Owner-only.</p>}
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Leave empty to auto-generate. Must start with ING-</p>
+                  {!canEditCodes && (
+                    <p className="mt-2 text-sm font-bold text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-4 py-2 rounded-xl border border-amber-200 dark:border-amber-800">
+                      ⚠ Code fields are Owner-only
+                    </p>
+                  )}
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">CODE CATEGORY</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    CODE CATEGORY
+                  </label>
                   <input
                     className={cls(
-                      "w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all",
-                      !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-50 dark:bg-gray-800"
+                      "w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg",
+                      !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
                     placeholder={`e.g. ${suggestedCodeCategory}`}
                     disabled={!canEditCodes}
                   />
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">Optional (max 6 chars). If empty, uses Category.</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">Optional (max 6 chars). If empty, uses Category.</p>
                 </div>
 
                 <div className="md:col-span-2">
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">NAME *</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    NAME <span className="text-rose-500">*</span>
+                  </label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
+                    className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
                     value={fName}
                     onChange={(e) => setFName(e.target.value)}
                     placeholder="e.g. Extra Virgin Olive Oil"
@@ -1139,24 +1272,28 @@ export default function Ingredients() {
 
             {/* CLASSIFICATION */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full"></div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">CLASSIFICATION</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-purple-500 to-pink-500 rounded-full"></div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-wider">CLASSIFICATION</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">CATEGORY</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    CATEGORY
+                  </label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
+                    className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils & Fats"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">SUPPLIER</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    SUPPLIER
+                  </label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
+                    className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
@@ -1167,15 +1304,17 @@ export default function Ingredients() {
 
             {/* PACK */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full"></div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">PACK</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-pink-500 to-rose-500 rounded-full"></div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-wider">PACK</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">PACK SIZE *</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    PACK SIZE <span className="text-rose-500">*</span>
+                  </label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
+                    className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
                     type="number"
                     min={1}
                     step="1"
@@ -1184,40 +1323,46 @@ export default function Ingredients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">UNIT *</label>
-                  <select
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all appearance-none"
-                    value={fPackUnit}
-                    onChange={(e) => setFPackUnit(e.target.value)}
-                    style={{
-                      backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%236B7F3B' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E")`,
-                      backgroundPosition: 'right 1rem center',
-                      backgroundRepeat: 'no-repeat',
-                      backgroundSize: '1.5em 1.5em',
-                      paddingRight: '2.5rem'
-                    }}
-                  >
-                    <option value="g">g (gram)</option>
-                    <option value="kg">kg (kilogram)</option>
-                    <option value="ml">ml (milliliter)</option>
-                    <option value="l">L (liter)</option>
-                    <option value="pcs">pcs (pieces)</option>
-                  </select>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    UNIT <span className="text-rose-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <select
+                      className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all appearance-none text-lg"
+                      value={fPackUnit}
+                      onChange={(e) => setFPackUnit(e.target.value)}
+                      style={{
+                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236366f1'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
+                        backgroundPosition: 'right 1rem center',
+                        backgroundRepeat: 'no-repeat',
+                        backgroundSize: '1.5em 1.5em',
+                        paddingRight: '3rem'
+                      }}
+                    >
+                      <option value="g">g (gram)</option>
+                      <option value="kg">kg (kilogram)</option>
+                      <option value="ml">ml (milliliter)</option>
+                      <option value="l">L (liter)</option>
+                      <option value="pcs">pcs (pieces)</option>
+                    </select>
+                  </div>
                 </div>
               </div>
             </div>
 
             {/* COST */}
             <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="w-1 h-6 bg-gradient-to-b from-primary-500 to-primary-600 rounded-full"></div>
-                <h3 className="text-sm font-semibold text-gray-900 dark:text-white uppercase tracking-wider">COST</h3>
+              <div className="flex items-center gap-3">
+                <div className="w-1.5 h-8 bg-gradient-to-b from-rose-500 to-orange-500 rounded-full"></div>
+                <h3 className="text-lg font-black text-gray-900 dark:text-white uppercase tracking-wider">COST</h3>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">PACK PRICE *</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    PACK PRICE <span className="text-rose-500">*</span>
+                  </label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
+                    className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
                     type="number"
                     step="0.01"
                     value={fPackPrice}
@@ -1225,39 +1370,53 @@ export default function Ingredients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">NET UNIT COST</label>
+                  <label className="block text-xs font-black text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
+                    NET UNIT COST
+                  </label>
                   <input
-                    className="w-full px-4 py-3 border border-gray-200 dark:border-gray-600 rounded-xl bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-primary-500 focus:ring-2 focus:ring-primary-200 dark:focus:ring-primary-800 transition-all"
+                    className="w-full px-5 py-4 border-2 border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:border-indigo-500 focus:ring-4 focus:ring-indigo-200 dark:focus:ring-indigo-900 transition-all text-lg"
                     type="number"
                     step="0.000001"
                     value={fNetUnitCost}
                     onChange={(e) => setFNetUnitCost(e.target.value)}
                   />
-                  <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">If left 0 → auto-calculated from pack</p>
+                  <p className="mt-2 text-sm text-gray-500 dark:text-gray-400 font-medium">If left 0 → auto-calculated from pack</p>
                 </div>
               </div>
             </div>
 
             {/* Smart Helpers */}
-            <div className="bg-gradient-to-r from-gray-50 to-gray-100 dark:from-gray-700/30 dark:to-gray-700/50 rounded-xl p-5">
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="text-xs font-semibold text-gray-600 dark:text-gray-300 uppercase tracking-wider">SMART HELPERS:</span>
-                <motion.button
-                  className="px-5 py-2.5 text-xs bg-white dark:bg-gray-600 border border-gray-300 dark:border-gray-500 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-500 transition-all shadow-sm"
-                  onClick={smartRecalcNetCost}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Recalculate net cost from pack
-                </motion.button>
-                <span className="text-xs text-gray-500 dark:text-gray-400 font-mono bg-gray-200 dark:bg-gray-600 px-2 py-1 rounded">net = pack_price ÷ pack_size</span>
+            <motion.div 
+              className="relative group"
+              whileHover={{ scale: 1.01 }}
+              transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            >
+              <div className="absolute -inset-0.5 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-2xl opacity-0 group-hover:opacity-100 blur transition duration-500"></div>
+              <div className="relative bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 rounded-xl p-6 border-2 border-indigo-200 dark:border-indigo-800">
+                <div className="flex flex-wrap items-center gap-4">
+                  <span className="text-sm font-black text-indigo-700 dark:text-indigo-400 uppercase tracking-wider">⚡ SMART HELPERS</span>
+                  <motion.button
+                    className="px-6 py-3 bg-white dark:bg-gray-800 text-indigo-700 dark:text-indigo-400 rounded-xl text-sm font-bold border-2 border-indigo-300 dark:border-indigo-700 hover:border-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/50 transition-all shadow-lg flex items-center gap-2"
+                    onClick={smartRecalcNetCost}
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                    Recalculate net cost
+                  </motion.button>
+                  <span className="text-sm font-mono font-bold text-indigo-600 dark:text-indigo-400 bg-white dark:bg-gray-800 px-4 py-2 rounded-xl border-2 border-indigo-200 dark:border-indigo-800">
+                    net = pack_price ÷ pack_size
+                  </span>
+                </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-3 pt-6 border-t border-gray-200 dark:border-gray-700">
+            <div className="flex justify-end gap-4 pt-8 border-t-2 border-gray-200 dark:border-gray-700">
               <motion.button
-                className="px-6 py-3 border border-gray-300 dark:border-gray-600 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700 transition-all"
+                className="px-8 py-4 border-2 border-gray-300 dark:border-gray-600 rounded-xl text-lg font-bold hover:bg-gray-100 dark:hover:bg-gray-800 transition-all"
                 onClick={() => setModalOpen(false)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
@@ -1265,13 +1424,29 @@ export default function Ingredients() {
                 Cancel
               </motion.button>
               <motion.button
-                className="px-8 py-3 bg-gradient-to-r from-primary-600 to-primary-700 text-white rounded-xl shadow-lg hover:shadow-xl transition-all disabled:opacity-50"
+                className="px-10 py-4 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl text-lg font-bold shadow-2xl hover:shadow-3xl transition-all disabled:opacity-50 flex items-center gap-2"
                 onClick={save}
                 disabled={saving}
                 whileHover={{ scale: 1.02, y: -1 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {saving ? 'Saving...' : 'Save Ingredient'}
+                {saving ? (
+                  <>
+                    <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
+                    </svg>
+                    Saving...
+                  </>
+                ) : (
+                  <>
+                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                      <polyline points="17 21 17 13 7 13 7 21" />
+                      <polyline points="7 3 7 8 15 8" />
+                    </svg>
+                    Save Ingredient
+                  </>
+                )}
               </motion.button>
             </div>
           </div>
@@ -1279,6 +1454,29 @@ export default function Ingredients() {
 
         <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
       </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 8px;
+          height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #cbd5e1;
+          border-radius: 9999px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #4b5563;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #94a3b8;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+        }
+      `}</style>
     </motion.div>
   )
 }
