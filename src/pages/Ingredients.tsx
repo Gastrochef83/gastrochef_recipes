@@ -63,108 +63,120 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== Icons - Refined ====================
+// ==================== GastroChef Forge Icons ====================
 const Icons = {
   search: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
   close: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   edit: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
     </svg>
   ),
   delete: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   ),
   plus: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ),
   chevronDown: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <polyline points="6 9 12 15 18 9" />
     </svg>
   ),
   dollar: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="12" y1="1" x2="12" y2="23" />
       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   ),
   alert: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
   ),
   bolt: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   ),
   check: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
   reset: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   ),
   deactivate: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
   ),
+  forge: (props: any) => (
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+      <path d="M4 8 L8 4 L16 4 L20 8 L20 16 L16 20 L8 20 L4 16 L4 8" />
+      <circle cx="12" cy="12" r="4" />
+    </svg>
+  ),
 }
 
-// ==================== Stronger Premium Color Palette ====================
+// ==================== GastroChef Forge Color Palette ====================
 const colors = {
-  forest: {
-    50: '#f0f5ea',
-    100: '#e0e9d3',
-    200: '#c2d1a7',
-    300: '#9eb07c',
-    400: '#7a8f51',
-    500: '#2C5F2D', // Deep forest green - primary
-    600: '#234a24',
-    700: '#1b361c',
-    800: '#122313',
-    900: '#0a100a',
+  forge: {
+    50: '#f2f6ed',
+    100: '#e0e9d4',
+    200: '#c2d1a9',
+    300: '#a3b97e',
+    400: '#85a153',
+    500: '#2C5F2D', // Forge Olive primary
+    600: '#234c24',
+    700: '#1b391c',
+    800: '#122613',
+    900: '#091309',
   },
-  charcoal: '#1A1A1A', // Darker, stronger text
-  slate: '#2D3E4F',
-  ivory: '#F5F3EF', // Warmer, less pale
-  cream: '#FFFFFF', // Clean white surfaces
-  amber: '#B58B4A', // Richer amber
-  deepRed: '#9E2A2B', // Strong destructive
-  border: '#D8D4CC', // Stronger borders
-  lightBorder: '#EDE9E2', // Secondary borders
+  bronze: {
+    500: '#B78C5A', // Burnished Bronze accent
+    600: '#9e7548',
+    700: '#855e3a',
+  },
+  graphite: '#1E1E1E', // Graphite Charcoal for strong text
+  stoneIvory: '#F8F5F0', // Base background
+  warmWhite: '#FFFFFF', // Pure warm white for surfaces
+  smokedTeal: '#3A6B6F', // Refined secondary accent
+  oxideRed: '#A63D40', // Destructive actions
+  amberSpice: '#C17B3A', // Warnings
+  border: '#E0D9D0', // Rich border definition
+  lightBorder: '#ECE7E0', // Secondary borders
   text: {
-    primary: '#1A1A1A',
+    primary: '#1E1E1E',
     secondary: '#4A4A4A',
     tertiary: '#6B6B6B',
+    light: '#FFFFFF',
   }
 }
 
-// ==================== Unit Badge - Stronger ====================
+// ==================== Unit Badge - Forge Style ====================
 const UnitBadge = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
@@ -175,23 +187,23 @@ const UnitBadge = ({ unit }: { unit: string }) => {
   }
 
   return (
-    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-semibold text-forest-700 bg-forest-50 border border-forest-200 rounded">
+    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-bold text-forge-700 bg-forge-50 border border-forge-200 rounded-md">
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== Price Display - Stronger ====================
+// ==================== Price Display - Forge Style ====================
 const PriceDisplay = ({ amount, unit }: { amount: number; unit: string }) => (
   <div className="flex items-center justify-end gap-2">
-    <span className="font-mono text-sm font-semibold text-charcoal">
+    <span className="font-mono text-sm font-bold text-graphite">
       {money(amount)}
     </span>
     <UnitBadge unit={unit} />
   </div>
 )
 
-// ==================== Modal ====================
+// ==================== Modal - Forge Premium ====================
 function Modal({
   open,
   title,
@@ -215,7 +227,7 @@ function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm"
+            className="absolute inset-0 bg-graphite/60 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -228,11 +240,11 @@ function Modal({
             exit={{ scale: 0.96, opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="bg-cream rounded-xl shadow-xl border border-border overflow-hidden">
+            <div className="bg-warmWhite rounded-xl shadow-2xl border border-border overflow-hidden">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-                <h2 className="text-lg font-semibold text-charcoal">{title}</h2>
+                <h2 className="text-lg font-bold text-graphite">{title}</h2>
                 <button
-                  className="p-2 rounded-lg hover:bg-forest-50 text-text-tertiary hover:text-forest-700 transition-colors"
+                  className="p-2 rounded-lg hover:bg-forge-50 text-text-tertiary hover:text-forge-700 transition-colors"
                   onClick={onClose}
                 >
                   <Icons.close />
@@ -249,7 +261,7 @@ function Modal({
   )
 }
 
-// ==================== Form Field - Clearer ====================
+// ==================== Form Field - Forge Clarity ====================
 const FormField = ({
   label,
   required,
@@ -263,9 +275,9 @@ const FormField = ({
 }) => (
   <div className="space-y-1.5">
     <div className="flex items-center justify-between">
-      <label className="text-sm font-semibold text-text-primary">
+      <label className="text-sm font-bold text-graphite">
         {label}
-        {required && <span className="text-deepRed ml-1">*</span>}
+        {required && <span className="text-oxideRed ml-1">*</span>}
       </label>
       {hint && <span className="text-xs text-text-tertiary">{hint}</span>}
     </div>
@@ -273,7 +285,7 @@ const FormField = ({
   </div>
 )
 
-// ==================== Table Row - Stronger Presence ====================
+// ==================== Table Row - Forge Strong ====================
 const IngredientTableRow = memo(function IngredientTableRow({
   ingredient,
   isDebug,
@@ -300,7 +312,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className={cls(
-        'group border-b border-lightBorder last:border-0 hover:bg-forest-50/30 transition-colors',
+        'group border-b border-lightBorder last:border-0 hover:bg-forge-50/30 transition-colors',
         !active && 'opacity-50'
       )}
     >
@@ -312,13 +324,13 @@ const IngredientTableRow = memo(function IngredientTableRow({
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           <span className={cls(
-            "text-sm font-semibold text-text-primary",
+            "text-sm font-bold text-graphite",
             !active && "line-through text-text-tertiary"
           )}>
             {ingredient.name ?? '—'}
           </span>
           {hasWarning && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-semibold bg-amber/10 text-amber border border-amber/20">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-bold bg-amberSpice/10 text-amberSpice border border-amberSpice/20">
               <Icons.alert width={10} height={10} />
               check unit
             </span>
@@ -330,11 +342,11 @@ const IngredientTableRow = memo(function IngredientTableRow({
           </div>
         )}
       </td>
-      <td className="px-4 py-4 text-sm text-text-secondary">
+      <td className="px-4 py-4 text-sm font-medium text-text-secondary">
         {ingredient.category ?? '—'}
       </td>
       <td className="px-4 py-4 text-center">
-        <span className="text-sm font-mono font-semibold text-text-primary">
+        <span className="text-sm font-mono font-bold text-graphite">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
       </td>
@@ -350,7 +362,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
       <td className="px-4 py-4">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-2 rounded-lg hover:bg-forest-100 text-text-tertiary hover:text-forest-700 transition-colors"
+            className="p-2 rounded-lg hover:bg-forge-100 text-text-tertiary hover:text-forge-700 transition-colors"
             onClick={() => onEdit(ingredient)}
             title="Edit"
           >
@@ -358,7 +370,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
           </button>
           {active && (
             <button
-              className="p-2 rounded-lg hover:bg-forest-100 text-text-tertiary hover:text-amber transition-colors"
+              className="p-2 rounded-lg hover:bg-forge-100 text-text-tertiary hover:text-amberSpice transition-colors"
               onClick={() => onDeactivate(ingredient.id)}
               title="Deactivate"
             >
@@ -366,7 +378,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
             </button>
           )}
           <button
-            className="p-2 rounded-lg hover:bg-forest-100 text-text-tertiary hover:text-deepRed transition-colors"
+            className="p-2 rounded-lg hover:bg-forge-100 text-text-tertiary hover:text-oxideRed transition-colors"
             onClick={() => {
               if (window.confirm('Delete permanently? This cannot be undone.')) {
                 onHardDelete(ingredient.id)
@@ -382,31 +394,31 @@ const IngredientTableRow = memo(function IngredientTableRow({
   )
 })
 
-// ==================== Stat Card - Stronger Definition ====================
+// ==================== Stat Card - Forge Premium ====================
 const StatCard = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
-  <div className="bg-cream rounded-xl p-6 border border-border shadow-sm">
-    <div className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">
+  <div className="bg-warmWhite rounded-xl p-6 border border-border shadow-md">
+    <div className="text-xs font-bold text-text-secondary uppercase tracking-wider mb-2">
       {label}
     </div>
     <div className={cls(
-      "text-2xl font-light",
-      warning ? "text-amber" : "text-text-primary"
+      "text-3xl font-light",
+      warning ? "text-amberSpice" : "text-graphite"
     )}>
       {value}
     </div>
-    <div className="text-xs text-text-tertiary mt-2">
+    <div className="text-xs font-medium text-text-tertiary mt-2">
       {sublabel}
     </div>
   </div>
 )
 
-// ==================== Empty State ====================
+// ==================== Empty State - Forge ====================
 const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
-  <div className="bg-cream rounded-xl p-12 text-center border border-border">
-    <div className="w-16 h-16 mx-auto mb-4 bg-forest-50 rounded-2xl flex items-center justify-center text-3xl text-forest-700 border border-forest-200">
-      🥬
+  <div className="bg-warmWhite rounded-xl p-12 text-center border border-border shadow-md">
+    <div className="w-16 h-16 mx-auto mb-4 bg-forge-100 rounded-2xl flex items-center justify-center text-3xl text-forge-700 border border-forge-200">
+      <Icons.forge width={32} height={32} />
     </div>
-    <h3 className="text-xl font-semibold text-text-primary mb-2">
+    <h3 className="text-xl font-bold text-graphite mb-2">
       {hasFilters ? 'No matching ingredients' : 'No ingredients yet'}
     </h3>
     <p className="text-base text-text-secondary max-w-sm mx-auto mb-8">
@@ -415,7 +427,7 @@ const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: bool
         : 'Add your first ingredient to start building your kitchen database.'}
     </p>
     <button
-      className="inline-flex items-center gap-2 px-6 py-3 bg-forest-500 text-white text-base font-semibold rounded-xl hover:bg-forest-600 transition-colors shadow-sm"
+      className="inline-flex items-center gap-2 px-6 py-3 bg-forge-500 text-white text-base font-bold rounded-lg hover:bg-forge-600 transition-colors shadow-md"
       onClick={onAdd}
     >
       <Icons.plus />
@@ -429,14 +441,14 @@ const LoadingState = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-cream rounded-xl p-6 border border-border">
+        <div key={i} className="bg-warmWhite rounded-xl p-6 border border-border shadow-md">
           <Skeleton className="h-4 w-16 mb-2" />
           <Skeleton className="h-8 w-24 mb-1" />
           <Skeleton className="h-3 w-20" />
         </div>
       ))}
     </div>
-    <div className="bg-cream rounded-xl p-6 border border-border">
+    <div className="bg-warmWhite rounded-xl p-6 border border-border shadow-md">
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-2">
@@ -453,8 +465,8 @@ const LoadingState = () => (
 
 // ==================== Error State ====================
 const ErrorState = ({ message }: { message: string }) => (
-  <div className="bg-deepRed/5 rounded-xl p-6 border border-deepRed/20">
-    <div className="flex items-center gap-3 text-deepRed">
+  <div className="bg-oxideRed/5 rounded-xl p-6 border border-oxideRed/20">
+    <div className="flex items-center gap-3 text-oxideRed">
       <Icons.alert />
       <span className="text-base font-medium">{message}</span>
     </div>
@@ -822,27 +834,32 @@ export default function Ingredients() {
   }
 
   return (
-    <div className="min-h-screen bg-ivory">
+    <div className="min-h-screen bg-stoneIvory">
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Header - Stronger */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-semibold text-text-primary tracking-tight">Ingredients</h1>
-            <p className="text-sm text-text-secondary mt-1">
-              {filtered.length} items · {stats.missingCost} need pricing
-            </p>
+        {/* Header - Forge Powerful */}
+        <div className="flex items-center justify-between mb-10">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-forge-500 rounded-xl flex items-center justify-center text-white shadow-lg">
+              <Icons.forge width={28} height={28} />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-graphite tracking-tight">Ingredients</h1>
+              <p className="text-sm font-medium text-text-secondary mt-1">
+                {filtered.length} items · {stats.missingCost} need pricing
+              </p>
+            </div>
           </div>
           {isDebug && kitchenId && (
-            <span className="text-xs font-mono font-medium text-text-secondary bg-cream border border-border px-3 py-1.5 rounded-lg">
+            <span className="text-xs font-mono font-bold text-text-secondary bg-warmWhite border border-border px-3 py-1.5 rounded-lg shadow-sm">
               {kitchenId.slice(0, 8)}...
             </span>
           )}
         </div>
 
-        {/* Primary Action - Stronger */}
+        {/* Primary Action - Forge Bold */}
         <div className="flex items-center justify-between mb-8">
           <button
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-forest-500 text-white text-base font-semibold rounded-lg hover:bg-forest-600 transition-colors shadow-sm"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-forge-500 text-white text-base font-bold rounded-lg hover:bg-forge-600 transition-colors shadow-md"
             onClick={openCreate}
           >
             <Icons.plus />
@@ -851,23 +868,23 @@ export default function Ingredients() {
 
           {hasFilteredItems && (
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-text-secondary">Filtered:</span>
+              <span className="text-sm font-bold text-text-secondary">Filtered:</span>
               <button
-                className="px-4 py-2 text-sm font-medium text-text-primary bg-cream border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-bold text-graphite bg-warmWhite border border-border rounded-lg hover:bg-forge-50 hover:border-forge-300 transition-colors shadow-sm disabled:opacity-40"
                 onClick={bulkRecalcNetCosts}
                 disabled={bulkWorking}
               >
                 Recalculate costs
               </button>
               <button
-                className="px-4 py-2 text-sm font-medium text-text-primary bg-cream border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-bold text-graphite bg-warmWhite border border-border rounded-lg hover:bg-forge-50 hover:border-forge-300 transition-colors shadow-sm disabled:opacity-40"
                 onClick={() => bulkSetActive(true)}
                 disabled={bulkWorking}
               >
                 Activate all
               </button>
               <button
-                className="px-4 py-2 text-sm font-medium text-text-primary bg-cream border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-bold text-graphite bg-warmWhite border border-border rounded-lg hover:bg-forge-50 hover:border-forge-300 transition-colors shadow-sm disabled:opacity-40"
                 onClick={() => bulkSetActive(false)}
                 disabled={bulkWorking}
               >
@@ -877,7 +894,7 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Filters - Stronger Definition */}
+        {/* Filters - Forge Precision */}
         <div className="flex items-center gap-3 mb-8">
           <div className="flex-1 max-w-md">
             <div className="relative">
@@ -885,7 +902,7 @@ export default function Ingredients() {
                 <Icons.search />
               </span>
               <input
-                className="w-full pl-11 pr-10 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                className="w-full pl-11 pr-10 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite placeholder:text-text-tertiary focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search ingredients..."
@@ -893,7 +910,7 @@ export default function Ingredients() {
               {search && (
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-forest-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-forge-700"
                   onClick={() => setSearch('')}
                 >
                   <Icons.close width={16} height={16} />
@@ -903,7 +920,7 @@ export default function Ingredients() {
           </div>
 
           <select
-            className="px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+            className="px-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite font-medium focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -914,7 +931,7 @@ export default function Ingredients() {
           </select>
 
           <select
-            className="px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+            className="px-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite font-medium focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -925,10 +942,10 @@ export default function Ingredients() {
 
           <button
             className={cls(
-              "inline-flex items-center gap-2 px-4 py-3 rounded-lg text-base font-medium transition-colors",
+              "inline-flex items-center gap-2 px-4 py-3 rounded-lg text-base font-bold transition-colors shadow-sm",
               showInactive
-                ? "bg-forest-500 text-white border border-forest-500"
-                : "bg-cream text-text-primary border border-border hover:bg-forest-50"
+                ? "bg-forge-500 text-white border border-forge-500"
+                : "bg-warmWhite text-graphite border border-border hover:bg-forge-50"
             )}
             onClick={() => setShowInactive(!showInactive)}
           >
@@ -936,14 +953,14 @@ export default function Ingredients() {
               "w-5 h-5 rounded-md border flex items-center justify-center",
               showInactive ? "bg-white border-white" : "bg-white border-text-tertiary"
             )}>
-              {showInactive && <Icons.check width={12} height={12} className="text-forest-500" />}
+              {showInactive && <Icons.check width={12} height={12} className="text-forge-500" />}
             </div>
             <span>Show inactive</span>
           </button>
 
           {hasActiveFilters && (
             <button
-              className="p-3 bg-cream border border-border rounded-lg text-text-tertiary hover:text-forest-700 hover:border-forest-300 transition-colors"
+              className="p-3 bg-warmWhite border border-border rounded-lg text-text-tertiary hover:text-forge-700 hover:border-forge-300 transition-colors shadow-sm"
               onClick={() => {
                 setSearch('')
                 setCategory('')
@@ -955,7 +972,7 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Stats - Stronger Cards */}
+        {/* Stats - Forge Strong Cards */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Total items"
@@ -991,19 +1008,19 @@ export default function Ingredients() {
             {filtered.length === 0 ? (
               <EmptyState onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <div className="bg-cream rounded-xl border border-border overflow-hidden shadow-sm">
+              <div className="bg-warmWhite rounded-xl border border-border overflow-hidden shadow-md">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border bg-forest-50/50">
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Code</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Category</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-text-secondary uppercase tracking-wider">Pack</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-text-secondary uppercase tracking-wider">Unit</th>
-                        <th className="px-4 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Pack Price</th>
-                        <th className="px-4 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Unit Price</th>
-                        <th className="px-4 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Actions</th>
+                      <tr className="border-b border-border bg-forge-50/50">
+                        <th className="px-4 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Code</th>
+                        <th className="px-4 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-4 text-left text-xs font-bold text-text-secondary uppercase tracking-wider">Category</th>
+                        <th className="px-4 py-4 text-center text-xs font-bold text-text-secondary uppercase tracking-wider">Pack</th>
+                        <th className="px-4 py-4 text-center text-xs font-bold text-text-secondary uppercase tracking-wider">Unit</th>
+                        <th className="px-4 py-4 text-right text-xs font-bold text-text-secondary uppercase tracking-wider">Pack Price</th>
+                        <th className="px-4 py-4 text-right text-xs font-bold text-text-secondary uppercase tracking-wider">Unit Price</th>
+                        <th className="px-4 py-4 text-right text-xs font-bold text-text-secondary uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-lightBorder">
@@ -1027,13 +1044,13 @@ export default function Ingredients() {
           </>
         )}
 
-        {/* Modal */}
+        {/* Modal - Forge Premium */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
           <div className="space-y-6">
             <div className="space-y-4">
               <FormField label="Name" required>
                 <input
-                  className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                  className="w-full px-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite placeholder:text-text-tertiary focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
@@ -1043,7 +1060,7 @@ export default function Ingredients() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Category">
                   <input
-                    className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                    className="w-full px-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite placeholder:text-text-tertiary focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
@@ -1051,7 +1068,7 @@ export default function Ingredients() {
                 </FormField>
                 <FormField label="Supplier">
                   <input
-                    className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                    className="w-full px-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite placeholder:text-text-tertiary focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
@@ -1062,15 +1079,15 @@ export default function Ingredients() {
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-text-primary">Code system</h3>
-                <span className="text-xs font-mono font-medium bg-forest-50 text-text-secondary px-2 py-1 rounded-md border border-border">Optional</span>
+                <h3 className="text-sm font-bold text-graphite">Code system</h3>
+                <span className="text-xs font-mono font-bold bg-forge-50 text-text-secondary px-2 py-1 rounded-md border border-border">Optional</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Ingredient code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-cream border border-border rounded-lg text-base font-mono text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-forest-50 cursor-not-allowed"
+                      "w-full px-4 py-3 bg-warmWhite border border-border rounded-lg text-base font-mono text-graphite placeholder:text-text-tertiary focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm",
+                      !canEditCodes && "opacity-50 bg-forge-50 cursor-not-allowed"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
@@ -1081,8 +1098,8 @@ export default function Ingredients() {
                 <FormField label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-cream border border-border rounded-lg text-base font-mono text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-forest-50 cursor-not-allowed"
+                      "w-full px-4 py-3 bg-warmWhite border border-border rounded-lg text-base font-mono text-graphite placeholder:text-text-tertiary focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm",
+                      !canEditCodes && "opacity-50 bg-forge-50 cursor-not-allowed"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
@@ -1092,7 +1109,7 @@ export default function Ingredients() {
                 </FormField>
               </div>
               {!canEditCodes && (
-                <p className="text-sm text-amber flex items-center gap-1">
+                <p className="text-sm text-amberSpice flex items-center gap-1 font-medium">
                   <Icons.alert width={14} height={14} />
                   Owner-only
                 </p>
@@ -1100,7 +1117,7 @@ export default function Ingredients() {
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-text-primary">Pack & Cost</h3>
+              <h3 className="text-sm font-bold text-graphite">Pack & Cost</h3>
 
               <div className="flex gap-2">
                 {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
@@ -1109,10 +1126,10 @@ export default function Ingredients() {
                     type="button"
                     onClick={() => setFPackUnit(unit)}
                     className={cls(
-                      "flex-1 px-4 py-2.5 text-base font-mono font-medium rounded-lg border transition-colors",
+                      "flex-1 px-4 py-2.5 text-base font-mono font-bold rounded-lg border transition-colors shadow-sm",
                       fPackUnit === unit
-                        ? "bg-forest-500 text-white border-forest-500"
-                        : "bg-cream text-text-primary border-border hover:border-forest-300"
+                        ? "bg-forge-500 text-white border-forge-500"
+                        : "bg-warmWhite text-graphite border-border hover:border-forge-300"
                     )}
                   >
                     {unit}
@@ -1124,20 +1141,20 @@ export default function Ingredients() {
                 <FormField label="Pack size" required>
                   <div className="relative">
                     <input
-                      className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors pr-16"
+                      className="w-full px-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors pr-16 shadow-sm"
                       type="number"
                       min={1}
                       step="1"
                       value={fPackSize}
                       onChange={(e) => setFPackSize(e.target.value)}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-text-tertiary">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono font-medium text-text-tertiary">
                       {fPackUnit}
                     </span>
                   </div>
                 </FormField>
                 <FormField label="Unit" required>
-                  <div className="px-4 py-3 bg-forest-50 border border-border rounded-lg text-base text-text-primary font-mono">
+                  <div className="px-4 py-3 bg-forge-50 border border-border rounded-lg text-base text-graphite font-mono font-medium shadow-sm">
                     {fPackUnit}
                   </div>
                 </FormField>
@@ -1148,7 +1165,7 @@ export default function Ingredients() {
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary text-lg">$</span>
                     <input
-                      className="w-full pl-8 pr-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                      className="w-full pl-8 pr-4 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors shadow-sm"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
@@ -1160,13 +1177,13 @@ export default function Ingredients() {
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary text-lg">$</span>
                     <input
-                      className="w-full pl-8 pr-16 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors font-mono"
+                      className="w-full pl-8 pr-16 py-3 bg-warmWhite border border-border rounded-lg text-base text-graphite focus:outline-none focus:border-forge-500 focus:ring-2 focus:ring-forge-500/20 transition-colors font-mono shadow-sm"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-text-tertiary">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono font-medium text-text-tertiary">
                       {"/" + fPackUnit}
                     </span>
                   </div>
@@ -1174,15 +1191,15 @@ export default function Ingredients() {
               </div>
 
               {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
-                <div className="p-4 bg-forest-50/50 rounded-lg border border-forest-200">
+                <div className="p-4 bg-forge-50/50 rounded-lg border border-forge-200 shadow-sm">
                   <div className="flex items-center justify-between text-base">
-                    <span className="font-medium text-forest-700">Preview:</span>
-                    <span className="font-mono font-medium text-forest-800">
+                    <span className="font-bold text-forge-700">Preview:</span>
+                    <span className="font-mono font-bold text-forge-800">
                       {"$" + parseFloat(fPackPrice) + " ÷ " + parseFloat(fPackSize) + " " + fPackUnit + " = $" + (parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4) + "/" + fPackUnit}
                     </span>
                   </div>
                   <button
-                    className="w-full mt-3 px-4 py-2.5 bg-cream text-forest-700 rounded-lg text-base font-medium border border-forest-200 hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-3 px-4 py-2.5 bg-warmWhite text-forge-700 rounded-lg text-base font-bold border border-forge-200 hover:bg-forge-50 transition-colors shadow-sm flex items-center justify-center gap-2"
                     onClick={smartRecalcNetCost}
                   >
                     <Icons.bolt width={14} height={14} />
@@ -1194,13 +1211,13 @@ export default function Ingredients() {
 
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <button
-                className="px-5 py-2.5 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-forest-50 rounded-lg transition-colors"
+                className="px-5 py-2.5 text-base font-bold text-text-secondary hover:text-graphite hover:bg-forge-50 rounded-lg transition-colors"
                 onClick={() => setModalOpen(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-5 py-2.5 bg-forest-500 text-white text-base font-semibold rounded-lg hover:bg-forest-600 transition-colors disabled:opacity-40"
+                className="px-5 py-2.5 bg-forge-500 text-white text-base font-bold rounded-lg hover:bg-forge-600 transition-colors shadow-md disabled:opacity-40"
                 onClick={save}
                 disabled={saving}
               >
