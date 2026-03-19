@@ -63,8 +63,8 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== OBSIDIAN - الهوية البصرية النووية ====================
-// تصميم مستوحى من الصخور البركانية السوداء، النحاس المصقول، والذهب الأسود
+// ==================== SOLARA - الهوية البصرية النووية الجديدة ====================
+// تصميم مستوحى من الضوء، البلورات، والطاقة الشمسية
 
 const Icons = {
   search: (props: any) => (
@@ -135,53 +135,54 @@ const Icons = {
       <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
   ),
-  obsidian: (props: any) => (
+  solara: (props: any) => (
     <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
-      <path d="M4 6 L12 2 L20 6 L20 18 L12 22 L4 18 L4 6" />
-      <path d="M12 2 L12 22 M4 6 L20 18 M20 6 L4 18" strokeOpacity="0.3" />
-      <circle cx="12" cy="12" r="2" fill="currentColor" />
+      <circle cx="12" cy="12" r="6" />
+      <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12 M4 4 L7 7 M17 17 L20 20 M4 20 L7 17 M17 7 L20 4" strokeOpacity="0.5" />
     </svg>
   ),
-  crystal: (props: any) => (
+  ray: (props: any) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-      <path d="M12 2 L22 7 L22 17 L12 22 L2 17 L2 7 L12 2" />
-      <line x1="12" y1="2" x2="12" y2="22" strokeOpacity="0.3" />
+      <path d="M12 2 L12 8 M12 16 L12 22 M2 12 L8 12 M16 12 L22 12 M5 5 L9 9 M15 15 L19 19 M5 19 L9 15 M15 9 L19 5" strokeOpacity="0.3" />
     </svg>
   ),
 }
 
-// ==================== OBSIDIAN - لوحة الألوان النووية ====================
+// ==================== SOLARA - لوحة الألوان النووية ====================
 const colors = {
-  obsidian: {
-    950: '#0C0A09', // أسود بركاني عميق - الخلفية الرئيسية
-    900: '#1C1917', // أسود دخاني - بطاقات
-    800: '#292524', // رمادي بركاني - حدود
-    700: '#44403C', // رمادي حمم - نص ثانوي
+  solara: {
+    50: '#f2f0fe',
+    100: '#e4e0fd',
+    200: '#c9c1fb',
+    300: '#aea2f9',
+    400: '#9383f7',
+    500: '#6C5CE7', // Solara Purple - الأساسي
+    600: '#5646c9',
+    700: '#4135a6',
+    800: '#2b2482',
+    900: '#16135e',
   },
-  bronze: {
-    500: '#B77E4A', // برونزي مصقول - الأساسي
-    400: '#C99A6B', // برونزي فاتح - hover
-    600: '#9E6538', // برونزي غامق - active
+  sun: {
+    500: '#FFD166', // Sun Gold - أكcent
+    400: '#FFDF99',
+    600: '#E5B84C',
   },
-  copper: {
-    500: '#D68B5C', // نحاسي دافئ - أكcent
-    400: '#E5A16F', // نحاسي فاتح
+  sky: {
+    500: '#48CAE4', // Sky Blue - ثانوي
+    400: '#7BD3F0',
   },
-  gold: {
-    500: '#CBA135', // ذهبي أسود - تحذيرات
-    600: '#B48A28',
-  },
-  ruby: '#A63D40', // ياقوتي - destructive
-  surface: '#FFFFFF', // أبيض نقي - للأسطح
+  coral: '#FF6B6B', // Coral - destructive
+  surface: '#FFFFFF', // أبيض نقي
+  background: '#F8F7FF', // خلفية بنفسجية فاتحة جداً
   text: {
-    primary: '#F5F5F4', // أبيض دخاني - نص رئيسي
-    secondary: '#A8A29E', // رمادي فضي - نص ثانوي
-    tertiary: '#78716C', // رمادي دخاني - نص مساعد
+    primary: '#1E1E2E',
+    secondary: '#4A4A5E',
+    tertiary: '#6B6B7E',
   }
 }
 
-// ==================== وحدة القياس - كريستالية ====================
-const UnitCrystal = ({ unit }: { unit: string }) => {
+// ==================== وحدة القياس - شعاعية ====================
+const UnitRay = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
     kg: 'kg',
@@ -191,24 +192,24 @@ const UnitCrystal = ({ unit }: { unit: string }) => {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono font-medium text-bronze-500 bg-obsidian-800/50 border border-bronze-500/20 rounded-sm tracking-wider">
-      <Icons.crystal width={10} height={10} className="text-bronze-500/50" />
+    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono font-medium text-solara-600 bg-solara-50 border border-solara-200 rounded-full">
+      <Icons.ray width={10} height={10} className="text-solara-400" />
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== عرض السعر - برونزي ====================
-const PriceObsidian = ({ amount, unit }: { amount: number; unit: string }) => (
+// ==================== عرض السعر - شمسي ====================
+const PriceSolara = ({ amount, unit }: { amount: number; unit: string }) => (
   <div className="flex items-center justify-end gap-2">
     <span className="font-mono text-sm font-medium text-text-primary">
       {money(amount)}
     </span>
-    <UnitCrystal unit={unit} />
+    <UnitRay unit={unit} />
   </div>
 )
 
-// ==================== مودال - معماري ====================
+// ==================== مودال - شفاف ====================
 function Modal({
   open,
   title,
@@ -232,7 +233,7 @@ function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-obsidian-950/90 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -245,17 +246,14 @@ function Modal({
             exit={{ scale: 0.96, opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="bg-obsidian-900 border border-obsidian-700 rounded-lg shadow-2xl overflow-hidden">
-              {/* خط برونزي علوي */}
-              <div className="h-0.5 w-full bg-gradient-to-r from-bronze-500/0 via-bronze-500 to-bronze-500/0" />
-              
-              <div className="flex items-center justify-between px-6 py-5 border-b border-obsidian-800">
+            <div className="bg-white/90 backdrop-blur-xl border border-solara-200 rounded-2xl shadow-2xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-solara-100">
                 <div className="flex items-center gap-3">
-                  <Icons.obsidian width={24} height={24} className="text-bronze-500" />
-                  <h2 className="text-lg font-light tracking-wide text-text-primary">{title}</h2>
+                  <Icons.solara width={24} height={24} className="text-solara-500" />
+                  <h2 className="text-lg font-light text-text-primary">{title}</h2>
                 </div>
                 <button
-                  className="p-2 rounded hover:bg-obsidian-800 text-text-tertiary hover:text-bronze-400 transition-colors"
+                  className="p-2 rounded-full hover:bg-solara-50 text-text-tertiary hover:text-solara-600 transition-colors"
                   onClick={onClose}
                 >
                   <Icons.close />
@@ -272,8 +270,8 @@ function Modal({
   )
 }
 
-// ==================== حقل النموذج - برونزي ====================
-const FormFieldObsidian = ({
+// ==================== حقل النموذج - شمسي ====================
+const FormFieldSolara = ({
   label,
   required,
   children,
@@ -286,9 +284,9 @@ const FormFieldObsidian = ({
 }) => (
   <div className="space-y-1.5">
     <div className="flex items-center justify-between">
-      <label className="text-xs font-medium tracking-wide text-text-secondary">
+      <label className="text-xs font-medium text-text-secondary">
         {label}
-        {required && <span className="text-ruby ml-1">*</span>}
+        {required && <span className="text-coral ml-1">*</span>}
       </label>
       {hint && <span className="text-[10px] text-text-tertiary">{hint}</span>}
     </div>
@@ -296,8 +294,8 @@ const FormFieldObsidian = ({
   </div>
 )
 
-// ==================== صف الجدول - بركاني ====================
-const IngredientRowObsidian = memo(function IngredientRowObsidian({
+// ==================== صف الجدول - شمسي ====================
+const IngredientRowSolara = memo(function IngredientRowSolara({
   ingredient,
   isDebug,
   onEdit,
@@ -323,7 +321,7 @@ const IngredientRowObsidian = memo(function IngredientRowObsidian({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className={cls(
-        'group border-b border-obsidian-800 last:border-0 hover:bg-obsidian-800/30 transition-colors',
+        'group border-b border-solara-100 last:border-0 hover:bg-solara-50/50 transition-colors',
         !active && 'opacity-40'
       )}
     >
@@ -341,9 +339,9 @@ const IngredientRowObsidian = memo(function IngredientRowObsidian({
             {ingredient.name ?? '—'}
           </span>
           {hasWarning && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-sm text-[8px] font-medium bg-gold-500/10 text-gold-500 border border-gold-500/20 tracking-wider">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-medium bg-sun-500/10 text-sun-600 border border-sun-200">
               <Icons.alert width={10} height={10} />
-              CHECK
+              ATTENTION
             </span>
           )}
         </div>
@@ -362,18 +360,18 @@ const IngredientRowObsidian = memo(function IngredientRowObsidian({
         </span>
       </td>
       <td className="px-4 py-4">
-        <UnitCrystal unit={unit} />
+        <UnitRay unit={unit} />
       </td>
       <td className="px-4 py-4">
-        <PriceObsidian amount={toNum(ingredient.pack_price, 0)} unit={unit} />
+        <PriceSolara amount={toNum(ingredient.pack_price, 0)} unit={unit} />
       </td>
       <td className="px-4 py-4">
-        <PriceObsidian amount={net} unit={unit} />
+        <PriceSolara amount={net} unit={unit} />
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-1.5 rounded-sm hover:bg-obsidian-800 text-text-tertiary hover:text-bronze-400 transition-colors"
+            className="p-1.5 rounded-full hover:bg-solara-100 text-text-tertiary hover:text-solara-600 transition-colors"
             onClick={() => onEdit(ingredient)}
             title="Edit"
           >
@@ -381,7 +379,7 @@ const IngredientRowObsidian = memo(function IngredientRowObsidian({
           </button>
           {active && (
             <button
-              className="p-1.5 rounded-sm hover:bg-obsidian-800 text-text-tertiary hover:text-copper-400 transition-colors"
+              className="p-1.5 rounded-full hover:bg-solara-100 text-text-tertiary hover:text-sun-600 transition-colors"
               onClick={() => onDeactivate(ingredient.id)}
               title="Deactivate"
             >
@@ -389,7 +387,7 @@ const IngredientRowObsidian = memo(function IngredientRowObsidian({
             </button>
           )}
           <button
-            className="p-1.5 rounded-sm hover:bg-obsidian-800 text-text-tertiary hover:text-ruby transition-colors"
+            className="p-1.5 rounded-full hover:bg-solara-100 text-text-tertiary hover:text-coral transition-colors"
             onClick={() => {
               if (window.confirm('Delete permanently? This cannot be undone.')) {
                 onHardDelete(ingredient.id)
@@ -405,15 +403,15 @@ const IngredientRowObsidian = memo(function IngredientRowObsidian({
   )
 })
 
-// ==================== بطاقة إحصائية - كريستالية ====================
-const StatCardObsidian = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
-  <div className="bg-obsidian-900/80 border border-obsidian-800 rounded-sm p-6 backdrop-blur-sm">
-    <div className="text-[10px] font-medium tracking-wider text-text-tertiary uppercase mb-2">
+// ==================== بطاقة إحصائية - شمسية ====================
+const StatCardSolara = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
+  <div className="bg-white border border-solara-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
+    <div className="text-[10px] font-medium text-text-tertiary uppercase tracking-wider mb-2">
       {label}
     </div>
     <div className={cls(
-      "text-2xl font-light tracking-tight",
-      warning ? "text-gold-500" : "text-text-primary"
+      "text-2xl font-light",
+      warning ? "text-sun-600" : "text-text-primary"
     )}>
       {value}
     </div>
@@ -423,50 +421,50 @@ const StatCardObsidian = ({ label, value, sublabel, warning }: { label: string; 
   </div>
 )
 
-// ==================== حالة فارغة - فنية ====================
-const EmptyStateObsidian = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
-  <div className="bg-obsidian-900/80 border border-obsidian-800 rounded-sm p-16 text-center backdrop-blur-sm">
-    <div className="w-20 h-20 mx-auto mb-6 bg-obsidian-800 rounded-sm flex items-center justify-center">
-      <Icons.obsidian width={48} height={48} className="text-bronze-500/50" />
+// ==================== حالة فارغة - شمسية ====================
+const EmptyStateSolara = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
+  <div className="bg-white border border-solara-100 rounded-2xl p-16 text-center shadow-sm">
+    <div className="w-20 h-20 mx-auto mb-6 bg-solara-50 rounded-full flex items-center justify-center">
+      <Icons.solara width={48} height={48} className="text-solara-300" />
     </div>
-    <h3 className="text-xl font-light tracking-wide text-text-primary mb-3">
-      {hasFilters ? '🔍 VOID' : '⚫ EMPTY'}
+    <h3 className="text-xl font-light text-text-primary mb-3">
+      {hasFilters ? 'No results found' : 'No ingredients yet'}
     </h3>
     <p className="text-sm text-text-secondary max-w-sm mx-auto mb-8">
       {hasFilters
-        ? 'No crystals match your current filters.'
-        : 'The obsidian core is empty. Forge your first ingredient.'}
+        ? 'Try adjusting your filters to see more results.'
+        : 'Start building your kitchen by adding your first ingredient.'}
     </p>
     <button
-      className="inline-flex items-center gap-2 px-6 py-3 bg-bronze-500/10 border border-bronze-500/30 text-bronze-400 text-sm font-medium rounded-sm hover:bg-bronze-500/20 transition-colors tracking-wide"
+      className="inline-flex items-center gap-2 px-6 py-3 bg-solara-500 text-white text-sm font-medium rounded-full hover:bg-solara-600 transition-colors shadow-sm"
       onClick={onAdd}
     >
       <Icons.plus width={18} height={18} />
-      FORGE INGREDIENT
+      Add ingredient
     </button>
   </div>
 )
 
 // ==================== حالة التحميل ====================
-const LoadingStateObsidian = () => (
+const LoadingStateSolara = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-obsidian-900/80 border border-obsidian-800 rounded-sm p-6">
-          <Skeleton className="h-3 w-16 mb-2 bg-obsidian-700" />
-          <Skeleton className="h-6 w-20 mb-1 bg-obsidian-700" />
-          <Skeleton className="h-3 w-24 bg-obsidian-700" />
+        <div key={i} className="bg-white border border-solara-100 rounded-2xl p-6">
+          <Skeleton className="h-3 w-16 mb-2" />
+          <Skeleton className="h-6 w-20 mb-1" />
+          <Skeleton className="h-3 w-24" />
         </div>
       ))}
     </div>
-    <div className="bg-obsidian-900/80 border border-obsidian-800 rounded-sm p-6">
+    <div className="bg-white border border-solara-100 rounded-2xl p-6">
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-2">
-            <Skeleton className="h-3 w-16 bg-obsidian-700" />
-            <Skeleton className="h-3 w-32 flex-1 bg-obsidian-700" />
-            <Skeleton className="h-3 w-20 bg-obsidian-700" />
-            <Skeleton className="h-3 w-20 bg-obsidian-700" />
+            <Skeleton className="h-3 w-16" />
+            <Skeleton className="h-3 w-32 flex-1" />
+            <Skeleton className="h-3 w-20" />
+            <Skeleton className="h-3 w-20" />
           </div>
         ))}
       </div>
@@ -475,9 +473,9 @@ const LoadingStateObsidian = () => (
 )
 
 // ==================== حالة الخطأ ====================
-const ErrorStateObsidian = ({ message }: { message: string }) => (
-  <div className="bg-ruby/5 border border-ruby/20 rounded-sm p-6">
-    <div className="flex items-center gap-3 text-ruby">
+const ErrorStateSolara = ({ message }: { message: string }) => (
+  <div className="bg-coral/5 border border-coral/20 rounded-2xl p-6">
+    <div className="flex items-center gap-3 text-coral">
       <Icons.alert />
       <span className="text-sm font-medium">{message}</span>
     </div>
@@ -845,86 +843,84 @@ export default function Ingredients() {
   }
 
   return (
-    <div className="min-h-screen bg-obsidian-950 text-text-primary">
-      {/* خلفية نسيج بركاني */}
-      <div className="fixed inset-0 opacity-5 pointer-events-none">
-        <div className="absolute inset-0" style={{
-          backgroundImage: `radial-gradient(circle at 1px 1px, ${colors.obsidian[700]} 1px, transparent 0)`,
-          backgroundSize: '40px 40px'
-        }} />
+    <div className="min-h-screen bg-background">
+      {/* خلفية شعاعية */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-80 h-80 bg-solara-200/30 rounded-full blur-3xl" />
+        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-sun-200/30 rounded-full blur-3xl" />
       </div>
 
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
-        {/* Header - بركاني */}
-        <div className="flex items-center justify-between mb-10 border-b border-obsidian-800 pb-6">
+        {/* Header - شمسي */}
+        <div className="flex items-center justify-between mb-10">
           <div className="flex items-center gap-4">
             <div className="relative">
-              <div className="w-16 h-16 bg-obsidian-900 rounded-sm flex items-center justify-center border border-bronze-500/30">
-                <Icons.obsidian width={40} height={40} className="text-bronze-500" />
+              <div className="w-14 h-14 bg-gradient-to-br from-solara-500 to-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-solara-500/20">
+                <Icons.solara width={28} height={28} />
               </div>
               <div className="absolute -top-1 -right-1 w-3 h-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-bronze-500 opacity-30"></span>
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-bronze-500"></span>
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-solara-400 opacity-50" />
+                <span className="relative inline-flex rounded-full h-3 w-3 bg-solara-500" />
               </div>
             </div>
             <div>
-              <h1 className="text-3xl font-light tracking-wider text-text-primary flex items-center gap-3">
-                OBSIDIAN
-                <span className="text-[8px] font-mono tracking-widest text-bronze-500/70 border border-bronze-500/30 px-2 py-1 rounded-sm">
-                  CORE
+              <h1 className="text-3xl font-light text-text-primary tracking-tight flex items-center gap-3">
+                SOLARA
+                <span className="text-[8px] font-mono text-solara-500 bg-solara-50 px-2 py-1 rounded-full border border-solara-200">
+                  RADIANT
                 </span>
               </h1>
-              <p className="text-xs text-text-tertiary mt-1 tracking-wide">
-                {filtered.length} crystals · {stats.missingCost} void
+              <p className="text-sm text-text-tertiary mt-1">
+                {filtered.length} items · {stats.missingCost} need attention
               </p>
             </div>
           </div>
           {isDebug && kitchenId && (
-            <span className="text-[10px] font-mono text-text-tertiary bg-obsidian-900 border border-obsidian-800 px-3 py-1.5 rounded-sm">
+            <span className="text-xs font-mono text-text-tertiary bg-white border border-solara-200 px-3 py-1.5 rounded-full shadow-sm">
               {kitchenId.slice(0, 8)}...
             </span>
           )}
         </div>
 
-        {/* Primary Action - برونزي */}
+        {/* Primary Action - شمسي */}
         <div className="flex items-center justify-between mb-8">
           <button
-            className="inline-flex items-center gap-2 px-6 py-3 bg-bronze-500/10 border border-bronze-500/30 text-bronze-400 text-sm font-medium rounded-sm hover:bg-bronze-500/20 transition-colors tracking-wide"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-solara-500 text-white text-sm font-medium rounded-full hover:bg-solara-600 transition-colors shadow-lg shadow-solara-500/20"
             onClick={openCreate}
           >
             <Icons.plus width={18} height={18} />
-            FORGE CRYSTAL
+            New ingredient
           </button>
 
           {hasFilteredItems && (
             <div className="flex items-center gap-3">
-              <span className="text-xs tracking-wider text-text-tertiary">FILTERED:</span>
+              <span className="text-sm text-text-tertiary">Filtered:</span>
               <button
-                className="px-4 py-2 text-xs font-medium text-text-secondary bg-obsidian-900 border border-obsidian-800 rounded-sm hover:bg-obsidian-800 hover:text-bronze-400 transition-colors disabled:opacity-40 tracking-wide"
+                className="px-4 py-2 text-xs font-medium text-text-secondary bg-white border border-solara-200 rounded-full hover:bg-solara-50 hover:border-solara-300 transition-colors shadow-sm disabled:opacity-40"
                 onClick={bulkRecalcNetCosts}
                 disabled={bulkWorking}
               >
-                RECALCULATE
+                Recalculate
               </button>
               <button
-                className="px-4 py-2 text-xs font-medium text-text-secondary bg-obsidian-900 border border-obsidian-800 rounded-sm hover:bg-obsidian-800 hover:text-bronze-400 transition-colors disabled:opacity-40 tracking-wide"
+                className="px-4 py-2 text-xs font-medium text-text-secondary bg-white border border-solara-200 rounded-full hover:bg-solara-50 hover:border-solara-300 transition-colors shadow-sm disabled:opacity-40"
                 onClick={() => bulkSetActive(true)}
                 disabled={bulkWorking}
               >
-                ACTIVATE ALL
+                Activate all
               </button>
               <button
-                className="px-4 py-2 text-xs font-medium text-text-secondary bg-obsidian-900 border border-obsidian-800 rounded-sm hover:bg-obsidian-800 hover:text-bronze-400 transition-colors disabled:opacity-40 tracking-wide"
+                className="px-4 py-2 text-xs font-medium text-text-secondary bg-white border border-solara-200 rounded-full hover:bg-solara-50 hover:border-solara-300 transition-colors shadow-sm disabled:opacity-40"
                 onClick={() => bulkSetActive(false)}
                 disabled={bulkWorking}
               >
-                DEACTIVATE ALL
+                Deactivate all
               </button>
             </div>
           )}
         </div>
 
-        {/* Filters - بركانية */}
+        {/* Filters - شمسية */}
         <div className="flex items-center gap-3 mb-8">
           <div className="flex-1 max-w-md">
             <div className="relative">
@@ -932,15 +928,15 @@ export default function Ingredients() {
                 <Icons.search />
               </span>
               <input
-                className="w-full pl-11 pr-10 py-3 bg-obsidian-900/50 border border-obsidian-800 rounded-sm text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+                className="w-full pl-11 pr-10 py-3 bg-white border border-solara-200 rounded-full text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors shadow-sm"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search crystals..."
+                placeholder="Search ingredients..."
               />
               {search && (
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-bronze-400"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-solara-600"
                   onClick={() => setSearch('')}
                 >
                   <Icons.close width={16} height={16} />
@@ -950,7 +946,7 @@ export default function Ingredients() {
           </div>
 
           <select
-            className="px-4 py-3 bg-obsidian-900/50 border border-obsidian-800 rounded-sm text-sm text-text-primary focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+            className="px-4 py-3 bg-white border border-solara-200 rounded-full text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors shadow-sm"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -961,7 +957,7 @@ export default function Ingredients() {
           </select>
 
           <select
-            className="px-4 py-3 bg-obsidian-900/50 border border-obsidian-800 rounded-sm text-sm text-text-primary focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+            className="px-4 py-3 bg-white border border-solara-200 rounded-full text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors shadow-sm"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -972,25 +968,25 @@ export default function Ingredients() {
 
           <button
             className={cls(
-              "inline-flex items-center gap-2 px-4 py-3 rounded-sm text-sm font-medium transition-colors",
+              "inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-medium transition-colors shadow-sm",
               showInactive
-                ? "bg-bronze-500/10 text-bronze-400 border border-bronze-500/30"
-                : "bg-obsidian-900/50 text-text-secondary border border-obsidian-800 hover:bg-obsidian-800"
+                ? "bg-solara-500 text-white border border-solara-500"
+                : "bg-white text-text-secondary border border-solara-200 hover:bg-solara-50"
             )}
             onClick={() => setShowInactive(!showInactive)}
           >
             <div className={cls(
-              "w-4 h-4 border flex items-center justify-center",
-              showInactive ? "bg-bronze-500/20 border-bronze-500/50" : "bg-transparent border-obsidian-700"
+              "w-4 h-4 rounded-full border flex items-center justify-center",
+              showInactive ? "bg-white border-white" : "bg-white border-text-tertiary"
             )}>
-              {showInactive && <Icons.check width={10} height={10} className="text-bronze-400" />}
+              {showInactive && <Icons.check width={10} height={10} className="text-solara-500" />}
             </div>
-            <span>Show void</span>
+            <span>Show inactive</span>
           </button>
 
           {hasActiveFilters && (
             <button
-              className="p-3 bg-obsidian-900/50 border border-obsidian-800 rounded-sm text-text-tertiary hover:text-bronze-400 hover:border-bronze-500/30 transition-colors"
+              className="p-3 bg-white border border-solara-200 rounded-full text-text-tertiary hover:text-solara-600 hover:border-solara-300 transition-colors shadow-sm"
               onClick={() => {
                 setSearch('')
                 setCategory('')
@@ -1002,61 +998,61 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Stats - بطاقات كريستالية */}
+        {/* Stats - بطاقات شمسية */}
         <div className="grid grid-cols-4 gap-4 mb-8">
-          <StatCardObsidian
-            label="CRYSTALS"
+          <StatCardSolara
+            label="TOTAL ITEMS"
             value={stats.items}
-            sublabel="filtered"
+            sublabel="filtered results"
           />
-          <StatCardObsidian
-            label="AVG ENERGY"
+          <StatCardSolara
+            label="AVG COST"
             value={money(stats.avgNet)}
             sublabel="per unit"
           />
-          <StatCardObsidian
-            label="VOID"
+          <StatCardSolara
+            label="MISSING"
             value={stats.missingCost}
-            sublabel="missing"
+            sublabel="need pricing"
             warning={stats.missingCost > 0}
           />
-          <StatCardObsidian
-            label="FLAWS"
+          <StatCardSolara
+            label="WARNINGS"
             value={stats.warnUnits}
-            sublabel="warnings"
+            sublabel="unit issues"
             warning={stats.warnUnits > 0}
           />
         </div>
 
         {/* Main content */}
-        {loading && <LoadingStateObsidian />}
+        {loading && <LoadingStateSolara />}
 
-        {err && <ErrorStateObsidian message={err} />}
+        {err && <ErrorStateSolara message={err} />}
 
         {!loading && !err && (
           <>
             {filtered.length === 0 ? (
-              <EmptyStateObsidian onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
+              <EmptyStateSolara onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <div className="bg-obsidian-900/50 border border-obsidian-800 rounded-sm overflow-hidden">
+              <div className="bg-white border border-solara-200 rounded-2xl overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-obsidian-800 bg-obsidian-900/80">
+                      <tr className="border-b border-solara-100 bg-solara-50/50">
                         <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">CODE</th>
-                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">CRYSTAL</th>
-                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">CLASS</th>
-                        <th className="px-4 py-4 text-center text-[9px] font-medium text-text-tertiary uppercase tracking-wider">MASS</th>
+                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">NAME</th>
+                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">CATEGORY</th>
+                        <th className="px-4 py-4 text-center text-[9px] font-medium text-text-tertiary uppercase tracking-wider">PACK</th>
                         <th className="px-4 py-4 text-center text-[9px] font-medium text-text-tertiary uppercase tracking-wider">UNIT</th>
-                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">MASS VALUE</th>
-                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">UNIT VALUE</th>
-                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">FORGE</th>
+                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">PACK PRICE</th>
+                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">UNIT PRICE</th>
+                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">ACTIONS</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-obsidian-800">
+                    <tbody className="divide-y divide-solara-100">
                       <AnimatePresence>
                         {filtered.map((r) => (
-                          <IngredientRowObsidian
+                          <IngredientRowSolara
                             key={r.id}
                             ingredient={r}
                             isDebug={isDebug}
@@ -1074,80 +1070,80 @@ export default function Ingredients() {
           </>
         )}
 
-        {/* Modal - Obsidian */}
-        <Modal open={modalOpen} title={editingId ? 'FORGE CRYSTAL' : 'NEW CRYSTAL'} onClose={() => setModalOpen(false)}>
+        {/* Modal - Solara */}
+        <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
           <div className="space-y-6">
             <div className="space-y-4">
-              <FormFieldObsidian label="CRYSTAL NAME" required>
+              <FormFieldSolara label="Name" required>
                 <input
-                  className="w-full px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
                 />
-              </FormFieldObsidian>
+              </FormFieldSolara>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormFieldObsidian label="CLASS">
+                <FormFieldSolara label="Category">
                   <input
-                    className="w-full px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+                    className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
                   />
-                </FormFieldObsidian>
-                <FormFieldObsidian label="ORIGIN">
+                </FormFieldSolara>
+                <FormFieldSolara label="Supplier">
                   <input
-                    className="w-full px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+                    className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
                   />
-                </FormFieldObsidian>
+                </FormFieldSolara>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-medium tracking-wider text-text-secondary">SIGIL</h3>
-                <span className="text-[8px] font-mono text-text-tertiary border border-obsidian-700 px-2 py-0.5 rounded-sm">OPTIONAL</span>
+                <h3 className="text-xs font-medium text-text-secondary">Code system</h3>
+                <span className="text-[8px] font-mono text-text-tertiary bg-solara-50 px-2 py-0.5 rounded-full border border-solara-200">Optional</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <FormFieldObsidian label="CRYSTAL SIGIL" hint="ING-000123">
+                <FormFieldSolara label="Ingredient code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-obsidian-900 cursor-not-allowed"
+                      "w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors",
+                      !canEditCodes && "opacity-50 bg-solara-50 cursor-not-allowed"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
                     placeholder="ING-000123"
                     disabled={!canEditCodes}
                   />
-                </FormFieldObsidian>
-                <FormFieldObsidian label="CLASS SIGIL" hint={`e.g. ${suggestedCodeCategory}`}>
+                </FormFieldSolara>
+                <FormFieldSolara label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-obsidian-900 cursor-not-allowed"
+                      "w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors",
+                      !canEditCodes && "opacity-50 bg-solara-50 cursor-not-allowed"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
                     placeholder={suggestedCodeCategory}
                     disabled={!canEditCodes}
                   />
-                </FormFieldObsidian>
+                </FormFieldSolara>
               </div>
               {!canEditCodes && (
-                <p className="text-xs text-copper-400 flex items-center gap-1">
+                <p className="text-xs text-sun-600 flex items-center gap-1">
                   <Icons.alert width={12} height={12} />
-                  Sigils are owner-only
+                  Code fields are owner-only
                 </p>
               )}
             </div>
 
             <div className="space-y-4">
-              <h3 className="text-xs font-medium tracking-wider text-text-secondary">MASS & VALUE</h3>
+              <h3 className="text-xs font-medium text-text-secondary">Pack & Cost</h3>
 
               <div className="flex gap-2">
                 {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
@@ -1156,10 +1152,10 @@ export default function Ingredients() {
                     type="button"
                     onClick={() => setFPackUnit(unit)}
                     className={cls(
-                      "flex-1 px-4 py-2.5 text-xs font-mono font-medium rounded-sm border transition-colors",
+                      "flex-1 px-4 py-2.5 text-xs font-mono font-medium rounded-full border transition-colors",
                       fPackUnit === unit
-                        ? "bg-bronze-500/10 text-bronze-400 border-bronze-500/30"
-                        : "bg-obsidian-950 text-text-tertiary border-obsidian-800 hover:border-bronze-500/30"
+                        ? "bg-solara-500 text-white border-solara-500"
+                        : "bg-white text-text-secondary border-solara-200 hover:border-solara-300"
                     )}
                   >
                     {unit}
@@ -1168,10 +1164,10 @@ export default function Ingredients() {
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormFieldObsidian label="MASS" required>
+                <FormFieldSolara label="Pack size" required>
                   <div className="relative">
                     <input
-                      className="w-full px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors pr-16"
+                      className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors pr-16"
                       type="number"
                       min={1}
                       step="1"
@@ -1182,32 +1178,32 @@ export default function Ingredients() {
                       {fPackUnit}
                     </span>
                   </div>
-                </FormFieldObsidian>
-                <FormFieldObsidian label="UNIT" required>
-                  <div className="px-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary font-mono">
+                </FormFieldSolara>
+                <FormFieldSolara label="Unit" required>
+                  <div className="px-4 py-3 bg-solara-50 border border-solara-200 rounded-xl text-sm text-text-primary font-mono">
                     {fPackUnit}
                   </div>
-                </FormFieldObsidian>
+                </FormFieldSolara>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <FormFieldObsidian label="MASS VALUE" required>
+                <FormFieldSolara label="Pack price" required>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">$</span>
                     <input
-                      className="w-full pl-8 pr-4 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors"
+                      className="w-full pl-8 pr-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
                       onChange={(e) => setFPackPrice(e.target.value)}
                     />
                   </div>
-                </FormFieldObsidian>
-                <FormFieldObsidian label="UNIT VALUE" hint={"per " + fPackUnit}>
+                </FormFieldSolara>
+                <FormFieldSolara label="Unit price" hint={"per " + fPackUnit}>
                   <div className="relative">
                     <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">$</span>
                     <input
-                      className="w-full pl-8 pr-16 py-3 bg-obsidian-950 border border-obsidian-800 rounded-sm text-sm text-text-primary focus:outline-none focus:border-bronze-500/30 focus:ring-1 focus:ring-bronze-500/20 transition-colors font-mono"
+                      className="w-full pl-8 pr-16 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
@@ -1217,41 +1213,41 @@ export default function Ingredients() {
                       {"/" + fPackUnit}
                     </span>
                   </div>
-                </FormFieldObsidian>
+                </FormFieldSolara>
               </div>
 
               {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
-                <div className="p-4 bg-obsidian-950 border border-bronze-500/20 rounded-sm">
+                <div className="p-4 bg-solara-50 rounded-xl border border-solara-200">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-bronze-400 tracking-wider">ALCHEMY:</span>
+                    <span className="text-solara-600">Calculation preview:</span>
                     <span className="font-mono text-text-secondary">
                       {"$" + parseFloat(fPackPrice) + " ÷ " + parseFloat(fPackSize) + " " + fPackUnit + " = $" + (parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4) + "/" + fPackUnit}
                     </span>
                   </div>
                   <button
-                    className="w-full mt-3 px-4 py-2 bg-obsidian-900 text-bronze-400 rounded-sm text-xs font-medium border border-bronze-500/20 hover:bg-bronze-500/10 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-3 px-4 py-2 bg-white text-solara-600 rounded-full text-xs font-medium border border-solara-200 hover:bg-solara-50 transition-colors flex items-center justify-center gap-2"
                     onClick={smartRecalcNetCost}
                   >
                     <Icons.bolt width={12} height={12} />
-                    APPLY ALCHEMY
+                    Apply to unit price
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-obsidian-800">
+            <div className="flex justify-end gap-3 pt-4 border-t border-solara-100">
               <button
-                className="px-5 py-2.5 text-xs font-medium text-text-tertiary hover:text-text-secondary hover:bg-obsidian-900 rounded-sm transition-colors tracking-wide"
+                className="px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-solara-50 rounded-full transition-colors"
                 onClick={() => setModalOpen(false)}
               >
-                CANCEL
+                Cancel
               </button>
               <button
-                className="px-5 py-2.5 bg-bronze-500/10 text-bronze-400 text-xs font-medium rounded-sm border border-bronze-500/30 hover:bg-bronze-500/20 transition-colors tracking-wide disabled:opacity-40"
+                className="px-5 py-2.5 bg-solara-500 text-white text-sm font-medium rounded-full hover:bg-solara-600 transition-colors shadow-sm disabled:opacity-40"
                 onClick={save}
                 disabled={saving}
               >
-                {saving ? 'FORGING...' : editingId ? 'FORGE UPDATE' : 'FORGE CRYSTAL'}
+                {saving ? 'Saving…' : editingId ? 'Update' : 'Create'}
               </button>
             </div>
           </div>
