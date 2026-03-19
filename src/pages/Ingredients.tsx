@@ -1,4 +1,3 @@
-```tsx
 // src/pages/Ingredients.tsx
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
@@ -772,9 +771,10 @@ export default function Ingredients() {
     await load()
   }
 
+  // FIXED: استخدام علامات اقتباس عادية بدلاً من backticks
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
-    const ok = window.confirm(`Recalculate unit costs for ${filtered.length} filtered items?`)
+    const ok = window.confirm("Recalculate unit costs for " + filtered.length + " filtered items?")
     if (!ok) return
 
     setBulkWorking(true)
@@ -798,10 +798,11 @@ export default function Ingredients() {
     }
   }
 
+  // FIXED: استخدام علامات اقتباس عادية بدلاً من backticks
   const bulkSetActive = async (active: boolean) => {
     if (filtered.length === 0) return
     const action = active ? 'Activate' : 'Deactivate'
-    const ok = window.confirm(`${action} ${filtered.length} filtered items?`)
+    const ok = window.confirm(action + " " + filtered.length + " filtered items?")
     if (!ok) return
 
     setBulkWorking(true)
@@ -812,10 +813,10 @@ export default function Ingredients() {
       }
 
       invalidateIngredientsCache()
-      showToast(`Bulk ${action.toLowerCase()} done`)
+      showToast("Bulk " + action.toLowerCase() + " done")
       await load()
     } catch (e: any) {
-      showToast(e?.message ?? `Bulk ${action.toLowerCase()} failed`)
+      showToast(e?.message ?? "Bulk " + action.toLowerCase() + " failed")
     } finally {
       setBulkWorking(false)
     }
@@ -1166,7 +1167,7 @@ export default function Ingredients() {
                     />
                   </div>
                 </FormField>
-                <FormField label="Unit price" hint={`per ${fPackUnit}`}>
+                <FormField label="Unit price" hint={"per " + fPackUnit}>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">$</span>
                     <input
@@ -1177,7 +1178,7 @@ export default function Ingredients() {
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-stone-400">
-                      /{fPackUnit}
+                      {"/" + fPackUnit}
                     </span>
                   </div>
                 </FormField>
@@ -1189,7 +1190,7 @@ export default function Ingredients() {
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-olive-700">Preview:</span>
                     <span className="font-mono text-olive-900">
-                      ${parseFloat(fPackPrice)} ÷ {parseFloat(fPackSize)} {fPackUnit} = ${(parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4)} /{fPackUnit}
+                      {"$" + parseFloat(fPackPrice) + " ÷ " + parseFloat(fPackSize) + " " + fPackUnit + " = $" + (parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4) + "/" + fPackUnit}
                     </span>
                   </div>
                   <button
@@ -1227,4 +1228,3 @@ export default function Ingredients() {
     </div>
   )
 }
-```
