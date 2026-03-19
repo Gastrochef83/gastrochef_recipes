@@ -63,7 +63,7 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== Premium Icons - Bold & Refined ====================
+// ==================== Icons - Refined ====================
 const Icons = {
   search: (props: any) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
@@ -135,32 +135,36 @@ const Icons = {
   ),
 }
 
-// ==================== Bold Premium Color Palette ====================
+// ==================== Stronger Premium Color Palette ====================
 const colors = {
   forest: {
-    50: '#ecf0e6',
-    100: '#d4ddc4',
-    200: '#b9c7a0',
+    50: '#f0f5ea',
+    100: '#e0e9d3',
+    200: '#c2d1a7',
     300: '#9eb07c',
-    400: '#839f58',
+    400: '#7a8f51',
     500: '#2C5F2D', // Deep forest green - primary
     600: '#234a24',
-    700: '#1a361b',
-    800: '#112311',
-    900: '#080f08',
+    700: '#1b361c',
+    800: '#122313',
+    900: '#0a100a',
   },
-  olive: '#5C7344', // Secondary olive
-  charcoal: '#1E1E1E', // Rich dark text
-  slate: '#2D3E4F', // Deep accent
-  ivory: '#F8F6F0', // Warm supportive background
-  cream: '#FAF7F2', // Card background
-  gold: '#C6A15B', // Premium accent
-  amber: '#B58B4A', // Warning
-  deepRed: '#9E2A2B', // Destructive
-  border: '#E0DDD5', // Clean borders
+  charcoal: '#1A1A1A', // Darker, stronger text
+  slate: '#2D3E4F',
+  ivory: '#F5F3EF', // Warmer, less pale
+  cream: '#FFFFFF', // Clean white surfaces
+  amber: '#B58B4A', // Richer amber
+  deepRed: '#9E2A2B', // Strong destructive
+  border: '#D8D4CC', // Stronger borders
+  lightBorder: '#EDE9E2', // Secondary borders
+  text: {
+    primary: '#1A1A1A',
+    secondary: '#4A4A4A',
+    tertiary: '#6B6B6B',
+  }
 }
 
-// ==================== Unit Badge - Bold & Clear ====================
+// ==================== Unit Badge - Stronger ====================
 const UnitBadge = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
@@ -171,23 +175,23 @@ const UnitBadge = ({ unit }: { unit: string }) => {
   }
 
   return (
-    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-medium text-forest-700 bg-forest-50 border border-forest-200 rounded-md">
+    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-semibold text-forest-700 bg-forest-50 border border-forest-200 rounded">
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== Price Display - Bold & Structured ====================
+// ==================== Price Display - Stronger ====================
 const PriceDisplay = ({ amount, unit }: { amount: number; unit: string }) => (
   <div className="flex items-center justify-end gap-2">
-    <span className="font-mono text-base font-medium text-charcoal">
+    <span className="font-mono text-sm font-semibold text-charcoal">
       {money(amount)}
     </span>
     <UnitBadge unit={unit} />
   </div>
 )
 
-// ==================== Modal - Strong Presence ====================
+// ==================== Modal ====================
 function Modal({
   open,
   title,
@@ -224,11 +228,11 @@ function Modal({
             exit={{ scale: 0.96, opacity: 0, y: 10 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="bg-white rounded-xl shadow-2xl border border-border overflow-hidden">
+            <div className="bg-cream rounded-xl shadow-xl border border-border overflow-hidden">
               <div className="flex items-center justify-between px-6 py-5 border-b border-border">
-                <h2 className="text-base font-semibold text-charcoal">{title}</h2>
+                <h2 className="text-lg font-semibold text-charcoal">{title}</h2>
                 <button
-                  className="p-2 rounded-lg hover:bg-forest-50 text-stone-500 hover:text-forest-700 transition-colors"
+                  className="p-2 rounded-lg hover:bg-forest-50 text-text-tertiary hover:text-forest-700 transition-colors"
                   onClick={onClose}
                 >
                   <Icons.close />
@@ -245,7 +249,7 @@ function Modal({
   )
 }
 
-// ==================== Form Field - Strong & Clear ====================
+// ==================== Form Field - Clearer ====================
 const FormField = ({
   label,
   required,
@@ -259,17 +263,17 @@ const FormField = ({
 }) => (
   <div className="space-y-1.5">
     <div className="flex items-center justify-between">
-      <label className="text-sm font-semibold text-charcoal">
+      <label className="text-sm font-semibold text-text-primary">
         {label}
         {required && <span className="text-deepRed ml-1">*</span>}
       </label>
-      {hint && <span className="text-xs text-stone-500">{hint}</span>}
+      {hint && <span className="text-xs text-text-tertiary">{hint}</span>}
     </div>
     {children}
   </div>
 )
 
-// ==================== Table Row - Premium Presence ====================
+// ==================== Table Row - Stronger Presence ====================
 const IngredientTableRow = memo(function IngredientTableRow({
   ingredient,
   isDebug,
@@ -296,41 +300,41 @@ const IngredientTableRow = memo(function IngredientTableRow({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className={cls(
-        'group border-b border-border last:border-0 hover:bg-forest-50/30 transition-colors',
+        'group border-b border-lightBorder last:border-0 hover:bg-forest-50/30 transition-colors',
         !active && 'opacity-50'
       )}
     >
       <td className="px-4 py-4">
-        <span className="text-sm font-mono font-medium text-stone-600">
+        <span className="text-xs font-mono font-medium text-text-tertiary">
           {ingredient.code || '—'}
         </span>
       </td>
       <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           <span className={cls(
-            "text-base font-semibold text-charcoal",
-            !active && "line-through text-stone-400"
+            "text-sm font-semibold text-text-primary",
+            !active && "line-through text-text-tertiary"
           )}>
             {ingredient.name ?? '—'}
           </span>
           {hasWarning && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-amber/10 text-amber border border-amber/20">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[9px] font-semibold bg-amber/10 text-amber border border-amber/20">
               <Icons.alert width={10} height={10} />
               check unit
             </span>
           )}
         </div>
         {isDebug && (
-          <div className="text-[9px] font-mono text-stone-400 mt-1">
+          <div className="text-[9px] font-mono text-text-tertiary mt-1">
             {ingredient.id.slice(0, 8)}...
           </div>
         )}
       </td>
-      <td className="px-4 py-4 text-base text-stone-600">
+      <td className="px-4 py-4 text-sm text-text-secondary">
         {ingredient.category ?? '—'}
       </td>
       <td className="px-4 py-4 text-center">
-        <span className="text-base font-mono font-medium text-charcoal">
+        <span className="text-sm font-mono font-semibold text-text-primary">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
       </td>
@@ -346,7 +350,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
       <td className="px-4 py-4">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-2 rounded-lg hover:bg-forest-100 text-stone-500 hover:text-forest-700 transition-colors"
+            className="p-2 rounded-lg hover:bg-forest-100 text-text-tertiary hover:text-forest-700 transition-colors"
             onClick={() => onEdit(ingredient)}
             title="Edit"
           >
@@ -354,7 +358,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
           </button>
           {active && (
             <button
-              className="p-2 rounded-lg hover:bg-forest-100 text-stone-500 hover:text-amber transition-colors"
+              className="p-2 rounded-lg hover:bg-forest-100 text-text-tertiary hover:text-amber transition-colors"
               onClick={() => onDeactivate(ingredient.id)}
               title="Deactivate"
             >
@@ -362,7 +366,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
             </button>
           )}
           <button
-            className="p-2 rounded-lg hover:bg-forest-100 text-stone-500 hover:text-deepRed transition-colors"
+            className="p-2 rounded-lg hover:bg-forest-100 text-text-tertiary hover:text-deepRed transition-colors"
             onClick={() => {
               if (window.confirm('Delete permanently? This cannot be undone.')) {
                 onHardDelete(ingredient.id)
@@ -378,40 +382,40 @@ const IngredientTableRow = memo(function IngredientTableRow({
   )
 })
 
-// ==================== Stat Card - Bold & Premium ====================
+// ==================== Stat Card - Stronger Definition ====================
 const StatCard = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
-  <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
-    <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
+  <div className="bg-cream rounded-xl p-6 border border-border shadow-sm">
+    <div className="text-xs font-semibold text-text-tertiary uppercase tracking-wider mb-2">
       {label}
     </div>
     <div className={cls(
       "text-2xl font-light",
-      warning ? "text-amber" : "text-charcoal"
+      warning ? "text-amber" : "text-text-primary"
     )}>
       {value}
     </div>
-    <div className="text-xs text-stone-500 mt-2">
+    <div className="text-xs text-text-tertiary mt-2">
       {sublabel}
     </div>
   </div>
 )
 
-// ==================== Empty State - Confident ====================
+// ==================== Empty State ====================
 const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
-  <div className="bg-white rounded-xl p-12 text-center border border-border">
+  <div className="bg-cream rounded-xl p-12 text-center border border-border">
     <div className="w-16 h-16 mx-auto mb-4 bg-forest-50 rounded-2xl flex items-center justify-center text-3xl text-forest-700 border border-forest-200">
       🥬
     </div>
-    <h3 className="text-xl font-semibold text-charcoal mb-2">
+    <h3 className="text-xl font-semibold text-text-primary mb-2">
       {hasFilters ? 'No matching ingredients' : 'No ingredients yet'}
     </h3>
-    <p className="text-base text-stone-600 max-w-sm mx-auto mb-8">
+    <p className="text-base text-text-secondary max-w-sm mx-auto mb-8">
       {hasFilters
-        ? 'Try adjusting your search or filters to find what you need.'
-        : 'Add your first ingredient to start building your premium kitchen database.'}
+        ? 'Try adjusting your search or filters.'
+        : 'Add your first ingredient to start building your kitchen database.'}
     </p>
     <button
-      className="inline-flex items-center gap-2 px-6 py-3 bg-forest-500 text-white text-base font-semibold rounded-xl hover:bg-forest-600 transition-colors shadow-md"
+      className="inline-flex items-center gap-2 px-6 py-3 bg-forest-500 text-white text-base font-semibold rounded-xl hover:bg-forest-600 transition-colors shadow-sm"
       onClick={onAdd}
     >
       <Icons.plus />
@@ -420,19 +424,19 @@ const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: bool
   </div>
 )
 
-// ==================== Loading State - Clean ====================
+// ==================== Loading State ====================
 const LoadingState = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-xl p-6 border border-border">
+        <div key={i} className="bg-cream rounded-xl p-6 border border-border">
           <Skeleton className="h-4 w-16 mb-2" />
           <Skeleton className="h-8 w-24 mb-1" />
           <Skeleton className="h-3 w-20" />
         </div>
       ))}
     </div>
-    <div className="bg-white rounded-xl p-6 border border-border">
+    <div className="bg-cream rounded-xl p-6 border border-border">
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-2">
@@ -820,51 +824,50 @@ export default function Ingredients() {
   return (
     <div className="min-h-screen bg-ivory">
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Header - Bold & Clear */}
+        {/* Header - Stronger */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-3xl font-light text-charcoal tracking-tight">Ingredients</h1>
-            <p className="text-base text-stone-600 mt-1">
+            <h1 className="text-2xl font-semibold text-text-primary tracking-tight">Ingredients</h1>
+            <p className="text-sm text-text-secondary mt-1">
               {filtered.length} items · {stats.missingCost} need pricing
             </p>
           </div>
           {isDebug && kitchenId && (
-            <span className="text-xs font-mono font-medium text-stone-500 bg-cream border border-border px-3 py-1.5 rounded-lg">
+            <span className="text-xs font-mono font-medium text-text-secondary bg-cream border border-border px-3 py-1.5 rounded-lg">
               {kitchenId.slice(0, 8)}...
             </span>
           )}
         </div>
 
-        {/* Primary Action - Strong & Visible */}
+        {/* Primary Action - Stronger */}
         <div className="flex items-center justify-between mb-8">
           <button
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-forest-500 text-white text-base font-semibold rounded-xl hover:bg-forest-600 transition-colors shadow-md"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-forest-500 text-white text-base font-semibold rounded-lg hover:bg-forest-600 transition-colors shadow-sm"
             onClick={openCreate}
           >
             <Icons.plus />
             New ingredient
           </button>
 
-          {/* Bulk actions - visible when needed */}
           {hasFilteredItems && (
             <div className="flex items-center gap-3">
-              <span className="text-sm font-medium text-stone-500">Filtered:</span>
+              <span className="text-sm font-medium text-text-secondary">Filtered:</span>
               <button
-                className="px-4 py-2 text-sm font-medium text-charcoal bg-white border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-medium text-text-primary bg-cream border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
                 onClick={bulkRecalcNetCosts}
                 disabled={bulkWorking}
               >
                 Recalculate costs
               </button>
               <button
-                className="px-4 py-2 text-sm font-medium text-charcoal bg-white border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-medium text-text-primary bg-cream border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
                 onClick={() => bulkSetActive(true)}
                 disabled={bulkWorking}
               >
                 Activate all
               </button>
               <button
-                className="px-4 py-2 text-sm font-medium text-charcoal bg-white border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-medium text-text-primary bg-cream border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
                 onClick={() => bulkSetActive(false)}
                 disabled={bulkWorking}
               >
@@ -874,16 +877,15 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Filters - Sharp & Precise */}
+        {/* Filters - Stronger Definition */}
         <div className="flex items-center gap-3 mb-8">
-          {/* Search */}
           <div className="flex-1 max-w-md">
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">
                 <Icons.search />
               </span>
               <input
-                className="w-full pl-11 pr-10 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                className="w-full pl-11 pr-10 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search ingredients..."
@@ -891,7 +893,7 @@ export default function Ingredients() {
               {search && (
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-forest-700"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-forest-700"
                   onClick={() => setSearch('')}
                 >
                   <Icons.close width={16} height={16} />
@@ -900,9 +902,8 @@ export default function Ingredients() {
             </div>
           </div>
 
-          {/* Category filter */}
           <select
-            className="px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+            className="px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -912,9 +913,8 @@ export default function Ingredients() {
             ))}
           </select>
 
-          {/* Sort */}
           <select
-            className="px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+            className="px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -923,29 +923,27 @@ export default function Ingredients() {
             <option value="pack_price">Pack price</option>
           </select>
 
-          {/* Show inactive toggle */}
           <button
             className={cls(
-              "inline-flex items-center gap-2 px-4 py-3 rounded-xl text-base font-medium transition-colors",
+              "inline-flex items-center gap-2 px-4 py-3 rounded-lg text-base font-medium transition-colors",
               showInactive
                 ? "bg-forest-500 text-white border border-forest-500"
-                : "bg-white text-charcoal border border-border hover:bg-forest-50"
+                : "bg-cream text-text-primary border border-border hover:bg-forest-50"
             )}
             onClick={() => setShowInactive(!showInactive)}
           >
             <div className={cls(
               "w-5 h-5 rounded-md border flex items-center justify-center",
-              showInactive ? "bg-white border-white" : "bg-white border-stone-400"
+              showInactive ? "bg-white border-white" : "bg-white border-text-tertiary"
             )}>
               {showInactive && <Icons.check width={12} height={12} className="text-forest-500" />}
             </div>
             <span>Show inactive</span>
           </button>
 
-          {/* Clear filters */}
           {hasActiveFilters && (
             <button
-              className="p-3 bg-white border border-border rounded-xl text-stone-400 hover:text-forest-700 hover:border-forest-300 transition-colors"
+              className="p-3 bg-cream border border-border rounded-lg text-text-tertiary hover:text-forest-700 hover:border-forest-300 transition-colors"
               onClick={() => {
                 setSearch('')
                 setCategory('')
@@ -957,7 +955,7 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Stats - Strong Cards */}
+        {/* Stats - Stronger Cards */}
         <div className="grid grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Total items"
@@ -993,22 +991,22 @@ export default function Ingredients() {
             {filtered.length === 0 ? (
               <EmptyState onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <div className="bg-white rounded-xl border border-border overflow-hidden shadow-sm">
+              <div className="bg-cream rounded-xl border border-border overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-border bg-cream">
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Code</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Category</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-stone-600 uppercase tracking-wider">Pack</th>
-                        <th className="px-4 py-4 text-center text-xs font-semibold text-stone-600 uppercase tracking-wider">Unit</th>
-                        <th className="px-4 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Pack Price</th>
-                        <th className="px-4 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Unit Price</th>
-                        <th className="px-4 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Actions</th>
+                      <tr className="border-b border-border bg-forest-50/50">
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Code</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Category</th>
+                        <th className="px-4 py-4 text-center text-xs font-semibold text-text-secondary uppercase tracking-wider">Pack</th>
+                        <th className="px-4 py-4 text-center text-xs font-semibold text-text-secondary uppercase tracking-wider">Unit</th>
+                        <th className="px-4 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Pack Price</th>
+                        <th className="px-4 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Unit Price</th>
+                        <th className="px-4 py-4 text-right text-xs font-semibold text-text-secondary uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border">
+                    <tbody className="divide-y divide-lightBorder">
                       <AnimatePresence>
                         {filtered.map((r) => (
                           <IngredientTableRow
@@ -1032,11 +1030,10 @@ export default function Ingredients() {
         {/* Modal */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
           <div className="space-y-6">
-            {/* Basic Information */}
             <div className="space-y-4">
               <FormField label="Name" required>
                 <input
-                  className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                  className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
@@ -1046,7 +1043,7 @@ export default function Ingredients() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Category">
                   <input
-                    className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                    className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
@@ -1054,7 +1051,7 @@ export default function Ingredients() {
                 </FormField>
                 <FormField label="Supplier">
                   <input
-                    className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                    className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
@@ -1063,18 +1060,17 @@ export default function Ingredients() {
               </div>
             </div>
 
-            {/* Code Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold text-charcoal">Code system</h3>
-                <span className="text-xs font-mono font-medium bg-cream text-stone-500 px-2 py-1 rounded-md border border-border">Optional</span>
+                <h3 className="text-sm font-semibold text-text-primary">Code system</h3>
+                <span className="text-xs font-mono font-medium bg-forest-50 text-text-secondary px-2 py-1 rounded-md border border-border">Optional</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Ingredient code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-white border border-border rounded-xl text-base font-mono text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-cream cursor-not-allowed"
+                      "w-full px-4 py-3 bg-cream border border-border rounded-lg text-base font-mono text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
+                      !canEditCodes && "opacity-50 bg-forest-50 cursor-not-allowed"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
@@ -1085,8 +1081,8 @@ export default function Ingredients() {
                 <FormField label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-white border border-border rounded-xl text-base font-mono text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-cream cursor-not-allowed"
+                      "w-full px-4 py-3 bg-cream border border-border rounded-lg text-base font-mono text-text-primary placeholder:text-text-tertiary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
+                      !canEditCodes && "opacity-50 bg-forest-50 cursor-not-allowed"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
@@ -1103,11 +1099,9 @@ export default function Ingredients() {
               )}
             </div>
 
-            {/* Pack & Cost */}
             <div className="space-y-4">
-              <h3 className="text-sm font-semibold text-charcoal">Pack & Cost</h3>
+              <h3 className="text-sm font-semibold text-text-primary">Pack & Cost</h3>
 
-              {/* Unit selector */}
               <div className="flex gap-2">
                 {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
                   <button
@@ -1118,7 +1112,7 @@ export default function Ingredients() {
                       "flex-1 px-4 py-2.5 text-base font-mono font-medium rounded-lg border transition-colors",
                       fPackUnit === unit
                         ? "bg-forest-500 text-white border-forest-500"
-                        : "bg-white text-charcoal border-border hover:border-forest-300"
+                        : "bg-cream text-text-primary border-border hover:border-forest-300"
                     )}
                   >
                     {unit}
@@ -1130,20 +1124,20 @@ export default function Ingredients() {
                 <FormField label="Pack size" required>
                   <div className="relative">
                     <input
-                      className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors pr-16"
+                      className="w-full px-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors pr-16"
                       type="number"
                       min={1}
                       step="1"
                       value={fPackSize}
                       onChange={(e) => setFPackSize(e.target.value)}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-stone-500">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-text-tertiary">
                       {fPackUnit}
                     </span>
                   </div>
                 </FormField>
                 <FormField label="Unit" required>
-                  <div className="px-4 py-3 bg-cream border border-border rounded-xl text-base text-charcoal font-mono">
+                  <div className="px-4 py-3 bg-forest-50 border border-border rounded-lg text-base text-text-primary font-mono">
                     {fPackUnit}
                   </div>
                 </FormField>
@@ -1152,9 +1146,9 @@ export default function Ingredients() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Pack price" required>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 text-lg">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary text-lg">$</span>
                     <input
-                      className="w-full pl-8 pr-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
+                      className="w-full pl-8 pr-4 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
@@ -1164,24 +1158,23 @@ export default function Ingredients() {
                 </FormField>
                 <FormField label="Unit price" hint={"per " + fPackUnit}>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 text-lg">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary text-lg">$</span>
                     <input
-                      className="w-full pl-8 pr-16 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors font-mono"
+                      className="w-full pl-8 pr-16 py-3 bg-cream border border-border rounded-lg text-base text-text-primary focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-stone-500">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-text-tertiary">
                       {"/" + fPackUnit}
                     </span>
                   </div>
                 </FormField>
               </div>
 
-              {/* Calculation preview */}
               {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
-                <div className="p-4 bg-forest-50/50 rounded-xl border border-forest-200">
+                <div className="p-4 bg-forest-50/50 rounded-lg border border-forest-200">
                   <div className="flex items-center justify-between text-base">
                     <span className="font-medium text-forest-700">Preview:</span>
                     <span className="font-mono font-medium text-forest-800">
@@ -1189,7 +1182,7 @@ export default function Ingredients() {
                     </span>
                   </div>
                   <button
-                    className="w-full mt-3 px-4 py-2.5 bg-white text-forest-700 rounded-lg text-base font-medium border border-forest-200 hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-3 px-4 py-2.5 bg-cream text-forest-700 rounded-lg text-base font-medium border border-forest-200 hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
                     onClick={smartRecalcNetCost}
                   >
                     <Icons.bolt width={14} height={14} />
@@ -1199,10 +1192,9 @@ export default function Ingredients() {
               )}
             </div>
 
-            {/* Actions */}
             <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <button
-                className="px-5 py-2.5 text-base font-medium text-stone-600 hover:text-charcoal hover:bg-cream rounded-lg transition-colors"
+                className="px-5 py-2.5 text-base font-medium text-text-secondary hover:text-text-primary hover:bg-forest-50 rounded-lg transition-colors"
                 onClick={() => setModalOpen(false)}
               >
                 Cancel
