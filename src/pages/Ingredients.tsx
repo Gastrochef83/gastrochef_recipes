@@ -1,4 +1,4 @@
-// src/pages/Ingredients.tsx
+// src/pages/Ingredients.tsx (Fixed closing tags)
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -7,7 +7,7 @@ import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDebounce } from '../hooks/useDebounce' // Fixed import
+import { useDebounce } from '../hooks/useDebounce'
 
 // ==================== Type Definitions ====================
 type IngredientRow = {
@@ -1353,17 +1353,6 @@ export default function Ingredients() {
     return Array.from(s).sort((a, b) => a.localeCompare(b))
   }, [normalized])
 
-  const subCategories = useMemo(() => {
-    const s = new Set<string>()
-    for (const r of normalized) {
-      if (r.category === category) {
-        const sc = (r.sub_category ?? '').trim()
-        if (sc) s.add(sc)
-      }
-    }
-    return Array.from(s).sort((a, b) => a.localeCompare(b))
-  }, [normalized, category])
-
   const filtered = useMemo(() => {
     const s = deferredSearch.trim().toLowerCase()
     let list = normalized.filter((r) => {
@@ -1992,4 +1981,281 @@ export default function Ingredients() {
                             onDuplicate={openDuplicate}
                             selected={selectedRows.has(r.id)}
                             onSelect={handleSelectRow}
-                           
+                          />
+                        ))}
+                      </AnimatePresence>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+
+        {/* Modal */}
+        <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : duplicateFrom ? 'Duplicate ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)} size="large">
+          <div className="space-y-6">
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Basic Information</h3>
+              
+              <FormField label="Name" required>
+                <Input
+                  value={fName}
+                  onChange={(e) => setFName(e.target.value)}
+                  placeholder="e.g. Extra Virgin Olive Oil"
+                />
+              </FormField>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Category">
+                  <Input
+                    value={fCategory}
+                    onChange={(e) => setFCategory(e.target.value)}
+                    placeholder="e.g. Oils"
+                  />
+                </FormField>
+                <FormField label="Sub-category">
+                  <Input
+                    value={fSubCategory}
+                    onChange={(e) => setFSubCategory(e.target.value)}
+                    placeholder="e.g. Olive Oil"
+                  />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Supplier">
+                  <Input
+                    value={fSupplier}
+                    onChange={(e) => setFSupplier(e.target.value)}
+                    placeholder="e.g. Sysco"
+                  />
+                </FormField>
+                <FormField label="Barcode">
+                  <Input
+                    value={fCode}
+                    onChange={(e) => setFCode(e.target.value)}
+                    placeholder="e.g. 123456789012"
+                  />
+                </FormField>
+              </div>
+            </div>
+
+            {/* Code Section */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code System</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Ingredient Code" hint="ING-000123">
+                  <Input
+                    value={fCode}
+                    onChange={(e) => setFCode(e.target.value)}
+                    placeholder="ING-000123"
+                    disabled={!canEditCodes}
+                  />
+                </FormField>
+                <FormField label="Category Code" hint={`e.g. ${suggestedCodeCategory}`}>
+                  <Input
+                    value={fCodeCategory}
+                    onChange={(e) => setFCodeCategory(e.target.value)}
+                    placeholder={suggestedCodeCategory}
+                    disabled={!canEditCodes}
+                  />
+                </FormField>
+              </div>
+              {!canEditCodes && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Icons.alert width={12} height={12} />
+                  Code fields are owner-only
+                </p>
+              )}
+            </div>
+
+            {/* Pack & Cost */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack & Cost</h3>
+
+              {/* Unit Selector */}
+              <div className="flex gap-2">
+                {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
+                  <button
+                    key={unit}
+                    type="button"
+                    onClick={() => setFPackUnit(unit)}
+                    className={cls(
+                      "flex-1 px-3 py-2 text-xs font-mono rounded-lg border transition-all",
+                      fPackUnit === unit
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700"
+                    )}
+                  >
+                    {unit}
+                  </button>
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Pack Size" required>
+                  <Input
+                    type="number"
+                    min={1}
+                    step="1"
+                    value={fPackSize}
+                    onChange={(e) => setFPackSize(e.target.value)}
+                    suffix={fPackUnit}
+                  />
+                </FormField>
+                <FormField label="Unit" required>
+                  <div className="px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 font-mono text-sm">
+                    {fPackUnit}
+                  </div>
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Pack Price" required>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min={0}
+                    value={fPackPrice}
+                    onChange={(e) => setFPackPrice(e.target.value)}
+                    prefix="$"
+                  />
+                </FormField>
+                <FormField label="Unit Price" hint={`per ${fPackUnit}`}>
+                  <Input
+                    type="number"
+                    step="0.000001"
+                    min={0}
+                    value={fNetUnitCost}
+                    onChange={(e) => setFNetUnitCost(e.target.value)}
+                    prefix="$"
+                    suffix={`/${fPackUnit}`}
+                  />
+                </FormField>
+              </div>
+
+              {/* Calculation Preview */}
+              {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-blue-700 dark:text-blue-400">Preview:</span>
+                    <span className="font-mono text-blue-900 dark:text-blue-300">
+                      ${parseFloat(fPackPrice)} ÷ {parseFloat(fPackSize)} {fPackUnit} = ${(parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4)} /{fPackUnit}
+                    </span>
+                  </div>
+                  <button
+                    className="w-full mt-2 px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors flex items-center justify-center gap-1"
+                    onClick={smartRecalcNetCost}
+                  >
+                    <Icons.bolt width={12} height={12} />
+                    Apply calculation
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Additional Information */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Additional Information</h3>
+
+              <FormField label="Notes">
+                <textarea
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all min-h-[80px]"
+                  value={fNotes}
+                  onChange={(e) => setFNotes(e.target.value)}
+                  placeholder="Additional notes about this ingredient..."
+                />
+              </FormField>
+
+              <FormField label="Storage Instructions">
+                <textarea
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                  value={fStorage}
+                  onChange={(e) => setFStorage(e.target.value)}
+                  placeholder="e.g. Store in cool, dry place"
+                />
+              </FormField>
+
+              <FormField label="Minimum Stock">
+                <Input
+                  type="number"
+                  min={0}
+                  step="1"
+                  value={fMinStock}
+                  onChange={(e) => setFMinStock(e.target.value)}
+                  placeholder="e.g. 10"
+                  suffix={fPackUnit}
+                />
+              </FormField>
+
+              <div className="flex items-center gap-6">
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={fOrganic}
+                    onChange={(e) => setFOrganic(e.target.checked)}
+                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Organic certified</span>
+                </label>
+                <label className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={fLocal}
+                    onChange={(e) => setFLocal(e.target.checked)}
+                    className="rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                  />
+                  <span className="text-sm text-gray-700 dark:text-gray-300">Local sourced</span>
+                </label>
+              </div>
+            </div>
+
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
+              <button
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                onClick={() => setModalOpen(false)}
+              >
+                Cancel
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 disabled:opacity-40"
+                onClick={save}
+                disabled={saving}
+              >
+                {saving ? 'Saving...' : editingId ? 'Update' : duplicateFrom ? 'Duplicate' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+
+        <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
+      </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e5e7eb;
+          border-radius: 9999px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #4b5563;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #d1d5db;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+        }
+      `}</style>
+    </motion.div>
+  )
+}
