@@ -1,4 +1,4 @@
-// src/pages/Ingredients.tsx (Fixed closing tags)
+// src/pages/Ingredients.tsx
 import { memo, type ReactNode, useDeferredValue, useEffect, useMemo, useState, useCallback, useRef } from 'react'
 import { useLocation } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
@@ -66,14 +66,6 @@ function calcNetUnitCost(packPrice: number, packSize: number) {
   const ps = Math.max(1e-9, packSize)
   const pp = Math.max(0, packPrice)
   return pp / ps
-}
-
-function formatDate(date: string) {
-  return new Date(date).toLocaleDateString(undefined, { 
-    year: 'numeric', 
-    month: 'short', 
-    day: 'numeric' 
-  })
 }
 
 // ==================== Validation & Sanity Checks ====================
@@ -184,11 +176,6 @@ const Icons = {
       <line x1="3" y1="18" x2="21" y2="18" />
     </svg>
   ),
-  filter: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <polygon points="22 3 2 3 10 13 10 21 14 18 14 13 22 3" />
-    </svg>
-  ),
   download: (props: any) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
@@ -209,18 +196,9 @@ const Icons = {
       <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
     </svg>
   ),
-  printer: (props: any) => (
+  star: (props: any) => (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <polyline points="6 18 6 22 18 22 18 18" />
-      <line x1="6" y1="14" x2="18" y2="14" />
-      <rect x="4" y="6" width="16" height="12" rx="2" />
-      <circle cx="18" cy="10" r="1" />
-    </svg>
-  ),
-  history: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <polyline points="12 6 12 12 16 14" />
+      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
     </svg>
   ),
   tag: (props: any) => (
@@ -229,15 +207,9 @@ const Icons = {
       <line x1="7" y1="7" x2="7.01" y2="7" />
     </svg>
   ),
-  star: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
-    </svg>
-  ),
 }
 
 // ==================== UI Components ====================
-
 const UnitBadge = ({ unit, variant = 'default' }: { unit: string; variant?: 'default' | 'small' }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
@@ -430,36 +402,6 @@ const Input = ({
       </span>
     )}
   </div>
-)
-
-const Select = ({
-  value,
-  onChange,
-  options,
-  placeholder,
-  className,
-}: {
-  value: string
-  onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void
-  options: Array<{ value: string; label: string }>
-  placeholder?: string
-  className?: string
-}) => (
-  <select
-    className={cls(
-      "w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all",
-      className
-    )}
-    value={value}
-    onChange={onChange}
-  >
-    {placeholder && <option value="">{placeholder}</option>}
-    {options.map((option) => (
-      <option key={option.value} value={option.value}>
-        {option.label}
-      </option>
-    ))}
-  </select>
 )
 
 // ==================== Table Row Component ====================
@@ -832,13 +774,12 @@ const IngredientCompactRow = memo(function IngredientCompactRow({
 })
 
 // ==================== Stats Card Component ====================
-const StatsCard = ({ label, value, sublabel, icon, warning, trend }: {
+const StatsCard = ({ label, value, sublabel, icon, warning }: {
   label: string
   value: string | number
   sublabel: string
   icon: ReactNode
   warning?: boolean
-  trend?: { value: number; positive?: boolean }
 }) => (
   <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm hover:shadow-md transition-shadow">
     <div className="flex items-start justify-between">
@@ -853,14 +794,6 @@ const StatsCard = ({ label, value, sublabel, icon, warning, trend }: {
           )}>
             {value}
           </span>
-          {trend && (
-            <span className={cls(
-              "text-[10px]",
-              trend.positive ? "text-green-600" : "text-red-600"
-            )}>
-              {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-            </span>
-          )}
         </div>
         <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
           {sublabel}
@@ -1273,7 +1206,6 @@ export default function Ingredients() {
   }, [loc.pathname, loc.hash])
 
   const deferredSearch = useDeferredValue(search)
-  const debouncedSearch = useDebounce(search, 300)
 
   const FIELDS = 'id,code,code_category,name,category,sub_category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active,created_at,updated_at,notes,allergen_info,dietary_info,storage_instructions,minimum_stock,current_stock,stock_unit,image_url,barcode,organic_certified,local_sourced,seasonality'
 
@@ -1467,7 +1399,7 @@ export default function Ingredients() {
   const openDuplicate = (r: IngredientRow) => {
     setEditingId(null)
     setDuplicateFrom(r)
-    setFCode('') // Clear code for duplicate
+    setFCode('')
     setFCodeCategory(r.code_category ?? '')
     setFName(`${r.name} (Copy)`)
     setFCategory(r.category ?? '')
@@ -1589,14 +1521,6 @@ export default function Ingredients() {
     await load()
   }
 
-  const restore = async (id: string) => {
-    const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
-    if (error) return showToast(error.message)
-    showToast('Ingredient restored')
-    clearSelection()
-    await load()
-  }
-
   const hardDelete = async (id: string) => {
     const { error } = await supabase.from('ingredients').delete().eq('id', id)
     if (error) {
@@ -1689,7 +1613,6 @@ export default function Ingredients() {
   }
 
   const bulkImport = () => {
-    // Implement import logic
     showToast('Import feature coming soon')
   }
 
