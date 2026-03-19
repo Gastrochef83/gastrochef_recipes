@@ -63,129 +63,74 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== NOMAD - الهوية البصرية النووية الجديدة ====================
-// تصميم مستوحى من السفر، الخرائط، الاستكشاف، والرفاهية البدوية
+// ==================== UI Primitives ====================
 
 const Icons = {
   search: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
   close: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   edit: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
     </svg>
   ),
   delete: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   ),
   plus: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ),
   chevronDown: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <polyline points="6 9 12 15 18 9" />
     </svg>
   ),
   dollar: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="12" y1="1" x2="12" y2="23" />
       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   ),
   alert: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
   ),
   bolt: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   ),
   check: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
   reset: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   ),
-  deactivate: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <line x1="8" y1="12" x2="16" y2="12" />
-    </svg>
-  ),
-  nomad: (props: any) => (
-    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" {...props}>
-      <path d="M3 12 L12 3 L21 12 L12 21 L3 12" />
-      <circle cx="12" cy="12" r="3" fill="currentColor" fillOpacity="0.2" />
-      <path d="M12 3 L12 21 M3 12 L21 12" strokeOpacity="0.3" />
-    </svg>
-  ),
-  compass: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
-      <circle cx="12" cy="12" r="10" />
-      <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12" strokeOpacity="0.5" />
-      <path d="M12 12 L16 8 L12 16 L8 8 L12 12" fill="currentColor" fillOpacity="0.1" />
-    </svg>
-  ),
 }
 
-// ==================== NOMAD - لوحة الألوان ====================
-const colors = {
-  sand: {
-    50: '#faf7f2',
-    100: '#f5efe5',
-    200: '#ebe0d1',
-    300: '#dbcbb5',
-    400: '#c9b69a',
-    500: '#AA8C6A', // Sand Dune - الأساسي
-    600: '#8a6e4f',
-    700: '#6b533c',
-    800: '#4c3b2a',
-    900: '#2d2319',
-  },
-  earth: {
-    500: '#8B7E6C', // Earth - ثانوي
-    400: '#A59884',
-    300: '#BFB2A0',
-  },
-  rust: {
-    500: '#B75D3A', // Rust - أكcent
-    400: '#D17A58',
-  },
-  slate: '#4A5B5E', // Slate - تحذيرات
-  clay: '#C45E3A', // Clay - destructive
-  paper: '#FCF9F5', // ورق - خلفية
-  text: {
-    primary: '#2C2824',
-    secondary: '#5C554C',
-    tertiary: '#8B8278',
-  }
-}
-
-// ==================== وحدة القياس - بوصلة ====================
-const UnitCompass = ({ unit }: { unit: string }) => {
+const UnitBadge = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
     kg: 'kg',
@@ -195,24 +140,22 @@ const UnitCompass = ({ unit }: { unit: string }) => {
   }
 
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono font-medium text-sand-700 bg-sand-50 border border-sand-200 tracking-wider">
-      <Icons.compass width={10} height={10} className="text-sand-400" />
+    <span className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-mono font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== عرض السعر - صحراوي ====================
-const PriceNomad = ({ amount, unit }: { amount: number; unit: string }) => (
-  <div className="flex items-center justify-end gap-2">
-    <span className="font-mono text-sm font-light text-text-primary tracking-wide">
+const PriceDisplay = ({ amount, unit }: { amount: number; unit: string }) => (
+  <div className="flex items-center justify-end gap-1.5">
+    <span className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">
       {money(amount)}
     </span>
-    <UnitCompass unit={unit} />
+    <UnitBadge unit={unit} />
   </div>
 )
 
-// ==================== مودال - خيمة ====================
+// ==================== Modal Component ====================
 function Modal({
   open,
   title,
@@ -236,7 +179,7 @@ function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-black/5 backdrop-blur-[1px]"
+            className="absolute inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -244,25 +187,22 @@ function Modal({
           />
           <motion.div
             className="relative w-full max-w-lg mx-auto"
-            initial={{ scale: 0.98, opacity: 0, y: 5 }}
+            initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.98, opacity: 0, y: 5 }}
-            transition={{ duration: 0.2 }}
+            exit={{ scale: 0.95, opacity: 0, y: 10 }}
+            transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
-            <div className="bg-paper border border-sand-200 shadow-xl overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-sand-100">
-                <div className="flex items-center gap-3">
-                  <Icons.nomad width={20} height={20} className="text-sand-500" />
-                  <h2 className="text-base font-light tracking-wide text-text-primary">{title}</h2>
-                </div>
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+                <h2 className="text-base font-medium text-gray-900 dark:text-white">{title}</h2>
                 <button
-                  className="p-1.5 text-text-tertiary hover:text-sand-600 transition-colors"
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
                   onClick={onClose}
                 >
-                  <Icons.close />
+                  <Icons.close width={16} height={16} />
                 </button>
               </div>
-              <div className="px-6 py-5 max-h-[calc(90vh-8rem)] overflow-y-auto">
+              <div className="px-6 py-5 max-h-[calc(90vh-8rem)] overflow-y-auto custom-scrollbar">
                 {children}
               </div>
             </div>
@@ -273,8 +213,8 @@ function Modal({
   )
 }
 
-// ==================== حقل النموذج - صحراوي ====================
-const FormFieldNomad = ({
+// ==================== Form Field Component ====================
+const FormField = ({
   label,
   required,
   children,
@@ -285,20 +225,20 @@ const FormFieldNomad = ({
   children: ReactNode
   hint?: string
 }) => (
-  <div className="space-y-1">
+  <div className="space-y-1.5">
     <div className="flex items-center justify-between">
-      <label className="text-xs font-medium tracking-wide text-text-secondary">
+      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
         {label}
-        {required && <span className="text-clay ml-1">*</span>}
+        {required && <span className="text-red-500 ml-1">*</span>}
       </label>
-      {hint && <span className="text-[9px] text-text-tertiary">{hint}</span>}
+      {hint && <span className="text-[10px] text-gray-400 dark:text-gray-500">{hint}</span>}
     </div>
     {children}
   </div>
 )
 
-// ==================== صف الجدول - بدوي ====================
-const IngredientRowNomad = memo(function IngredientRowNomad({
+// ==================== Table Row Component ====================
+const IngredientTableRow = memo(function IngredientTableRow({
   ingredient,
   isDebug,
   onEdit,
@@ -315,66 +255,78 @@ const IngredientRowNomad = memo(function IngredientRowNomad({
   const net = toNum(ingredient.net_unit_cost, 0)
   const unit = ingredient.pack_unit ?? 'g'
   const flag = sanityFlag(net, unit)
-  const hasWarning = flag.level === 'warn'
+
+  // Safer approach: deactivate is primary, delete is secondary with confirmation
+  const handleDeleteClick = () => {
+    if (window.confirm('Delete permanently? This cannot be undone.')) {
+      onHardDelete(ingredient.id)
+    }
+  }
+
+  const handleDeactivateClick = () => {
+    if (active) {
+      onDeactivate(ingredient.id)
+    }
+  }
 
   return (
     <motion.tr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
+      exit={{ opacity: 0, x: -10 }}
       transition={{ duration: 0.15 }}
       className={cls(
-        'group border-b border-sand-100 last:border-0 hover:bg-sand-50/30 transition-colors',
+        'group border-b border-gray-100 dark:border-gray-800/50 last:border-0 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors',
         !active && 'opacity-40'
       )}
     >
       <td className="px-4 py-3">
-        <span className="text-xs font-mono text-text-tertiary">
+        <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
           {ingredient.code || '—'}
         </span>
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <span className={cls(
-            "text-sm font-light tracking-wide text-text-primary",
-            !active && "line-through text-text-tertiary"
+            "text-sm font-medium text-gray-900 dark:text-white",
+            !active && "line-through text-gray-400"
           )}>
             {ingredient.name ?? '—'}
           </span>
-          {hasWarning && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[8px] font-mono text-slate bg-slate/5 border border-slate/20">
-              <Icons.alert width={8} height={8} />
-              CHECK
+          {flag.level === 'warn' && (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              <Icons.alert width={10} height={10} />
+              unit?
             </span>
           )}
         </div>
         {isDebug && (
-          <div className="text-[7px] font-mono text-text-tertiary mt-1">
-            {ingredient.id.slice(0, 6)}...
+          <div className="text-[9px] font-mono text-gray-400 dark:text-gray-500 mt-0.5">
+            {ingredient.id.slice(0, 8)}...
           </div>
         )}
       </td>
-      <td className="px-4 py-3 text-xs text-text-secondary">
+      <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
         {ingredient.category ?? '—'}
       </td>
       <td className="px-4 py-3 text-center">
-        <span className="text-sm font-mono text-text-primary">
+        <span className="text-sm font-mono text-gray-900 dark:text-white">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
       </td>
       <td className="px-4 py-3">
-        <UnitCompass unit={unit} />
+        <UnitBadge unit={unit} />
       </td>
       <td className="px-4 py-3">
-        <PriceNomad amount={toNum(ingredient.pack_price, 0)} unit={unit} />
+        <PriceDisplay amount={toNum(ingredient.pack_price, 0)} unit={unit} />
       </td>
       <td className="px-4 py-3">
-        <PriceNomad amount={net} unit={unit} />
+        <PriceDisplay amount={net} unit={unit} />
       </td>
       <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-1.5 text-text-tertiary hover:text-sand-600 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             onClick={() => onEdit(ingredient)}
             title="Edit"
           >
@@ -382,21 +334,20 @@ const IngredientRowNomad = memo(function IngredientRowNomad({
           </button>
           {active && (
             <button
-              className="p-1.5 text-text-tertiary hover:text-rust-400 transition-colors"
-              onClick={() => onDeactivate(ingredient.id)}
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+              onClick={handleDeactivateClick}
               title="Deactivate"
             >
-              <Icons.deactivate />
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
             </button>
           )}
           <button
-            className="p-1.5 text-text-tertiary hover:text-clay transition-colors"
-            onClick={() => {
-              if (window.confirm('Delete permanently? This cannot be undone.')) {
-                onHardDelete(ingredient.id)
-              }
-            }}
-            title="Delete"
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            onClick={handleDeleteClick}
+            title="Delete permanently"
           >
             <Icons.delete />
           </button>
@@ -406,68 +357,88 @@ const IngredientRowNomad = memo(function IngredientRowNomad({
   )
 })
 
-// ==================== بطاقة إحصائية - رملية ====================
-const StatCardNomad = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
-  <div className="bg-paper border border-sand-200 p-5">
-    <div className="text-[9px] font-medium tracking-wider text-text-tertiary uppercase mb-1">
-      {label}
-    </div>
-    <div className={cls(
-      "text-xl font-light tracking-wide",
-      warning ? "text-slate" : "text-text-primary"
-    )}>
-      {value}
-    </div>
-    <div className="text-[9px] text-text-tertiary mt-1">
-      {sublabel}
+// ==================== Stats Card Component ====================
+const StatsCard = ({ label, value, sublabel, icon, warning }: {
+  label: string
+  value: string | number
+  sublabel: string
+  icon: ReactNode
+  warning?: boolean
+}) => (
+  <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
+    <div className="flex items-start justify-between">
+      <div>
+        <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
+          {label}
+        </div>
+        <div className="flex items-baseline gap-2">
+          <span className={cls(
+            "text-2xl font-light",
+            warning ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-white"
+          )}>
+            {value}
+          </span>
+        </div>
+        <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
+          {sublabel}
+        </div>
+      </div>
+      <div className={cls(
+        "w-10 h-10 rounded-xl flex items-center justify-center",
+        warning
+          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+          : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+      )}>
+        {icon}
+      </div>
     </div>
   </div>
 )
 
-// ==================== حالة فارغة - صحراء ====================
-const EmptyStateNomad = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
-  <div className="bg-paper border border-sand-200 p-12 text-center">
-    <div className="w-16 h-16 mx-auto mb-4 bg-sand-100 flex items-center justify-center border border-sand-200">
-      <Icons.nomad width={32} height={32} className="text-sand-400" />
+// ==================== Empty State Component ====================
+const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
+  <div className="bg-white dark:bg-gray-900 rounded-xl p-12 text-center border border-gray-200 dark:border-gray-800">
+    <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl flex items-center justify-center text-3xl border border-blue-100 dark:border-blue-800">
+      🥗
     </div>
-    <h3 className="text-lg font-light tracking-wide text-text-primary mb-2">
-      {hasFilters ? 'No destinations found' : 'Empty territory'}
+    <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">
+      {hasFilters ? 'No results found' : 'No ingredients yet'}
     </h3>
-    <p className="text-sm text-text-secondary max-w-sm mx-auto mb-6">
+    <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">
       {hasFilters
-        ? 'Try adjusting your compass to discover new ingredients.'
-        : 'Begin your journey by adding your first ingredient to the map.'}
+        ? 'Try adjusting your search or filters to find what you\'re looking for.'
+        : 'Start building your kitchen database by adding your first ingredient.'}
     </p>
     <button
-      className="inline-flex items-center gap-2 px-5 py-2.5 bg-sand-500 text-white text-sm font-light tracking-wide hover:bg-sand-600 transition-colors border border-sand-600"
+      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
       onClick={onAdd}
     >
-      <Icons.plus width={16} height={16} />
+      <Icons.plus />
       Add ingredient
     </button>
   </div>
 )
 
-// ==================== حالة التحميل ====================
-const LoadingStateNomad = () => (
+// ==================== Loading State Component ====================
+const LoadingState = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-paper border border-sand-200 p-5">
-          <Skeleton className="h-3 w-16 mb-2 bg-sand-100" />
-          <Skeleton className="h-5 w-20 mb-1 bg-sand-100" />
-          <Skeleton className="h-3 w-24 bg-sand-100" />
+        <div key={i} className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+          <Skeleton className="h-4 w-16 mb-2" />
+          <Skeleton className="h-8 w-24 mb-1" />
+          <Skeleton className="h-3 w-20" />
         </div>
       ))}
     </div>
-    <div className="bg-paper border border-sand-200 p-5">
-      <div className="space-y-2">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
+      <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 py-1.5">
-            <Skeleton className="h-3 w-16 bg-sand-100" />
-            <Skeleton className="h-3 w-32 flex-1 bg-sand-100" />
-            <Skeleton className="h-3 w-20 bg-sand-100" />
-            <Skeleton className="h-3 w-20 bg-sand-100" />
+          <div key={i} className="flex items-center gap-4">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-32 flex-1" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
           </div>
         ))}
       </div>
@@ -475,17 +446,17 @@ const LoadingStateNomad = () => (
   </div>
 )
 
-// ==================== حالة الخطأ ====================
-const ErrorStateNomad = ({ message }: { message: string }) => (
-  <div className="bg-clay/5 border border-clay/20 p-5">
-    <div className="flex items-center gap-3 text-clay">
+// ==================== Error State Component ====================
+const ErrorState = ({ message }: { message: string }) => (
+  <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
+    <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
       <Icons.alert />
-      <span className="text-sm font-light">{message}</span>
+      <span className="text-sm">{message}</span>
     </div>
   </div>
 )
 
-// ==================== المكون الرئيسي ====================
+// ==================== Main Component ====================
 export default function Ingredients() {
   const k = useKitchen()
   const canEditCodes = k.isOwner
@@ -512,6 +483,7 @@ export default function Ingredients() {
   const [search, setSearch] = useState('')
   const loc = useLocation()
 
+  // One-time search prefill from Command Palette
   useEffect(() => {
     try {
       const v = sessionStorage.getItem('gc:prefill:ingredients')
@@ -529,6 +501,7 @@ export default function Ingredients() {
 
   const [kitchenId, setKitchenId] = useState<string | null>(null)
 
+  // Toast
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
   const showToast = (msg: string) => {
@@ -536,6 +509,7 @@ export default function Ingredients() {
     setToastOpen(true)
   }
 
+  // Modal state
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -545,6 +519,7 @@ export default function Ingredients() {
   const [fCategory, setFCategory] = useState('')
   const [fSupplier, setFSupplier] = useState('')
 
+  // Required fields
   const [fPackSize, setFPackSize] = useState('1')
   const [fPackPrice, setFPackPrice] = useState('0')
   const [fPackUnit, setFPackUnit] = useState('g')
@@ -664,7 +639,10 @@ export default function Ingredients() {
     return { items, avgNet, missingCost, warnUnits }
   }, [filtered])
 
+  // Filter state tracking
   const hasActiveFilters = search !== '' || category !== ''
+
+  // Bulk actions apply to filtered results, not selection (safer approach)
   const hasFilteredItems = filtered.length > 0
 
   const openCreate = () => {
@@ -774,11 +752,18 @@ export default function Ingredients() {
   }, [fCategory])
 
   const deactivate = async (id: string) => {
-    const ok = window.confirm('Deactivate this ingredient? It will be hidden from pickers.')
+    const ok = window.confirm('Deactivate ingredient? It will be hidden from pickers.')
     if (!ok) return
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
     showToast('Ingredient deactivated')
+    await load()
+  }
+
+  const restore = async (id: string) => {
+    const { error } = await supabase.from('ingredients').update({ is_active: true }).eq('id', id)
+    if (error) return showToast(error.message)
+    showToast('Ingredient restored')
     await load()
   }
 
@@ -788,7 +773,7 @@ export default function Ingredients() {
       const msg = String((error as any).message || '')
       const code = String((error as any).code || '')
       if (code === '23503' || msg.toLowerCase().includes('foreign key')) {
-        return showToast('Cannot delete: ingredient is in use')
+        return showToast('Cannot delete: ingredient in use')
       }
       return showToast(msg || 'Delete failed')
     }
@@ -798,7 +783,7 @@ export default function Ingredients() {
 
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
-    const ok = window.confirm("Recalculate unit costs for " + filtered.length + " filtered items?")
+    const ok = window.confirm(`Recalculate unit costs for ${filtered.length} filtered items?`)
     if (!ok) return
 
     setBulkWorking(true)
@@ -825,7 +810,7 @@ export default function Ingredients() {
   const bulkSetActive = async (active: boolean) => {
     if (filtered.length === 0) return
     const action = active ? 'Activate' : 'Deactivate'
-    const ok = window.confirm(action + " " + filtered.length + " filtered items?")
+    const ok = window.confirm(`${action} ${filtered.length} filtered items?`)
     if (!ok) return
 
     setBulkWorking(true)
@@ -836,85 +821,115 @@ export default function Ingredients() {
       }
 
       invalidateIngredientsCache()
-      showToast("Bulk " + action.toLowerCase() + " done")
+      showToast(`Bulk ${action.toLowerCase()} done`)
       await load()
     } catch (e: any) {
-      showToast(e?.message ?? "Bulk " + action.toLowerCase() + " failed")
+      showToast(e?.message ?? `Bulk ${action.toLowerCase()} failed`)
     } finally {
       setBulkWorking(false)
     }
   }
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.02 }
+    }
+  }
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 10 },
+    visible: { opacity: 1, y: 0 }
+  }
+
   return (
-    <div className="min-h-screen bg-paper">
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {/* Header - بوصلة */}
-        <div className="flex items-center justify-between mb-8 border-b border-sand-100 pb-4">
+    <motion.div
+      className="min-h-screen bg-gray-50 dark:bg-gray-950"
+      initial="hidden"
+      animate="visible"
+      variants={containerVariants}
+    >
+      <div className="max-w-7xl mx-auto px-6 py-8">
+        {/* Header */}
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-sand-100 flex items-center justify-center border border-sand-200">
-              <Icons.nomad width={20} height={20} className="text-sand-600" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
             </div>
             <div>
-              <h1 className="text-lg font-light tracking-wide text-text-primary">NOMAD</h1>
-              <p className="text-[10px] text-text-tertiary tracking-wider mt-0.5">
-                {filtered.length} items · {stats.missingCost} uncharted
+              <h1 className="text-xl font-light text-gray-900 dark:text-white tracking-tight">
+                Ingredients
+              </h1>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                {filtered.length} items · {stats.missingCost} missing costs
               </p>
             </div>
           </div>
+
           {isDebug && kitchenId && (
-            <span className="text-[9px] font-mono text-text-tertiary bg-sand-50 border border-sand-200 px-2 py-1">
-              {kitchenId.slice(0, 6)}…
+            <span className="text-[10px] font-mono bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-lg">
+              {kitchenId.slice(0, 8)}...
             </span>
           )}
-        </div>
+        </motion.div>
 
-        {/* Primary Action - بوصلة */}
-        <div className="flex items-center justify-between mb-6">
-          <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-sand-500 text-white text-xs font-light tracking-wide hover:bg-sand-600 transition-colors border border-sand-600"
-            onClick={openCreate}
-          >
-            <Icons.plus width={14} height={14} />
-            New ingredient
-          </button>
+        {/* Action Bar - Clearly labeled as applying to filtered results */}
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
+              onClick={openCreate}
+            >
+              <Icons.plus />
+              New ingredient
+            </button>
 
-          {hasFilteredItems && (
-            <div className="flex items-center gap-2">
-              <span className="text-[10px] text-text-tertiary tracking-wider">FILTERED:</span>
-              <button
-                className="px-3 py-1.5 text-[10px] font-light text-text-secondary bg-paper border border-sand-200 hover:bg-sand-50 transition-colors"
-                onClick={bulkRecalcNetCosts}
-                disabled={bulkWorking}
-              >
-                Recalculate
-              </button>
-              <button
-                className="px-3 py-1.5 text-[10px] font-light text-text-secondary bg-paper border border-sand-200 hover:bg-sand-50 transition-colors"
-                onClick={() => bulkSetActive(true)}
-                disabled={bulkWorking}
-              >
-                Activate all
-              </button>
-              <button
-                className="px-3 py-1.5 text-[10px] font-light text-text-secondary bg-paper border border-sand-200 hover:bg-sand-50 transition-colors"
-                onClick={() => bulkSetActive(false)}
-                disabled={bulkWorking}
-              >
-                Deactivate all
-              </button>
-            </div>
-          )}
-        </div>
+            {hasFilteredItems && (
+              <>
+                <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1" />
+                <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">
+                  Filtered:
+                </span>
+                <button
+                  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  onClick={bulkRecalcNetCosts}
+                  disabled={bulkWorking}
+                >
+                  Recalculate costs
+                </button>
+                <button
+                  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  onClick={() => bulkSetActive(true)}
+                  disabled={bulkWorking}
+                >
+                  Activate all
+                </button>
+                <button
+                  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  onClick={() => bulkSetActive(false)}
+                  disabled={bulkWorking}
+                >
+                  Deactivate all
+                </button>
+              </>
+            )}
+          </div>
+        </motion.div>
 
-        {/* Filters - رحلة */}
-        <div className="flex items-center gap-2 mb-6">
+        {/* Filter Bar */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+          {/* Search */}
           <div className="flex-1 max-w-sm">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Icons.search />
               </span>
               <input
-                className="w-full pl-8 pr-7 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
+                className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search ingredients..."
@@ -922,17 +937,18 @@ export default function Ingredients() {
               {search && (
                 <button
                   type="button"
-                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-sand-600"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   onClick={() => setSearch('')}
                 >
-                  <Icons.close width={12} height={12} />
+                  <Icons.close width={14} height={14} />
                 </button>
               )}
             </div>
           </div>
 
+          {/* Category Filter */}
           <select
-            className="px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors"
+            className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -942,103 +958,110 @@ export default function Ingredients() {
             ))}
           </select>
 
+          {/* Sort */}
           <select
-            className="px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors"
+            className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
-            <option value="name">Name</option>
-            <option value="cost">Unit cost</option>
-            <option value="pack_price">Pack price</option>
+            <option value="name">Sort by name</option>
+            <option value="cost">Sort by unit cost</option>
+            <option value="pack_price">Sort by pack price</option>
           </select>
 
+          {/* Show Inactive Toggle */}
           <button
             className={cls(
-              "inline-flex items-center gap-1.5 px-3 py-2 text-xs transition-colors",
+              "inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors",
               showInactive
-                ? "bg-sand-500 text-white border border-sand-600"
-                : "bg-paper text-text-secondary border border-sand-200 hover:bg-sand-50"
+                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
             )}
             onClick={() => setShowInactive(!showInactive)}
           >
             <div className={cls(
-              "w-3 h-3 border flex items-center justify-center",
-              showInactive ? "bg-white border-white" : "bg-transparent border-text-tertiary"
+              "w-4 h-4 rounded border flex items-center justify-center",
+              showInactive ? "bg-blue-600 border-blue-600" : "border-gray-400"
             )}>
-              {showInactive && <Icons.check width={8} height={8} className="text-sand-500" />}
+              {showInactive && <Icons.check width={12} height={12} className="text-white" />}
             </div>
-            <span>Inactive</span>
+            <span>Show inactive</span>
           </button>
 
+          {/* Clear Filters */}
           {hasActiveFilters && (
             <button
-              className="p-2 bg-paper border border-sand-200 text-text-tertiary hover:text-sand-600 hover:border-sand-300 transition-colors"
+              className="p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               onClick={() => {
                 setSearch('')
                 setCategory('')
               }}
               title="Clear filters"
             >
-              <Icons.reset width={12} height={12} />
+              <Icons.reset />
             </button>
           )}
-        </div>
+        </motion.div>
 
-        {/* Stats - كثبان */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <StatCardNomad
-            label="TOTAL"
+        {/* Stats Cards */}
+        <motion.div variants={itemVariants} className="grid grid-cols-4 gap-4 mb-6">
+          <StatsCard
+            label="Total items"
             value={stats.items}
-            sublabel="filtered"
+            sublabel="filtered results"
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
           />
-          <StatCardNomad
-            label="AVG"
+          <StatsCard
+            label="Average cost"
             value={money(stats.avgNet)}
             sublabel="per unit"
+            icon={<Icons.dollar />}
           />
-          <StatCardNomad
-            label="VOID"
+          <StatsCard
+            label="Missing costs"
             value={stats.missingCost}
-            sublabel="missing"
+            sublabel="need attention"
+            icon={<Icons.alert />}
             warning={stats.missingCost > 0}
           />
-          <StatCardNomad
-            label="WARN"
+          <StatsCard
+            label="Warnings"
             value={stats.warnUnits}
-            sublabel="warnings"
+            sublabel="unit mismatches"
+            icon={<Icons.bolt />}
             warning={stats.warnUnits > 0}
           />
-        </div>
+        </motion.div>
 
-        {/* Main content */}
-        {loading && <LoadingStateNomad />}
+        {/* Main Content */}
+        {loading && <LoadingState />}
 
-        {err && <ErrorStateNomad message={err} />}
+        {err && <ErrorState message={err} />}
 
         {!loading && !err && (
-          <>
+          <motion.div variants={itemVariants}>
             {filtered.length === 0 ? (
-              <EmptyStateNomad onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
+              <EmptyState onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <div className="bg-paper border border-sand-200 overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-sand-100 bg-sand-50/30">
-                        <th className="px-4 py-2 text-left text-[8px] font-medium text-text-tertiary uppercase tracking-wider">CODE</th>
-                        <th className="px-4 py-2 text-left text-[8px] font-medium text-text-tertiary uppercase tracking-wider">NAME</th>
-                        <th className="px-4 py-2 text-left text-[8px] font-medium text-text-tertiary uppercase tracking-wider">CATEGORY</th>
-                        <th className="px-4 py-2 text-center text-[8px] font-medium text-text-tertiary uppercase tracking-wider">PACK</th>
-                        <th className="px-4 py-2 text-center text-[8px] font-medium text-text-tertiary uppercase tracking-wider">UNIT</th>
-                        <th className="px-4 py-2 text-right text-[8px] font-medium text-text-tertiary uppercase tracking-wider">PACK</th>
-                        <th className="px-4 py-2 text-right text-[8px] font-medium text-text-tertiary uppercase tracking-wider">UNIT</th>
-                        <th className="px-4 py-2 text-right text-[8px] font-medium text-text-tertiary uppercase tracking-wider">ACT</th>
+                      <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
+                        <th className="px-4 py-3 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
+                        <th className="px-4 py-3 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-3 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                        <th className="px-4 py-3 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack</th>
+                        <th className="px-4 py-3 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Price</th>
+                        <th className="px-4 py-3 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-sand-100">
+                    <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                       <AnimatePresence>
                         {filtered.map((r) => (
-                          <IngredientRowNomad
+                          <IngredientTableRow
                             key={r.id}
                             ingredient={r}
                             isDebug={isDebug}
@@ -1053,95 +1076,99 @@ export default function Ingredients() {
                 </div>
               </div>
             )}
-          </>
+          </motion.div>
         )}
 
-        {/* Modal - خيمة */}
+        {/* Modal */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
           <div className="space-y-5">
-            <div className="space-y-3">
-              <FormFieldNomad label="Name" required>
+            {/* Basic Information */}
+            <div className="space-y-4">
+              <FormField label="Name" required>
                 <input
-                  className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
                 />
-              </FormFieldNomad>
+              </FormField>
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormFieldNomad label="Category">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Category">
                   <input
-                    className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
                   />
-                </FormFieldNomad>
-                <FormFieldNomad label="Supplier">
+                </FormField>
+                <FormField label="Supplier">
                   <input
-                    className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
                   />
-                </FormFieldNomad>
+                </FormField>
               </div>
             </div>
 
-            <div className="space-y-2">
+            {/* Code Section */}
+            <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-[10px] font-medium tracking-wide text-text-secondary">Code system</h3>
-                <span className="text-[7px] font-mono text-text-tertiary bg-sand-50 px-1.5 py-0.5 border border-sand-200">OPT</span>
+                <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code System</h3>
+                <span className="text-[8px] font-mono bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">OPTIONAL</span>
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <FormFieldNomad label="Ingredient code" hint="ING-000123">
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Ingredient Code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-3 py-2 bg-paper border border-sand-200 text-xs font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors",
-                      !canEditCodes && "opacity-50 bg-sand-50 cursor-not-allowed"
+                      "w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all",
+                      !canEditCodes && "opacity-50 bg-gray-100 dark:bg-gray-900 cursor-not-allowed"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
                     placeholder="ING-000123"
                     disabled={!canEditCodes}
                   />
-                </FormFieldNomad>
-                <FormFieldNomad label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
+                </FormField>
+                <FormField label="Category Code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-3 py-2 bg-paper border border-sand-200 text-xs font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors",
-                      !canEditCodes && "opacity-50 bg-sand-50 cursor-not-allowed"
+                      "w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all",
+                      !canEditCodes && "opacity-50 bg-gray-100 dark:bg-gray-900 cursor-not-allowed"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
                     placeholder={suggestedCodeCategory}
                     disabled={!canEditCodes}
                   />
-                </FormFieldNomad>
+                </FormField>
               </div>
               {!canEditCodes && (
-                <p className="text-[9px] text-rust-400 flex items-center gap-1">
-                  <Icons.alert width={10} height={10} />
-                  Owner-only
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
+                  <Icons.alert width={12} height={12} />
+                  Code fields are owner-only
                 </p>
               )}
             </div>
 
-            <div className="space-y-3">
-              <h3 className="text-[10px] font-medium tracking-wide text-text-secondary">Pack & Cost</h3>
+            {/* Pack & Cost */}
+            <div className="space-y-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack & Cost</h3>
 
-              <div className="flex gap-1">
+              {/* Unit Selector */}
+              <div className="flex gap-2">
                 {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
                   <button
                     key={unit}
                     type="button"
                     onClick={() => setFPackUnit(unit)}
                     className={cls(
-                      "flex-1 px-2 py-1.5 text-[9px] font-mono border transition-colors",
+                      "flex-1 px-3 py-2 text-xs font-mono rounded-lg border transition-all",
                       fPackUnit === unit
-                        ? "bg-sand-500 text-white border-sand-600"
-                        : "bg-paper text-text-secondary border-sand-200 hover:border-sand-300"
+                        ? "bg-blue-600 text-white border-blue-600"
+                        : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-400 border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700"
                     )}
                   >
                     {unit}
@@ -1149,91 +1176,93 @@ export default function Ingredients() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormFieldNomad label="Pack size" required>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Pack Size" required>
                   <div className="relative">
                     <input
-                      className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors pr-10"
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all pr-12"
                       type="number"
                       min={1}
                       step="1"
                       value={fPackSize}
                       onChange={(e) => setFPackSize(e.target.value)}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono text-text-tertiary">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-mono">
                       {fPackUnit}
                     </span>
                   </div>
-                </FormFieldNomad>
-                <FormFieldNomad label="Unit" required>
-                  <div className="px-3 py-2 bg-sand-50 border border-sand-200 text-xs text-text-primary font-mono">
+                </FormField>
+                <FormField label="Unit" required>
+                  <div className="px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 font-mono text-sm">
                     {fPackUnit}
                   </div>
-                </FormFieldNomad>
+                </FormField>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <FormFieldNomad label="Pack price" required>
+              <div className="grid grid-cols-2 gap-4">
+                <FormField label="Pack Price" required>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-xs">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                     <input
-                      className="w-full pl-7 pr-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors"
+                      className="w-full pl-7 pr-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
                       onChange={(e) => setFPackPrice(e.target.value)}
                     />
                   </div>
-                </FormFieldNomad>
-                <FormFieldNomad label="Unit price" hint={"per " + fPackUnit}>
+                </FormField>
+                <FormField label="Unit Price" hint={`per ${fPackUnit}`}>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-xs">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
                     <input
-                      className="w-full pl-7 pr-10 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors font-mono"
+                      className="w-full pl-7 pr-12 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono text-text-tertiary">
-                      {"/" + fPackUnit}
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500">
+                      /{fPackUnit}
                     </span>
                   </div>
-                </FormFieldNomad>
+                </FormField>
               </div>
 
+              {/* Calculation Preview */}
               {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
-                <div className="p-3 bg-sand-50 border border-sand-200">
-                  <div className="flex items-center justify-between text-[9px]">
-                    <span className="text-sand-600">Journey:</span>
-                    <span className="font-mono text-text-secondary">
-                      {"$" + parseFloat(fPackPrice) + " ÷ " + parseFloat(fPackSize) + " " + fPackUnit + " = $" + (parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4) + "/" + fPackUnit}
+                <div className="p-3 bg-blue-50 dark:bg-blue-950/30 rounded-lg border border-blue-100 dark:border-blue-800">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-blue-700 dark:text-blue-400">Preview:</span>
+                    <span className="font-mono text-blue-900 dark:text-blue-300">
+                      ${parseFloat(fPackPrice)} ÷ {parseFloat(fPackSize)} {fPackUnit} = ${(parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4)} /{fPackUnit}
                     </span>
                   </div>
                   <button
-                    className="w-full mt-2 px-3 py-1.5 bg-paper text-sand-600 text-[9px] border border-sand-200 hover:bg-sand-50 transition-colors flex items-center justify-center gap-1"
+                    className="w-full mt-2 px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors flex items-center justify-center gap-1"
                     onClick={smartRecalcNetCost}
                   >
-                    <Icons.bolt width={10} height={10} />
-                    Apply
+                    <Icons.bolt width={12} height={12} />
+                    Apply calculation
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-2 pt-3 border-t border-sand-100">
+            {/* Actions */}
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
               <button
-                className="px-4 py-2 text-[10px] text-text-secondary hover:text-text-primary hover:bg-sand-50 transition-colors"
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
                 onClick={() => setModalOpen(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-sand-500 text-white text-[10px] font-light tracking-wide hover:bg-sand-600 transition-colors disabled:opacity-40"
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 disabled:opacity-40"
                 onClick={save}
                 disabled={saving}
               >
-                {saving ? '…' : editingId ? 'Update' : 'Create'}
+                {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
               </button>
             </div>
           </div>
@@ -1241,6 +1270,29 @@ export default function Ingredients() {
 
         <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
       </div>
-    </div>
+
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+          height: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #e5e7eb;
+          border-radius: 9999px;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: #4b5563;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #d1d5db;
+        }
+        .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: #6b7280;
+        }
+      `}</style>
+    </motion.div>
   )
 }
