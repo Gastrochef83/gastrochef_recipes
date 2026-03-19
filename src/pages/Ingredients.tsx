@@ -63,153 +63,156 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== SOLARA - الهوية البصرية النووية الجديدة ====================
-// تصميم مستوحى من الضوء، البلورات، والطاقة الشمسية
+// ==================== NOMAD - الهوية البصرية النووية الجديدة ====================
+// تصميم مستوحى من السفر، الخرائط، الاستكشاف، والرفاهية البدوية
 
 const Icons = {
   search: (props: any) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
   close: (props: any) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   edit: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
     </svg>
   ),
   delete: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   ),
   plus: (props: any) => (
-    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ),
   chevronDown: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <polyline points="6 9 12 15 18 9" />
     </svg>
   ),
   dollar: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <line x1="12" y1="1" x2="12" y2="23" />
       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   ),
   alert: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
   ),
   bolt: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <path d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   ),
   check: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
   reset: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   ),
   deactivate: (props: any) => (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
   ),
-  solara: (props: any) => (
-    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
-      <circle cx="12" cy="12" r="6" />
-      <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12 M4 4 L7 7 M17 17 L20 20 M4 20 L7 17 M17 7 L20 4" strokeOpacity="0.5" />
+  nomad: (props: any) => (
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" {...props}>
+      <path d="M3 12 L12 3 L21 12 L12 21 L3 12" />
+      <circle cx="12" cy="12" r="3" fill="currentColor" fillOpacity="0.2" />
+      <path d="M12 3 L12 21 M3 12 L21 12" strokeOpacity="0.3" />
     </svg>
   ),
-  ray: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-      <path d="M12 2 L12 8 M12 16 L12 22 M2 12 L8 12 M16 12 L22 12 M5 5 L9 9 M15 15 L19 19 M5 19 L9 15 M15 9 L19 5" strokeOpacity="0.3" />
+  compass: (props: any) => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12" strokeOpacity="0.5" />
+      <path d="M12 12 L16 8 L12 16 L8 8 L12 12" fill="currentColor" fillOpacity="0.1" />
     </svg>
   ),
 }
 
-// ==================== SOLARA - لوحة الألوان النووية ====================
+// ==================== NOMAD - لوحة الألوان ====================
 const colors = {
-  solara: {
-    50: '#f2f0fe',
-    100: '#e4e0fd',
-    200: '#c9c1fb',
-    300: '#aea2f9',
-    400: '#9383f7',
-    500: '#6C5CE7', // Solara Purple - الأساسي
-    600: '#5646c9',
-    700: '#4135a6',
-    800: '#2b2482',
-    900: '#16135e',
+  sand: {
+    50: '#faf7f2',
+    100: '#f5efe5',
+    200: '#ebe0d1',
+    300: '#dbcbb5',
+    400: '#c9b69a',
+    500: '#AA8C6A', // Sand Dune - الأساسي
+    600: '#8a6e4f',
+    700: '#6b533c',
+    800: '#4c3b2a',
+    900: '#2d2319',
   },
-  sun: {
-    500: '#FFD166', // Sun Gold - أكcent
-    400: '#FFDF99',
-    600: '#E5B84C',
+  earth: {
+    500: '#8B7E6C', // Earth - ثانوي
+    400: '#A59884',
+    300: '#BFB2A0',
   },
-  sky: {
-    500: '#48CAE4', // Sky Blue - ثانوي
-    400: '#7BD3F0',
+  rust: {
+    500: '#B75D3A', // Rust - أكcent
+    400: '#D17A58',
   },
-  coral: '#FF6B6B', // Coral - destructive
-  surface: '#FFFFFF', // أبيض نقي
-  background: '#F8F7FF', // خلفية بنفسجية فاتحة جداً
+  slate: '#4A5B5E', // Slate - تحذيرات
+  clay: '#C45E3A', // Clay - destructive
+  paper: '#FCF9F5', // ورق - خلفية
   text: {
-    primary: '#1E1E2E',
-    secondary: '#4A4A5E',
-    tertiary: '#6B6B7E',
+    primary: '#2C2824',
+    secondary: '#5C554C',
+    tertiary: '#8B8278',
   }
 }
 
-// ==================== وحدة القياس - شعاعية ====================
-const UnitRay = ({ unit }: { unit: string }) => {
+// ==================== وحدة القياس - بوصلة ====================
+const UnitCompass = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
     kg: 'kg',
-    ml: 'mL',
+    ml: 'ml',
     l: 'L',
-    pcs: 'pc',
+    pcs: 'pcs',
   }
 
   return (
-    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono font-medium text-solara-600 bg-solara-50 border border-solara-200 rounded-full">
-      <Icons.ray width={10} height={10} className="text-solara-400" />
+    <span className="inline-flex items-center gap-1 px-2 py-1 text-[9px] font-mono font-medium text-sand-700 bg-sand-50 border border-sand-200 tracking-wider">
+      <Icons.compass width={10} height={10} className="text-sand-400" />
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== عرض السعر - شمسي ====================
-const PriceSolara = ({ amount, unit }: { amount: number; unit: string }) => (
+// ==================== عرض السعر - صحراوي ====================
+const PriceNomad = ({ amount, unit }: { amount: number; unit: string }) => (
   <div className="flex items-center justify-end gap-2">
-    <span className="font-mono text-sm font-medium text-text-primary">
+    <span className="font-mono text-sm font-light text-text-primary tracking-wide">
       {money(amount)}
     </span>
-    <UnitRay unit={unit} />
+    <UnitCompass unit={unit} />
   </div>
 )
 
-// ==================== مودال - شفاف ====================
+// ==================== مودال - خيمة ====================
 function Modal({
   open,
   title,
@@ -233,7 +236,7 @@ function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-black/20 backdrop-blur-sm"
+            className="absolute inset-0 bg-black/5 backdrop-blur-[1px]"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -241,25 +244,25 @@ function Modal({
           />
           <motion.div
             className="relative w-full max-w-lg mx-auto"
-            initial={{ scale: 0.96, opacity: 0, y: 10 }}
+            initial={{ scale: 0.98, opacity: 0, y: 5 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.96, opacity: 0, y: 10 }}
+            exit={{ scale: 0.98, opacity: 0, y: 5 }}
             transition={{ duration: 0.2 }}
           >
-            <div className="bg-white/90 backdrop-blur-xl border border-solara-200 rounded-2xl shadow-2xl overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-solara-100">
+            <div className="bg-paper border border-sand-200 shadow-xl overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-sand-100">
                 <div className="flex items-center gap-3">
-                  <Icons.solara width={24} height={24} className="text-solara-500" />
-                  <h2 className="text-lg font-light text-text-primary">{title}</h2>
+                  <Icons.nomad width={20} height={20} className="text-sand-500" />
+                  <h2 className="text-base font-light tracking-wide text-text-primary">{title}</h2>
                 </div>
                 <button
-                  className="p-2 rounded-full hover:bg-solara-50 text-text-tertiary hover:text-solara-600 transition-colors"
+                  className="p-1.5 text-text-tertiary hover:text-sand-600 transition-colors"
                   onClick={onClose}
                 >
                   <Icons.close />
                 </button>
               </div>
-              <div className="px-6 py-6 max-h-[calc(90vh-8rem)] overflow-y-auto">
+              <div className="px-6 py-5 max-h-[calc(90vh-8rem)] overflow-y-auto">
                 {children}
               </div>
             </div>
@@ -270,8 +273,8 @@ function Modal({
   )
 }
 
-// ==================== حقل النموذج - شمسي ====================
-const FormFieldSolara = ({
+// ==================== حقل النموذج - صحراوي ====================
+const FormFieldNomad = ({
   label,
   required,
   children,
@@ -282,20 +285,20 @@ const FormFieldSolara = ({
   children: ReactNode
   hint?: string
 }) => (
-  <div className="space-y-1.5">
+  <div className="space-y-1">
     <div className="flex items-center justify-between">
-      <label className="text-xs font-medium text-text-secondary">
+      <label className="text-xs font-medium tracking-wide text-text-secondary">
         {label}
-        {required && <span className="text-coral ml-1">*</span>}
+        {required && <span className="text-clay ml-1">*</span>}
       </label>
-      {hint && <span className="text-[10px] text-text-tertiary">{hint}</span>}
+      {hint && <span className="text-[9px] text-text-tertiary">{hint}</span>}
     </div>
     {children}
   </div>
 )
 
-// ==================== صف الجدول - شمسي ====================
-const IngredientRowSolara = memo(function IngredientRowSolara({
+// ==================== صف الجدول - بدوي ====================
+const IngredientRowNomad = memo(function IngredientRowNomad({
   ingredient,
   isDebug,
   onEdit,
@@ -321,57 +324,57 @@ const IngredientRowSolara = memo(function IngredientRowSolara({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className={cls(
-        'group border-b border-solara-100 last:border-0 hover:bg-solara-50/50 transition-colors',
+        'group border-b border-sand-100 last:border-0 hover:bg-sand-50/30 transition-colors',
         !active && 'opacity-40'
       )}
     >
-      <td className="px-4 py-4">
+      <td className="px-4 py-3">
         <span className="text-xs font-mono text-text-tertiary">
           {ingredient.code || '—'}
         </span>
       </td>
-      <td className="px-4 py-4">
+      <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <span className={cls(
-            "text-sm font-medium text-text-primary",
+            "text-sm font-light tracking-wide text-text-primary",
             !active && "line-through text-text-tertiary"
           )}>
             {ingredient.name ?? '—'}
           </span>
           {hasWarning && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[8px] font-medium bg-sun-500/10 text-sun-600 border border-sun-200">
-              <Icons.alert width={10} height={10} />
-              ATTENTION
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 text-[8px] font-mono text-slate bg-slate/5 border border-slate/20">
+              <Icons.alert width={8} height={8} />
+              CHECK
             </span>
           )}
         </div>
         {isDebug && (
-          <div className="text-[8px] font-mono text-text-tertiary mt-1">
-            {ingredient.id.slice(0, 8)}...
+          <div className="text-[7px] font-mono text-text-tertiary mt-1">
+            {ingredient.id.slice(0, 6)}...
           </div>
         )}
       </td>
-      <td className="px-4 py-4 text-xs text-text-secondary">
+      <td className="px-4 py-3 text-xs text-text-secondary">
         {ingredient.category ?? '—'}
       </td>
-      <td className="px-4 py-4 text-center">
+      <td className="px-4 py-3 text-center">
         <span className="text-sm font-mono text-text-primary">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
       </td>
-      <td className="px-4 py-4">
-        <UnitRay unit={unit} />
+      <td className="px-4 py-3">
+        <UnitCompass unit={unit} />
       </td>
-      <td className="px-4 py-4">
-        <PriceSolara amount={toNum(ingredient.pack_price, 0)} unit={unit} />
+      <td className="px-4 py-3">
+        <PriceNomad amount={toNum(ingredient.pack_price, 0)} unit={unit} />
       </td>
-      <td className="px-4 py-4">
-        <PriceSolara amount={net} unit={unit} />
+      <td className="px-4 py-3">
+        <PriceNomad amount={net} unit={unit} />
       </td>
-      <td className="px-4 py-4">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-1.5 rounded-full hover:bg-solara-100 text-text-tertiary hover:text-solara-600 transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-sand-600 transition-colors"
             onClick={() => onEdit(ingredient)}
             title="Edit"
           >
@@ -379,7 +382,7 @@ const IngredientRowSolara = memo(function IngredientRowSolara({
           </button>
           {active && (
             <button
-              className="p-1.5 rounded-full hover:bg-solara-100 text-text-tertiary hover:text-sun-600 transition-colors"
+              className="p-1.5 text-text-tertiary hover:text-rust-400 transition-colors"
               onClick={() => onDeactivate(ingredient.id)}
               title="Deactivate"
             >
@@ -387,13 +390,13 @@ const IngredientRowSolara = memo(function IngredientRowSolara({
             </button>
           )}
           <button
-            className="p-1.5 rounded-full hover:bg-solara-100 text-text-tertiary hover:text-coral transition-colors"
+            className="p-1.5 text-text-tertiary hover:text-clay transition-colors"
             onClick={() => {
               if (window.confirm('Delete permanently? This cannot be undone.')) {
                 onHardDelete(ingredient.id)
               }
             }}
-            title="Delete permanently"
+            title="Delete"
           >
             <Icons.delete />
           </button>
@@ -403,68 +406,68 @@ const IngredientRowSolara = memo(function IngredientRowSolara({
   )
 })
 
-// ==================== بطاقة إحصائية - شمسية ====================
-const StatCardSolara = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
-  <div className="bg-white border border-solara-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-    <div className="text-[10px] font-medium text-text-tertiary uppercase tracking-wider mb-2">
+// ==================== بطاقة إحصائية - رملية ====================
+const StatCardNomad = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
+  <div className="bg-paper border border-sand-200 p-5">
+    <div className="text-[9px] font-medium tracking-wider text-text-tertiary uppercase mb-1">
       {label}
     </div>
     <div className={cls(
-      "text-2xl font-light",
-      warning ? "text-sun-600" : "text-text-primary"
+      "text-xl font-light tracking-wide",
+      warning ? "text-slate" : "text-text-primary"
     )}>
       {value}
     </div>
-    <div className="text-[10px] text-text-tertiary mt-2">
+    <div className="text-[9px] text-text-tertiary mt-1">
       {sublabel}
     </div>
   </div>
 )
 
-// ==================== حالة فارغة - شمسية ====================
-const EmptyStateSolara = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
-  <div className="bg-white border border-solara-100 rounded-2xl p-16 text-center shadow-sm">
-    <div className="w-20 h-20 mx-auto mb-6 bg-solara-50 rounded-full flex items-center justify-center">
-      <Icons.solara width={48} height={48} className="text-solara-300" />
+// ==================== حالة فارغة - صحراء ====================
+const EmptyStateNomad = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
+  <div className="bg-paper border border-sand-200 p-12 text-center">
+    <div className="w-16 h-16 mx-auto mb-4 bg-sand-100 flex items-center justify-center border border-sand-200">
+      <Icons.nomad width={32} height={32} className="text-sand-400" />
     </div>
-    <h3 className="text-xl font-light text-text-primary mb-3">
-      {hasFilters ? 'No results found' : 'No ingredients yet'}
+    <h3 className="text-lg font-light tracking-wide text-text-primary mb-2">
+      {hasFilters ? 'No destinations found' : 'Empty territory'}
     </h3>
-    <p className="text-sm text-text-secondary max-w-sm mx-auto mb-8">
+    <p className="text-sm text-text-secondary max-w-sm mx-auto mb-6">
       {hasFilters
-        ? 'Try adjusting your filters to see more results.'
-        : 'Start building your kitchen by adding your first ingredient.'}
+        ? 'Try adjusting your compass to discover new ingredients.'
+        : 'Begin your journey by adding your first ingredient to the map.'}
     </p>
     <button
-      className="inline-flex items-center gap-2 px-6 py-3 bg-solara-500 text-white text-sm font-medium rounded-full hover:bg-solara-600 transition-colors shadow-sm"
+      className="inline-flex items-center gap-2 px-5 py-2.5 bg-sand-500 text-white text-sm font-light tracking-wide hover:bg-sand-600 transition-colors border border-sand-600"
       onClick={onAdd}
     >
-      <Icons.plus width={18} height={18} />
+      <Icons.plus width={16} height={16} />
       Add ingredient
     </button>
   </div>
 )
 
 // ==================== حالة التحميل ====================
-const LoadingStateSolara = () => (
+const LoadingStateNomad = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white border border-solara-100 rounded-2xl p-6">
-          <Skeleton className="h-3 w-16 mb-2" />
-          <Skeleton className="h-6 w-20 mb-1" />
-          <Skeleton className="h-3 w-24" />
+        <div key={i} className="bg-paper border border-sand-200 p-5">
+          <Skeleton className="h-3 w-16 mb-2 bg-sand-100" />
+          <Skeleton className="h-5 w-20 mb-1 bg-sand-100" />
+          <Skeleton className="h-3 w-24 bg-sand-100" />
         </div>
       ))}
     </div>
-    <div className="bg-white border border-solara-100 rounded-2xl p-6">
-      <div className="space-y-3">
+    <div className="bg-paper border border-sand-200 p-5">
+      <div className="space-y-2">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="flex items-center gap-4 py-2">
-            <Skeleton className="h-3 w-16" />
-            <Skeleton className="h-3 w-32 flex-1" />
-            <Skeleton className="h-3 w-20" />
-            <Skeleton className="h-3 w-20" />
+          <div key={i} className="flex items-center gap-4 py-1.5">
+            <Skeleton className="h-3 w-16 bg-sand-100" />
+            <Skeleton className="h-3 w-32 flex-1 bg-sand-100" />
+            <Skeleton className="h-3 w-20 bg-sand-100" />
+            <Skeleton className="h-3 w-20 bg-sand-100" />
           </div>
         ))}
       </div>
@@ -473,11 +476,11 @@ const LoadingStateSolara = () => (
 )
 
 // ==================== حالة الخطأ ====================
-const ErrorStateSolara = ({ message }: { message: string }) => (
-  <div className="bg-coral/5 border border-coral/20 rounded-2xl p-6">
-    <div className="flex items-center gap-3 text-coral">
+const ErrorStateNomad = ({ message }: { message: string }) => (
+  <div className="bg-clay/5 border border-clay/20 p-5">
+    <div className="flex items-center gap-3 text-clay">
       <Icons.alert />
-      <span className="text-sm font-medium">{message}</span>
+      <span className="text-sm font-light">{message}</span>
     </div>
   </div>
 )
@@ -843,74 +846,57 @@ export default function Ingredients() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* خلفية شعاعية */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-solara-200/30 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-sun-200/30 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-8">
-        {/* Header - شمسي */}
-        <div className="flex items-center justify-between mb-10">
-          <div className="flex items-center gap-4">
-            <div className="relative">
-              <div className="w-14 h-14 bg-gradient-to-br from-solara-500 to-sky-500 rounded-2xl flex items-center justify-center text-white shadow-lg shadow-solara-500/20">
-                <Icons.solara width={28} height={28} />
-              </div>
-              <div className="absolute -top-1 -right-1 w-3 h-3">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-solara-400 opacity-50" />
-                <span className="relative inline-flex rounded-full h-3 w-3 bg-solara-500" />
-              </div>
+    <div className="min-h-screen bg-paper">
+      <div className="max-w-7xl mx-auto px-6 py-6">
+        {/* Header - بوصلة */}
+        <div className="flex items-center justify-between mb-8 border-b border-sand-100 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-sand-100 flex items-center justify-center border border-sand-200">
+              <Icons.nomad width={20} height={20} className="text-sand-600" />
             </div>
             <div>
-              <h1 className="text-3xl font-light text-text-primary tracking-tight flex items-center gap-3">
-                SOLARA
-                <span className="text-[8px] font-mono text-solara-500 bg-solara-50 px-2 py-1 rounded-full border border-solara-200">
-                  RADIANT
-                </span>
-              </h1>
-              <p className="text-sm text-text-tertiary mt-1">
-                {filtered.length} items · {stats.missingCost} need attention
+              <h1 className="text-lg font-light tracking-wide text-text-primary">NOMAD</h1>
+              <p className="text-[10px] text-text-tertiary tracking-wider mt-0.5">
+                {filtered.length} items · {stats.missingCost} uncharted
               </p>
             </div>
           </div>
           {isDebug && kitchenId && (
-            <span className="text-xs font-mono text-text-tertiary bg-white border border-solara-200 px-3 py-1.5 rounded-full shadow-sm">
-              {kitchenId.slice(0, 8)}...
+            <span className="text-[9px] font-mono text-text-tertiary bg-sand-50 border border-sand-200 px-2 py-1">
+              {kitchenId.slice(0, 6)}…
             </span>
           )}
         </div>
 
-        {/* Primary Action - شمسي */}
-        <div className="flex items-center justify-between mb-8">
+        {/* Primary Action - بوصلة */}
+        <div className="flex items-center justify-between mb-6">
           <button
-            className="inline-flex items-center gap-2 px-6 py-3 bg-solara-500 text-white text-sm font-medium rounded-full hover:bg-solara-600 transition-colors shadow-lg shadow-solara-500/20"
+            className="inline-flex items-center gap-2 px-4 py-2 bg-sand-500 text-white text-xs font-light tracking-wide hover:bg-sand-600 transition-colors border border-sand-600"
             onClick={openCreate}
           >
-            <Icons.plus width={18} height={18} />
+            <Icons.plus width={14} height={14} />
             New ingredient
           </button>
 
           {hasFilteredItems && (
-            <div className="flex items-center gap-3">
-              <span className="text-sm text-text-tertiary">Filtered:</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] text-text-tertiary tracking-wider">FILTERED:</span>
               <button
-                className="px-4 py-2 text-xs font-medium text-text-secondary bg-white border border-solara-200 rounded-full hover:bg-solara-50 hover:border-solara-300 transition-colors shadow-sm disabled:opacity-40"
+                className="px-3 py-1.5 text-[10px] font-light text-text-secondary bg-paper border border-sand-200 hover:bg-sand-50 transition-colors"
                 onClick={bulkRecalcNetCosts}
                 disabled={bulkWorking}
               >
                 Recalculate
               </button>
               <button
-                className="px-4 py-2 text-xs font-medium text-text-secondary bg-white border border-solara-200 rounded-full hover:bg-solara-50 hover:border-solara-300 transition-colors shadow-sm disabled:opacity-40"
+                className="px-3 py-1.5 text-[10px] font-light text-text-secondary bg-paper border border-sand-200 hover:bg-sand-50 transition-colors"
                 onClick={() => bulkSetActive(true)}
                 disabled={bulkWorking}
               >
                 Activate all
               </button>
               <button
-                className="px-4 py-2 text-xs font-medium text-text-secondary bg-white border border-solara-200 rounded-full hover:bg-solara-50 hover:border-solara-300 transition-colors shadow-sm disabled:opacity-40"
+                className="px-3 py-1.5 text-[10px] font-light text-text-secondary bg-paper border border-sand-200 hover:bg-sand-50 transition-colors"
                 onClick={() => bulkSetActive(false)}
                 disabled={bulkWorking}
               >
@@ -920,15 +906,15 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Filters - شمسية */}
-        <div className="flex items-center gap-3 mb-8">
-          <div className="flex-1 max-w-md">
+        {/* Filters - رحلة */}
+        <div className="flex items-center gap-2 mb-6">
+          <div className="flex-1 max-w-sm">
             <div className="relative">
-              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">
                 <Icons.search />
               </span>
               <input
-                className="w-full pl-11 pr-10 py-3 bg-white border border-solara-200 rounded-full text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors shadow-sm"
+                className="w-full pl-8 pr-7 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search ingredients..."
@@ -936,17 +922,17 @@ export default function Ingredients() {
               {search && (
                 <button
                   type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-solara-600"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-sand-600"
                   onClick={() => setSearch('')}
                 >
-                  <Icons.close width={16} height={16} />
+                  <Icons.close width={12} height={12} />
                 </button>
               )}
             </div>
           </div>
 
           <select
-            className="px-4 py-3 bg-white border border-solara-200 rounded-full text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors shadow-sm"
+            className="px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -957,7 +943,7 @@ export default function Ingredients() {
           </select>
 
           <select
-            className="px-4 py-3 bg-white border border-solara-200 rounded-full text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors shadow-sm"
+            className="px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -968,91 +954,91 @@ export default function Ingredients() {
 
           <button
             className={cls(
-              "inline-flex items-center gap-2 px-4 py-3 rounded-full text-sm font-medium transition-colors shadow-sm",
+              "inline-flex items-center gap-1.5 px-3 py-2 text-xs transition-colors",
               showInactive
-                ? "bg-solara-500 text-white border border-solara-500"
-                : "bg-white text-text-secondary border border-solara-200 hover:bg-solara-50"
+                ? "bg-sand-500 text-white border border-sand-600"
+                : "bg-paper text-text-secondary border border-sand-200 hover:bg-sand-50"
             )}
             onClick={() => setShowInactive(!showInactive)}
           >
             <div className={cls(
-              "w-4 h-4 rounded-full border flex items-center justify-center",
-              showInactive ? "bg-white border-white" : "bg-white border-text-tertiary"
+              "w-3 h-3 border flex items-center justify-center",
+              showInactive ? "bg-white border-white" : "bg-transparent border-text-tertiary"
             )}>
-              {showInactive && <Icons.check width={10} height={10} className="text-solara-500" />}
+              {showInactive && <Icons.check width={8} height={8} className="text-sand-500" />}
             </div>
-            <span>Show inactive</span>
+            <span>Inactive</span>
           </button>
 
           {hasActiveFilters && (
             <button
-              className="p-3 bg-white border border-solara-200 rounded-full text-text-tertiary hover:text-solara-600 hover:border-solara-300 transition-colors shadow-sm"
+              className="p-2 bg-paper border border-sand-200 text-text-tertiary hover:text-sand-600 hover:border-sand-300 transition-colors"
               onClick={() => {
                 setSearch('')
                 setCategory('')
               }}
               title="Clear filters"
             >
-              <Icons.reset />
+              <Icons.reset width={12} height={12} />
             </button>
           )}
         </div>
 
-        {/* Stats - بطاقات شمسية */}
-        <div className="grid grid-cols-4 gap-4 mb-8">
-          <StatCardSolara
-            label="TOTAL ITEMS"
+        {/* Stats - كثبان */}
+        <div className="grid grid-cols-4 gap-3 mb-6">
+          <StatCardNomad
+            label="TOTAL"
             value={stats.items}
-            sublabel="filtered results"
+            sublabel="filtered"
           />
-          <StatCardSolara
-            label="AVG COST"
+          <StatCardNomad
+            label="AVG"
             value={money(stats.avgNet)}
             sublabel="per unit"
           />
-          <StatCardSolara
-            label="MISSING"
+          <StatCardNomad
+            label="VOID"
             value={stats.missingCost}
-            sublabel="need pricing"
+            sublabel="missing"
             warning={stats.missingCost > 0}
           />
-          <StatCardSolara
-            label="WARNINGS"
+          <StatCardNomad
+            label="WARN"
             value={stats.warnUnits}
-            sublabel="unit issues"
+            sublabel="warnings"
             warning={stats.warnUnits > 0}
           />
         </div>
 
         {/* Main content */}
-        {loading && <LoadingStateSolara />}
+        {loading && <LoadingStateNomad />}
 
-        {err && <ErrorStateSolara message={err} />}
+        {err && <ErrorStateNomad message={err} />}
 
         {!loading && !err && (
           <>
             {filtered.length === 0 ? (
-              <EmptyStateSolara onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
+              <EmptyStateNomad onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <div className="bg-white border border-solara-200 rounded-2xl overflow-hidden shadow-sm">
+              <div className="bg-paper border border-sand-200 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-solara-100 bg-solara-50/50">
-                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">CODE</th>
-                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">NAME</th>
-                        <th className="px-4 py-4 text-left text-[9px] font-medium text-text-tertiary uppercase tracking-wider">CATEGORY</th>
-                        <th className="px-4 py-4 text-center text-[9px] font-medium text-text-tertiary uppercase tracking-wider">PACK</th>
-                        <th className="px-4 py-4 text-center text-[9px] font-medium text-text-tertiary uppercase tracking-wider">UNIT</th>
-                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">PACK PRICE</th>
-                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">UNIT PRICE</th>
-                        <th className="px-4 py-4 text-right text-[9px] font-medium text-text-tertiary uppercase tracking-wider">ACTIONS</th>
+                      <tr className="border-b border-sand-100 bg-sand-50/30">
+                        <th className="px-4 py-2 text-left text-[8px] font-medium text-text-tertiary uppercase tracking-wider">CODE</th>
+                        <th className="px-4 py-2 text-left text-[8px] font-medium text-text-tertiary uppercase tracking-wider">NAME</th>
+                        <th className="px-4 py-2 text-left text-[8px] font-medium text-text-tertiary uppercase tracking-wider">CATEGORY</th>
+                        <th className="px-4 py-2 text-center text-[8px] font-medium text-text-tertiary uppercase tracking-wider">PACK</th>
+                        <th className="px-4 py-2 text-center text-[8px] font-medium text-text-tertiary uppercase tracking-wider">UNIT</th>
+                        <th className="px-4 py-2 text-right text-[8px] font-medium text-text-tertiary uppercase tracking-wider">PACK</th>
+                        <th className="px-4 py-2 text-right text-[8px] font-medium text-text-tertiary uppercase tracking-wider">UNIT</th>
+                        <th className="px-4 py-2 text-right text-[8px] font-medium text-text-tertiary uppercase tracking-wider">ACT</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-solara-100">
+                    <tbody className="divide-y divide-sand-100">
                       <AnimatePresence>
                         {filtered.map((r) => (
-                          <IngredientRowSolara
+                          <IngredientRowNomad
                             key={r.id}
                             ingredient={r}
                             isDebug={isDebug}
@@ -1070,92 +1056,92 @@ export default function Ingredients() {
           </>
         )}
 
-        {/* Modal - Solara */}
+        {/* Modal - خيمة */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
-          <div className="space-y-6">
-            <div className="space-y-4">
-              <FormFieldSolara label="Name" required>
+          <div className="space-y-5">
+            <div className="space-y-3">
+              <FormFieldNomad label="Name" required>
                 <input
-                  className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
+                  className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
                 />
-              </FormFieldSolara>
+              </FormFieldNomad>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormFieldSolara label="Category">
+              <div className="grid grid-cols-2 gap-3">
+                <FormFieldNomad label="Category">
                   <input
-                    className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
+                    className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
                   />
-                </FormFieldSolara>
-                <FormFieldSolara label="Supplier">
+                </FormFieldNomad>
+                <FormFieldNomad label="Supplier">
                   <input
-                    className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
+                    className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
                   />
-                </FormFieldSolara>
+                </FormFieldNomad>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2">
               <div className="flex items-center gap-2">
-                <h3 className="text-xs font-medium text-text-secondary">Code system</h3>
-                <span className="text-[8px] font-mono text-text-tertiary bg-solara-50 px-2 py-0.5 rounded-full border border-solara-200">Optional</span>
+                <h3 className="text-[10px] font-medium tracking-wide text-text-secondary">Code system</h3>
+                <span className="text-[7px] font-mono text-text-tertiary bg-sand-50 px-1.5 py-0.5 border border-sand-200">OPT</span>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <FormFieldSolara label="Ingredient code" hint="ING-000123">
+              <div className="grid grid-cols-2 gap-3">
+                <FormFieldNomad label="Ingredient code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-solara-50 cursor-not-allowed"
+                      "w-full px-3 py-2 bg-paper border border-sand-200 text-xs font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors",
+                      !canEditCodes && "opacity-50 bg-sand-50 cursor-not-allowed"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
                     placeholder="ING-000123"
                     disabled={!canEditCodes}
                   />
-                </FormFieldSolara>
-                <FormFieldSolara label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
+                </FormFieldNomad>
+                <FormFieldNomad label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-solara-50 cursor-not-allowed"
+                      "w-full px-3 py-2 bg-paper border border-sand-200 text-xs font-mono text-text-primary placeholder:text-text-tertiary/50 focus:outline-none focus:border-sand-500 transition-colors",
+                      !canEditCodes && "opacity-50 bg-sand-50 cursor-not-allowed"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
                     placeholder={suggestedCodeCategory}
                     disabled={!canEditCodes}
                   />
-                </FormFieldSolara>
+                </FormFieldNomad>
               </div>
               {!canEditCodes && (
-                <p className="text-xs text-sun-600 flex items-center gap-1">
-                  <Icons.alert width={12} height={12} />
-                  Code fields are owner-only
+                <p className="text-[9px] text-rust-400 flex items-center gap-1">
+                  <Icons.alert width={10} height={10} />
+                  Owner-only
                 </p>
               )}
             </div>
 
-            <div className="space-y-4">
-              <h3 className="text-xs font-medium text-text-secondary">Pack & Cost</h3>
+            <div className="space-y-3">
+              <h3 className="text-[10px] font-medium tracking-wide text-text-secondary">Pack & Cost</h3>
 
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
                   <button
                     key={unit}
                     type="button"
                     onClick={() => setFPackUnit(unit)}
                     className={cls(
-                      "flex-1 px-4 py-2.5 text-xs font-mono font-medium rounded-full border transition-colors",
+                      "flex-1 px-2 py-1.5 text-[9px] font-mono border transition-colors",
                       fPackUnit === unit
-                        ? "bg-solara-500 text-white border-solara-500"
-                        : "bg-white text-text-secondary border-solara-200 hover:border-solara-300"
+                        ? "bg-sand-500 text-white border-sand-600"
+                        : "bg-paper text-text-secondary border-sand-200 hover:border-sand-300"
                     )}
                   >
                     {unit}
@@ -1163,91 +1149,91 @@ export default function Ingredients() {
                 ))}
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormFieldSolara label="Pack size" required>
+              <div className="grid grid-cols-2 gap-3">
+                <FormFieldNomad label="Pack size" required>
                   <div className="relative">
                     <input
-                      className="w-full px-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors pr-16"
+                      className="w-full px-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors pr-10"
                       type="number"
                       min={1}
                       step="1"
                       value={fPackSize}
                       onChange={(e) => setFPackSize(e.target.value)}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono text-text-tertiary">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono text-text-tertiary">
                       {fPackUnit}
                     </span>
                   </div>
-                </FormFieldSolara>
-                <FormFieldSolara label="Unit" required>
-                  <div className="px-4 py-3 bg-solara-50 border border-solara-200 rounded-xl text-sm text-text-primary font-mono">
+                </FormFieldNomad>
+                <FormFieldNomad label="Unit" required>
+                  <div className="px-3 py-2 bg-sand-50 border border-sand-200 text-xs text-text-primary font-mono">
                     {fPackUnit}
                   </div>
-                </FormFieldSolara>
+                </FormFieldNomad>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <FormFieldSolara label="Pack price" required>
+              <div className="grid grid-cols-2 gap-3">
+                <FormFieldNomad label="Pack price" required>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-xs">$</span>
                     <input
-                      className="w-full pl-8 pr-4 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors"
+                      className="w-full pl-7 pr-3 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
                       onChange={(e) => setFPackPrice(e.target.value)}
                     />
                   </div>
-                </FormFieldSolara>
-                <FormFieldSolara label="Unit price" hint={"per " + fPackUnit}>
+                </FormFieldNomad>
+                <FormFieldNomad label="Unit price" hint={"per " + fPackUnit}>
                   <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-tertiary">$</span>
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary text-xs">$</span>
                     <input
-                      className="w-full pl-8 pr-16 py-3 bg-white border border-solara-200 rounded-xl text-sm text-text-primary focus:outline-none focus:border-solara-500 focus:ring-2 focus:ring-solara-500/20 transition-colors font-mono"
+                      className="w-full pl-7 pr-10 py-2 bg-paper border border-sand-200 text-xs text-text-primary focus:outline-none focus:border-sand-500 transition-colors font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
-                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-xs font-mono text-text-tertiary">
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[8px] font-mono text-text-tertiary">
                       {"/" + fPackUnit}
                     </span>
                   </div>
-                </FormFieldSolara>
+                </FormFieldNomad>
               </div>
 
               {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
-                <div className="p-4 bg-solara-50 rounded-xl border border-solara-200">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-solara-600">Calculation preview:</span>
+                <div className="p-3 bg-sand-50 border border-sand-200">
+                  <div className="flex items-center justify-between text-[9px]">
+                    <span className="text-sand-600">Journey:</span>
                     <span className="font-mono text-text-secondary">
                       {"$" + parseFloat(fPackPrice) + " ÷ " + parseFloat(fPackSize) + " " + fPackUnit + " = $" + (parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4) + "/" + fPackUnit}
                     </span>
                   </div>
                   <button
-                    className="w-full mt-3 px-4 py-2 bg-white text-solara-600 rounded-full text-xs font-medium border border-solara-200 hover:bg-solara-50 transition-colors flex items-center justify-center gap-2"
+                    className="w-full mt-2 px-3 py-1.5 bg-paper text-sand-600 text-[9px] border border-sand-200 hover:bg-sand-50 transition-colors flex items-center justify-center gap-1"
                     onClick={smartRecalcNetCost}
                   >
-                    <Icons.bolt width={12} height={12} />
-                    Apply to unit price
+                    <Icons.bolt width={10} height={10} />
+                    Apply
                   </button>
                 </div>
               )}
             </div>
 
-            <div className="flex justify-end gap-3 pt-4 border-t border-solara-100">
+            <div className="flex justify-end gap-2 pt-3 border-t border-sand-100">
               <button
-                className="px-5 py-2.5 text-sm font-medium text-text-secondary hover:text-text-primary hover:bg-solara-50 rounded-full transition-colors"
+                className="px-4 py-2 text-[10px] text-text-secondary hover:text-text-primary hover:bg-sand-50 transition-colors"
                 onClick={() => setModalOpen(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-5 py-2.5 bg-solara-500 text-white text-sm font-medium rounded-full hover:bg-solara-600 transition-colors shadow-sm disabled:opacity-40"
+                className="px-4 py-2 bg-sand-500 text-white text-[10px] font-light tracking-wide hover:bg-sand-600 transition-colors disabled:opacity-40"
                 onClick={save}
                 disabled={saving}
               >
-                {saving ? 'Saving…' : editingId ? 'Update' : 'Create'}
+                {saving ? '…' : editingId ? 'Update' : 'Create'}
               </button>
             </div>
           </div>
