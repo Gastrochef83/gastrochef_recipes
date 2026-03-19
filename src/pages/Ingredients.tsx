@@ -24,7 +24,6 @@ type IngredientRow = {
   kitchen_id?: string
   created_at?: string
   updated_at?: string
-  notes?: string | null
   allergen_info?: string[] | null
   dietary_info?: string[] | null
   storage_instructions?: string | null
@@ -1176,7 +1175,6 @@ export default function Ingredients() {
   const [fPackPrice, setFPackPrice] = useState('0')
   const [fPackUnit, setFPackUnit] = useState('g')
   const [fNetUnitCost, setFNetUnitCost] = useState('0')
-  const [fNotes, setFNotes] = useState('')
   const [fAllergens, setFAllergens] = useState<string[]>([])
   const [fDietary, setFDietary] = useState<string[]>([])
   const [fStorage, setFStorage] = useState('')
@@ -1202,7 +1200,7 @@ export default function Ingredients() {
 
   const deferredSearch = useDeferredValue(search)
 
-  const FIELDS = 'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active,created_at,updated_at,notes,allergen_info,dietary_info,storage_instructions,minimum_stock,current_stock,stock_unit,image_url,barcode,organic_certified,local_sourced,seasonality'
+  const FIELDS = 'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active,created_at,updated_at,allergen_info,dietary_info,storage_instructions,minimum_stock,current_stock,stock_unit,image_url,barcode,organic_certified,local_sourced,seasonality'
 
   const PAGE_SIZE = 200
 
@@ -1357,7 +1355,6 @@ export default function Ingredients() {
     setFPackPrice('0')
     setFPackUnit('g')
     setFNetUnitCost('0')
-    setFNotes('')
     setFAllergens([])
     setFDietary([])
     setFStorage('')
@@ -1379,7 +1376,6 @@ export default function Ingredients() {
     setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
     setFPackUnit(r.pack_unit ?? 'g')
     setFNetUnitCost(String(Math.max(0, toNum(r.net_unit_cost, 0))))
-    setFNotes(r.notes ?? '')
     setFAllergens(r.allergen_info ?? [])
     setFDietary(r.dietary_info ?? [])
     setFStorage(r.storage_instructions ?? '')
@@ -1401,7 +1397,6 @@ export default function Ingredients() {
     setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
     setFPackUnit(r.pack_unit ?? 'g')
     setFNetUnitCost(String(Math.max(0, toNum(r.net_unit_cost, 0))))
-    setFNotes(r.notes ?? '')
     setFAllergens(r.allergen_info ?? [])
     setFDietary(r.dietary_info ?? [])
     setFStorage(r.storage_instructions ?? '')
@@ -1462,7 +1457,6 @@ export default function Ingredients() {
         pack_price: packPrice,
         pack_unit: unit,
         net_unit_cost: netFinal,
-        notes: fNotes.trim() || null,
         allergen_info: fAllergens.length ? fAllergens : null,
         dietary_info: fDietary.length ? fDietary : null,
         storage_instructions: fStorage.trim() || null,
@@ -2064,15 +2058,6 @@ export default function Ingredients() {
             {/* Additional Information */}
             <div className="space-y-4">
               <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Additional Information</h3>
-
-              <FormField label="Notes">
-                <textarea
-                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all min-h-[80px]"
-                  value={fNotes}
-                  onChange={(e) => setFNotes(e.target.value)}
-                  placeholder="Additional notes about this ingredient..."
-                />
-              </FormField>
 
               <FormField label="Storage Instructions">
                 <textarea
