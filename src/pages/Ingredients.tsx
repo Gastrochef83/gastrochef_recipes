@@ -63,51 +63,6 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== Organic Background Pattern ====================
-const OrganicPattern = () => (
-  <svg className="absolute inset-0 w-full h-full opacity-5" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-      <pattern id="organic-cells" x="0" y="0" width="60" height="60" patternUnits="userSpaceOnUse">
-        <circle cx="30" cy="30" r="8" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-emerald-600">
-          <animate attributeName="r" values="8;12;8" dur="8s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="15" cy="15" r="4" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-amber-600">
-          <animate attributeName="r" values="4;6;4" dur="6s" repeatCount="indefinite" />
-        </circle>
-        <circle cx="45" cy="45" r="6" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-teal-600">
-          <animate attributeName="r" values="6;9;6" dur="7s" repeatCount="indefinite" />
-        </circle>
-        <path d="M30 22 L38 38 L22 38 Z" fill="none" stroke="currentColor" strokeWidth="0.5" className="text-emerald-600">
-          <animate attributeName="opacity" values="0.3;0.6;0.3" dur="5s" repeatCount="indefinite" />
-        </path>
-      </pattern>
-    </defs>
-    <rect width="100%" height="100%" fill="url(#organic-cells)" />
-  </svg>
-)
-
-// ==================== Growing Line Animation ====================
-const GrowingLine = ({ className }: { className?: string }) => (
-  <svg className={className} viewBox="0 0 100 100" preserveAspectRatio="none">
-    <path
-      d="M0,50 Q25,30 50,50 T100,50"
-      stroke="currentColor"
-      strokeWidth="2"
-      fill="none"
-      className="text-emerald-600/30"
-      strokeDasharray="200"
-      strokeDashoffset="200"
-    >
-      <animate
-        attributeName="stroke-dashoffset"
-        values="200;0"
-        dur="3s"
-        repeatCount="indefinite"
-      />
-    </path>
-  </svg>
-)
-
 // ==================== Modal Component ====================
 function Modal({
   open,
@@ -131,64 +86,32 @@ function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-gradient-to-t from-emerald-950/90 via-teal-950/80 to-amber-950/90 backdrop-blur-md" onClick={onClose} />
+          <div className="absolute inset-0 bg-gray-500/10 backdrop-blur-sm" onClick={onClose} />
           <motion.div 
-            className="absolute left-1/2 top-1/2 w-[min(1000px,96vw)] -translate-x-1/2 -translate-y-1/2"
-            initial={{ scale: 0.9, opacity: 0, y: 50 }}
+            className="absolute left-1/2 top-1/2 w-[min(800px,90vw)] -translate-x-1/2 -translate-y-1/2"
+            initial={{ scale: 0.98, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: -50 }}
-            transition={{ type: "spring", damping: 20, stiffness: 200, mass: 1.5 }}
+            exit={{ scale: 0.98, opacity: 0, y: 10 }}
+            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            {/* Organic shape background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-emerald-100 via-teal-100 to-amber-100 dark:from-emerald-950 dark:via-teal-950 dark:to-amber-950 rounded-[3rem] transform rotate-1 scale-[1.02] blur-xl opacity-50"></div>
-            
-            {/* Main modal */}
-            <div className="relative bg-white/90 dark:bg-gray-900/90 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white/30 dark:border-emerald-800/30 overflow-hidden">
-              {/* Organic top decoration */}
-              <div className="absolute top-0 left-0 right-0 h-48">
-                <div className="absolute top-0 left-0 w-64 h-64 bg-emerald-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
-                <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/20 rounded-full blur-3xl translate-x-1/2 -translate-y-1/2"></div>
-                <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-teal-500/20 rounded-full blur-3xl -translate-x-1/2 -translate-y-1/2"></div>
+            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+                <h2 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h2>
+                <motion.button 
+                  className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                  onClick={onClose}
+                  type="button"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </motion.button>
               </div>
-              
-              {/* Growing line animation */}
-              <GrowingLine className="absolute top-0 left-0 w-full h-32 text-emerald-600/20" />
-              
-              <div className="relative z-10">
-                {/* Header */}
-                <div className="flex items-start justify-between gap-4 p-8 pb-4">
-                  <div>
-                    <div className="flex items-center gap-3 mb-3">
-                      <span className="relative flex h-4 w-4">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
-                      </span>
-                      <span className="text-xs font-mono font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-[0.3em]">
-                        {editingId ? 'EDIT · INGREDIENT' : 'NEW · INGREDIENT'}
-                      </span>
-                    </div>
-                    <h2 className="text-5xl font-light text-gray-900 dark:text-white">
-                      {title}
-                    </h2>
-                  </div>
-                  <motion.button 
-                    className="w-14 h-14 rounded-2xl bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm hover:bg-white dark:hover:bg-gray-700 flex items-center justify-center text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 border border-emerald-200 dark:border-emerald-800 shadow-lg"
-                    onClick={onClose}
-                    type="button"
-                    whileHover={{ scale: 1.1, rotate: 90 }}
-                    whileTap={{ scale: 0.9 }}
-                  >
-                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="18" y1="6" x2="6" y2="18" />
-                      <line x1="6" y1="6" x2="18" y2="18" />
-                    </svg>
-                  </motion.button>
-                </div>
-                
-                {/* Content */}
-                <div className="p-8 pt-2 max-h-[70vh] overflow-auto custom-scrollbar">
-                  {children}
-                </div>
+              <div className="p-6 max-h-[calc(90vh-8rem)] overflow-auto custom-scrollbar">
+                {children}
               </div>
             </div>
           </motion.div>
@@ -217,108 +140,81 @@ const IngredientTableRow = memo(function IngredientTableRow({
 
   return (
     <motion.tr 
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, x: -20 }}
-      whileHover={{ 
-        backgroundColor: 'rgba(16, 185, 129, 0.03)',
-        transition: { duration: 0.2 }
-      }}
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0, x: -10 }}
+      transition={{ duration: 0.15 }}
       className={cls(
-        'group relative transition-all duration-300',
-        !active && 'opacity-40 grayscale'
+        'group border-b border-gray-50 dark:border-gray-800/50 last:border-0 hover:bg-gray-50/50 dark:hover:bg-gray-800/30 transition-colors',
+        !active && 'opacity-40'
       )}
     >
-      {/* Organic connector line */}
-      <td className="absolute left-0 top-1/2 w-4 h-px bg-gradient-to-r from-emerald-500 to-teal-500 opacity-0 group-hover:opacity-100 transition-opacity"></td>
-      
-      <td className="px-6 py-5">
-        <div className="flex items-center gap-3">
-          <div className="w-2 h-2 rounded-full bg-gradient-to-r from-emerald-500 to-teal-500 group-hover:scale-150 transition-transform"></div>
-          <span className="font-mono text-sm font-light text-gray-700 dark:text-gray-300 bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-full border border-gray-200 dark:border-gray-700">
-            {r.code ? (
-              <span className="flex items-center gap-2">
-                <span className="w-1 h-1 rounded-full bg-emerald-500"></span>
-                {r.code}
-              </span>
-            ) : '—'}
+      <td className="px-4 py-3 text-xs font-mono text-gray-500 dark:text-gray-400">
+        {r.code || '—'}
+      </td>
+      <td className="px-4 py-3">
+        <div className="flex items-center gap-2">
+          <span className={cls(
+            "text-sm font-medium text-gray-900 dark:text-white",
+            !active && "line-through"
+          )}>
+            {r.name ?? '—'}
           </span>
-        </div>
-      </td>
-      <td className="px-6 py-5">
-        <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className="font-light text-2xl text-gray-900 dark:text-white tracking-tight">{r.name ?? '—'}</span>
-            {!active && (
-              <span className="px-4 py-1.5 text-xs font-mono bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 rounded-full border border-gray-300 dark:border-gray-600">
-                draft
-              </span>
-            )}
-            {flag.level === 'warn' && (
-              <span className="px-4 py-1.5 text-xs font-mono bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-full border border-amber-300 dark:border-amber-700 flex items-center gap-1">
-                <span>⚠</span>
-                attention
-              </span>
-            )}
-          </div>
-          {isDebug && (
-            <div className="text-xs font-mono text-gray-500 dark:text-gray-400 bg-gray-100 dark:bg-gray-800 px-3 py-1.5 rounded-full inline-flex items-center gap-2 w-fit">
-              <span className="w-1 h-1 rounded-full bg-gray-400"></span>
-              {r.id.slice(0, 8)}...
-            </div>
-          )}
           {flag.level === 'warn' && (
-            <div className="text-xs font-mono text-amber-600 dark:text-amber-400 mt-1">{flag.msg}</div>
+            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-500/20">
+              unit?
+            </span>
           )}
         </div>
+        {isDebug && (
+          <div className="text-[10px] font-mono text-gray-400 dark:text-gray-500 mt-0.5">
+            {r.id.slice(0, 6)}...
+          </div>
+        )}
+        {flag.level === 'warn' && flag.msg && (
+          <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">{flag.msg}</div>
+        )}
       </td>
-      <td className="px-6 py-5">
-        <span className="text-gray-600 dark:text-gray-400 font-light text-lg">{r.category ?? '—'}</span>
+      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+        {r.category ?? '—'}
       </td>
-      <td className="px-6 py-5 text-center">
-        <span className="font-mono font-light text-2xl text-gray-900 dark:text-white">{Math.max(1, toNum(r.pack_size, 1))}</span>
+      <td className="px-4 py-3 text-xs text-gray-900 dark:text-white font-mono text-center">
+        {Math.max(1, toNum(r.pack_size, 1))}
       </td>
-      <td className="px-6 py-5 text-center">
-        <span className="inline-flex px-5 py-2 bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-full text-sm font-mono font-light text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800">
+      <td className="px-4 py-3 text-center">
+        <span className="text-[10px] font-mono px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded">
           {unit}
         </span>
       </td>
-      <td className="px-6 py-5 text-center">
-        <span className="font-mono font-light text-2xl text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-teal-600 dark:from-emerald-400 dark:to-teal-400">
-          {money(toNum(r.pack_price, 0))}
-        </span>
+      <td className="px-4 py-3 text-xs font-mono text-gray-900 dark:text-white text-right">
+        {money(toNum(r.pack_price, 0))}
       </td>
-      <td className="px-6 py-5 text-center">
-        <div className="flex items-center justify-center gap-2">
-          <span className="font-mono font-light text-2xl text-gray-900 dark:text-white">{money(net)}</span>
-          {flag.level === 'warn' && (
-            <span className="text-amber-500 text-sm">⚠</span>
-          )}
-        </div>
+      <td className="px-4 py-3 text-xs font-mono text-gray-900 dark:text-white text-right">
+        {money(net)}
       </td>
-      <td className="px-6 py-5">
-        <div className="flex items-center justify-center gap-2">
+      <td className="px-4 py-3">
+        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <motion.button 
-            className="p-3 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-600 dark:text-gray-400 hover:text-emerald-600 dark:hover:text-emerald-400 border border-gray-200 dark:border-gray-700 hover:border-emerald-300 dark:hover:border-emerald-700 transition-all"
+            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
             type="button" 
             onClick={() => onEdit(r)}
-            whileHover={{ scale: 1.1, rotate: -5 }}
-            whileTap={{ scale: 0.9 }}
-            title="Edit ingredient"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Edit"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
             </svg>
           </motion.button>
           <motion.button 
-            className="p-3 rounded-2xl bg-gray-100/80 dark:bg-gray-800/80 backdrop-blur-sm text-gray-600 dark:text-gray-400 hover:text-rose-600 dark:hover:text-rose-400 border border-gray-200 dark:border-gray-700 hover:border-rose-300 dark:hover:border-rose-700 transition-all"
+            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
             type="button" 
             onClick={() => onHardDelete(r.id)}
-            whileHover={{ scale: 1.1, rotate: 5 }}
-            whileTap={{ scale: 0.9 }}
-            title="Delete ingredient"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            title="Delete"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6" />
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
@@ -329,77 +225,40 @@ const IngredientTableRow = memo(function IngredientTableRow({
   )
 })
 
-// ==================== Stats Card Component ====================
-const StatsCard = memo(function StatsCard({ 
+// ==================== Metric Card Component ====================
+const MetricCard = memo(function MetricCard({ 
   label, 
   value, 
-  sublabel, 
-  icon,
-  trend,
-  color = 'emerald'
+  sublabel,
+  trend 
 }: { 
   label: string
   value: string | number
   sublabel: string
-  icon: ReactNode
   trend?: { value: number; positive: boolean }
-  color?: 'emerald' | 'teal' | 'amber' | 'rose'
 }) {
-  const colorClasses = {
-    emerald: 'from-emerald-500 to-teal-500',
-    teal: 'from-teal-500 to-cyan-500',
-    amber: 'from-amber-500 to-orange-500',
-    rose: 'from-rose-500 to-pink-500'
-  }
-
   return (
-    <motion.div 
-      className="group relative"
-      whileHover={{ y: -2 }}
-      transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    >
-      {/* Organic shadow */}
-      <div className={`absolute inset-0 bg-gradient-to-br ${colorClasses[color]} opacity-0 group-hover:opacity-10 blur-2xl transition-opacity rounded-3xl`}></div>
-      
-      {/* Card */}
-      <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-3xl p-6 border border-gray-200/50 dark:border-gray-800/50 shadow-xl">
-        {/* Decorative cell */}
-        <div className="absolute top-4 right-4 w-20 h-20 opacity-10">
-          <svg viewBox="0 0 100 100" className="w-full h-full">
-            <circle cx="50" cy="50" r="20" fill="none" stroke="currentColor" strokeWidth="1" className="text-emerald-600">
-              <animate attributeName="r" values="20;25;20" dur="6s" repeatCount="indefinite" />
-            </circle>
-          </svg>
-        </div>
-        
-        <div className="relative z-10">
-          <div className="flex items-start justify-between">
-            <div>
-              <div className="text-xs font-mono font-light text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-2">
-                {label}
-              </div>
-              <div className="flex items-baseline gap-3">
-                <span className="text-4xl font-light text-gray-900 dark:text-white">{value}</span>
-                {trend && (
-                  <span className={cls(
-                    "px-2 py-1 text-xs font-mono rounded-full",
-                    trend.positive 
-                      ? "text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800" 
-                      : "text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-800"
-                  )}>
-                    {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-                  </span>
-                )}
-              </div>
-            </div>
-            <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${colorClasses[color]} bg-opacity-10 flex items-center justify-center text-white shadow-lg group-hover:scale-110 group-hover:rotate-3 transition-all`}>
-              {icon}
-            </div>
-          </div>
-          <div className="mt-3 text-sm font-mono font-light text-gray-500 dark:text-gray-400">{sublabel}</div>
-        </div>
+    <div className="space-y-1">
+      <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+        {label}
       </div>
-    </motion.div>
+      <div className="flex items-baseline gap-2">
+        <span className="text-xl font-medium text-gray-900 dark:text-white">
+          {value}
+        </span>
+        {trend && (
+          <span className={cls(
+            "text-[10px] font-medium",
+            trend.positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
+          )}>
+            {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
+          </span>
+        )}
+      </div>
+      <div className="text-[10px] text-gray-500 dark:text-gray-400">
+        {sublabel}
+      </div>
+    </div>
   )
 })
 
@@ -792,609 +651,364 @@ export default function Ingredients() {
     visible: {
       opacity: 1,
       transition: { 
-        staggerChildren: 0.08,
-        delayChildren: 0.1
+        staggerChildren: 0.03,
+        delayChildren: 0.05
       }
     }
   }
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 5 },
     visible: { 
       opacity: 1, 
       y: 0,
-      transition: { type: "spring", stiffness: 200, damping: 20 }
+      transition: { duration: 0.2, ease: [0.16, 1, 0.3, 1] }
     }
   }
 
   return (
     <motion.div 
-      className="min-h-screen bg-gradient-to-br from-emerald-50 via-teal-50 to-amber-50 dark:from-emerald-950 dark:via-teal-950 dark:to-amber-950"
+      className="min-h-screen bg-white dark:bg-gray-950"
       initial="hidden"
       animate="visible"
       variants={containerVariants}
     >
-      {/* Organic background pattern */}
-      <OrganicPattern />
-      
-      {/* Floating organic shapes */}
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute top-20 left-20 w-96 h-96 bg-emerald-500/5 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-amber-500/5 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-teal-500/5 rounded-full blur-3xl animate-pulse delay-500"></div>
-      </div>
-
-      <div className="relative z-10 max-w-7xl mx-auto p-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <motion.div variants={itemVariants} className="mb-12">
-          <div className="relative">
-            {/* Organic background */}
-            <div className="absolute inset-0 bg-gradient-to-r from-emerald-600/20 via-teal-600/20 to-amber-600/20 rounded-[3rem] blur-2xl"></div>
-            
-            {/* Main header */}
-            <div className="relative bg-white/60 dark:bg-gray-900/60 backdrop-blur-2xl rounded-[2.5rem] p-1 shadow-2xl border border-white/50 dark:border-emerald-900/50">
-              <div className="bg-gradient-to-br from-white to-emerald-50/50 dark:from-gray-900 dark:to-emerald-950/50 rounded-[2.3rem] p-8">
-                {/* Growing line decoration */}
-                <GrowingLine className="absolute top-0 right-0 w-64 h-64 text-emerald-600/20 rotate-180" />
-                
-                <div className="relative z-10 flex flex-wrap items-start justify-between gap-6">
-                  <div>
-                    <div className="flex items-center gap-4 mb-4">
-                      <div className="relative">
-                        <div className="w-16 h-16 rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center shadow-2xl">
-                          <svg className="w-8 h-8 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <path d="M12 2a15 15 0 0 0 0 20 15 15 0 0 0 0-20z" />
-                            <path d="M12 22a15 15 0 0 1 0-20" />
-                          </svg>
-                        </div>
-                        <div className="absolute -top-2 -right-2 w-4 h-4">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-4 w-4 bg-emerald-500"></span>
-                        </div>
-                      </div>
-                      <div>
-                        <h1 className="text-6xl font-light text-gray-900 dark:text-white tracking-tight">
-                          Ingredients
-                        </h1>
-                        <p className="text-lg font-mono font-light text-emerald-700 dark:text-emerald-400 mt-2">
-                          organic · living · database
-                        </p>
-                      </div>
-                    </div>
-                    
-                    {isDebug && (
-                      <div className="inline-flex items-center gap-3 px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl text-sm font-mono text-gray-600 dark:text-gray-400 border border-emerald-200 dark:border-emerald-800 mt-4">
-                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                        kitchen_id: {kitchenId?.slice(0, 8) ?? 'null'}...
-                      </div>
-                    )}
-                  </div>
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-8">
+          <div>
+            <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+              Ingredients
+            </h1>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+              {filtered.length} items · {stats.missingCost} missing cost
+            </p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors cursor-pointer">
+              <input 
+                type="checkbox" 
+                checked={showInactive} 
+                onChange={(e) => setShowInactive(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500/20 dark:border-gray-600"
+              />
+              <span className="text-xs text-gray-600 dark:text-gray-400">Show inactive</span>
+            </label>
 
-                  <div className="flex flex-wrap items-center gap-3">
-                    <label className="flex items-center gap-3 px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl text-gray-700 dark:text-gray-300 cursor-pointer hover:bg-white dark:hover:bg-gray-700 transition-all border border-emerald-200 dark:border-emerald-800">
-                      <input 
-                        type="checkbox" 
-                        checked={showInactive} 
-                        onChange={(e) => setShowInactive(e.target.checked)}
-                        className="w-5 h-5 rounded-lg border-emerald-300 text-emerald-600 focus:ring-emerald-500"
-                      />
-                      <span className="font-mono text-sm">show drafts</span>
-                    </label>
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
 
-                    <motion.button 
-                      className="px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl text-sm font-mono hover:bg-white dark:hover:bg-gray-700 transition-all border border-emerald-200 dark:border-emerald-800 disabled:opacity-50 flex items-center gap-2"
-                      type="button" 
-                      onClick={bulkRecalcNetCosts} 
-                      disabled={bulkWorking}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                        <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                      </svg>
-                      {bulkWorking ? '...' : 'recalc'}
-                    </motion.button>
+            <motion.button 
+              className="px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button" 
+              onClick={bulkRecalcNetCosts} 
+              disabled={bulkWorking}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {bulkWorking ? 'Recalculating...' : 'Recalc net'}
+            </motion.button>
 
-                    <motion.button 
-                      className="px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl text-sm font-mono hover:bg-white dark:hover:bg-gray-700 transition-all border border-emerald-200 dark:border-emerald-800 disabled:opacity-50"
-                      type="button" 
-                      onClick={() => bulkSetActive(true)} 
-                      disabled={bulkWorking}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      activate
-                    </motion.button>
+            <motion.button 
+              className="px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button" 
+              onClick={() => bulkSetActive(true)} 
+              disabled={bulkWorking}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Activate
+            </motion.button>
 
-                    <motion.button 
-                      className="px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl text-sm font-mono hover:bg-white dark:hover:bg-gray-700 transition-all border border-emerald-200 dark:border-emerald-800 disabled:opacity-50"
-                      type="button" 
-                      onClick={() => bulkSetActive(false)} 
-                      disabled={bulkWorking}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      draft
-                    </motion.button>
+            <motion.button 
+              className="px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button" 
+              onClick={() => bulkSetActive(false)} 
+              disabled={bulkWorking}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Deactivate
+            </motion.button>
 
-                    <motion.button 
-                      className="px-6 py-3 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-sm font-mono shadow-2xl hover:shadow-3xl transition-all flex items-center gap-2"
-                      type="button" 
-                      onClick={openCreate}
-                      whileHover={{ scale: 1.02, y: -1 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="12" y1="5" x2="12" y2="19" />
-                        <line x1="5" y1="12" x2="19" y2="12" />
-                      </svg>
-                      new
-                    </motion.button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
+
+            <motion.button 
+              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
+              type="button" 
+              onClick={openCreate}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              + New
+            </motion.button>
           </div>
         </motion.div>
 
+        {/* Quick Stats */}
+        <motion.div variants={itemVariants} className="grid grid-cols-4 gap-8 mb-8 pb-6 border-b border-gray-100 dark:border-gray-800">
+          <MetricCard
+            label="Items"
+            value={stats.items}
+            sublabel="filtered results"
+          />
+          <MetricCard
+            label="Average net"
+            value={money(stats.avgNet)}
+            sublabel="per unit"
+          />
+          <MetricCard
+            label="Missing cost"
+            value={stats.missingCost}
+            sublabel="items"
+            trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
+          />
+          <MetricCard
+            label="Warnings"
+            value={stats.warnUnits}
+            sublabel="unit mismatches"
+            trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
+          />
+        </motion.div>
+
         {/* Filters */}
-        <motion.div variants={itemVariants} className="mb-8">
-          <div className="relative group">
-            <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-3xl opacity-0 group-hover:opacity-30 blur transition duration-500"></div>
-            
-            <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-6 border border-white/50 dark:border-emerald-900/50 shadow-xl">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Search */}
-                <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
-                    search
-                  </label>
-                  <div className="relative">
-                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-emerald-600">⚲</span>
-                    <input
-                      className="w-full pl-11 pr-12 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
-                      value={search}
-                      onChange={(e) => setSearch(e.target.value)}
-                      placeholder="type to filter..."
-                    />
-                    {search && (
-                      <motion.button 
-                        type="button" 
-                        className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 bg-white dark:bg-gray-700 rounded-full w-6 h-6 flex items-center justify-center border border-emerald-200 dark:border-emerald-800"
-                        onClick={() => setSearch('')}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        ×
-                      </motion.button>
-                    )}
-                  </div>
-                </div>
-
-                {/* Category Filter */}
-                <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
-                    category
-                  </label>
-                  <div className="relative">
-                    <select 
-                      className="w-full px-4 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all appearance-none font-mono"
-                      value={category} 
-                      onChange={(e) => setCategory(e.target.value)}
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                        backgroundPosition: 'right 1rem center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
-                        paddingRight: '3rem'
-                      }}
-                    >
-                      <option value="">all categories</option>
-                      {categories.map((c) => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-
-                {/* Sort */}
-                <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-3">
-                    sort by
-                  </label>
-                  <div className="relative">
-                    <select 
-                      className="w-full px-4 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all appearance-none font-mono"
-                      value={sortBy} 
-                      onChange={(e) => setSortBy(e.target.value as any)}
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                        backgroundPosition: 'right 1rem center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
-                        paddingRight: '3rem'
-                      }}
-                    >
-                      <option value="name">name (a → z)</option>
-                      <option value="cost">net cost (high → low)</option>
-                      <option value="pack_price">pack price (high → low)</option>
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Active filters */}
-              {(search || category) && (
-                <motion.div 
-                  initial={{ opacity: 0, y: -10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="mt-4 pt-4 border-t border-emerald-200 dark:border-emerald-800"
+        <motion.div variants={itemVariants} className="mb-6 flex items-center gap-4">
+          {/* Search */}
+          <div className="flex-1">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="11" cy="11" r="8" />
+                  <line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </span>
+              <input
+                className="w-full pl-9 pr-8 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ingredients..."
+              />
+              {search && (
+                <button 
+                  type="button" 
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  onClick={() => setSearch('')}
                 >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span className="text-xs font-mono font-light text-gray-500 dark:text-gray-400">active:</span>
-                    {search && (
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-sm font-mono rounded-full border border-emerald-300 dark:border-emerald-700">
-                        <span>⚲</span>
-                        {search}
-                        <button onClick={() => setSearch('')} className="ml-1 hover:text-emerald-900 dark:hover:text-emerald-300">×</button>
-                      </span>
-                    )}
-                    {category && (
-                      <span className="inline-flex items-center gap-2 px-4 py-2 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-400 text-sm font-mono rounded-full border border-emerald-300 dark:border-emerald-700">
-                        <span>📁</span>
-                        {category}
-                        <button onClick={() => setCategory('')} className="ml-1 hover:text-emerald-900 dark:hover:text-emerald-300">×</button>
-                      </span>
-                    )}
-                    {(search || category) && (
-                      <motion.button 
-                        onClick={() => { setSearch(''); setCategory(''); }}
-                        className="px-4 py-2 text-sm font-mono text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white underline underline-offset-4"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        clear all
-                      </motion.button>
-                    )}
-                  </div>
-                </motion.div>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
               )}
             </div>
           </div>
+
+          {/* Category Filter */}
+          <select 
+            className="px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+            value={category} 
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          {/* Sort */}
+          <select 
+            className="px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+            value={sortBy} 
+            onChange={(e) => setSortBy(e.target.value as any)}
+          >
+            <option value="name">Name</option>
+            <option value="cost">Net cost (high to low)</option>
+            <option value="pack_price">Pack price (high to low)</option>
+          </select>
         </motion.div>
 
         {/* Loading/Error */}
         {loading && (
-          <motion.div variants={itemVariants} className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+          <motion.div variants={itemVariants} className="space-y-4">
+            <div className="grid grid-cols-4 gap-8">
               {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-6 border border-white/50 dark:border-emerald-900/50">
-                  <Skeleton className="h-4 w-20 mb-3 bg-emerald-200/50" />
-                  <Skeleton className="h-10 w-32 mb-2 bg-emerald-200/50" />
-                  <Skeleton className="h-4 w-40 bg-emerald-200/50" />
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-5 w-24" />
+                  <Skeleton className="h-3 w-20" />
                 </div>
               ))}
             </div>
-            <div className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl p-6 border border-white/50 dark:border-emerald-900/50">
-              <Skeleton className="h-6 w-48 mb-6 bg-emerald-200/50" />
-              <div className="space-y-4">
-                {Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-6">
-                    <Skeleton className="h-5 w-24 bg-emerald-200/50" />
-                    <Skeleton className="h-5 flex-1 bg-emerald-200/50" />
-                    <Skeleton className="h-5 w-32 bg-emerald-200/50" />
-                    <Skeleton className="h-5 w-28 bg-emerald-200/50" />
-                  </div>
-                ))}
-              </div>
+            <div className="border border-gray-100 dark:border-gray-800 rounded-lg divide-y divide-gray-100 dark:divide-gray-800">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="p-3 flex items-center gap-4">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-3 w-32 flex-1" />
+                  <Skeleton className="h-3 w-20" />
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
             </div>
           </motion.div>
         )}
 
         {err && (
-          <motion.div variants={itemVariants} className="bg-rose-50/80 dark:bg-rose-950/30 backdrop-blur-xl border border-rose-200 dark:border-rose-800 rounded-2xl p-8">
-            <div className="flex items-center gap-4 text-rose-700 dark:text-rose-400">
-              <div className="w-14 h-14 rounded-2xl bg-rose-100 dark:bg-rose-900/40 flex items-center justify-center text-2xl">
-                ⚠
-              </div>
-              <div>
-                <h3 className="text-lg font-mono font-light mb-1">error loading ingredients</h3>
-                <p className="text-sm font-mono font-light">{err}</p>
-              </div>
-            </div>
+          <motion.div variants={itemVariants} className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+            <p className="text-xs text-red-600 dark:text-red-400">{err}</p>
           </motion.div>
         )}
 
-        {/* Body */}
+        {/* Table */}
         {!loading && !err && (
-          <>
-            {/* KPIs */}
-            <motion.div variants={itemVariants} className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-              <StatsCard
-                label="items"
-                value={stats.items}
-                sublabel="filtered results"
-                color="emerald"
-                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
-              />
-              <StatsCard
-                label="avg net"
-                value={money(stats.avgNet)}
-                sublabel="average unit cost"
-                color="teal"
-                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="6" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-              />
-              <StatsCard
-                label="missing"
-                value={stats.missingCost}
-                sublabel="cost = 0"
-                color="amber"
-                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-                trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
-              />
-              <StatsCard
-                label="warnings"
-                value={stats.warnUnits}
-                sublabel="unit mismatches"
-                color="rose"
-                icon={<svg className="w-7 h-7" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>}
-                trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
-              />
-            </motion.div>
-
-            {/* Table */}
-            <motion.div variants={itemVariants} className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-600 via-teal-600 to-amber-600 rounded-3xl opacity-0 group-hover:opacity-20 blur-xl transition duration-500"></div>
-              
-              <div className="relative bg-white/80 dark:bg-gray-900/80 backdrop-blur-xl rounded-2xl border border-white/50 dark:border-emerald-900/50 shadow-2xl overflow-hidden">
-                <div className="p-6 border-b border-emerald-200 dark:border-emerald-800 flex items-center justify-between bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/30">
-                  <div>
-                    <div className="flex items-center gap-3 mb-1">
-                      <h2 className="text-sm font-mono font-light text-gray-900 dark:text-white uppercase tracking-wider">
-                        ingredients · living list
-                      </h2>
-                      <span className="px-3 py-1 bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 text-xs font-mono rounded-full border border-emerald-300 dark:border-emerald-700">
-                        {filtered.length} items
-                      </span>
-                    </div>
-                    <p className="text-sm font-mono font-light text-gray-600 dark:text-gray-400">click to edit · validate costs</p>
-                  </div>
+          <motion.div variants={itemVariants}>
+            {filtered.length === 0 ? (
+              <div className="py-12 text-center">
+                <div className="text-4xl mb-3 opacity-20">🥗</div>
+                <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
+                  {rows.length === 0 ? 'No ingredients' : 'No results'}
+                </h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400">
+                  {rows.length === 0 
+                    ? 'Get started by adding your first ingredient'
+                    : 'Try adjusting your filters'}
+                </p>
+                {rows.length === 0 && (
                   <motion.button 
-                    className="px-5 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-xl text-sm font-mono text-gray-700 dark:text-gray-300 hover:text-emerald-600 dark:hover:text-emerald-400 border border-emerald-200 dark:border-emerald-800 hover:border-emerald-400 transition-all flex items-center gap-2"
-                    onClick={load}
+                    className="mt-4 px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors"
+                    onClick={openCreate}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
-                    </svg>
-                    refresh
+                    + Add ingredient
                   </motion.button>
-                </div>
-
-                {filtered.length === 0 ? (
-                  <div className="p-16 text-center">
-                    <motion.div 
-                      initial={{ scale: 0 }}
-                      animate={{ scale: 1 }}
-                      transition={{ type: "spring", stiffness: 200, damping: 20 }}
-                      className="w-32 h-32 mx-auto mb-8 bg-gradient-to-br from-emerald-100 to-teal-100 dark:from-emerald-950/50 dark:to-teal-950/50 rounded-[2rem] flex items-center justify-center text-6xl border-2 border-emerald-300 dark:border-emerald-700"
-                    >
-                      🌱
-                    </motion.div>
-                    <h3 className="text-3xl font-light text-gray-900 dark:text-white mb-3 tracking-tight">
-                      {rows.length === 0
-                        ? 'no ingredients yet'
-                        : normalized.length === 0
-                          ? 'no active ingredients'
-                          : 'no ingredients found'}
-                    </h3>
-                    <p className="text-lg font-mono font-light text-gray-500 dark:text-gray-400 max-w-lg mx-auto mb-8">
-                      {rows.length === 0
-                        ? 'plant the first seed in your kitchen database'
-                        : normalized.length === 0
-                          ? 'all ingredients are in draft · toggle "show drafts" to see them'
-                          : 'try different filters or search terms'}
-                    </p>
-                    <div className="flex flex-wrap items-center justify-center gap-4">
-                      {rows.length === 0 ? (
-                        <motion.button 
-                          className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-lg font-mono font-light shadow-2xl hover:shadow-3xl transition-all flex items-center gap-3"
-                          onClick={openCreate}
-                          whileHover={{ scale: 1.02, y: -1 }}
-                          whileTap={{ scale: 0.98 }}
-                        >
-                          <svg className="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                            <line x1="12" y1="5" x2="12" y2="19" />
-                            <line x1="5" y1="12" x2="19" y2="12" />
-                          </svg>
-                          plant ingredient
-                        </motion.button>
-                      ) : normalized.length === 0 ? (
-                        <>
-                          <motion.button 
-                            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-lg font-mono font-light shadow-2xl hover:shadow-3xl transition-all"
-                            onClick={() => setShowInactive(true)}
-                            whileHover={{ scale: 1.02, y: -1 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            show drafts
-                          </motion.button>
-                          <motion.button 
-                            className="px-8 py-4 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl text-lg font-mono font-light hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all"
-                            onClick={openCreate}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            + new
-                          </motion.button>
-                        </>
-                      ) : (
-                        <>
-                          <motion.button 
-                            className="px-8 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-2xl text-lg font-mono font-light shadow-2xl hover:shadow-3xl transition-all"
-                            onClick={() => { setSearch(''); setCategory(''); }}
-                            whileHover={{ scale: 1.02, y: -1 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            clear filters
-                          </motion.button>
-                          <motion.button 
-                            className="px-8 py-4 border-2 border-emerald-300 dark:border-emerald-700 rounded-2xl text-lg font-mono font-light hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all"
-                            onClick={openCreate}
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                          >
-                            + new
-                          </motion.button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[1200px]">
-                      <thead>
-                        <tr className="bg-emerald-50/50 dark:bg-emerald-950/30 border-b border-emerald-200 dark:border-emerald-800">
-                          <th className="px-6 py-5 text-left text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">code</th>
-                          <th className="px-6 py-5 text-left text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">name</th>
-                          <th className="px-6 py-5 text-left text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">category</th>
-                          <th className="px-6 py-5 text-center text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">pack</th>
-                          <th className="px-6 py-5 text-center text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">unit</th>
-                          <th className="px-6 py-5 text-center text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">pack price</th>
-                          <th className="px-6 py-5 text-center text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">net cost</th>
-                          <th className="px-6 py-5 text-center text-xs font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">actions</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-emerald-200 dark:divide-emerald-800">
-                        <AnimatePresence>
-                          {filtered.map((r) => (
-                            <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
-                          ))}
-                        </AnimatePresence>
-                      </tbody>
-                    </table>
-                  </div>
                 )}
               </div>
-            </motion.div>
-          </>
+            ) : (
+              <div className="border border-gray-100 dark:border-gray-800 rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead>
+                    <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
+                      <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
+                      <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                      <th className="px-4 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack</th>
+                      <th className="px-4 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Cost</th>
+                      <th className="px-4 py-2 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+                    <AnimatePresence>
+                      {filtered.map((r) => (
+                        <IngredientTableRow key={r.id} r={r} isDebug={isDebug} onEdit={openEdit} onHardDelete={hardDelete} />
+                      ))}
+                    </AnimatePresence>
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </motion.div>
         )}
 
         {/* Modal */}
-        <Modal open={modalOpen} title={editingId ? 'Edit Ingredient' : 'New Ingredient'} onClose={() => setModalOpen(false)}>
-          <div className="space-y-8">
-            {/* IDENTIFICATION */}
+        <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
+          <div className="space-y-5">
+            {/* Basic Info */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-emerald-500 to-teal-500 rounded-full"></div>
-                <h3 className="text-lg font-mono font-light text-gray-900 dark:text-white uppercase tracking-wider">
-                  identification
-                </h3>
+              <div>
+                <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                  value={fName}
+                  onChange={(e) => setFName(e.target.value)}
+                  placeholder="e.g. Extra Virgin Olive Oil"
+                />
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    code
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Category
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    value={fCategory}
+                    onChange={(e) => setFCategory(e.target.value)}
+                    placeholder="e.g. Oils"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Supplier
+                  </label>
+                  <input
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    value={fSupplier}
+                    onChange={(e) => setFSupplier(e.target.value)}
+                    placeholder="e.g. Sysco"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Code Section */}
+            <div className="space-y-4">
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Code (optional)</span>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Code
                   </label>
                   <input
                     className={cls(
-                      "w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono",
-                      !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900"
+                      "w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors",
+                      !canEditCodes && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
                     placeholder="ING-000123"
                     disabled={!canEditCodes}
                   />
-                  <p className="mt-2 text-sm font-mono font-light text-gray-500 dark:text-gray-400">leave empty to auto-generate · must start with ING-</p>
-                  {!canEditCodes && (
-                    <p className="mt-2 text-sm font-mono text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/30 px-4 py-2 rounded-xl border border-amber-300 dark:border-amber-700">
-                      ⚠ code fields are owner-only
-                    </p>
-                  )}
                 </div>
-
                 <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    code category
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Category code
                   </label>
                   <input
                     className={cls(
-                      "w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono",
-                      !canEditCodes && "opacity-60 cursor-not-allowed bg-gray-100 dark:bg-gray-900"
+                      "w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors",
+                      !canEditCodes && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
                     placeholder={`e.g. ${suggestedCodeCategory}`}
                     disabled={!canEditCodes}
                   />
-                  <p className="mt-2 text-sm font-mono font-light text-gray-500 dark:text-gray-400">optional · max 6 chars · defaults to category</p>
-                </div>
-
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    name <span className="text-rose-500">*</span>
-                  </label>
-                  <input
-                    className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
-                    value={fName}
-                    onChange={(e) => setFName(e.target.value)}
-                    placeholder="e.g. extra virgin olive oil"
-                  />
                 </div>
               </div>
             </div>
 
-            {/* CLASSIFICATION */}
+            {/* Pack & Cost */}
             <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-teal-500 to-amber-500 rounded-full"></div>
-                <h3 className="text-lg font-mono font-light text-gray-900 dark:text-white uppercase tracking-wider">
-                  classification
-                </h3>
+              <div className="flex items-center gap-2">
+                <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
+                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Pack & Cost</span>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    category
-                  </label>
-                  <input
-                    className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
-                    value={fCategory}
-                    onChange={(e) => setFCategory(e.target.value)}
-                    placeholder="e.g. oils & fats"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    supplier
-                  </label>
-                  <input
-                    className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
-                    value={fSupplier}
-                    onChange={(e) => setFSupplier(e.target.value)}
-                    placeholder="e.g. sysco"
-                  />
-                </div>
-              </div>
-            </div>
 
-            {/* PACK */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-amber-500 to-orange-500 rounded-full"></div>
-                <h3 className="text-lg font-mono font-light text-gray-900 dark:text-white uppercase tracking-wider">
-                  pack
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    pack size <span className="text-rose-500">*</span>
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Pack size <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     type="number"
                     min={1}
                     step="1"
@@ -1403,48 +1017,30 @@ export default function Ingredients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    unit <span className="text-rose-500">*</span>
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Unit <span className="text-red-500">*</span>
                   </label>
-                  <div className="relative">
-                    <select
-                      className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all appearance-none font-mono"
-                      value={fPackUnit}
-                      onChange={(e) => setFPackUnit(e.target.value)}
-                      style={{
-                        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2310b981'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                        backgroundPosition: 'right 1rem center',
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '1.5em 1.5em',
-                        paddingRight: '3rem'
-                      }}
-                    >
-                      <option value="g">g (gram)</option>
-                      <option value="kg">kg (kilogram)</option>
-                      <option value="ml">ml (milliliter)</option>
-                      <option value="l">L (liter)</option>
-                      <option value="pcs">pcs (pieces)</option>
-                    </select>
-                  </div>
+                  <select
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    value={fPackUnit}
+                    onChange={(e) => setFPackUnit(e.target.value)}
+                  >
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="l">L</option>
+                    <option value="pcs">pcs</option>
+                  </select>
                 </div>
               </div>
-            </div>
 
-            {/* COST */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-orange-500 to-rose-500 rounded-full"></div>
-                <h3 className="text-lg font-mono font-light text-gray-900 dark:text-white uppercase tracking-wider">
-                  cost
-                </h3>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    pack price <span className="text-rose-500">*</span>
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Pack price <span className="text-red-500">*</span>
                   </label>
                   <input
-                    className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     type="number"
                     step="0.01"
                     value={fPackPrice}
@@ -1452,82 +1048,48 @@ export default function Ingredients() {
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-mono font-light text-gray-600 dark:text-gray-400 uppercase tracking-wider mb-2">
-                    net unit cost
+                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
+                    Net unit cost
                   </label>
-                  <input
-                    className="w-full px-5 py-4 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm border-2 border-emerald-200 dark:border-emerald-800 rounded-xl text-gray-900 dark:text-white focus:border-emerald-500 focus:ring-4 focus:ring-emerald-200 dark:focus:ring-emerald-900 transition-all font-mono"
-                    type="number"
-                    step="0.000001"
-                    value={fNetUnitCost}
-                    onChange={(e) => setFNetUnitCost(e.target.value)}
-                  />
-                  <p className="mt-2 text-sm font-mono font-light text-gray-500 dark:text-gray-400">if 0 → auto-calculated from pack</p>
+                  <div className="flex gap-2">
+                    <input
+                      className="flex-1 px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                      type="number"
+                      step="0.000001"
+                      value={fNetUnitCost}
+                      onChange={(e) => setFNetUnitCost(e.target.value)}
+                    />
+                    <motion.button
+                      className="px-2 py-2 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors whitespace-nowrap"
+                      onClick={smartRecalcNetCost}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                    >
+                      Recalc
+                    </motion.button>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* Smart Helpers */}
-            <motion.div 
-              className="relative group"
-              whileHover={{ scale: 1.01 }}
-              transition={{ type: "spring", stiffness: 300, damping: 20 }}
-            >
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-600 to-teal-600 rounded-2xl opacity-0 group-hover:opacity-30 blur transition duration-500"></div>
-              <div className="relative bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/30 dark:to-teal-950/30 rounded-xl p-6 border-2 border-emerald-300 dark:border-emerald-700">
-                <div className="flex flex-wrap items-center gap-4">
-                  <span className="text-sm font-mono font-light text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">⚡ smart helpers</span>
-                  <motion.button
-                    className="px-6 py-3 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm text-emerald-700 dark:text-emerald-400 rounded-xl text-sm font-mono border-2 border-emerald-300 dark:border-emerald-700 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/50 transition-all shadow-lg flex items-center gap-2"
-                    onClick={smartRecalcNetCost}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M13 10V3L4 14h7v7l9-11h-7z" />
-                    </svg>
-                    recalc net cost
-                  </motion.button>
-                  <span className="text-sm font-mono text-emerald-600 dark:text-emerald-400 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm px-4 py-2 rounded-xl border-2 border-emerald-300 dark:border-emerald-700">
-                    net = pack_price ÷ pack_size
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-
             {/* Actions */}
-            <div className="flex justify-end gap-4 pt-8 border-t-2 border-emerald-200 dark:border-emerald-800">
+            <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
               <motion.button
-                className="px-8 py-4 border-2 border-emerald-300 dark:border-emerald-700 rounded-xl text-lg font-mono font-light hover:bg-white/50 dark:hover:bg-gray-800/50 transition-all"
+                className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                 onClick={() => setModalOpen(false)}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                cancel
+                Cancel
               </motion.button>
               <motion.button
-                className="px-10 py-4 bg-gradient-to-r from-emerald-600 to-teal-600 text-white rounded-xl text-lg font-mono font-light shadow-2xl hover:shadow-3xl transition-all disabled:opacity-50 flex items-center gap-2"
+                className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md transition-colors shadow-sm"
                 onClick={save}
                 disabled={saving}
-                whileHover={{ scale: 1.02, y: -1 }}
+                whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
-                {saving ? (
-                  <>
-                    <svg className="animate-spin w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="8" />
-                    </svg>
-                    saving...
-                  </>
-                ) : (
-                  <>
-                    <svg className="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    save ingredient
-                  </>
-                )}
+                {saving ? 'Saving...' : 'Save'}
               </motion.button>
             </div>
           </div>
@@ -1538,32 +1100,24 @@ export default function Ingredients() {
 
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 8px;
-          height: 8px;
+          width: 4px;
+          height: 4px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
           background: transparent;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #10b981;
+          background: #e5e7eb;
           border-radius: 9999px;
-          opacity: 0.5;
         }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: #059669;
+          background: #374151;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #059669;
+          background: #d1d5db;
         }
         .dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: #10b981;
-        }
-        @keyframes float {
-          0%, 100% { transform: translateY(0px); }
-          50% { transform: translateY(-20px); }
-        }
-        .animate-float {
-          animation: float 6s ease-in-out infinite;
+          background: #4b5563;
         }
       `}</style>
     </motion.div>
