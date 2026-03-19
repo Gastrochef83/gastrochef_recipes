@@ -86,31 +86,31 @@ function Modal({
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          <div className="absolute inset-0 bg-gray-500/10 backdrop-blur-sm" onClick={onClose} />
+          <div className="absolute inset-0 bg-black/5 backdrop-blur-[2px]" onClick={onClose} />
           <motion.div 
-            className="absolute left-1/2 top-1/2 w-[min(800px,90vw)] -translate-x-1/2 -translate-y-1/2"
-            initial={{ scale: 0.98, opacity: 0, y: 10 }}
+            className="absolute left-1/2 top-1/2 w-[min(480px,96vw)] -translate-x-1/2 -translate-y-1/2"
+            initial={{ scale: 0.98, opacity: 0, y: 5 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.98, opacity: 0, y: 10 }}
+            exit={{ scale: 0.98, opacity: 0, y: 5 }}
             transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-2xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden">
-              <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 dark:border-gray-800">
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200/50 dark:border-gray-800/50 overflow-hidden">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800">
                 <h2 className="text-sm font-medium text-gray-900 dark:text-white">{title}</h2>
                 <motion.button 
-                  className="w-7 h-7 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+                  className="w-6 h-6 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 flex items-center justify-center text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
                   onClick={onClose}
                   type="button"
                   whileHover={{ scale: 1.05 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </motion.button>
               </div>
-              <div className="p-6 max-h-[calc(90vh-8rem)] overflow-auto custom-scrollbar">
+              <div className="p-4 max-h-[calc(90vh-8rem)] overflow-auto custom-scrollbar">
                 {children}
               </div>
             </div>
@@ -120,6 +120,48 @@ function Modal({
     </AnimatePresence>
   )
 }
+
+// ==================== Form Section Component ====================
+const FormSection = ({ title, children }: { title?: string; children: ReactNode }) => (
+  <div className="space-y-3">
+    {title && (
+      <div className="flex items-center gap-2">
+        <span className="text-[10px] font-medium text-gray-400 dark:text-gray-500 uppercase tracking-wider">{title}</span>
+        <div className="flex-1 h-px bg-gray-100 dark:bg-gray-800"></div>
+      </div>
+    )}
+    <div className="space-y-3">
+      {children}
+    </div>
+  </div>
+)
+
+// ==================== Form Field Component ====================
+const FormField = ({ 
+  label, 
+  required, 
+  children,
+  hint,
+  error
+}: { 
+  label: string
+  required?: boolean
+  children: ReactNode
+  hint?: string
+  error?: string
+}) => (
+  <div className="space-y-1.5">
+    <div className="flex items-center justify-between">
+      <label className="text-xs font-medium text-gray-700 dark:text-gray-300">
+        {label}
+        {required && <span className="text-red-500 ml-1">*</span>}
+      </label>
+      {hint && <span className="text-[10px] text-gray-400 dark:text-gray-500">{hint}</span>}
+    </div>
+    {children}
+    {error && <p className="text-[10px] text-red-500 dark:text-red-400">{error}</p>}
+  </div>
+)
 
 // ==================== Table Row Component ====================
 const IngredientTableRow = memo(function IngredientTableRow({
@@ -149,72 +191,69 @@ const IngredientTableRow = memo(function IngredientTableRow({
         !active && 'opacity-40'
       )}
     >
-      <td className="px-4 py-3 text-xs font-mono text-gray-500 dark:text-gray-400">
+      <td className="px-3 py-2.5 text-xs font-mono text-gray-500 dark:text-gray-400">
         {r.code || '—'}
       </td>
-      <td className="px-4 py-3">
+      <td className="px-3 py-2.5">
         <div className="flex items-center gap-2">
           <span className={cls(
-            "text-sm font-medium text-gray-900 dark:text-white",
+            "text-xs font-medium text-gray-900 dark:text-white",
             !active && "line-through"
           )}>
             {r.name ?? '—'}
           </span>
           {flag.level === 'warn' && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-500/20">
+            <span className="inline-flex items-center px-1 rounded text-[9px] font-medium bg-amber-50 text-amber-700 dark:bg-amber-500/10 dark:text-amber-400 border border-amber-200/50 dark:border-amber-500/20">
               unit?
             </span>
           )}
         </div>
         {isDebug && (
-          <div className="text-[10px] font-mono text-gray-400 dark:text-gray-500 mt-0.5">
+          <div className="text-[9px] font-mono text-gray-400 dark:text-gray-500 mt-0.5">
             {r.id.slice(0, 6)}...
           </div>
         )}
-        {flag.level === 'warn' && flag.msg && (
-          <div className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">{flag.msg}</div>
-        )}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-600 dark:text-gray-400">
+      <td className="px-3 py-2.5 text-xs text-gray-600 dark:text-gray-400">
         {r.category ?? '—'}
       </td>
-      <td className="px-4 py-3 text-xs text-gray-900 dark:text-white font-mono text-center">
+      <td className="px-3 py-2.5 text-xs text-gray-900 dark:text-white font-mono text-center">
         {Math.max(1, toNum(r.pack_size, 1))}
       </td>
-      <td className="px-4 py-3 text-center">
-        <span className="text-[10px] font-mono px-2 py-1 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded">
+      <td className="px-3 py-2.5 text-center">
+        <span className="text-[9px] font-mono px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 rounded">
           {unit}
         </span>
       </td>
-      <td className="px-4 py-3 text-xs font-mono text-gray-900 dark:text-white text-right">
+      <td className="px-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white text-right">
         {money(toNum(r.pack_price, 0))}
       </td>
-      <td className="px-4 py-3 text-xs font-mono text-gray-900 dark:text-white text-right">
+      <td className="px-3 py-2.5 text-xs font-mono text-gray-900 dark:text-white text-right">
         {money(net)}
       </td>
-      <td className="px-4 py-3">
-        <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+      <td className="px-3 py-2.5">
+        <div className="flex items-center justify-end gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
           <motion.button 
-            className="p-1.5 rounded-md hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
+            className="p-1 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-400 hover:text-gray-600 dark:text-gray-500 dark:hover:text-gray-300 transition-colors"
             type="button" 
             onClick={() => onEdit(r)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             title="Edit"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
             </svg>
           </motion.button>
           <motion.button 
-            className="p-1.5 rounded-md hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
+            className="p-1 rounded hover:bg-red-50 dark:hover:bg-red-500/10 text-gray-400 hover:text-red-600 dark:text-gray-500 dark:hover:text-red-400 transition-colors"
             type="button" 
             onClick={() => onHardDelete(r.id)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             title="Delete"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <polyline points="3 6 5 6 21 6" />
               <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
@@ -225,39 +264,21 @@ const IngredientTableRow = memo(function IngredientTableRow({
   )
 })
 
-// ==================== Metric Card Component ====================
-const MetricCard = memo(function MetricCard({ 
+// ==================== Metric Component ====================
+const Metric = memo(function Metric({ 
   label, 
   value, 
-  sublabel,
-  trend 
+  sublabel 
 }: { 
   label: string
   value: string | number
   sublabel: string
-  trend?: { value: number; positive: boolean }
 }) {
   return (
-    <div className="space-y-1">
-      <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
-        {label}
-      </div>
-      <div className="flex items-baseline gap-2">
-        <span className="text-xl font-medium text-gray-900 dark:text-white">
-          {value}
-        </span>
-        {trend && (
-          <span className={cls(
-            "text-[10px] font-medium",
-            trend.positive ? "text-emerald-600 dark:text-emerald-400" : "text-red-600 dark:text-red-400"
-          )}>
-            {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-          </span>
-        )}
-      </div>
-      <div className="text-[10px] text-gray-500 dark:text-gray-400">
-        {sublabel}
-      </div>
+    <div>
+      <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400">{label}</div>
+      <div className="text-lg font-medium text-gray-900 dark:text-white mt-0.5">{value}</div>
+      <div className="text-[9px] text-gray-400 dark:text-gray-500 mt-0.5">{sublabel}</div>
     </div>
   )
 })
@@ -675,14 +696,21 @@ export default function Ingredients() {
     >
       <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Header */}
-        <motion.div variants={itemVariants} className="flex items-center justify-between mb-8">
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-lg font-medium text-gray-900 dark:text-white">
+            <h1 className="text-base font-medium text-gray-900 dark:text-white">
               Ingredients
             </h1>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              {filtered.length} items · {stats.missingCost} missing cost
-            </p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-xs text-gray-500 dark:text-gray-400">
+                {filtered.length} items
+              </span>
+              {stats.missingCost > 0 && (
+                <span className="text-xs text-amber-600 dark:text-amber-400">
+                  • {stats.missingCost} missing cost
+                </span>
+              )}
+            </div>
           </div>
           
           <div className="flex items-center gap-2">
@@ -696,45 +724,20 @@ export default function Ingredients() {
               <span className="text-xs text-gray-600 dark:text-gray-400">Show inactive</span>
             </label>
 
-            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
+            <div className="h-3 w-px bg-gray-200 dark:bg-gray-700"></div>
 
-            <motion.button 
-              className="px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-              type="button" 
-              onClick={bulkRecalcNetCosts} 
-              disabled={bulkWorking}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
+            <select 
+              className="px-2 py-1 text-xs bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+              value={sortBy} 
+              onChange={(e) => setSortBy(e.target.value as any)}
             >
-              {bulkWorking ? 'Recalculating...' : 'Recalc net'}
-            </motion.button>
+              <option value="name">Sort by name</option>
+              <option value="cost">Sort by cost</option>
+              <option value="pack_price">Sort by pack price</option>
+            </select>
 
             <motion.button 
-              className="px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-              type="button" 
-              onClick={() => bulkSetActive(true)} 
-              disabled={bulkWorking}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Activate
-            </motion.button>
-
-            <motion.button 
-              className="px-2 py-1 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
-              type="button" 
-              onClick={() => bulkSetActive(false)} 
-              disabled={bulkWorking}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              Deactivate
-            </motion.button>
-
-            <div className="h-4 w-px bg-gray-200 dark:bg-gray-700 mx-1"></div>
-
-            <motion.button 
-              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
+              className="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-medium transition-colors shadow-sm"
               type="button" 
               onClick={openCreate}
               whileHover={{ scale: 1.02 }}
@@ -745,45 +748,19 @@ export default function Ingredients() {
           </div>
         </motion.div>
 
-        {/* Quick Stats */}
-        <motion.div variants={itemVariants} className="grid grid-cols-4 gap-8 mb-8 pb-6 border-b border-gray-100 dark:border-gray-800">
-          <MetricCard
-            label="Items"
-            value={stats.items}
-            sublabel="filtered results"
-          />
-          <MetricCard
-            label="Average net"
-            value={money(stats.avgNet)}
-            sublabel="per unit"
-          />
-          <MetricCard
-            label="Missing cost"
-            value={stats.missingCost}
-            sublabel="items"
-            trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
-          />
-          <MetricCard
-            label="Warnings"
-            value={stats.warnUnits}
-            sublabel="unit mismatches"
-            trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
-          />
-        </motion.div>
-
-        {/* Filters */}
-        <motion.div variants={itemVariants} className="mb-6 flex items-center gap-4">
+        {/* Filters and Actions */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
           {/* Search */}
-          <div className="flex-1">
+          <div className="flex-1 max-w-xs">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="11" cy="11" r="8" />
                   <line x1="21" y1="21" x2="16.65" y2="16.65" />
                 </svg>
               </span>
               <input
-                className="w-full pl-9 pr-8 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search ingredients..."
@@ -791,10 +768,10 @@ export default function Ingredients() {
               {search && (
                 <button 
                   type="button" 
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   onClick={() => setSearch('')}
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
@@ -805,7 +782,7 @@ export default function Ingredients() {
 
           {/* Category Filter */}
           <select 
-            className="px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+            className="px-2 py-1.5 text-xs bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
             value={category} 
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -815,16 +792,62 @@ export default function Ingredients() {
             ))}
           </select>
 
-          {/* Sort */}
-          <select 
-            className="px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
-            value={sortBy} 
-            onChange={(e) => setSortBy(e.target.value as any)}
-          >
-            <option value="name">Name</option>
-            <option value="cost">Net cost (high to low)</option>
-            <option value="pack_price">Pack price (high to low)</option>
-          </select>
+          <div className="flex items-center gap-1 ml-auto">
+            <motion.button 
+              className="px-2 py-1.5 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button" 
+              onClick={bulkRecalcNetCosts} 
+              disabled={bulkWorking}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Recalc
+            </motion.button>
+            <motion.button 
+              className="px-2 py-1.5 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button" 
+              onClick={() => bulkSetActive(true)} 
+              disabled={bulkWorking}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Activate
+            </motion.button>
+            <motion.button 
+              className="px-2 py-1.5 rounded-md text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-50"
+              type="button" 
+              onClick={() => bulkSetActive(false)} 
+              disabled={bulkWorking}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              Deactivate
+            </motion.button>
+          </div>
+        </motion.div>
+
+        {/* Quick Stats */}
+        <motion.div variants={itemVariants} className="grid grid-cols-4 gap-8 mb-6 pb-6 border-b border-gray-100 dark:border-gray-800">
+          <Metric
+            label="Items"
+            value={stats.items}
+            sublabel="filtered results"
+          />
+          <Metric
+            label="Average net"
+            value={money(stats.avgNet)}
+            sublabel="per unit"
+          />
+          <Metric
+            label="Missing cost"
+            value={stats.missingCost}
+            sublabel="items"
+          />
+          <Metric
+            label="Warnings"
+            value={stats.warnUnits}
+            sublabel="unit mismatches"
+          />
         </motion.div>
 
         {/* Loading/Error */}
@@ -853,7 +876,7 @@ export default function Ingredients() {
         )}
 
         {err && (
-          <motion.div variants={itemVariants} className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-lg">
+          <motion.div variants={itemVariants} className="p-3 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-md">
             <p className="text-xs text-red-600 dark:text-red-400">{err}</p>
           </motion.div>
         )}
@@ -862,8 +885,8 @@ export default function Ingredients() {
         {!loading && !err && (
           <motion.div variants={itemVariants}>
             {filtered.length === 0 ? (
-              <div className="py-12 text-center">
-                <div className="text-4xl mb-3 opacity-20">🥗</div>
+              <div className="py-12 text-center border border-gray-100 dark:border-gray-800 rounded-lg">
+                <div className="text-3xl mb-3 opacity-20">🥗</div>
                 <h3 className="text-sm font-medium text-gray-900 dark:text-white mb-1">
                   {rows.length === 0 ? 'No ingredients' : 'No results'}
                 </h3>
@@ -888,14 +911,14 @@ export default function Ingredients() {
                 <table className="w-full">
                   <thead>
                     <tr className="border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50">
-                      <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
-                      <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                      <th className="px-4 py-2 text-left text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
-                      <th className="px-4 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack</th>
-                      <th className="px-4 py-2 text-center text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
-                      <th className="px-4 py-2 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
-                      <th className="px-4 py-2 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Cost</th>
-                      <th className="px-4 py-2 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                      <th className="px-3 py-2 text-left text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code</th>
+                      <th className="px-3 py-2 text-left text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
+                      <th className="px-3 py-2 text-left text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Category</th>
+                      <th className="px-3 py-2 text-center text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack</th>
+                      <th className="px-3 py-2 text-center text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit</th>
+                      <th className="px-3 py-2 text-right text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
+                      <th className="px-3 py-2 text-right text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Net Cost</th>
+                      <th className="px-3 py-2 text-right text-[9px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
@@ -911,64 +934,47 @@ export default function Ingredients() {
           </motion.div>
         )}
 
-        {/* Modal */}
+        {/* Modal - مع حل مشكلة التكرار */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
-          <div className="space-y-5">
+          <div className="space-y-4">
             {/* Basic Info */}
-            <div className="space-y-4">
-              <div>
-                <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                  Name <span className="text-red-500">*</span>
-                </label>
+            <FormSection>
+              <FormField label="Name" required>
                 <input
-                  className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                  className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
                 />
-              </div>
+              </FormField>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Category
-                  </label>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Category">
                   <input
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
                   />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Supplier
-                  </label>
+                </FormField>
+                <FormField label="Supplier">
                   <input
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
                   />
-                </div>
+                </FormField>
               </div>
-            </div>
+            </FormSection>
 
-            {/* Code Section */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
-                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Code (optional)</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Code
-                  </label>
+            {/* Code Section - حل المشكلة: دمج الحقلين في مجموعة واحدة مع تسمية واضحة */}
+            <FormSection title="Code (optional)">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors",
+                      "w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors font-mono",
                       !canEditCodes && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900"
                     )}
                     value={fCode}
@@ -976,91 +982,74 @@ export default function Ingredients() {
                     placeholder="ING-000123"
                     disabled={!canEditCodes}
                   />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Category code
-                  </label>
+                </FormField>
+                <FormField label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors",
+                      "w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white placeholder:text-gray-400 focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors font-mono",
                       !canEditCodes && "opacity-50 cursor-not-allowed bg-gray-50 dark:bg-gray-900"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
-                    placeholder={`e.g. ${suggestedCodeCategory}`}
+                    placeholder={suggestedCodeCategory}
                     disabled={!canEditCodes}
                   />
-                </div>
+                </FormField>
               </div>
-            </div>
+              {!canEditCodes && (
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-1">Code fields are owner-only</p>
+              )}
+            </FormSection>
 
             {/* Pack & Cost */}
-            <div className="space-y-4">
-              <div className="flex items-center gap-2">
-                <div className="h-3 w-px bg-gray-300 dark:bg-gray-600"></div>
-                <span className="text-[10px] font-medium text-gray-400 uppercase tracking-wider">Pack & Cost</span>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Pack size <span className="text-red-500">*</span>
-                  </label>
+            <FormSection title="Pack & Cost">
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Pack size" required>
                   <input
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     type="number"
                     min={1}
                     step="1"
                     value={fPackSize}
                     onChange={(e) => setFPackSize(e.target.value)}
                   />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Unit <span className="text-red-500">*</span>
-                  </label>
+                </FormField>
+                <FormField label="Unit" required>
                   <select
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     value={fPackUnit}
                     onChange={(e) => setFPackUnit(e.target.value)}
                   >
-                    <option value="g">g</option>
-                    <option value="kg">kg</option>
-                    <option value="ml">ml</option>
-                    <option value="l">L</option>
-                    <option value="pcs">pcs</option>
+                    <option value="g">g (gram)</option>
+                    <option value="kg">kg (kilogram)</option>
+                    <option value="ml">ml (milliliter)</option>
+                    <option value="l">L (liter)</option>
+                    <option value="pcs">pcs (pieces)</option>
                   </select>
-                </div>
+                </FormField>
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Pack price <span className="text-red-500">*</span>
-                  </label>
+              <div className="grid grid-cols-2 gap-3">
+                <FormField label="Pack price" required>
                   <input
-                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                    className="w-full px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
                     type="number"
                     step="0.01"
                     value={fPackPrice}
                     onChange={(e) => setFPackPrice(e.target.value)}
                   />
-                </div>
-                <div>
-                  <label className="block text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1.5">
-                    Net unit cost
-                  </label>
+                </FormField>
+                <FormField label="Net unit cost" hint="auto-calc if 0">
                   <div className="flex gap-2">
                     <input
-                      className="flex-1 px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-lg text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors"
+                      className="flex-1 px-3 py-2 text-sm bg-transparent border border-gray-200 dark:border-gray-800 rounded-md text-gray-900 dark:text-white focus:outline-none focus:border-blue-500 dark:focus:border-blue-400 transition-colors font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
                     <motion.button
-                      className="px-2 py-2 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-lg transition-colors whitespace-nowrap"
+                      className="px-2 py-2 text-[10px] font-medium text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-500/10 rounded-md transition-colors whitespace-nowrap"
                       onClick={smartRecalcNetCost}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98 }}
@@ -1068,12 +1057,12 @@ export default function Ingredients() {
                       Recalc
                     </motion.button>
                   </div>
-                </div>
+                </FormField>
               </div>
-            </div>
+            </FormSection>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-gray-100 dark:border-gray-800">
+            <div className="flex justify-end gap-2 pt-3 border-t border-gray-100 dark:border-gray-800">
               <motion.button
                 className="px-3 py-1.5 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-md transition-colors"
                 onClick={() => setModalOpen(false)}
