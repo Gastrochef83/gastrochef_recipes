@@ -63,76 +63,8 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== NUCLEUS DESIGN SYSTEM ====================
+// ==================== UI Primitives ====================
 
-/* 
-  ███╗   ██╗██╗   ██╗ ██████╗██╗     ███████╗██╗   ██╗███████╗
-  ████╗  ██║██║   ██║██╔════╝██║     ██╔════╝██║   ██║██╔════╝
-  ██╔██╗ ██║██║   ██║██║     ██║     █████╗  ██║   ██║███████╗
-  ██║╚██╗██║██║   ██║██║     ██║     ██╔══╝  ██║   ██║╚════██║
-  ██║ ╚████║╚██████╔╝╚██████╗███████╗███████╗╚██████╔╝███████║
-  ╚═╝  ╚═══╝ ╚═════╝  ╚═════╝╚══════╝╚══════╝ ╚═════╝ ╚══════╝
-  
-  GASTROCHEF NUCLEUS - Professional Kitchen Operating System
-  Ingredients Core Module
-  Version 2.0.0
-*/
-
-// ==================== Color System ====================
-const colors = {
-  primary: {
-    50: '#f0f9ff',
-    100: '#e0f2fe',
-    200: '#bae6fd',
-    300: '#7dd3fc',
-    400: '#38bdf8',
-    500: '#0ea5e9',
-    600: '#0284c7',
-    700: '#0369a1',
-    800: '#075985',
-    900: '#0c4a6e',
-    950: '#082f49',
-  },
-  gray: {
-    50: '#f9fafb',
-    100: '#f3f4f6',
-    200: '#e5e7eb',
-    300: '#d1d5db',
-    400: '#9ca3af',
-    500: '#6b7280',
-    600: '#4b5563',
-    700: '#374151',
-    800: '#1f2937',
-    900: '#111827',
-    950: '#030712',
-  },
-  success: {
-    50: '#f0fdf4',
-    500: '#22c55e',
-    700: '#15803d',
-    950: '#052e16',
-  },
-  warning: {
-    50: '#fffbeb',
-    500: '#f59e0b',
-    700: '#b45309',
-    950: '#422006',
-  },
-  danger: {
-    50: '#fef2f2',
-    500: '#ef4444',
-    700: '#b91c1c',
-    950: '#450a0a',
-  },
-  accent: {
-    cyan: '#06b6d4',
-    purple: '#a855f7',
-    amber: '#f59e0b',
-    emerald: '#10b981',
-  },
-}
-
-// ==================== Icons System ====================
 const Icons = {
   search: (props: any) => (
     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
@@ -181,13 +113,6 @@ const Icons = {
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
   ),
-  nucleus: (props: any) => (
-    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-      <circle cx="12" cy="12" r="8" />
-      <circle cx="12" cy="12" r="2" fill="currentColor" />
-      <path d="M12 2 L12 6 M12 18 L12 22 M2 12 L6 12 M18 12 L22 12" stroke="currentColor" strokeWidth="1.5" />
-    </svg>
-  ),
   bolt: (props: any) => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M13 10V3L4 14h7v7l9-11h-7z" />
@@ -198,28 +123,6 @@ const Icons = {
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
-  spark: (props: any) => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
-      <path d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2z" />
-    </svg>
-  ),
-  filter: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <polygon points="22 3 2 3 10 13 10 21 14 18 14 13 22 3" />
-    </svg>
-  ),
-  sort: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <path d="M3 9h14M3 15h10M17 5l4 4-4 4M7 19l-4-4 4-4" />
-    </svg>
-  ),
-  more: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
-      <circle cx="12" cy="12" r="1" fill="currentColor" />
-      <circle cx="19" cy="12" r="1" fill="currentColor" />
-      <circle cx="5" cy="12" r="1" fill="currentColor" />
-    </svg>
-  ),
   reset: (props: any) => (
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
@@ -227,252 +130,82 @@ const Icons = {
   ),
 }
 
-// ==================== Typography System ====================
-const typography = {
-  h1: 'text-2xl font-light tracking-tight',
-  h2: 'text-lg font-medium',
-  h3: 'text-sm font-medium',
-  body: 'text-sm',
-  small: 'text-xs',
-  micro: 'text-[10px]',
-  code: 'font-mono text-sm',
-  label: 'text-xs font-medium uppercase tracking-wider',
-}
-
-// ==================== Spacing System ====================
-const spacing = {
-  section: 'mb-8',
-  card: 'p-6',
-  input: 'px-4 py-2.5',
-  button: 'px-4 py-2',
-  table: {
-    cell: 'px-4 py-3',
-    header: 'px-4 py-3 text-left text-[10px] font-medium uppercase tracking-wider',
-  },
-}
-
-// ==================== Core Components ====================
-
-// Card Component
-const Card = ({ children, className, onClick, interactive = false }: { children: ReactNode; className?: string; onClick?: () => void; interactive?: boolean }) => (
-  <motion.div
-    className={cls(
-      'bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 shadow-sm',
-      interactive && 'hover:shadow-md hover:border-gray-300 dark:hover:border-gray-700 transition-all cursor-pointer',
-      className
-    )}
-    whileHover={interactive ? { y: -1 } : {}}
-    onClick={onClick}
-  >
-    {children}
-  </motion.div>
-)
-
-// Button Component
-const Button = ({ 
-  variant = 'default', 
-  size = 'default', 
-  children, 
-  className, 
-  icon,
-  onClick,
-  disabled,
-  title,
-  fullWidth = false
-}: { 
-  variant?: 'primary' | 'secondary' | 'ghost' | 'danger'
-  size?: 'sm' | 'default' | 'lg'
-  children?: ReactNode
-  className?: string
-  icon?: ReactNode
-  onClick?: () => void
-  disabled?: boolean
-  title?: string
-  fullWidth?: boolean
-}) => {
-  const variants = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm shadow-blue-600/20',
-    secondary: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 border border-gray-200 dark:border-gray-700',
-    ghost: 'text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800',
-    danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm shadow-red-600/20',
-  }
-
-  const sizes = {
-    sm: 'px-3 py-1.5 text-xs rounded-lg',
-    default: 'px-4 py-2 text-sm rounded-xl',
-    lg: 'px-5 py-2.5 text-base rounded-xl',
-  }
-
-  return (
-    <motion.button
-      className={cls(
-        'inline-flex items-center justify-center gap-2 font-medium transition-all disabled:opacity-40 disabled:cursor-not-allowed',
-        variants[variant],
-        sizes[size],
-        fullWidth && 'w-full',
-        className
-      )}
-      whileHover={!disabled ? { scale: 1.02 } : {}}
-      whileTap={!disabled ? { scale: 0.98 } : {}}
-      onClick={onClick}
-      disabled={disabled}
-      title={title}
-    >
-      {icon && <span className="text-current">{icon}</span>}
-      {children}
-    </motion.button>
-  )
-}
-
-// Input Component
-const Input = ({ className, icon, ...props }: React.InputHTMLAttributes<HTMLInputElement> & { icon?: ReactNode }) => (
-  <div className="relative">
-    {icon && <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">{icon}</span>}
-    <input
-      className={cls(
-        'w-full bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all',
-        icon ? 'pl-9' : 'px-4',
-        props.type === 'number' ? 'pr-12' : 'pr-4',
-        'py-2.5 text-sm',
-        className
-      )}
-      {...props}
-    />
-  </div>
-)
-
-// Select Component
-const Select = ({ className, children, ...props }: React.SelectHTMLAttributes<HTMLSelectElement>) => (
-  <div className="relative">
-    <select
-      className={cls(
-        'w-full px-4 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all appearance-none',
-        className
-      )}
-      style={{
-        backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%236b7280'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-        backgroundPosition: 'right 1rem center',
-        backgroundRepeat: 'no-repeat',
-        backgroundSize: '1rem',
-        paddingRight: '2.5rem'
-      }}
-      {...props}
-    >
-      {children}
-    </select>
-  </div>
-)
-
-// Badge Component
-const Badge = ({ children, variant = 'default' }: { children: ReactNode; variant?: 'default' | 'success' | 'warning' | 'danger' | 'info' }) => {
-  const variants = {
-    default: 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300',
-    success: 'bg-green-100 dark:bg-green-950/30 text-green-700 dark:text-green-400',
-    warning: 'bg-amber-100 dark:bg-amber-950/30 text-amber-700 dark:text-amber-400',
-    danger: 'bg-red-100 dark:bg-red-950/30 text-red-700 dark:text-red-400',
-    info: 'bg-blue-100 dark:bg-blue-950/30 text-blue-700 dark:text-blue-400',
-  }
-
-  return (
-    <span className={cls(
-      'inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-medium',
-      variants[variant]
-    )}>
-      {children}
-    </span>
-  )
-}
-
-// Unit Badge Component
 const UnitBadge = ({ unit }: { unit: string }) => {
-  const unitMap: Record<string, { symbol: string; label: string }> = {
-    g: { symbol: 'g', label: 'gram' },
-    kg: { symbol: 'kg', label: 'kilogram' },
-    ml: { symbol: 'ml', label: 'milliliter' },
-    l: { symbol: 'L', label: 'liter' },
-    pcs: { symbol: 'pcs', label: 'pieces' },
+  const unitMap: Record<string, string> = {
+    g: 'g',
+    kg: 'kg',
+    ml: 'ml',
+    l: 'L',
+    pcs: 'pcs',
   }
-
-  const u = unitMap[unit] || { symbol: unit, label: unit }
 
   return (
     <span className="inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-mono font-medium bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-      {u.symbol}
+      {unitMap[unit] || unit}
     </span>
   )
 }
 
-// Price Display Component
 const PriceDisplay = ({ amount, unit }: { amount: number; unit: string }) => (
   <div className="flex items-center justify-end gap-1.5">
     <span className="font-mono text-sm font-medium text-gray-900 dark:text-gray-100">
-      {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount)}
+      {money(amount)}
     </span>
     <UnitBadge unit={unit} />
   </div>
 )
 
-// ==================== Modern Modal ====================
-const ModernModal = ({ 
-  open, 
-  onClose, 
-  title, 
+// ==================== Modal Component ====================
+function Modal({
+  open,
+  title,
   children,
-  size = 'md'
-}: { 
+  onClose,
+}: {
   open: boolean
-  onClose: () => void
   title: string
   children: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
-}) => {
-  const sizes = {
-    sm: 'max-w-md',
-    md: 'max-w-lg',
-    lg: 'max-w-2xl',
-    xl: 'max-w-4xl',
-  }
-
+  onClose: () => void
+}) {
   if (!open) return null
 
   return (
     <AnimatePresence>
       {open && (
-        <motion.div 
+        <motion.div
           className="fixed inset-0 z-50 flex items-center justify-center p-4"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
-          {/* Backdrop */}
-          <motion.div 
+          <motion.div
             className="absolute inset-0 bg-black/20 dark:bg-black/50 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={onClose}
           />
-
-          {/* Modal */}
-          <motion.div 
-            className={`relative w-full ${sizes[size]} mx-auto`}
+          <motion.div
+            className="relative w-full max-w-lg mx-auto"
             initial={{ scale: 0.95, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.95, opacity: 0, y: 10 }}
             transition={{ type: "spring", damping: 25, stiffness: 300 }}
           >
-            <Card className="overflow-hidden">
-              {/* Header */}
+            <div className="bg-white dark:bg-gray-900 rounded-xl shadow-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
               <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-gray-800">
                 <h2 className="text-base font-medium text-gray-900 dark:text-white">{title}</h2>
-                <Button variant="ghost" size="sm" onClick={onClose} icon={<Icons.close />} />
+                <button
+                  className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400"
+                  onClick={onClose}
+                >
+                  <Icons.close width={16} height={16} />
+                </button>
               </div>
-
-              {/* Content */}
-              <div className="px-6 py-5 max-h-[calc(90vh-12rem)] overflow-y-auto custom-scrollbar">
+              <div className="px-6 py-5 max-h-[calc(90vh-8rem)] overflow-y-auto custom-scrollbar">
                 {children}
               </div>
-            </Card>
+            </div>
           </motion.div>
         </motion.div>
       )}
@@ -480,26 +213,13 @@ const ModernModal = ({
   )
 }
 
-// ==================== Form Section ====================
-const FormSection = ({ title, optional = false, children }: { title: string; optional?: boolean; children: ReactNode }) => (
-  <div className="space-y-4">
-    <div className="flex items-center gap-2">
-      <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">{title}</h3>
-      {optional && (
-        <Badge variant="default">Optional</Badge>
-      )}
-    </div>
-    {children}
-  </div>
-)
-
-// ==================== Form Field ====================
-const FormField = ({ 
-  label, 
-  required, 
+// ==================== Form Field Component ====================
+const FormField = ({
+  label,
+  required,
   children,
-  hint
-}: { 
+  hint,
+}: {
   label: string
   required?: boolean
   children: ReactNode
@@ -517,25 +237,40 @@ const FormField = ({
   </div>
 )
 
-// ==================== Table Row ====================
-const TableRow = memo(function TableRow({
+// ==================== Table Row Component ====================
+const IngredientTableRow = memo(function IngredientTableRow({
   ingredient,
   isDebug,
   onEdit,
-  onDelete,
+  onDeactivate,
+  onHardDelete,
 }: {
   ingredient: IngredientRow
   isDebug: boolean
   onEdit: (ingredient: IngredientRow) => void
-  onDelete: (id: string) => void
+  onDeactivate: (id: string) => void
+  onHardDelete: (id: string) => void
 }) {
   const active = ingredient.is_active !== false
   const net = toNum(ingredient.net_unit_cost, 0)
   const unit = ingredient.pack_unit ?? 'g'
   const flag = sanityFlag(net, unit)
 
+  // Safer approach: deactivate is primary, delete is secondary with confirmation
+  const handleDeleteClick = () => {
+    if (window.confirm('Delete permanently? This cannot be undone.')) {
+      onHardDelete(ingredient.id)
+    }
+  }
+
+  const handleDeactivateClick = () => {
+    if (active) {
+      onDeactivate(ingredient.id)
+    }
+  }
+
   return (
-    <motion.tr 
+    <motion.tr
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, x: -10 }}
@@ -559,9 +294,10 @@ const TableRow = memo(function TableRow({
             {ingredient.name ?? '—'}
           </span>
           {flag.level === 'warn' && (
-            <Badge variant="warning" icon={<Icons.alert />}>
-              Unit?
-            </Badge>
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
+              <Icons.alert width={10} height={10} />
+              unit?
+            </span>
           )}
         </div>
         {isDebug && (
@@ -589,93 +325,113 @@ const TableRow = memo(function TableRow({
       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          <Button
-            variant="ghost"
-            size="sm"
+          <button
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
             onClick={() => onEdit(ingredient)}
-            icon={<Icons.edit />}
-            title="Edit ingredient"
-          />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => onDelete(ingredient.id)}
-            icon={<Icons.delete />}
-            title="Delete ingredient"
-            className="hover:text-red-600 dark:hover:text-red-400"
-          />
+            title="Edit"
+          >
+            <Icons.edit />
+          </button>
+          {active && (
+            <button
+              className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-amber-600 dark:hover:text-amber-400 transition-colors"
+              onClick={handleDeactivateClick}
+              title="Deactivate"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="8" y1="12" x2="16" y2="12" />
+              </svg>
+            </button>
+          )}
+          <button
+            className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-500 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 transition-colors"
+            onClick={handleDeleteClick}
+            title="Delete permanently"
+          >
+            <Icons.delete />
+          </button>
         </div>
       </td>
     </motion.tr>
   )
 })
 
-// ==================== Metric Card ====================
-const MetricCard = ({ label, value, sublabel, icon, trend }: { 
+// ==================== Stats Card Component ====================
+const StatsCard = ({ label, value, sublabel, icon, warning }: {
   label: string
   value: string | number
   sublabel: string
   icon: ReactNode
-  trend?: { value: number; positive: boolean }
+  warning?: boolean
 }) => (
-  <Card className="p-5">
+  <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800 shadow-sm">
     <div className="flex items-start justify-between">
       <div>
         <div className="text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider mb-1">
           {label}
         </div>
         <div className="flex items-baseline gap-2">
-          <span className="text-2xl font-light text-gray-900 dark:text-white">
+          <span className={cls(
+            "text-2xl font-light",
+            warning ? "text-amber-600 dark:text-amber-400" : "text-gray-900 dark:text-white"
+          )}>
             {value}
           </span>
-          {trend && (
-            <Badge variant={trend.positive ? 'success' : 'danger'}>
-              {trend.positive ? '↑' : '↓'} {Math.abs(trend.value)}%
-            </Badge>
-          )}
         </div>
         <div className="text-[10px] text-gray-500 dark:text-gray-400 mt-1">
           {sublabel}
         </div>
       </div>
-      <div className="w-10 h-10 rounded-xl bg-blue-50 dark:bg-blue-950/30 flex items-center justify-center text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-800">
+      <div className={cls(
+        "w-10 h-10 rounded-xl flex items-center justify-center",
+        warning
+          ? "bg-amber-100 dark:bg-amber-900/30 text-amber-600 dark:text-amber-400"
+          : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+      )}>
         {icon}
       </div>
     </div>
-  </Card>
+  </div>
 )
 
-// ==================== Empty State ====================
-const EmptyState = ({ onAdd }: { onAdd: () => void }) => (
-  <Card className="p-12 text-center">
+// ==================== Empty State Component ====================
+const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
+  <div className="bg-white dark:bg-gray-900 rounded-xl p-12 text-center border border-gray-200 dark:border-gray-800">
     <div className="w-16 h-16 mx-auto mb-4 bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-blue-950/30 dark:to-indigo-950/30 rounded-2xl flex items-center justify-center text-3xl border border-blue-100 dark:border-blue-800">
       🥗
     </div>
     <h3 className="text-base font-medium text-gray-900 dark:text-white mb-2">
-      No ingredients yet
+      {hasFilters ? 'No results found' : 'No ingredients yet'}
     </h3>
     <p className="text-sm text-gray-500 dark:text-gray-400 max-w-sm mx-auto mb-6">
-      Start building your kitchen database by adding your first ingredient.
+      {hasFilters
+        ? 'Try adjusting your search or filters to find what you\'re looking for.'
+        : 'Start building your kitchen database by adding your first ingredient.'}
     </p>
-    <Button variant="primary" onClick={onAdd} icon={<Icons.plus />}>
+    <button
+      className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
+      onClick={onAdd}
+    >
+      <Icons.plus />
       Add ingredient
-    </Button>
-  </Card>
+    </button>
+  </div>
 )
 
-// ==================== Loading State ====================
+// ==================== Loading State Component ====================
 const LoadingState = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <Card key={i} className="p-5">
+        <div key={i} className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
           <Skeleton className="h-4 w-16 mb-2" />
           <Skeleton className="h-8 w-24 mb-1" />
           <Skeleton className="h-3 w-20" />
-        </Card>
+        </div>
       ))}
     </div>
-    <Card className="p-5">
+    <div className="bg-white dark:bg-gray-900 rounded-xl p-5 border border-gray-200 dark:border-gray-800">
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4">
@@ -686,156 +442,16 @@ const LoadingState = () => (
           </div>
         ))}
       </div>
-    </Card>
+    </div>
   </div>
 )
 
-// ==================== Error State ====================
+// ==================== Error State Component ====================
 const ErrorState = ({ message }: { message: string }) => (
-  <Card className="p-6 bg-red-50 dark:bg-red-950/20 border-red-200 dark:border-red-800">
+  <div className="bg-red-50 dark:bg-red-950/20 rounded-xl p-6 border border-red-200 dark:border-red-800">
     <div className="flex items-center gap-3 text-red-600 dark:text-red-400">
       <Icons.alert />
       <span className="text-sm">{message}</span>
-    </div>
-  </Card>
-)
-
-// ==================== Filter Bar ====================
-const FilterBar = ({ 
-  search,
-  onSearchChange,
-  category,
-  onCategoryChange,
-  categories,
-  sortBy,
-  onSortChange,
-  showInactive,
-  onShowInactiveChange,
-  onClearFilters,
-  hasActiveFilters
-}: {
-  search: string
-  onSearchChange: (v: string) => void
-  category: string
-  onCategoryChange: (v: string) => void
-  categories: string[]
-  sortBy: string
-  onSortChange: (v: any) => void
-  showInactive: boolean
-  onShowInactiveChange: (v: boolean) => void
-  onClearFilters: () => void
-  hasActiveFilters: boolean
-}) => (
-  <div className="flex items-center gap-3">
-    {/* Search */}
-    <div className="flex-1 max-w-sm">
-      <Input
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        placeholder="Search ingredients..."
-        icon={<Icons.search />}
-      />
-    </div>
-
-    {/* Category Filter */}
-    <Select value={category} onChange={(e) => onCategoryChange(e.target.value)}>
-      <option value="">All categories</option>
-      {categories.map((c) => (
-        <option key={c} value={c}>{c}</option>
-      ))}
-    </Select>
-
-    {/* Sort */}
-    <Select value={sortBy} onChange={(e) => onSortChange(e.target.value)}>
-      <option value="name">Sort by name</option>
-      <option value="cost">Sort by cost</option>
-      <option value="pack_price">Sort by pack price</option>
-    </Select>
-
-    {/* Show Inactive Toggle */}
-    <Button
-      variant={showInactive ? 'secondary' : 'ghost'}
-      size="sm"
-      onClick={() => onShowInactiveChange(!showInactive)}
-      icon={<div className={cls(
-        "w-3 h-3 rounded border",
-        showInactive ? "bg-blue-600 border-blue-600" : "border-gray-400"
-      )}>
-        {showInactive && <Icons.check width={10} height={10} className="text-white" />}
-      </div>}
-    >
-      Show inactive
-    </Button>
-
-    {/* Clear Filters */}
-    {hasActiveFilters && (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onClearFilters}
-        icon={<Icons.reset />}
-      >
-        Clear
-      </Button>
-    )}
-  </div>
-)
-
-// ==================== Action Bar ====================
-const ActionBar = ({ 
-  onAdd,
-  onBulkRecalc,
-  onBulkActivate,
-  onBulkDeactivate,
-  bulkWorking,
-  hasSelection
-}: {
-  onAdd: () => void
-  onBulkRecalc: () => void
-  onBulkActivate: () => void
-  onBulkDeactivate: () => void
-  bulkWorking: boolean
-  hasSelection: boolean
-}) => (
-  <div className="flex items-center justify-between mb-6">
-    <div className="flex items-center gap-2">
-      <Button
-        variant="primary"
-        onClick={onAdd}
-        icon={<Icons.plus />}
-      >
-        New ingredient
-      </Button>
-
-      {hasSelection && (
-        <>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onBulkRecalc}
-            disabled={bulkWorking}
-            icon={<Icons.bolt />}
-          >
-            Recalculate
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onBulkActivate}
-            disabled={bulkWorking}
-          >
-            Activate
-          </Button>
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={onBulkDeactivate}
-            disabled={bulkWorking}
-          >
-            Deactivate
-          </Button>
-        </>
-      )}
     </div>
   </div>
 )
@@ -860,7 +476,7 @@ export default function Ingredients() {
       }
       return false
     })()
-  
+
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
   const [rows, setRows] = useState<IngredientRow[]>([])
@@ -934,7 +550,6 @@ export default function Ingredients() {
     setLoading(true)
     setErr(null)
 
-    // cancel any in-flight progressive load
     const runId = Date.now()
     progressiveRunRef.current = runId
 
@@ -945,7 +560,6 @@ export default function Ingredients() {
       let acc: IngredientRow[] = []
 
       while (true) {
-        // If a newer load started, stop this one
         if (progressiveRunRef.current !== runId) return
 
         const { data, error } = await supabase
@@ -959,10 +573,7 @@ export default function Ingredients() {
         const chunk = ((data ?? []) as IngredientRow[]) || []
         acc = acc.concat(chunk)
 
-        // Update UI progressively (fast first paint)
         setRows(acc)
-
-        // Prime cache so other pages benefit without refetching within TTL
         primeIngredientsCache(acc as any)
 
         if (offset === 0) setLoading(false)
@@ -970,8 +581,6 @@ export default function Ingredients() {
         if (!chunk.length || chunk.length < PAGE_SIZE) break
 
         offset += PAGE_SIZE
-
-        // Yield to the browser so scrolling/typing stays responsive
         await new Promise((r) => setTimeout(r, 0))
       }
 
@@ -984,7 +593,6 @@ export default function Ingredients() {
 
   useEffect(() => {
     load()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const normalized = useMemo(() => {
@@ -1025,12 +633,17 @@ export default function Ingredients() {
   const stats = useMemo(() => {
     const items = filtered.length
     const avgNet = items > 0 ? filtered.reduce((a, r) => a + toNum(r.net_unit_cost, 0), 0) / items : 0
-    const maxPack = items > 0 ? Math.max(...filtered.map((r) => toNum(r.pack_price, 0))) : 0
     const missingCost = filtered.filter((r) => toNum(r.net_unit_cost, 0) <= 0).length
     const warnUnits = filtered.filter((r) => sanityFlag(toNum(r.net_unit_cost, 0), r.pack_unit ?? 'g').level === 'warn').length
 
-    return { items, avgNet, maxPack, missingCost, warnUnits }
+    return { items, avgNet, missingCost, warnUnits }
   }, [filtered])
+
+  // Filter state tracking
+  const hasActiveFilters = search !== '' || category !== ''
+
+  // Bulk actions apply to filtered results, not selection (safer approach)
+  const hasFilteredItems = filtered.length > 0
 
   const openCreate = () => {
     setEditingId(null)
@@ -1084,11 +697,8 @@ export default function Ingredients() {
 
     const packSize = Math.max(1, toNum(fPackSize, 1))
     const packPrice = Math.max(0, toNum(fPackPrice, 0))
-
     const unit = safeUnit(fPackUnit || 'g')
     const net = Math.max(0, toNum(fNetUnitCost, 0))
-
-    // If user left net cost empty/zero, auto compute from pack
     const netFinal = net > 0 ? net : calcNetUnitCost(packPrice, packSize)
 
     setSaving(true)
@@ -1142,7 +752,7 @@ export default function Ingredients() {
   }, [fCategory])
 
   const deactivate = async (id: string) => {
-    const ok = confirm('Deactivate ingredient?')
+    const ok = window.confirm('Deactivate ingredient? It will be hidden from pickers.')
     if (!ok) return
     const { error } = await supabase.from('ingredients').update({ is_active: false }).eq('id', id)
     if (error) return showToast(error.message)
@@ -1158,9 +768,6 @@ export default function Ingredients() {
   }
 
   const hardDelete = async (id: string) => {
-    const ok = confirm('Delete permanently?')
-    if (!ok) return
-
     const { error } = await supabase.from('ingredients').delete().eq('id', id)
     if (error) {
       const msg = String((error as any).message || '')
@@ -1170,14 +777,13 @@ export default function Ingredients() {
       }
       return showToast(msg || 'Delete failed')
     }
-
     showToast('Ingredient deleted')
     await load()
   }
 
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
-    const ok = confirm(`Recalculate for ${filtered.length} items?`)
+    const ok = window.confirm(`Recalculate unit costs for ${filtered.length} filtered items?`)
     if (!ok) return
 
     setBulkWorking(true)
@@ -1203,7 +809,8 @@ export default function Ingredients() {
 
   const bulkSetActive = async (active: boolean) => {
     if (filtered.length === 0) return
-    const ok = confirm(`${active ? 'Activate' : 'Deactivate'} ${filtered.length} items?`)
+    const action = active ? 'Activate' : 'Deactivate'
+    const ok = window.confirm(`${action} ${filtered.length} filtered items?`)
     if (!ok) return
 
     setBulkWorking(true)
@@ -1214,22 +821,15 @@ export default function Ingredients() {
       }
 
       invalidateIngredientsCache()
-      showToast('Bulk update done')
+      showToast(`Bulk ${action.toLowerCase()} done`)
       await load()
     } catch (e: any) {
-      showToast(e?.message ?? 'Bulk update failed')
+      showToast(e?.message ?? `Bulk ${action.toLowerCase()} failed`)
     } finally {
       setBulkWorking(false)
     }
   }
 
-  // Check if any filters are active
-  const hasActiveFilters = search !== '' || category !== ''
-
-  // Check if any items are selected for bulk actions
-  const hasSelection = filtered.length > 0
-
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -1244,7 +844,7 @@ export default function Ingredients() {
   }
 
   return (
-    <motion.div 
+    <motion.div
       className="min-h-screen bg-gray-50 dark:bg-gray-950"
       initial="hidden"
       animate="visible"
@@ -1254,8 +854,11 @@ export default function Ingredients() {
         {/* Header */}
         <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg shadow-blue-600/20">
-              <Icons.nucleus />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 flex items-center justify-center text-white shadow-lg">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
             </div>
             <div>
               <h1 className="text-xl font-light text-gray-900 dark:text-white tracking-tight">
@@ -1267,75 +870,170 @@ export default function Ingredients() {
             </div>
           </div>
 
-          {/* Debug info */}
           {isDebug && kitchenId && (
-            <Badge variant="info">Kitchen: {kitchenId.slice(0, 8)}</Badge>
+            <span className="text-[10px] font-mono bg-gray-200 dark:bg-gray-800 text-gray-600 dark:text-gray-400 px-2 py-1 rounded-lg">
+              {kitchenId.slice(0, 8)}...
+            </span>
           )}
         </motion.div>
 
-        {/* Action Bar - Primary actions only */}
-        <motion.div variants={itemVariants}>
-          <ActionBar
-            onAdd={openCreate}
-            onBulkRecalc={bulkRecalcNetCosts}
-            onBulkActivate={() => bulkSetActive(true)}
-            onBulkDeactivate={() => bulkSetActive(false)}
-            bulkWorking={bulkWorking}
-            hasSelection={hasSelection}
-          />
+        {/* Action Bar - Clearly labeled as applying to filtered results */}
+        <motion.div variants={itemVariants} className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-2">
+            <button
+              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-sm font-medium hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20"
+              onClick={openCreate}
+            >
+              <Icons.plus />
+              New ingredient
+            </button>
+
+            {hasFilteredItems && (
+              <>
+                <div className="w-px h-6 bg-gray-200 dark:bg-gray-800 mx-1" />
+                <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">
+                  Filtered:
+                </span>
+                <button
+                  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  onClick={bulkRecalcNetCosts}
+                  disabled={bulkWorking}
+                >
+                  Recalculate costs
+                </button>
+                <button
+                  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  onClick={() => bulkSetActive(true)}
+                  disabled={bulkWorking}
+                >
+                  Activate all
+                </button>
+                <button
+                  className="px-3 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-xs text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-40"
+                  onClick={() => bulkSetActive(false)}
+                  disabled={bulkWorking}
+                >
+                  Deactivate all
+                </button>
+              </>
+            )}
+          </div>
         </motion.div>
 
-        {/* Filter Bar - Clean and organized */}
-        <motion.div variants={itemVariants} className="mb-6">
-          <FilterBar
-            search={search}
-            onSearchChange={setSearch}
-            category={category}
-            onCategoryChange={setCategory}
-            categories={categories}
-            sortBy={sortBy}
-            onSortChange={setSortBy}
-            showInactive={showInactive}
-            onShowInactiveChange={setShowInactive}
-            onClearFilters={() => {
-              setSearch('')
-              setCategory('')
-            }}
-            hasActiveFilters={hasActiveFilters}
-          />
+        {/* Filter Bar */}
+        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
+          {/* Search */}
+          <div className="flex-1 max-w-sm">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Icons.search />
+              </span>
+              <input
+                className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search ingredients..."
+              />
+              {search && (
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  onClick={() => setSearch('')}
+                >
+                  <Icons.close width={14} height={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Category Filter */}
+          <select
+            className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+            value={category}
+            onChange={(e) => setCategory(e.target.value)}
+          >
+            <option value="">All categories</option>
+            {categories.map((c) => (
+              <option key={c} value={c}>{c}</option>
+            ))}
+          </select>
+
+          {/* Sort */}
+          <select
+            className="px-3 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as any)}
+          >
+            <option value="name">Sort by name</option>
+            <option value="cost">Sort by unit cost</option>
+            <option value="pack_price">Sort by pack price</option>
+          </select>
+
+          {/* Show Inactive Toggle */}
+          <button
+            className={cls(
+              "inline-flex items-center gap-2 px-3 py-2.5 rounded-xl text-sm transition-colors",
+              showInactive
+                ? "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800"
+                : "bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800"
+            )}
+            onClick={() => setShowInactive(!showInactive)}
+          >
+            <div className={cls(
+              "w-4 h-4 rounded border flex items-center justify-center",
+              showInactive ? "bg-blue-600 border-blue-600" : "border-gray-400"
+            )}>
+              {showInactive && <Icons.check width={12} height={12} className="text-white" />}
+            </div>
+            <span>Show inactive</span>
+          </button>
+
+          {/* Clear Filters */}
+          {hasActiveFilters && (
+            <button
+              className="p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+              onClick={() => {
+                setSearch('')
+                setCategory('')
+              }}
+              title="Clear filters"
+            >
+              <Icons.reset />
+            </button>
+          )}
         </motion.div>
 
         {/* Stats Cards */}
         <motion.div variants={itemVariants} className="grid grid-cols-4 gap-4 mb-6">
-          <MetricCard
+          <StatsCard
             label="Total items"
             value={stats.items}
             sublabel="filtered results"
-            icon={<Icons.nucleus width={18} height={18} />}
+            icon={<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>}
           />
-          <MetricCard
+          <StatsCard
             label="Average cost"
             value={money(stats.avgNet)}
             sublabel="per unit"
-            icon={<Icons.dollar width={18} height={18} />}
+            icon={<Icons.dollar />}
           />
-          <MetricCard
+          <StatsCard
             label="Missing costs"
             value={stats.missingCost}
             sublabel="need attention"
-            icon={<Icons.alert width={18} height={18} />}
-            trend={stats.missingCost > 0 ? { value: stats.missingCost, positive: false } : undefined}
+            icon={<Icons.alert />}
+            warning={stats.missingCost > 0}
           />
-          <MetricCard
+          <StatsCard
             label="Warnings"
             value={stats.warnUnits}
             sublabel="unit mismatches"
-            icon={<Icons.bolt width={18} height={18} />}
-            trend={stats.warnUnits > 0 ? { value: stats.warnUnits, positive: false } : undefined}
+            icon={<Icons.bolt />}
+            warning={stats.warnUnits > 0}
           />
         </motion.div>
 
-        {/* Main Content - All states handled */}
+        {/* Main Content */}
         {loading && <LoadingState />}
 
         {err && <ErrorState message={err} />}
@@ -1343,9 +1041,9 @@ export default function Ingredients() {
         {!loading && !err && (
           <motion.div variants={itemVariants}>
             {filtered.length === 0 ? (
-              <EmptyState onAdd={openCreate} />
+              <EmptyState onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <Card className="overflow-hidden">
+              <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
@@ -1363,35 +1061,32 @@ export default function Ingredients() {
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                       <AnimatePresence>
                         {filtered.map((r) => (
-                          <TableRow
+                          <IngredientTableRow
                             key={r.id}
                             ingredient={r}
                             isDebug={isDebug}
                             onEdit={openEdit}
-                            onDelete={hardDelete}
+                            onDeactivate={deactivate}
+                            onHardDelete={hardDelete}
                           />
                         ))}
                       </AnimatePresence>
                     </tbody>
                   </table>
                 </div>
-              </Card>
+              </div>
             )}
           </motion.div>
         )}
 
-        {/* Modal - Perfectly centered */}
-        <ModernModal
-          open={modalOpen}
-          onClose={() => setModalOpen(false)}
-          title={editingId ? 'Edit ingredient' : 'New ingredient'}
-          size="lg"
-        >
-          <div className="space-y-6">
+        {/* Modal */}
+        <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
+          <div className="space-y-5">
             {/* Basic Information */}
-            <FormSection title="Basic Information">
+            <div className="space-y-4">
               <FormField label="Name" required>
-                <Input
+                <input
+                  className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
@@ -1400,28 +1095,37 @@ export default function Ingredients() {
 
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Category">
-                  <Input
+                  <input
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
                   />
                 </FormField>
                 <FormField label="Supplier">
-                  <Input
+                  <input
+                    className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
                   />
                 </FormField>
               </div>
-            </FormSection>
+            </div>
 
-            {/* Code System - Optional */}
-            <FormSection title="Code System" optional>
+            {/* Code Section */}
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Code System</h3>
+                <span className="text-[8px] font-mono bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-2 py-0.5 rounded-full">OPTIONAL</span>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Ingredient Code" hint="ING-000123">
-                  <Input
-                    className={!canEditCodes ? "opacity-50 bg-gray-100 dark:bg-gray-900" : ""}
+                  <input
+                    className={cls(
+                      "w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all",
+                      !canEditCodes && "opacity-50 bg-gray-100 dark:bg-gray-900 cursor-not-allowed"
+                    )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
                     placeholder="ING-000123"
@@ -1429,8 +1133,11 @@ export default function Ingredients() {
                   />
                 </FormField>
                 <FormField label="Category Code" hint={`e.g. ${suggestedCodeCategory}`}>
-                  <Input
-                    className={!canEditCodes ? "opacity-50 bg-gray-100 dark:bg-gray-900" : ""}
+                  <input
+                    className={cls(
+                      "w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all",
+                      !canEditCodes && "opacity-50 bg-gray-100 dark:bg-gray-900 cursor-not-allowed"
+                    )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
                     placeholder={suggestedCodeCategory}
@@ -1439,15 +1146,17 @@ export default function Ingredients() {
                 </FormField>
               </div>
               {!canEditCodes && (
-                <p className="text-[10px] text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                <p className="text-[10px] text-amber-600 dark:text-amber-400 flex items-center gap-1">
                   <Icons.alert width={12} height={12} />
                   Code fields are owner-only
                 </p>
               )}
-            </FormSection>
+            </div>
 
             {/* Pack & Cost */}
-            <FormSection title="Pack & Cost">
+            <div className="space-y-4">
+              <h3 className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack & Cost</h3>
+
               {/* Unit Selector */}
               <div className="flex gap-2">
                 {['g', 'kg', 'ml', 'l', 'pcs'].map((unit) => (
@@ -1470,13 +1179,13 @@ export default function Ingredients() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Pack Size" required>
                   <div className="relative">
-                    <Input
+                    <input
+                      className="w-full px-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all pr-12"
                       type="number"
                       min={1}
                       step="1"
                       value={fPackSize}
                       onChange={(e) => setFPackSize(e.target.value)}
-                      className="pr-12"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500 font-mono">
                       {fPackUnit}
@@ -1484,7 +1193,7 @@ export default function Ingredients() {
                   </div>
                 </FormField>
                 <FormField label="Unit" required>
-                  <div className="px-4 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white font-mono text-sm">
+                  <div className="px-3 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-gray-100 font-mono text-sm">
                     {fPackUnit}
                   </div>
                 </FormField>
@@ -1494,24 +1203,24 @@ export default function Ingredients() {
                 <FormField label="Pack Price" required>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                    <Input
+                    <input
+                      className="w-full pl-7 pr-3 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
                       onChange={(e) => setFPackPrice(e.target.value)}
-                      className="pl-7"
                     />
                   </div>
                 </FormField>
                 <FormField label="Unit Price" hint={`per ${fPackUnit}`}>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">$</span>
-                    <Input
+                    <input
+                      className="w-full pl-7 pr-12 py-2.5 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
-                      className="pl-7 pr-12"
                     />
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 dark:text-gray-500">
                       /{fPackUnit}
@@ -1529,30 +1238,35 @@ export default function Ingredients() {
                       ${parseFloat(fPackPrice)} ÷ {parseFloat(fPackSize)} {fPackUnit} = ${(parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4)} /{fPackUnit}
                     </span>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="w-full mt-2"
+                  <button
+                    className="w-full mt-2 px-3 py-1.5 bg-white dark:bg-gray-800 text-blue-600 dark:text-blue-400 rounded-lg text-xs font-medium border border-blue-200 dark:border-blue-800 hover:bg-blue-50 dark:hover:bg-blue-950/50 transition-colors flex items-center justify-center gap-1"
                     onClick={smartRecalcNetCost}
-                    icon={<Icons.bolt />}
                   >
+                    <Icons.bolt width={12} height={12} />
                     Apply calculation
-                  </Button>
+                  </button>
                 </div>
               )}
-            </FormSection>
+            </div>
 
-            {/* Form Actions */}
+            {/* Actions */}
             <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-gray-800">
-              <Button variant="ghost" onClick={() => setModalOpen(false)}>
+              <button
+                className="px-4 py-2 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                onClick={() => setModalOpen(false)}
+              >
                 Cancel
-              </Button>
-              <Button variant="primary" onClick={save} disabled={saving}>
+              </button>
+              <button
+                className="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors shadow-sm shadow-blue-600/20 disabled:opacity-40"
+                onClick={save}
+                disabled={saving}
+              >
                 {saving ? 'Saving...' : editingId ? 'Update' : 'Create'}
-              </Button>
+              </button>
             </div>
           </div>
-        </ModernModal>
+        </Modal>
 
         <Toast open={toastOpen} message={toastMsg} onClose={() => setToastOpen(false)} />
       </div>
