@@ -7,7 +7,6 @@ import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
 import { motion, AnimatePresence } from 'framer-motion'
-import { useDebounce } from '../hooks/useDebounce'
 
 // ==================== Type Definitions ====================
 type IngredientRow = {
@@ -16,7 +15,6 @@ type IngredientRow = {
   code_category?: string | null
   name?: string
   category?: string | null
-  sub_category?: string | null
   supplier?: string | null
   pack_size?: number | null
   pack_price?: number | null
@@ -497,7 +495,6 @@ const IngredientTableRow = memo(function IngredientTableRow({
       </td>
       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
         {ingredient.category ?? '—'}
-        {ingredient.sub_category && <span className="text-xs text-gray-400"> / {ingredient.sub_category}</span>}
       </td>
       <td className="px-4 py-3 text-center">
         <span className="text-sm font-mono text-gray-900 dark:text-white">
@@ -1174,7 +1171,6 @@ export default function Ingredients() {
   const [fCodeCategory, setFCodeCategory] = useState('')
   const [fName, setFName] = useState('')
   const [fCategory, setFCategory] = useState('')
-  const [fSubCategory, setFSubCategory] = useState('')
   const [fSupplier, setFSupplier] = useState('')
   const [fPackSize, setFPackSize] = useState('1')
   const [fPackPrice, setFPackPrice] = useState('0')
@@ -1192,7 +1188,6 @@ export default function Ingredients() {
   const [bulkWorking, setBulkWorking] = useState(false)
 
   const progressiveRunRef = useRef<number>(0)
-  const tableContainerRef = useRef<HTMLDivElement>(null)
 
   // One-time search prefill from Command Palette
   useEffect(() => {
@@ -1207,7 +1202,7 @@ export default function Ingredients() {
 
   const deferredSearch = useDeferredValue(search)
 
-  const FIELDS = 'id,code,code_category,name,category,sub_category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active,created_at,updated_at,notes,allergen_info,dietary_info,storage_instructions,minimum_stock,current_stock,stock_unit,image_url,barcode,organic_certified,local_sourced,seasonality'
+  const FIELDS = 'id,code,code_category,name,category,supplier,pack_size,pack_price,pack_unit,net_unit_cost,is_active,created_at,updated_at,notes,allergen_info,dietary_info,storage_instructions,minimum_stock,current_stock,stock_unit,image_url,barcode,organic_certified,local_sourced,seasonality'
 
   const PAGE_SIZE = 200
 
@@ -1357,7 +1352,6 @@ export default function Ingredients() {
     setFCodeCategory('')
     setFName('')
     setFCategory('')
-    setFSubCategory('')
     setFSupplier('')
     setFPackSize('1')
     setFPackPrice('0')
@@ -1380,7 +1374,6 @@ export default function Ingredients() {
     setFCodeCategory((r.code_category ?? '').toUpperCase())
     setFName(r.name ?? '')
     setFCategory(r.category ?? '')
-    setFSubCategory(r.sub_category ?? '')
     setFSupplier(r.supplier ?? '')
     setFPackSize(String(Math.max(1, toNum(r.pack_size, 1))))
     setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
@@ -1403,7 +1396,6 @@ export default function Ingredients() {
     setFCodeCategory(r.code_category ?? '')
     setFName(`${r.name} (Copy)`)
     setFCategory(r.category ?? '')
-    setFSubCategory(r.sub_category ?? '')
     setFSupplier(r.supplier ?? '')
     setFPackSize(String(Math.max(1, toNum(r.pack_size, 1))))
     setFPackPrice(String(Math.max(0, toNum(r.pack_price, 0))))
@@ -1465,7 +1457,6 @@ export default function Ingredients() {
         code_category: (fCodeCategory || '').trim().toUpperCase() || null,
         name,
         category: fCategory.trim() || null,
-        sub_category: fSubCategory.trim() || null,
         supplier: fSupplier.trim() || null,
         pack_size: packSize,
         pack_price: packPrice,
@@ -1826,7 +1817,7 @@ export default function Ingredients() {
             ) : (
               <div className="bg-white dark:bg-gray-900 rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden">
                 {viewMode === 'table' && (
-                  <div className="overflow-x-auto" ref={tableContainerRef}>
+                  <div className="overflow-x-auto">
                     <table className="w-full">
                       <thead>
                         <tr className="border-b border-gray-200 dark:border-gray-800 bg-gray-50 dark:bg-gray-900/50">
@@ -1938,16 +1929,6 @@ export default function Ingredients() {
                     placeholder="e.g. Oils"
                   />
                 </FormField>
-                <FormField label="Sub-category">
-                  <Input
-                    value={fSubCategory}
-                    onChange={(e) => setFSubCategory(e.target.value)}
-                    placeholder="e.g. Olive Oil"
-                  />
-                </FormField>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
                 <FormField label="Supplier">
                   <Input
                     value={fSupplier}
@@ -1955,14 +1936,15 @@ export default function Ingredients() {
                     placeholder="e.g. Sysco"
                   />
                 </FormField>
-                <FormField label="Barcode">
-                  <Input
-                    value={fCode}
-                    onChange={(e) => setFCode(e.target.value)}
-                    placeholder="e.g. 123456789012"
-                  />
-                </FormField>
               </div>
+
+              <FormField label="Barcode">
+                <Input
+                  value={fCode}
+                  onChange={(e) => setFCode(e.target.value)}
+                  placeholder="e.g. 123456789012"
+                />
+              </FormField>
             </div>
 
             {/* Code Section */}
