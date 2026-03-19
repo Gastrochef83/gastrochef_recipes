@@ -63,108 +63,104 @@ function sanityFlag(net: number, unit: string) {
   return { level: 'ok' as const, msg: '' }
 }
 
-// ==================== Premium Icons - Refined, purposeful ====================
+// ==================== Premium Icons - Bold & Refined ====================
 const Icons = {
   search: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="11" cy="11" r="8" />
       <line x1="21" y1="21" x2="16.65" y2="16.65" />
     </svg>
   ),
   close: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="18" y1="6" x2="6" y2="18" />
       <line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
   edit: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z" />
     </svg>
   ),
   delete: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <polyline points="3 6 5 6 21 6" />
       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
     </svg>
   ),
   plus: (props: any) => (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="12" y1="5" x2="12" y2="19" />
       <line x1="5" y1="12" x2="19" y2="12" />
     </svg>
   ),
   chevronDown: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <polyline points="6 9 12 15 18 9" />
     </svg>
   ),
   dollar: (props: any) => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <line x1="12" y1="1" x2="12" y2="23" />
       <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
     </svg>
   ),
   alert: (props: any) => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="12" y1="8" x2="12" y2="12" />
       <line x1="12" y1="16" x2="12.01" y2="16" />
     </svg>
   ),
   bolt: (props: any) => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M13 10V3L4 14h7v7l9-11h-7z" />
     </svg>
   ),
   check: (props: any) => (
-    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" {...props}>
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" {...props}>
       <polyline points="20 6 9 17 4 12" />
     </svg>
   ),
   reset: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15" />
     </svg>
   ),
   deactivate: (props: any) => (
-    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" {...props}>
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" {...props}>
       <circle cx="12" cy="12" r="10" />
       <line x1="8" y1="12" x2="16" y2="12" />
     </svg>
   ),
 }
 
-// ==================== Premium Color Palette ====================
+// ==================== Bold Premium Color Palette ====================
 const colors = {
-  olive: {
-    50: '#f6f7f4',
-    100: '#e3e5de',
-    200: '#c7cbb8',
-    300: '#a8ae93',
-    400: '#8a9170',
-    500: '#6b7f3b', // Primary olive
-    600: '#5a6832',
-    700: '#4a5229',
-    800: '#3a3f20',
-    900: '#2a2d17',
+  forest: {
+    50: '#ecf0e6',
+    100: '#d4ddc4',
+    200: '#b9c7a0',
+    300: '#9eb07c',
+    400: '#839f58',
+    500: '#2C5F2D', // Deep forest green - primary
+    600: '#234a24',
+    700: '#1a361b',
+    800: '#112311',
+    900: '#080f08',
   },
-  ivory: '#faf9f7',
-  stone: '#e8e6e1',
-  warm: {
-    bg: '#fcfaf7',
-    surface: '#ffffff',
-    border: '#eae7e2',
-    text: '#2c2a27',
-    textSecondary: '#6b6762',
-  },
-  sage: '#a8b5a0',
-  charcoal: '#2c2a27',
-  amber: '#bd8a4a',
-  deepRed: '#9e4a4a',
+  olive: '#5C7344', // Secondary olive
+  charcoal: '#1E1E1E', // Rich dark text
+  slate: '#2D3E4F', // Deep accent
+  ivory: '#F8F6F0', // Warm supportive background
+  cream: '#FAF7F2', // Card background
+  gold: '#C6A15B', // Premium accent
+  amber: '#B58B4A', // Warning
+  deepRed: '#9E2A2B', // Destructive
+  border: '#E0DDD5', // Clean borders
 }
 
-// ==================== Unit Badge - Minimal, functional ====================
+// ==================== Unit Badge - Bold & Clear ====================
 const UnitBadge = ({ unit }: { unit: string }) => {
   const unitMap: Record<string, string> = {
     g: 'g',
@@ -175,23 +171,23 @@ const UnitBadge = ({ unit }: { unit: string }) => {
   }
 
   return (
-    <span className="inline-flex items-center justify-center px-1.5 py-0.5 text-[10px] font-mono text-stone-600 bg-stone-100 rounded">
+    <span className="inline-flex items-center justify-center px-2 py-1 text-[10px] font-mono font-medium text-forest-700 bg-forest-50 border border-forest-200 rounded-md">
       {unitMap[unit] || unit}
     </span>
   )
 }
 
-// ==================== Price Display - Clean, structured ====================
+// ==================== Price Display - Bold & Structured ====================
 const PriceDisplay = ({ amount, unit }: { amount: number; unit: string }) => (
-  <div className="flex items-center justify-end gap-1.5">
-    <span className="font-mono text-sm text-charcoal">
+  <div className="flex items-center justify-end gap-2">
+    <span className="font-mono text-base font-medium text-charcoal">
       {money(amount)}
     </span>
     <UnitBadge unit={unit} />
   </div>
 )
 
-// ==================== Modal - Calm, purposeful ====================
+// ==================== Modal - Strong Presence ====================
 function Modal({
   open,
   title,
@@ -215,7 +211,7 @@ function Modal({
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="absolute inset-0 bg-charcoal/10 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-charcoal/40 backdrop-blur-sm"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
@@ -223,22 +219,22 @@ function Modal({
           />
           <motion.div
             className="relative w-full max-w-lg mx-auto"
-            initial={{ scale: 0.98, opacity: 0, y: 8 }}
+            initial={{ scale: 0.96, opacity: 0, y: 10 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.98, opacity: 0, y: 8 }}
-            transition={{ duration: 0.2, ease: [0.16, 1, 0.3, 1] }}
+            exit={{ scale: 0.96, opacity: 0, y: 10 }}
+            transition={{ duration: 0.2 }}
           >
-            <div className="bg-white rounded-lg shadow-xl border border-stone-200 overflow-hidden">
-              <div className="flex items-center justify-between px-5 py-4 border-b border-stone-100">
-                <h2 className="text-sm font-medium text-charcoal">{title}</h2>
+            <div className="bg-white rounded-xl shadow-2xl border border-border overflow-hidden">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-border">
+                <h2 className="text-base font-semibold text-charcoal">{title}</h2>
                 <button
-                  className="p-1 rounded hover:bg-stone-100 text-stone-400 hover:text-stone-600 transition-colors"
+                  className="p-2 rounded-lg hover:bg-forest-50 text-stone-500 hover:text-forest-700 transition-colors"
                   onClick={onClose}
                 >
                   <Icons.close />
                 </button>
               </div>
-              <div className="px-5 py-5 max-h-[calc(90vh-8rem)] overflow-y-auto">
+              <div className="px-6 py-6 max-h-[calc(90vh-8rem)] overflow-y-auto">
                 {children}
               </div>
             </div>
@@ -249,7 +245,7 @@ function Modal({
   )
 }
 
-// ==================== Form Field - Clean, legible ====================
+// ==================== Form Field - Strong & Clear ====================
 const FormField = ({
   label,
   required,
@@ -263,17 +259,17 @@ const FormField = ({
 }) => (
   <div className="space-y-1.5">
     <div className="flex items-center justify-between">
-      <label className="text-xs font-medium text-stone-600">
+      <label className="text-sm font-semibold text-charcoal">
         {label}
         {required && <span className="text-deepRed ml-1">*</span>}
       </label>
-      {hint && <span className="text-[10px] text-stone-400">{hint}</span>}
+      {hint && <span className="text-xs text-stone-500">{hint}</span>}
     </div>
     {children}
   </div>
 )
 
-// ==================== Table Row - Refined, functional ====================
+// ==================== Table Row - Premium Presence ====================
 const IngredientTableRow = memo(function IngredientTableRow({
   ingredient,
   isDebug,
@@ -300,56 +296,57 @@ const IngredientTableRow = memo(function IngredientTableRow({
       exit={{ opacity: 0 }}
       transition={{ duration: 0.15 }}
       className={cls(
-        'group border-b border-stone-100 last:border-0 transition-colors',
-        !active && 'opacity-40'
+        'group border-b border-border last:border-0 hover:bg-forest-50/30 transition-colors',
+        !active && 'opacity-50'
       )}
     >
-      <td className="px-4 py-3">
-        <span className="text-xs font-mono text-stone-400">
+      <td className="px-4 py-4">
+        <span className="text-sm font-mono font-medium text-stone-600">
           {ingredient.code || '—'}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-4">
         <div className="flex items-center gap-2">
           <span className={cls(
-            "text-sm text-charcoal",
+            "text-base font-semibold text-charcoal",
             !active && "line-through text-stone-400"
           )}>
             {ingredient.name ?? '—'}
           </span>
           {hasWarning && (
-            <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-medium bg-amber/10 text-amber border border-amber/20">
+            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-medium bg-amber/10 text-amber border border-amber/20">
+              <Icons.alert width={10} height={10} />
               check unit
             </span>
           )}
         </div>
         {isDebug && (
-          <div className="text-[8px] font-mono text-stone-300 mt-1">
-            {ingredient.id.slice(0, 6)}…
+          <div className="text-[9px] font-mono text-stone-400 mt-1">
+            {ingredient.id.slice(0, 8)}...
           </div>
         )}
       </td>
-      <td className="px-4 py-3 text-sm text-stone-500">
+      <td className="px-4 py-4 text-base text-stone-600">
         {ingredient.category ?? '—'}
       </td>
-      <td className="px-4 py-3 text-center">
-        <span className="text-sm font-mono text-charcoal">
+      <td className="px-4 py-4 text-center">
+        <span className="text-base font-mono font-medium text-charcoal">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-4">
         <UnitBadge unit={unit} />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-4">
         <PriceDisplay amount={toNum(ingredient.pack_price, 0)} unit={unit} />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-4">
         <PriceDisplay amount={net} unit={unit} />
       </td>
-      <td className="px-4 py-3">
+      <td className="px-4 py-4">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
-            className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-olive-600 transition-colors"
+            className="p-2 rounded-lg hover:bg-forest-100 text-stone-500 hover:text-forest-700 transition-colors"
             onClick={() => onEdit(ingredient)}
             title="Edit"
           >
@@ -357,7 +354,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
           </button>
           {active && (
             <button
-              className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-amber transition-colors"
+              className="p-2 rounded-lg hover:bg-forest-100 text-stone-500 hover:text-amber transition-colors"
               onClick={() => onDeactivate(ingredient.id)}
               title="Deactivate"
             >
@@ -365,7 +362,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
             </button>
           )}
           <button
-            className="p-1.5 rounded hover:bg-stone-100 text-stone-400 hover:text-deepRed transition-colors"
+            className="p-2 rounded-lg hover:bg-forest-100 text-stone-500 hover:text-deepRed transition-colors"
             onClick={() => {
               if (window.confirm('Delete permanently? This cannot be undone.')) {
                 onHardDelete(ingredient.id)
@@ -381,40 +378,40 @@ const IngredientTableRow = memo(function IngredientTableRow({
   )
 })
 
-// ==================== Stat Card - Calm, informative ====================
+// ==================== Stat Card - Bold & Premium ====================
 const StatCard = ({ label, value, sublabel, warning }: { label: string; value: string | number; sublabel: string; warning?: boolean }) => (
-  <div className="bg-white rounded-lg p-4 border border-stone-100">
-    <div className="text-[10px] font-medium text-stone-400 uppercase tracking-wider mb-1">
+  <div className="bg-white rounded-xl p-6 border border-border shadow-sm">
+    <div className="text-xs font-semibold text-stone-500 uppercase tracking-wider mb-2">
       {label}
     </div>
     <div className={cls(
-      "text-xl font-light",
+      "text-2xl font-light",
       warning ? "text-amber" : "text-charcoal"
     )}>
       {value}
     </div>
-    <div className="text-[10px] text-stone-400 mt-1">
+    <div className="text-xs text-stone-500 mt-2">
       {sublabel}
     </div>
   </div>
 )
 
-// ==================== Empty State - Warm, inviting ====================
+// ==================== Empty State - Confident ====================
 const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: boolean }) => (
-  <div className="bg-white rounded-lg p-12 text-center border border-stone-100">
-    <div className="w-12 h-12 mx-auto mb-4 bg-stone-100 rounded-full flex items-center justify-center text-xl text-stone-400">
-      ⚕️
+  <div className="bg-white rounded-xl p-12 text-center border border-border">
+    <div className="w-16 h-16 mx-auto mb-4 bg-forest-50 rounded-2xl flex items-center justify-center text-3xl text-forest-700 border border-forest-200">
+      🥬
     </div>
-    <h3 className="text-base font-medium text-charcoal mb-2">
+    <h3 className="text-xl font-semibold text-charcoal mb-2">
       {hasFilters ? 'No matching ingredients' : 'No ingredients yet'}
     </h3>
-    <p className="text-sm text-stone-500 max-w-sm mx-auto mb-6">
+    <p className="text-base text-stone-600 max-w-sm mx-auto mb-8">
       {hasFilters
-        ? 'Try adjusting your search or filters.'
-        : 'Add your first ingredient to start building your kitchen database.'}
+        ? 'Try adjusting your search or filters to find what you need.'
+        : 'Add your first ingredient to start building your premium kitchen database.'}
     </p>
     <button
-      className="inline-flex items-center gap-2 px-4 py-2 bg-olive-600 text-white text-sm font-medium rounded hover:bg-olive-700 transition-colors"
+      className="inline-flex items-center gap-2 px-6 py-3 bg-forest-500 text-white text-base font-semibold rounded-xl hover:bg-forest-600 transition-colors shadow-md"
       onClick={onAdd}
     >
       <Icons.plus />
@@ -423,26 +420,26 @@ const EmptyState = ({ onAdd, hasFilters }: { onAdd: () => void; hasFilters: bool
   </div>
 )
 
-// ==================== Loading State - Quiet, calm ====================
+// ==================== Loading State - Clean ====================
 const LoadingState = () => (
   <div className="space-y-4">
     <div className="grid grid-cols-4 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white rounded-lg p-4 border border-stone-100">
-          <Skeleton className="h-3 w-16 mb-2 bg-stone-100" />
-          <Skeleton className="h-6 w-20 mb-1 bg-stone-100" />
-          <Skeleton className="h-3 w-24 bg-stone-100" />
+        <div key={i} className="bg-white rounded-xl p-6 border border-border">
+          <Skeleton className="h-4 w-16 mb-2" />
+          <Skeleton className="h-8 w-24 mb-1" />
+          <Skeleton className="h-3 w-20" />
         </div>
       ))}
     </div>
-    <div className="bg-white rounded-lg p-4 border border-stone-100">
-      <div className="space-y-2">
+    <div className="bg-white rounded-xl p-6 border border-border">
+      <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
           <div key={i} className="flex items-center gap-4 py-2">
-            <Skeleton className="h-3 w-16 bg-stone-100" />
-            <Skeleton className="h-3 w-32 flex-1 bg-stone-100" />
-            <Skeleton className="h-3 w-20 bg-stone-100" />
-            <Skeleton className="h-3 w-20 bg-stone-100" />
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-4 w-32 flex-1" />
+            <Skeleton className="h-4 w-20" />
+            <Skeleton className="h-4 w-20" />
           </div>
         ))}
       </div>
@@ -450,12 +447,12 @@ const LoadingState = () => (
   </div>
 )
 
-// ==================== Error State - Clear, not alarming ====================
+// ==================== Error State ====================
 const ErrorState = ({ message }: { message: string }) => (
-  <div className="bg-deepRed/5 rounded-lg p-6 border border-deepRed/10">
+  <div className="bg-deepRed/5 rounded-xl p-6 border border-deepRed/20">
     <div className="flex items-center gap-3 text-deepRed">
       <Icons.alert />
-      <span className="text-sm">{message}</span>
+      <span className="text-base font-medium">{message}</span>
     </div>
   </div>
 )
@@ -771,7 +768,6 @@ export default function Ingredients() {
     await load()
   }
 
-  // FIXED: استخدام علامات اقتباس عادية بدلاً من backticks
   const bulkRecalcNetCosts = async () => {
     if (filtered.length === 0) return
     const ok = window.confirm("Recalculate unit costs for " + filtered.length + " filtered items?")
@@ -798,7 +794,6 @@ export default function Ingredients() {
     }
   }
 
-  // FIXED: استخدام علامات اقتباس عادية بدلاً من backticks
   const bulkSetActive = async (active: boolean) => {
     if (filtered.length === 0) return
     const action = active ? 'Activate' : 'Deactivate'
@@ -823,53 +818,53 @@ export default function Ingredients() {
   }
 
   return (
-    <div className="min-h-screen bg-warm-bg">
+    <div className="min-h-screen bg-ivory">
       <div className="max-w-7xl mx-auto px-8 py-8">
-        {/* Header - Apple Calm */}
+        {/* Header - Bold & Clear */}
         <div className="flex items-center justify-between mb-8">
           <div>
-            <h1 className="text-xl font-light text-charcoal tracking-tight">Ingredients</h1>
-            <p className="text-xs text-stone-500 mt-1">
+            <h1 className="text-3xl font-light text-charcoal tracking-tight">Ingredients</h1>
+            <p className="text-base text-stone-600 mt-1">
               {filtered.length} items · {stats.missingCost} need pricing
             </p>
           </div>
           {isDebug && kitchenId && (
-            <span className="text-[9px] font-mono text-stone-400 bg-stone-100 px-2 py-1 rounded">
-              {kitchenId.slice(0, 6)}…
+            <span className="text-xs font-mono font-medium text-stone-500 bg-cream border border-border px-3 py-1.5 rounded-lg">
+              {kitchenId.slice(0, 8)}...
             </span>
           )}
         </div>
 
-        {/* Primary Action - Braun Function */}
-        <div className="flex items-center justify-between mb-6">
+        {/* Primary Action - Strong & Visible */}
+        <div className="flex items-center justify-between mb-8">
           <button
-            className="inline-flex items-center gap-2 px-4 py-2 bg-olive-600 text-white text-sm font-medium rounded hover:bg-olive-700 transition-colors"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-forest-500 text-white text-base font-semibold rounded-xl hover:bg-forest-600 transition-colors shadow-md"
             onClick={openCreate}
           >
             <Icons.plus />
             New ingredient
           </button>
 
-          {/* Bulk actions - only when filtered results exist */}
+          {/* Bulk actions - visible when needed */}
           {hasFilteredItems && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs text-stone-400 mr-1">Filtered:</span>
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-stone-500">Filtered:</span>
               <button
-                className="px-3 py-1.5 text-xs text-stone-600 bg-white border border-stone-200 rounded hover:bg-stone-50 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-medium text-charcoal bg-white border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
                 onClick={bulkRecalcNetCosts}
                 disabled={bulkWorking}
               >
                 Recalculate costs
               </button>
               <button
-                className="px-3 py-1.5 text-xs text-stone-600 bg-white border border-stone-200 rounded hover:bg-stone-50 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-medium text-charcoal bg-white border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
                 onClick={() => bulkSetActive(true)}
                 disabled={bulkWorking}
               >
                 Activate all
               </button>
               <button
-                className="px-3 py-1.5 text-xs text-stone-600 bg-white border border-stone-200 rounded hover:bg-stone-50 transition-colors disabled:opacity-40"
+                className="px-4 py-2 text-sm font-medium text-charcoal bg-white border border-border rounded-lg hover:bg-forest-50 hover:border-forest-300 transition-colors disabled:opacity-40"
                 onClick={() => bulkSetActive(false)}
                 disabled={bulkWorking}
               >
@@ -879,16 +874,16 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Filters - Linear Precision */}
-        <div className="flex items-center gap-3 mb-6">
+        {/* Filters - Sharp & Precise */}
+        <div className="flex items-center gap-3 mb-8">
           {/* Search */}
-          <div className="flex-1 max-w-sm">
+          <div className="flex-1 max-w-md">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">
+              <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-400">
                 <Icons.search />
               </span>
               <input
-                className="w-full pl-9 pr-8 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+                className="w-full pl-11 pr-10 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder="Search ingredients..."
@@ -896,10 +891,10 @@ export default function Ingredients() {
               {search && (
                 <button
                   type="button"
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-stone-400 hover:text-stone-600"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400 hover:text-forest-700"
                   onClick={() => setSearch('')}
                 >
-                  <Icons.close width={12} height={12} />
+                  <Icons.close width={16} height={16} />
                 </button>
               )}
             </div>
@@ -907,7 +902,7 @@ export default function Ingredients() {
 
           {/* Category filter */}
           <select
-            className="px-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+            className="px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
             value={category}
             onChange={(e) => setCategory(e.target.value)}
           >
@@ -919,7 +914,7 @@ export default function Ingredients() {
 
           {/* Sort */}
           <select
-            className="px-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+            className="px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as any)}
           >
@@ -931,18 +926,18 @@ export default function Ingredients() {
           {/* Show inactive toggle */}
           <button
             className={cls(
-              "inline-flex items-center gap-2 px-3 py-2 rounded text-sm transition-colors",
+              "inline-flex items-center gap-2 px-4 py-3 rounded-xl text-base font-medium transition-colors",
               showInactive
-                ? "bg-olive-600/10 text-olive-700 border border-olive-600/20"
-                : "bg-white border border-stone-200 text-stone-600 hover:bg-stone-50"
+                ? "bg-forest-500 text-white border border-forest-500"
+                : "bg-white text-charcoal border border-border hover:bg-forest-50"
             )}
             onClick={() => setShowInactive(!showInactive)}
           >
             <div className={cls(
-              "w-4 h-4 rounded border flex items-center justify-center",
-              showInactive ? "bg-olive-600 border-olive-600" : "border-stone-400"
+              "w-5 h-5 rounded-md border flex items-center justify-center",
+              showInactive ? "bg-white border-white" : "bg-white border-stone-400"
             )}>
-              {showInactive && <Icons.check width={10} height={10} className="text-white" />}
+              {showInactive && <Icons.check width={12} height={12} className="text-forest-500" />}
             </div>
             <span>Show inactive</span>
           </button>
@@ -950,7 +945,7 @@ export default function Ingredients() {
           {/* Clear filters */}
           {hasActiveFilters && (
             <button
-              className="p-2 bg-white border border-stone-200 rounded text-stone-400 hover:text-stone-600 hover:bg-stone-50 transition-colors"
+              className="p-3 bg-white border border-border rounded-xl text-stone-400 hover:text-forest-700 hover:border-forest-300 transition-colors"
               onClick={() => {
                 setSearch('')
                 setCategory('')
@@ -962,8 +957,8 @@ export default function Ingredients() {
           )}
         </div>
 
-        {/* Stats - Calm, informative */}
-        <div className="grid grid-cols-4 gap-4 mb-6">
+        {/* Stats - Strong Cards */}
+        <div className="grid grid-cols-4 gap-4 mb-8">
           <StatCard
             label="Total items"
             value={stats.items}
@@ -988,7 +983,7 @@ export default function Ingredients() {
           />
         </div>
 
-        {/* Main content - all states */}
+        {/* Main content */}
         {loading && <LoadingState />}
 
         {err && <ErrorState message={err} />}
@@ -998,22 +993,22 @@ export default function Ingredients() {
             {filtered.length === 0 ? (
               <EmptyState onAdd={openCreate} hasFilters={hasActiveFilters || !showInactive} />
             ) : (
-              <div className="bg-white rounded-lg border border-stone-100 overflow-hidden">
+              <div className="bg-white rounded-xl border border-border overflow-hidden shadow-sm">
                 <div className="overflow-x-auto">
                   <table className="w-full">
                     <thead>
-                      <tr className="border-b border-stone-100">
-                        <th className="px-4 py-3 text-left text-[9px] font-medium text-stone-400 uppercase tracking-wider">Code</th>
-                        <th className="px-4 py-3 text-left text-[9px] font-medium text-stone-400 uppercase tracking-wider">Name</th>
-                        <th className="px-4 py-3 text-left text-[9px] font-medium text-stone-400 uppercase tracking-wider">Category</th>
-                        <th className="px-4 py-3 text-center text-[9px] font-medium text-stone-400 uppercase tracking-wider">Pack</th>
-                        <th className="px-4 py-3 text-center text-[9px] font-medium text-stone-400 uppercase tracking-wider">Unit</th>
-                        <th className="px-4 py-3 text-right text-[9px] font-medium text-stone-400 uppercase tracking-wider">Pack Price</th>
-                        <th className="px-4 py-3 text-right text-[9px] font-medium text-stone-400 uppercase tracking-wider">Unit Price</th>
-                        <th className="px-4 py-3 text-right text-[9px] font-medium text-stone-400 uppercase tracking-wider">Actions</th>
+                      <tr className="border-b border-border bg-cream">
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Code</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Name</th>
+                        <th className="px-4 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Category</th>
+                        <th className="px-4 py-4 text-center text-xs font-semibold text-stone-600 uppercase tracking-wider">Pack</th>
+                        <th className="px-4 py-4 text-center text-xs font-semibold text-stone-600 uppercase tracking-wider">Unit</th>
+                        <th className="px-4 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Pack Price</th>
+                        <th className="px-4 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Unit Price</th>
+                        <th className="px-4 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-stone-100">
+                    <tbody className="divide-y divide-border">
                       <AnimatePresence>
                         {filtered.map((r) => (
                           <IngredientTableRow
@@ -1036,12 +1031,12 @@ export default function Ingredients() {
 
         {/* Modal */}
         <Modal open={modalOpen} title={editingId ? 'Edit ingredient' : 'New ingredient'} onClose={() => setModalOpen(false)}>
-          <div className="space-y-5">
+          <div className="space-y-6">
             {/* Basic Information */}
             <div className="space-y-4">
               <FormField label="Name" required>
                 <input
-                  className="w-full px-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+                  className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                   value={fName}
                   onChange={(e) => setFName(e.target.value)}
                   placeholder="e.g. Extra Virgin Olive Oil"
@@ -1051,7 +1046,7 @@ export default function Ingredients() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Category">
                   <input
-                    className="w-full px-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+                    className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                     value={fCategory}
                     onChange={(e) => setFCategory(e.target.value)}
                     placeholder="e.g. Oils"
@@ -1059,7 +1054,7 @@ export default function Ingredients() {
                 </FormField>
                 <FormField label="Supplier">
                   <input
-                    className="w-full px-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+                    className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                     value={fSupplier}
                     onChange={(e) => setFSupplier(e.target.value)}
                     placeholder="e.g. Sysco"
@@ -1071,15 +1066,15 @@ export default function Ingredients() {
             {/* Code Section */}
             <div className="space-y-3">
               <div className="flex items-center gap-2">
-                <h3 className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Code system</h3>
-                <span className="text-[8px] font-mono bg-stone-100 text-stone-500 px-1.5 py-0.5 rounded">Optional</span>
+                <h3 className="text-sm font-semibold text-charcoal">Code system</h3>
+                <span className="text-xs font-mono font-medium bg-cream text-stone-500 px-2 py-1 rounded-md border border-border">Optional</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
-                <FormField label="Ingredient code" hint="ING‑000123">
+                <FormField label="Ingredient code" hint="ING-000123">
                   <input
                     className={cls(
-                      "w-full px-3 py-2 bg-white border border-stone-200 rounded text-sm font-mono text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-stone-50 cursor-not-allowed"
+                      "w-full px-4 py-3 bg-white border border-border rounded-xl text-base font-mono text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
+                      !canEditCodes && "opacity-50 bg-cream cursor-not-allowed"
                     )}
                     value={fCode}
                     onChange={(e) => setFCode(e.target.value)}
@@ -1090,8 +1085,8 @@ export default function Ingredients() {
                 <FormField label="Category code" hint={`e.g. ${suggestedCodeCategory}`}>
                   <input
                     className={cls(
-                      "w-full px-3 py-2 bg-white border border-stone-200 rounded text-sm font-mono text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors",
-                      !canEditCodes && "opacity-50 bg-stone-50 cursor-not-allowed"
+                      "w-full px-4 py-3 bg-white border border-border rounded-xl text-base font-mono text-charcoal placeholder:text-stone-400 focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors",
+                      !canEditCodes && "opacity-50 bg-cream cursor-not-allowed"
                     )}
                     value={fCodeCategory}
                     onChange={(e) => setFCodeCategory(e.target.value)}
@@ -1101,8 +1096,8 @@ export default function Ingredients() {
                 </FormField>
               </div>
               {!canEditCodes && (
-                <p className="text-[9px] text-amber flex items-center gap-1">
-                  <Icons.alert width={10} height={10} />
+                <p className="text-sm text-amber flex items-center gap-1">
+                  <Icons.alert width={14} height={14} />
                   Owner-only
                 </p>
               )}
@@ -1110,7 +1105,7 @@ export default function Ingredients() {
 
             {/* Pack & Cost */}
             <div className="space-y-4">
-              <h3 className="text-[10px] font-medium text-stone-400 uppercase tracking-wider">Pack & Cost</h3>
+              <h3 className="text-sm font-semibold text-charcoal">Pack & Cost</h3>
 
               {/* Unit selector */}
               <div className="flex gap-2">
@@ -1120,10 +1115,10 @@ export default function Ingredients() {
                     type="button"
                     onClick={() => setFPackUnit(unit)}
                     className={cls(
-                      "flex-1 px-3 py-1.5 text-xs font-mono rounded border transition-colors",
+                      "flex-1 px-4 py-2.5 text-base font-mono font-medium rounded-lg border transition-colors",
                       fPackUnit === unit
-                        ? "bg-olive-600 text-white border-olive-600"
-                        : "bg-white text-stone-600 border-stone-200 hover:border-olive-600/30"
+                        ? "bg-forest-500 text-white border-forest-500"
+                        : "bg-white text-charcoal border-border hover:border-forest-300"
                     )}
                   >
                     {unit}
@@ -1135,20 +1130,20 @@ export default function Ingredients() {
                 <FormField label="Pack size" required>
                   <div className="relative">
                     <input
-                      className="w-full px-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors pr-12"
+                      className="w-full px-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors pr-16"
                       type="number"
                       min={1}
                       step="1"
                       value={fPackSize}
                       onChange={(e) => setFPackSize(e.target.value)}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-stone-400 font-mono">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-stone-500">
                       {fPackUnit}
                     </span>
                   </div>
                 </FormField>
                 <FormField label="Unit" required>
-                  <div className="px-3 py-2 bg-stone-50 border border-stone-200 rounded text-sm text-charcoal font-mono">
+                  <div className="px-4 py-3 bg-cream border border-border rounded-xl text-base text-charcoal font-mono">
                     {fPackUnit}
                   </div>
                 </FormField>
@@ -1157,9 +1152,9 @@ export default function Ingredients() {
               <div className="grid grid-cols-2 gap-4">
                 <FormField label="Pack price" required>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 text-lg">$</span>
                     <input
-                      className="w-full pl-7 pr-3 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors"
+                      className="w-full pl-8 pr-4 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors"
                       type="number"
                       step="0.01"
                       value={fPackPrice}
@@ -1169,15 +1164,15 @@ export default function Ingredients() {
                 </FormField>
                 <FormField label="Unit price" hint={"per " + fPackUnit}>
                   <div className="relative">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-stone-400">$</span>
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-stone-500 text-lg">$</span>
                     <input
-                      className="w-full pl-7 pr-12 py-2 bg-white border border-stone-200 rounded text-sm text-charcoal focus:outline-none focus:border-olive-600 focus:ring-1 focus:ring-olive-600/20 transition-colors font-mono"
+                      className="w-full pl-8 pr-16 py-3 bg-white border border-border rounded-xl text-base text-charcoal focus:outline-none focus:border-forest-500 focus:ring-2 focus:ring-forest-500/20 transition-colors font-mono"
                       type="number"
                       step="0.000001"
                       value={fNetUnitCost}
                       onChange={(e) => setFNetUnitCost(e.target.value)}
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[9px] text-stone-400">
+                    <span className="absolute right-4 top-1/2 -translate-y-1/2 text-sm font-mono text-stone-500">
                       {"/" + fPackUnit}
                     </span>
                   </div>
@@ -1186,18 +1181,18 @@ export default function Ingredients() {
 
               {/* Calculation preview */}
               {parseFloat(fPackPrice) > 0 && parseFloat(fPackSize) > 0 && (
-                <div className="p-3 bg-olive-50/50 rounded border border-olive-200/30">
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="text-olive-700">Preview:</span>
-                    <span className="font-mono text-olive-900">
+                <div className="p-4 bg-forest-50/50 rounded-xl border border-forest-200">
+                  <div className="flex items-center justify-between text-base">
+                    <span className="font-medium text-forest-700">Preview:</span>
+                    <span className="font-mono font-medium text-forest-800">
                       {"$" + parseFloat(fPackPrice) + " ÷ " + parseFloat(fPackSize) + " " + fPackUnit + " = $" + (parseFloat(fPackPrice) / parseFloat(fPackSize)).toFixed(4) + "/" + fPackUnit}
                     </span>
                   </div>
                   <button
-                    className="w-full mt-2 px-3 py-1.5 bg-white text-olive-700 rounded text-xs font-medium border border-olive-200 hover:bg-olive-50 transition-colors flex items-center justify-center gap-1"
+                    className="w-full mt-3 px-4 py-2.5 bg-white text-forest-700 rounded-lg text-base font-medium border border-forest-200 hover:bg-forest-50 transition-colors flex items-center justify-center gap-2"
                     onClick={smartRecalcNetCost}
                   >
-                    <Icons.bolt width={10} height={10} />
+                    <Icons.bolt width={14} height={14} />
                     Apply to unit price
                   </button>
                 </div>
@@ -1205,15 +1200,15 @@ export default function Ingredients() {
             </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t border-stone-100">
+            <div className="flex justify-end gap-3 pt-4 border-t border-border">
               <button
-                className="px-4 py-2 text-sm text-stone-500 hover:text-stone-700 hover:bg-stone-50 rounded transition-colors"
+                className="px-5 py-2.5 text-base font-medium text-stone-600 hover:text-charcoal hover:bg-cream rounded-lg transition-colors"
                 onClick={() => setModalOpen(false)}
               >
                 Cancel
               </button>
               <button
-                className="px-4 py-2 bg-olive-600 text-white text-sm font-medium rounded hover:bg-olive-700 transition-colors disabled:opacity-40"
+                className="px-5 py-2.5 bg-forest-500 text-white text-base font-semibold rounded-lg hover:bg-forest-600 transition-colors disabled:opacity-40"
                 onClick={save}
                 disabled={saving}
               >
