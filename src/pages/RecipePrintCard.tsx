@@ -128,14 +128,24 @@ function pct(n: number | null | undefined) {
 // Helper function to check if text contains invalid/greek characters
 function isValidText(text: string | null | undefined): boolean {
   if (!text) return false
-  // Check if text contains Greek letters or excessive special characters
+  const cleaned = String(text).trim()
+  if (cleaned.length === 0) return false
+  
+  // Check if text is mostly Greek letters
   const greekPattern = /[α-ωΑ-Ωγδφψω]/g
-  const matches = text.match(greekPattern)
-  if (matches && matches.length > text.length * 0.3) return false
+  const greekMatches = cleaned.match(greekPattern)
+  if (greekMatches && greekMatches.length > cleaned.length * 0.3) return false
+  
+  // Check if text contains random pattern like P-α-β-D-γ
+  const randomPattern = /[A-Z]-[α-ω]-[α-ω]-[A-Z]-[α-ω]/g
+  if (randomPattern.test(cleaned)) return false
+  
   // Check if text is too short or only symbols
-  if (text.length < 2) return false
+  if (cleaned.length < 2) return false
+  
   // Check if text contains only special characters
-  if (/^[^a-zA-Z0-9\u0600-\u06FF\u4e00-\u9fa5]+$/.test(text)) return false
+  if (/^[^a-zA-Z0-9\u0600-\u06FF\u4e00-\u9fa5]+$/.test(cleaned)) return false
+  
   return true
 }
 
@@ -154,7 +164,7 @@ function getValidCode(code: string | null | undefined, fallback: string = '—')
   // Check if code is valid (not greek letters, not too long, not just symbols)
   const greekPattern = /[α-ωΑ-Ωγδφψω]/g
   if (greekPattern.test(cleaned)) return fallback
-  if (cleaned.length > 30) return cleaned.slice(0, 25) + '...'
+  if (cleaned.length > 30) return cleaned.slice(0, 25) + '…'
   return cleaned
 }
 
@@ -293,8 +303,7 @@ export default function RecipePrintCard() {
 
       if (l.line_type === 'ingredient' && l.ingredient_id) {
         const ing = ingById.get(l.ingredient_id)
-        // Validate and clean ingredient data
-        const validName = getValidName(ing?.name, 'Missing Ingredient')
+        const validName = getValidName(ing?.name, '—')
         title = validName
         code = getValidCode(ing?.code, undefined)
         unitCost = toNum(ing?.net_unit_cost, 0)
@@ -302,7 +311,7 @@ export default function RecipePrintCard() {
 
       if (l.line_type === 'subrecipe' && l.sub_recipe_id) {
         const sr = subById.get(l.sub_recipe_id)
-        const validName = getValidName(sr?.name, 'Missing Sub Recipe')
+        const validName = getValidName(sr?.name, '—')
         title = validName
         code = getValidCode(sr?.code, undefined)
         unitCost = 0
@@ -474,7 +483,8 @@ export default function RecipePrintCard() {
           width: 100%;
           border-collapse: separate;
           border-spacing: 0;
-          min-width: 1200px;
+          min-width: 1400px;
+          table-layout: fixed;
         }
 
         .recipe-table thead {
@@ -499,10 +509,23 @@ export default function RecipePrintCard() {
         .recipe-table th {
           word-break: break-word;
           white-space: normal;
+          padding: 10px 12px;
+          vertical-align: top;
+        }
+
+        .recipe-table td.text-right,
+        .recipe-table th.text-right {
+          text-align: right;
         }
 
         .recipe-table .whitespace-nowrap {
           white-space: nowrap;
+        }
+
+        .recipe-table .break-words {
+          word-break: break-word;
+          white-space: normal;
+          overflow-wrap: break-word;
         }
 
         .step-grid {
@@ -531,6 +554,11 @@ export default function RecipePrintCard() {
             border-radius: 0 !important;
           }
 
+          .recipe-table {
+            min-width: 100%;
+            table-layout: auto;
+          }
+
           .recipe-table tr,
           .avoid-break,
           .step-card,
@@ -548,9 +576,15 @@ export default function RecipePrintCard() {
           }
         }
 
-        @media (max-width: 1024px) {
+        @media (max-width: 1400px) {
           .recipe-table {
-            min-width: 1000px;
+            min-width: 1300px;
+          }
+        }
+
+        @media (max-width: 1200px) {
+          .recipe-table {
+            min-width: 1100px;
           }
         }
       `}</style>
@@ -632,7 +666,7 @@ export default function RecipePrintCard() {
             </div>
           </header>
 
-          <section className="border-b border-[#dfe5df] px-8 py-8 md:px-10">
+          <section className="border-b border-[#dfe5df] px-6 py-6 md:px-8">
             <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
               <Panel title="Recipe Identity" accent="olive">
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -653,7 +687,7 @@ export default function RecipePrintCard() {
             </div>
           </section>
 
-          <section className="border-b border-[#dfe5df] px-8 py-8 md:px-10">
+          <section className="border-b border-[#dfe5df] px-6 py-6 md:px-8">
             <SectionTitle>Ingredient Costing & Sub-Recipes</SectionTitle>
 
             <div className="overflow-hidden rounded-[28px] border border-[#dfe5df]">
@@ -661,18 +695,18 @@ export default function RecipePrintCard() {
                 <table className="recipe-table w-full border-collapse text-sm">
                   <thead className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] text-[#556b2f]">
                     <tr>
-                      <Th className="w-[80px]">Code</Th>
-                      <Th className="min-w-[200px] w-[28%]">Item</Th>
-                      <Th className="min-w-[100px] w-[10%]">Note</Th>
-                      <Th className="w-[90px] text-right">Net Qty</Th>
-                      <Th className="w-[60px]">Unit</Th>
-                      <Th className="w-[90px] text-right">Gross Qty</Th>
-                      <Th className="w-[60px]">Unit</Th>
-                      <Th className="w-[80px] text-right">Yield</Th>
-                      <Th className="w-[80px] text-right">Qty %</Th>
-                      <Th className="w-[80px] text-right">Cost %</Th>
-                      <Th className="w-[100px] text-right">Unit Cost</Th>
-                      <Th className="w-[100px] text-right">Line Cost</Th>
+                      <Th className="w-[70px]">Code</Th>
+                      <Th className="min-w-[220px] w-[26%]">Item</Th>
+                      <Th className="min-w-[120px] w-[12%]">Note / Spec</Th>
+                      <Th className="w-[85px] text-right">Net Qty</Th>
+                      <Th className="w-[55px] text-center">Unit</Th>
+                      <Th className="w-[85px] text-right">Gross Qty</Th>
+                      <Th className="w-[55px] text-center">Unit</Th>
+                      <Th className="w-[75px] text-right">Yield</Th>
+                      <Th className="w-[75px] text-right">Qty %</Th>
+                      <Th className="w-[75px] text-right">Cost %</Th>
+                      <Th className="w-[95px] text-right">Unit Cost</Th>
+                      <Th className="w-[105px] text-right">Line Cost</Th>
                     </tr>
                   </thead>
 
@@ -683,7 +717,7 @@ export default function RecipePrintCard() {
                           <tr key={row.id} className="bg-[linear-gradient(90deg,#556b2f_0%,#2f6f5e_100%)] text-white">
                             <td colSpan={12} className="px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em]">
                               {row.groupTitle}
-                            </td>
+                             </td>
                           </tr>
                         )
                       }
@@ -692,39 +726,46 @@ export default function RecipePrintCard() {
                       const rowClass = row.isSubrecipe ? 'bg-[#eef3ef] text-stone-800' : zebra
                       
                       // Final validation for display
-                      const displayCode = row.code && isValidText(row.code) && !row.code.match(/[α-ωΑ-Ω]/) 
-                        ? row.code 
-                        : '—'
-                      const displayTitle = row.title !== 'Line' && row.title !== 'Missing Ingredient' && isValidText(row.title)
-                        ? row.title
-                        : (row.title === 'Missing Ingredient' ? '—' : row.title)
+                      let displayCode = '—'
+                      let displayTitle = '—'
+                      
+                      if (row.code && row.code !== 'Line' && !row.code.match(/[α-ωΑ-Ωγδφψω]/)) {
+                        displayCode = row.code.length > 20 ? row.code.slice(0, 18) + '…' : row.code
+                      }
+                      
+                      if (row.title && row.title !== 'Line' && row.title !== '—') {
+                        const hasGreek = /[α-ωΑ-Ωγδφψω]/.test(row.title)
+                        if (!hasGreek) {
+                          displayTitle = row.title
+                        }
+                      }
 
                       return (
-                        <tr key={row.id} className={`${rowClass} align-top text-stone-700`}>
-                          <Td className="font-medium text-[#2f6f5e] whitespace-nowrap">{displayCode}</Td>
+                        <tr key={row.id} className={`${rowClass} align-top text-stone-700 hover:bg-[#f5f7f2] transition-colors`}>
+                          <Td className="font-mono text-[11px] font-medium text-[#2f6f5e] whitespace-nowrap">{displayCode}</Td>
                           <Td className="font-semibold text-stone-900">
                             <div className="flex items-center gap-2">
                               {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
-                              <span className="break-words">{displayTitle}</span>
+                              <span className="break-words leading-tight">{displayTitle}</span>
                             </div>
                           </Td>
-                          <Td className="text-stone-600 break-words">{row.note || '—'}</Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">{fmtQty(row.net)}</Td>
-                          <Td className="whitespace-nowrap">{row.unit}</Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">{fmtQty(row.gross)}</Td>
-                          <Td className="whitespace-nowrap">{row.unit}</Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">{row.yieldPct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">{row.sharePct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">{row.costSharePct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums whitespace-nowrap">{fmtMoney(row.unitCost, currency)}</Td>
-                          <Td className="text-right font-semibold tabular-nums whitespace-nowrap text-[#556b2f]">{fmtMoney(row.lineCost, currency)}</Td>
+                          <Td className="text-stone-500 text-[12px] break-words">{row.note || '—'}</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtQty(row.net)}</Td>
+                          <Td className="whitespace-nowrap text-center">{row.unit}</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtQty(row.gross)}</Td>
+                          <Td className="whitespace-nowrap text-center">{row.unit}</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap font-mono">{row.yieldPct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap font-mono">{row.sharePct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap font-mono">{row.costSharePct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtMoney(row.unitCost, currency)}</Td>
+                          <Td className="text-right font-semibold tabular-nums whitespace-nowrap font-mono text-[#556b2f]">{fmtMoney(row.lineCost, currency)}</Td>
                         </tr>
                       )
                     })}
                   </tbody>
 
                   <tfoot>
-                    <tr className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)]">
+                    <tr className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] border-t border-[#dfe5df]">
                       <td colSpan={10} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                         Total Recipe Cost
                       </td>
@@ -739,7 +780,7 @@ export default function RecipePrintCard() {
           </section>
 
           {(steps.length || methodText) ? (
-            <section className="border-b border-[#dfe5df] px-8 py-8 md:px-10">
+            <section className="border-b border-[#dfe5df] px-6 py-6 md:px-8">
               <SectionTitle>Preparation Method & Step Photos</SectionTitle>
 
               {steps.length ? (
@@ -795,7 +836,7 @@ export default function RecipePrintCard() {
           ) : null}
 
           {showNutrition ? (
-            <section className="avoid-break border-b border-[#dfe5df] px-8 py-8 md:px-10">
+            <section className="avoid-break border-b border-[#dfe5df] px-6 py-6 md:px-8">
               <SectionTitle>Nutrition Overview</SectionTitle>
               <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                 <NutritionCard label="Calories" value={fmtMacro(recipe.calories)} unit="kcal" />
@@ -806,7 +847,7 @@ export default function RecipePrintCard() {
             </section>
           ) : null}
 
-          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-8 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-10">
+          <footer className="flex flex-col gap-3 bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] px-6 py-5 text-xs text-stone-500 md:flex-row md:items-center md:justify-between md:px-8">
             <div>
               <div className="font-semibold uppercase tracking-[0.2em] text-[#556b2f]">GastroChef World-Class Kitchen System</div>
               <div className="mt-1">Live recipe data from your system, with dish image, step photos, costing, and kitchen-ready preparation flow.</div>
@@ -820,7 +861,7 @@ export default function RecipePrintCard() {
 }
 
 function SectionTitle({ children }: { children: ReactNode }) {
-  return <h2 className="mb-6 text-[1.85rem] font-semibold tracking-[-0.03em] text-[#556b2f]">{children}</h2>
+  return <h2 className="mb-5 text-[1.7rem] font-semibold tracking-[-0.03em] text-[#556b2f] md:mb-6 md:text-[1.85rem]">{children}</h2>
 }
 
 function Tag({ children, tone = 'primary' }: { children: ReactNode; tone?: 'primary' | 'secondary' }) {
@@ -887,9 +928,9 @@ function NutritionCard({ label, value, unit }: { label: string; value: string; u
 }
 
 function Th({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <th className={`border-b border-[#dfe5df] px-4 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] ${className}`}>{children}</th>
+  return <th className={`border-b border-[#dfe5df] px-3 py-3 text-left text-[11px] font-semibold uppercase tracking-[0.16em] ${className}`}>{children}</th>
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`border-b border-[#eef1ee] px-4 py-3 ${className}`}>{children}</td>
+  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children}</td>
 }
