@@ -4242,4 +4242,42 @@ export default function RecipeEditor() {
 
                     return (
                       <tr key={l.id}>
-                        <td><span className="gc-code-display">{code}</span>
+                        <td><span className="gc-code-display">{code}</span></td>
+                        <td>
+                          <div>
+                            <div>{name}</div>
+                            {l.notes && <div style={{ fontSize: '8pt', color: '#64748B' }}>{l.notes}</div>}
+                          </div>
+                        </td>
+                        <td>{c ? fmtQty(c.net) : '—'}</td>
+                        <td>{l.unit || 'g'}</td>
+                        <td>{c ? fmtQty(c.gross) : '—'}</td>
+                        <td>{c ? `${c.yieldPct.toFixed(1)}%` : '—'}</td>
+                        <td>{l.notes || '—'}</td>
+                      </tr>
+                    )
+                  })}
+              </tbody>
+            </table>
+          </div>
+
+          {steps.length ? (
+            <div className="gc-print-section">
+              <div className="gc-print-title">Method</div>
+              <div className="gc-print-text">
+                {steps.map((s, i) => `${i + 1}. ${s}`).join('\n')}
+              </div>
+            </div>
+          ) : methodLegacy ? (
+            <div className="gc-print-section">
+              <div className="gc-print-title">Method</div>
+              <div className="gc-print-text">{methodLegacy}</div>
+            </div>
+          ) : null}
+        </div>
+      </div>
+
+      {toastOpen && <Toast message={toastMsg} onClose={() => setToastOpen(false)} />}
+    </>
+  )
+}
