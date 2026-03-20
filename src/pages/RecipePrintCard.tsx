@@ -125,6 +125,39 @@ function pct(n: number | null | undefined) {
   return `${Number(n).toFixed(1)}%`
 }
 
+// Helper function to check if text contains invalid/greek characters
+function isValidText(text: string | null | undefined): boolean {
+  if (!text) return false
+  // Check if text contains Greek letters or excessive special characters
+  const greekPattern = /[α-ωΑ-Ωγδφψω]/g
+  const matches = text.match(greekPattern)
+  if (matches && matches.length > text.length * 0.3) return false
+  // Check if text is too short or only symbols
+  if (text.length < 2) return false
+  // Check if text contains only special characters
+  if (/^[^a-zA-Z0-9\u0600-\u06FF\u4e00-\u9fa5]+$/.test(text)) return false
+  return true
+}
+
+// Helper function to clean and validate ingredient name
+function getValidName(name: string | null | undefined, fallback: string = '—'): string {
+  const cleaned = cleanText(name)
+  if (!cleaned) return fallback
+  if (isValidText(cleaned)) return cleaned
+  return fallback
+}
+
+// Helper function to clean and validate ingredient code
+function getValidCode(code: string | null | undefined, fallback: string = '—'): string {
+  const cleaned = cleanText(code)
+  if (!cleaned) return fallback
+  // Check if code is valid (not greek letters, not too long, not just symbols)
+  const greekPattern = /[α-ωΑ-Ωγδφψω]/g
+  if (greekPattern.test(cleaned)) return fallback
+  if (cleaned.length > 30) return cleaned.slice(0, 25) + '...'
+  return cleaned
+}
+
 export default function RecipePrintCard() {
   const [sp] = useSearchParams()
   const id = sp.get('id')
@@ -260,15 +293,18 @@ export default function RecipePrintCard() {
 
       if (l.line_type === 'ingredient' && l.ingredient_id) {
         const ing = ingById.get(l.ingredient_id)
-        title = ing?.name || 'Ingredient'
-        code = ing?.code || undefined
+        // Validate and clean ingredient data
+        const validName = getValidName(ing?.name, 'Missing Ingredient')
+        title = validName
+        code = getValidCode(ing?.code, undefined)
         unitCost = toNum(ing?.net_unit_cost, 0)
       }
 
       if (l.line_type === 'subrecipe' && l.sub_recipe_id) {
         const sr = subById.get(l.sub_recipe_id)
-        title = sr?.name || 'Sub Recipe'
-        code = sr?.code || undefined
+        const validName = getValidName(sr?.name, 'Missing Sub Recipe')
+        title = validName
+        code = getValidCode(sr?.code, undefined)
         unitCost = 0
         isSubrecipe = true
       }
@@ -654,14 +690,22 @@ export default function RecipePrintCard() {
 
                       const zebra = index % 2 === 0 ? 'bg-white' : 'bg-[#fbfcfb]'
                       const rowClass = row.isSubrecipe ? 'bg-[#eef3ef] text-stone-800' : zebra
+                      
+                      // Final validation for display
+                      const displayCode = row.code && isValidText(row.code) && !row.code.match(/[α-ωΑ-Ω]/) 
+                        ? row.code 
+                        : '—'
+                      const displayTitle = row.title !== 'Line' && row.title !== 'Missing Ingredient' && isValidText(row.title)
+                        ? row.title
+                        : (row.title === 'Missing Ingredient' ? '—' : row.title)
 
                       return (
                         <tr key={row.id} className={`${rowClass} align-top text-stone-700`}>
-                          <Td className="font-medium text-[#2f6f5e] whitespace-nowrap">{row.code || '—'}</Td>
+                          <Td className="font-medium text-[#2f6f5e] whitespace-nowrap">{displayCode}</Td>
                           <Td className="font-semibold text-stone-900">
                             <div className="flex items-center gap-2">
                               {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
-                              <span className="break-words">{row.title}</span>
+                              <span className="break-words">{displayTitle}</span>
                             </div>
                           </Td>
                           <Td className="text-stone-600 break-words">{row.note || '—'}</Td>
