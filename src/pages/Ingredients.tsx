@@ -7,6 +7,7 @@ import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
 import { motion, AnimatePresence } from 'framer-motion'
+import { displayCode } from '../lib/codes'
 
 type IngredientRow = {
   id: string
@@ -255,8 +256,8 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const net = toNum(ingredient.net_unit_cost, 0)
   const unit = ingredient.pack_unit ?? 'g'
   const flag = sanityFlag(net, unit)
+  const ingredientCode = ingredient.code || displayCode('ING', ingredient.id)
 
-  // Safer approach: deactivate is primary, delete is secondary with confirmation
   const handleDeleteClick = () => {
     if (window.confirm('Delete permanently? This cannot be undone.')) {
       onHardDelete(ingredient.id)
@@ -282,9 +283,9 @@ const IngredientTableRow = memo(function IngredientTableRow({
     >
       <td className="px-4 py-3">
         <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-          {ingredient.code || '—'}
+          {ingredientCode}
         </span>
-      </td>
+       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <span className={cls(
@@ -305,24 +306,24 @@ const IngredientTableRow = memo(function IngredientTableRow({
             {ingredient.id.slice(0, 8)}...
           </div>
         )}
-      </td>
+       </td>
       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
         {ingredient.category ?? '—'}
-      </td>
+       </td>
       <td className="px-4 py-3 text-center">
         <span className="text-sm font-mono text-gray-900 dark:text-white">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
-      </td>
+       </td>
       <td className="px-4 py-3">
         <UnitBadge unit={unit} />
-      </td>
+       </td>
       <td className="px-4 py-3">
         <PriceDisplay amount={toNum(ingredient.pack_price, 0)} unit={unit} />
-      </td>
+       </td>
       <td className="px-4 py-3">
         <PriceDisplay amount={net} unit={unit} />
-      </td>
+       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -352,7 +353,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
             <Icons.delete />
           </button>
         </div>
-      </td>
+       </td>
     </motion.tr>
   )
 })
@@ -647,7 +648,10 @@ export default function Ingredients() {
 
   const openCreate = () => {
     setEditingId(null)
-    setFCode('')
+    // Generate new ingredient code
+    const nextNumber = rows.length + 1
+    const newCode = `ING-${String(nextNumber).padStart(4, '0')}`
+    setFCode(newCode)
     setFCodeCategory('')
     setFName('')
     setFCategory('')
@@ -661,7 +665,8 @@ export default function Ingredients() {
 
   const openEdit = (r: IngredientRow) => {
     setEditingId(r.id)
-    setFCode((r.code ?? '').toUpperCase())
+    const existingCode = (r.code ?? '').toUpperCase()
+    setFCode(existingCode || `ING-${String(rows.findIndex(x => x.id === r.id) + 1).padStart(4, '0')}`)
     setFCodeCategory((r.code_category ?? '').toUpperCase())
     setFName(r.name ?? '')
     setFCategory(r.category ?? '')
@@ -686,7 +691,10 @@ export default function Ingredients() {
     if (!name) return showToast('Name is required')
 
     const codeInput = (fCode || '').trim().toUpperCase()
-    if (codeInput && !codeInput.startsWith('ING-')) return showToast('Code must start with ING-')
+    // Allow ING- prefix or generate automatically
+    if (codeInput && !codeInput.startsWith('ING-')) {
+      return showToast('Code must start with ING-')
+    }
 
     const codeCatInput = (fCodeCategory || '').trim().toUpperCase()
     if (codeCatInput) {
