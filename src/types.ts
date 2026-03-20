@@ -1,3 +1,4 @@
+// src/types.ts
 export type Recipe = {
   id: string
   name: string
