@@ -12,8 +12,612 @@ import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
 
-type LineType = 'ingredient' | 'subrecipe' | 'group'
+// ============================================================================
+// 🎨 DESIGN TOKENS - نظام التصميم الموحد
+// ============================================================================
+const DesignTokens = (
+  <style>{`
+    :root {
+      /* Primary Palette - Teal/Emerald */
+      --color-primary-50:  #f0fdfa;
+      --color-primary-100: #ccfbf1;
+      --color-primary-200: #99f6e4;
+      --color-primary-300: #5eead4;
+      --color-primary-400: #2dd4bf;
+      --color-primary-500: #14b8a6;
+      --color-primary-600: #0d9488;
+      --color-primary-700: #0f766e;
+      --color-primary-800: #115e59;
+      --color-primary-900: #134e4a;
 
+      /* Secondary Palette - Amber/Warm */
+      --color-secondary-50:  #fffbeb;
+      --color-secondary-100: #fef3c7;
+      --color-secondary-200: #fde68a;
+      --color-secondary-300: #fcd34d;
+      --color-secondary-400: #fbbf24;
+      --color-secondary-500: #f59e0b;
+      --color-secondary-600: #d97706;
+      --color-secondary-700: #b45309;
+
+      /* Neutral Palette */
+      --color-neutral-50:  #f8fafc;
+      --color-neutral-100: #f1f5f9;
+      --color-neutral-200: #e2e8f0;
+      --color-neutral-300: #cbd5e1;
+      --color-neutral-400: #94a3b8;
+      --color-neutral-500: #64748b;
+      --color-neutral-600: #475569;
+      --color-neutral-700: #334155;
+      --color-neutral-800: #1e293b;
+      --color-neutral-900: #0f172a;
+
+      /* Semantic Colors */
+      --color-success: #22c55e;
+      --color-warning: #f59e0b;
+      --color-error: #ef4444;
+      --color-info: #3b82f6;
+
+      /* Backgrounds */
+      --bg-primary: #ffffff;
+      --bg-secondary: #f8fafc;
+      --bg-tertiary: #f1f5f9;
+
+      /* Borders */
+      --border-light: rgba(148, 163, 184, 0.2);
+      --border-medium: rgba(148, 163, 184, 0.4);
+      --border-strong: rgba(148, 163, 184, 0.8);
+
+      /* Shadows */
+      --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+
+      /* Transitions */
+      --transition-fast: 150ms ease;
+      --transition-normal: 250ms ease;
+
+      /* Border Radius */
+      --radius-sm: 0.375rem;
+      --radius-md: 0.5rem;
+      --radius-lg: 0.75rem;
+      --radius-xl: 1rem;
+      --radius-2xl: 1.5rem;
+      --radius-full: 9999px;
+
+      /* Typography */
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+    }
+
+    /* Dark Mode Support */
+    [data-theme="dark"] {
+      --bg-primary: #0f172a;
+      --bg-secondary: #1e293b;
+      --bg-tertiary: #334155;
+      --color-neutral-50: #0f172a;
+      --color-neutral-900: #ffffff;
+    }
+  `}</style>
+)
+
+// ============================================================================
+// 🎨 COMPONENT STYLES - أنماط المكونات
+// ============================================================================
+const ComponentStyles = (
+  <style>{`
+    /* === Base Components === */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1.25rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      border-radius: var(--radius-lg);
+      border: 2px solid transparent;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    .btn:focus-visible {
+      outline: none;
+      box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.25);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--color-primary-500), var(--color-primary-600));
+      color: white;
+      box-shadow: var(--shadow-md);
+    }
+
+    .btn-primary:hover:not(:disabled) {
+      background: linear-gradient(135deg, var(--color-primary-600), var(--color-primary-700));
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .btn-secondary {
+      background: var(--bg-primary);
+      color: var(--color-neutral-700);
+      border-color: var(--border-medium);
+    }
+
+    .btn-secondary:hover:not(:disabled) {
+      background: var(--bg-secondary);
+      border-color: var(--color-primary-400);
+      color: var(--color-primary-700);
+      transform: translateY(-1px);
+    }
+
+    .btn-ghost {
+      background: transparent;
+      color: var(--color-neutral-600);
+      border-color: transparent;
+    }
+
+    .btn-ghost:hover:not(:disabled) {
+      background: var(--bg-secondary);
+      color: var(--color-neutral-800);
+    }
+
+    .btn-danger {
+      background: var(--color-error);
+      color: white;
+    }
+
+    .btn-danger:hover:not(:disabled) {
+      background: #dc2626;
+      transform: translateY(-2px);
+    }
+
+    .btn-sm {
+      padding: 0.5rem 1rem;
+      font-size: 0.75rem;
+      border-radius: var(--radius-md);
+    }
+
+    .btn-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      padding: 0;
+      border-radius: var(--radius-lg);
+    }
+
+    /* === Inputs === */
+    .input {
+      width: 100%;
+      padding: 0.75rem 1rem;
+      font-size: 1rem;
+      color: var(--color-neutral-800);
+      background: var(--bg-primary);
+      border: 2px solid var(--border-light);
+      border-radius: var(--radius-lg);
+      transition: all var(--transition-fast);
+    }
+
+    .input::placeholder {
+      color: var(--color-neutral-400);
+    }
+
+    .input:hover {
+      border-color: var(--border-medium);
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--color-primary-500);
+      box-shadow: 0 0 0 4px rgba(20, 184, 166, 0.15);
+    }
+
+    .input:disabled {
+      background: var(--bg-tertiary);
+      color: var(--color-neutral-400);
+      cursor: not-allowed;
+    }
+
+    .select {
+      appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2364748b'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+      background-repeat: no-repeat;
+      background-position: right 12px center;
+      background-size: 1.25rem;
+      padding-right: 2.5rem;
+      cursor: pointer;
+    }
+
+    .textarea {
+      min-height: 100px;
+      resize: vertical;
+      line-height: 1.6;
+    }
+
+    /* === Cards === */
+    .card {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-2xl);
+      box-shadow: var(--shadow-md);
+      transition: all var(--transition-normal);
+      overflow: hidden;
+      margin-bottom: 1.25rem;
+    }
+
+    .card:hover {
+      border-color: var(--color-primary-300);
+      box-shadow: var(--shadow-lg);
+      transform: translateY(-2px);
+    }
+
+    .card-header {
+      padding: 1.25rem 1.5rem;
+      border-bottom: 1px solid var(--border-light);
+      background: linear-gradient(to right, rgba(20, 184, 166, 0.03), transparent);
+    }
+
+    .card-body {
+      padding: 1.5rem;
+    }
+
+    .card-footer {
+      padding: 1rem 1.5rem;
+      border-top: 1px solid var(--border-light);
+      background: var(--bg-secondary);
+    }
+
+    .card-soft {
+      background: var(--bg-secondary);
+      border: 1px dashed var(--border-light);
+      border-radius: var(--radius-xl);
+    }
+
+    /* === KPI Cards === */
+    .kpi-card {
+      background: linear-gradient(145deg, var(--bg-primary), var(--bg-secondary));
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      padding: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: all var(--transition-fast);
+    }
+
+    .kpi-card:hover {
+      transform: translateY(-4px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--color-primary-500), var(--color-secondary-400));
+      opacity: 0.7;
+    }
+
+    .kpi-label {
+      font-size: 0.75rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--color-neutral-500);
+      margin-bottom: 0.5rem;
+    }
+
+    .kpi-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--color-neutral-800);
+      font-family: var(--font-mono);
+    }
+
+    /* === Tables === */
+    .table-container {
+      background: var(--bg-primary);
+      border: 1px solid var(--border-light);
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+    }
+
+    .table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.875rem;
+      table-layout: fixed;
+    }
+
+    .table thead {
+      background: linear-gradient(to bottom, var(--bg-secondary), var(--bg-tertiary));
+      border-bottom: 2px solid var(--border-medium);
+    }
+
+    .table th {
+      padding: 0.75rem 1rem;
+      font-weight: 700;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--color-neutral-600);
+      text-align: left;
+      border-right: 1px solid var(--border-light);
+    }
+
+    .table th:last-child {
+      border-right: none;
+    }
+
+    .table td {
+      padding: 0.75rem 1rem;
+      border-bottom: 1px solid var(--border-light);
+      border-right: 1px solid var(--border-light);
+      vertical-align: middle;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .table td:last-child {
+      border-right: none;
+    }
+
+    .table tbody tr:hover {
+      background: rgba(20, 184, 166, 0.04);
+    }
+
+    .table tbody tr.has-note {
+      background: rgba(245, 158, 11, 0.03);
+    }
+
+    .row-group {
+      background: linear-gradient(to right, rgba(20, 184, 166, 0.05), rgba(245, 158, 11, 0.05));
+      font-weight: 600;
+    }
+
+    @keyframes flash-row {
+      0%, 100% { background: transparent; }
+      50% { background: rgba(20, 184, 166, 0.15); }
+    }
+
+    .row-flash {
+      animation: flash-row 0.5s ease;
+    }
+
+    /* === Badges === */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.25rem;
+      padding: 0.25rem 0.75rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      border-radius: var(--radius-full);
+      white-space: nowrap;
+    }
+
+    .badge-primary {
+      background: rgba(20, 184, 166, 0.15);
+      color: var(--color-primary-700);
+    }
+
+    .badge-secondary {
+      background: rgba(245, 158, 11, 0.15);
+      color: var(--color-secondary-700);
+    }
+
+    .badge-success {
+      background: rgba(34, 197, 94, 0.15);
+      color: #166534;
+    }
+
+    /* === Status Indicators === */
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+
+    .status-dot.saving {
+      background: var(--color-primary-500);
+      animation: pulse 2s infinite;
+    }
+
+    .status-dot.saved {
+      background: var(--color-success);
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.6; transform: scale(1.1); }
+    }
+
+    /* === Warning Banner === */
+    .banner-warning {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.75rem;
+      padding: 1rem;
+      background: rgba(245, 158, 11, 0.08);
+      border: 1px solid rgba(245, 158, 11, 0.3);
+      border-radius: var(--radius-lg);
+      animation: slideIn 0.3s ease;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(-8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* === Section Navigation === */
+    .section-nav {
+      display: flex;
+      gap: 0.5rem;
+      overflow-x: auto;
+      padding-bottom: 0.5rem;
+    }
+
+    .section-btn {
+      padding: 0.5rem 1rem;
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: var(--color-neutral-600);
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-full);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+      white-space: nowrap;
+    }
+
+    .section-btn:hover {
+      color: var(--color-primary-600);
+      background: rgba(20, 184, 166, 0.1);
+    }
+
+    .section-btn.active {
+      color: var(--color-primary-700);
+      background: rgba(20, 184, 166, 0.15);
+      font-weight: 600;
+    }
+
+    /* === Grid System === */
+    .grid {
+      display: grid;
+      gap: 1.5rem;
+    }
+
+    .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+    .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+    .grid-cols-12 { grid-template-columns: repeat(12, 1fr); }
+
+    .col-span-12 { grid-column: span 12; }
+    .col-span-6 { grid-column: span 6; }
+    .col-span-4 { grid-column: span 4; }
+    .col-span-3 { grid-column: span 3; }
+
+    @media (max-width: 1024px) {
+      .grid-cols-4 { grid-template-columns: repeat(2, 1fr); }
+      .col-span-6, .col-span-4, .col-span-3 { grid-column: span 12; }
+    }
+
+    @media (max-width: 640px) {
+      .grid-cols-2, .grid-cols-3, .grid-cols-4 {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    /* === Typography === */
+    .text-display {
+      font-size: 2.25rem;
+      font-weight: 800;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      color: var(--color-neutral-900);
+    }
+
+    .text-heading {
+      font-size: 1.5rem;
+      font-weight: 700;
+      line-height: 1.2;
+      color: var(--color-neutral-800);
+    }
+
+    .text-subheading {
+      font-size: 1.125rem;
+      font-weight: 600;
+      color: var(--color-neutral-700);
+    }
+
+    .text-body {
+      font-size: 1rem;
+      font-weight: 400;
+      line-height: 1.5;
+      color: var(--color-neutral-600);
+    }
+
+    .text-caption {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--color-neutral-500);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .text-primary { color: var(--color-primary-600); }
+    .text-secondary { color: var(--color-secondary-600); }
+    .text-success { color: var(--color-success); }
+    .text-warning { color: var(--color-warning); }
+    .text-error { color: var(--color-error); }
+    .text-muted { color: var(--color-neutral-500); }
+
+    /* === Utilities === */
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+    .justify-between { justify-content: space-between; }
+    .gap-1 { gap: 0.25rem; }
+    .gap-2 { gap: 0.5rem; }
+    .gap-3 { gap: 0.75rem; }
+    .gap-4 { gap: 1rem; }
+    .gap-6 { gap: 1.5rem; }
+    .mb-2 { margin-bottom: 0.5rem; }
+    .mb-4 { margin-bottom: 1rem; }
+    .mt-2 { margin-top: 0.5rem; }
+    .mt-4 { margin-top: 1rem; }
+    .p-2 { padding: 0.5rem; }
+    .p-4 { padding: 1rem; }
+    .rounded-lg { border-radius: var(--radius-lg); }
+    .rounded-xl { border-radius: var(--radius-xl); }
+    .rounded-full { border-radius: var(--radius-full); }
+    .font-mono { font-family: var(--font-mono); }
+    .font-bold { font-weight: 700; }
+    .font-semibold { font-weight: 600; }
+
+    /* === Loading States === */
+    .skeleton {
+      background: linear-gradient(90deg, var(--bg-tertiary) 25%, var(--bg-secondary) 50%, var(--bg-tertiary) 75%);
+      background-size: 200% 100%;
+      animation: skeleton-loading 1.5s infinite;
+      border-radius: var(--radius-md);
+    }
+
+    @keyframes skeleton-loading {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* === Accessibility === */
+    *:focus-visible {
+      outline: 2px solid var(--color-primary-500);
+      outline-offset: 2px;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+  `}</style>
+)
+
+// ============================================================================
+// TYPES
+// ============================================================================
+type LineType = 'ingredient' | 'subrecipe' | 'group'
 type Recipe = {
   id: string
   code?: string | null
@@ -39,7 +643,6 @@ type Recipe = {
   currency?: string | null
   target_food_cost_pct?: number | null
 }
-
 type Ingredient = {
   id: string
   code?: string | null
@@ -49,7 +652,6 @@ type Ingredient = {
   net_unit_cost?: number | null
   is_active?: boolean | null
 }
-
 type Line = {
   id: string
   kitchen_id: string | null
@@ -66,6 +668,9 @@ type Line = {
   group_title: string | null
 }
 
+// ============================================================================
+// UTILITY FUNCTIONS (UNCHANGED)
+// ============================================================================
 function toNum(x: any, fallback = 0) {
   const n = Number(x)
   return Number.isFinite(n) ? n : fallback
@@ -156,6 +761,9 @@ function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
 }
 
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 export default function RecipeEditor() {
   const { isKitchen, isMgmt } = useMode()
   const showCost = isMgmt
@@ -165,10 +773,9 @@ export default function RecipeEditor() {
   const navigate = useNavigate()
   const [sp] = useSearchParams()
   const id = sp.get('id')
-
   const autosave = useAutosave()
-
   const mounted = useRef(true)
+
   useEffect(() => {
     mounted.current = true
     return () => {
@@ -178,7 +785,6 @@ export default function RecipeEditor() {
 
   const [loading, setLoading] = useState(true)
   const [err, setErr] = useState<string | null>(null)
-
   const [recipe, setRecipe] = useState<Recipe | null>(null)
   const [lines, setLines] = useState<Line[]>([])
 
@@ -200,9 +806,9 @@ export default function RecipeEditor() {
 
   const [ingredients, setIngredients] = useState<Ingredient[]>([])
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
-
   const [toastMsg, setToastMsg] = useState('')
   const [toastOpen, setToastOpen] = useState(false)
+
   const showToast = useCallback((msg: string) => {
     setToastMsg(msg)
     setToastOpen(true)
@@ -215,25 +821,20 @@ export default function RecipeEditor() {
   const [category, setCategory] = useState('')
   const [portions, setPortions] = useState('1')
   const [description, setDescription] = useState('')
-
   const [steps, setSteps] = useState<string[]>([])
   const [newStep, setNewStep] = useState('')
   const [methodLegacy, setMethodLegacy] = useState('')
   const [stepPhotos, setStepPhotos] = useState<string[]>([])
-
   const [calories, setCalories] = useState('')
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
-
   const [currency, setCurrency] = useState('USD')
   const [sellingPrice, setSellingPrice] = useState('')
   const [targetFC, setTargetFC] = useState('30')
-
   const [isSubRecipe, setIsSubRecipe] = useState(false)
   const [yieldQty, setYieldQty] = useState('')
   const [yieldUnit, setYieldUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
-
   const [uploading, setUploading] = useState(false)
   const [stepUploading, setStepUploading] = useState(false)
 
@@ -258,6 +859,7 @@ export default function RecipeEditor() {
   }, [density])
 
   const [activeSection, setActiveSection] = useState<string>('sec-basics')
+
   useEffect(() => {
     const ids = ['sec-basics', 'sec-method', 'sec-nutrition', 'sec-lines', 'sec-print', 'sec-cook', 'sec-cost']
     const els = ids.map((x) => document.getElementById(x)).filter(Boolean) as HTMLElement[]
@@ -286,7 +888,6 @@ export default function RecipeEditor() {
   const [addType, setAddType] = useState<LineType>('ingredient')
   const [ingSearch, setIngSearch] = useState('')
   const [addNote, setAddNote] = useState('')
-
   const cur = (currency || 'USD').toUpperCase()
 
   const visibleLines = useMemo(
@@ -332,6 +933,7 @@ export default function RecipeEditor() {
   }, [addGross, addNetQty])
 
   const [costPoints, setCostPoints] = useState(() => (id ? listCostPoints(id) : []))
+
   useEffect(() => {
     if (!id) return
     setCostPoints(listCostPoints(id))
@@ -339,14 +941,17 @@ export default function RecipeEditor() {
 
   const recipeRef = useRef<Recipe | null>(null)
   const linesRef = useRef<Line[]>([])
+
   useEffect(() => {
     recipeRef.current = recipe
   }, [recipe])
+
   useEffect(() => {
     linesRef.current = lines
   }, [lines])
 
   const deletedLineIdsRef = useRef<string[]>([])
+
   const isDraftLine = useCallback((l: Line) => {
     const lid = (l?.id || '') as string
     return lid.startsWith('tmp_')
@@ -365,13 +970,12 @@ export default function RecipeEditor() {
       setLoading(false)
       return
     }
-
     let alive = true
+
     async function load() {
       if (!alive) return
       setLoading(true)
       setErr(null)
-
       try {
         const { data: r, error: rErr } = await supabase
           .from('recipes')
@@ -381,37 +985,30 @@ export default function RecipeEditor() {
           .eq('id', id)
           .single()
         if (rErr) throw rErr
-
         const recipeRow = r as Recipe
         if (!alive) return
-
         setRecipe(recipeRow)
         try {
           localStorage.setItem('gc_last_recipe_id', recipeRow.id)
           localStorage.setItem('gc_last_recipe_name', recipeRow.name || '')
           localStorage.setItem('gc_last_recipe_ts', String(Date.now()))
         } catch {}
-
         setCode((recipeRow.code || '').toUpperCase())
         setCodeCategory((recipeRow.code_category || '').toUpperCase())
         setName(recipeRow.name || '')
         setCategory(recipeRow.category || '')
         setPortions(String(recipeRow.portions ?? 1))
         setDescription(recipeRow.description || '')
-
         setSteps((recipeRow.method_steps || []).filter((x) => typeof x === 'string'))
         setStepPhotos((recipeRow.method_step_photos || []).filter((x) => typeof x === 'string'))
         setMethodLegacy(recipeRow.method || '')
-
         setCalories(recipeRow.calories != null ? String(recipeRow.calories) : '')
         setProtein(recipeRow.protein_g != null ? String(recipeRow.protein_g) : '')
         setCarbs(recipeRow.carbs_g != null ? String(recipeRow.carbs_g) : '')
         setFat(recipeRow.fat_g != null ? String(recipeRow.fat_g) : '')
-
         setCurrency((recipeRow.currency || 'USD').toUpperCase())
         setSellingPrice(recipeRow.selling_price != null ? String(recipeRow.selling_price) : '')
         setTargetFC(recipeRow.target_food_cost_pct != null ? String(recipeRow.target_food_cost_pct) : '30')
-
         setIsSubRecipe(!!recipeRow.is_subrecipe)
         setYieldQty(recipeRow.yield_qty != null ? String(recipeRow.yield_qty) : '')
         setYieldUnit((safeUnit(recipeRow.yield_unit || 'g') as any) || 'g')
@@ -425,6 +1022,7 @@ export default function RecipeEditor() {
           .order('position', { ascending: true })
         if (lErr) throw lErr
         if (!alive) return
+
         const draft = id ? readDraftLines(id) : []
         const mergedLines = draft?.length ? mergeDbAndDraft((l || []) as Line[], draft) : ((l || []) as Line[])
         setLines(mergedLines as Line[])
@@ -443,7 +1041,6 @@ export default function RecipeEditor() {
       } catch (e: any) {
         const msg = e?.message || 'Failed to save lines.'
         autosave.setError(msg)
-
         if (!alive) return
         setErr(e?.message || 'Failed to load recipe.')
       } finally {
@@ -451,7 +1048,6 @@ export default function RecipeEditor() {
         setLoading(false)
       }
     }
-
     load().catch(() => {})
     return () => {
       alive = false
@@ -460,13 +1056,13 @@ export default function RecipeEditor() {
 
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
-    for (const i of ingredients) m.set(i.id, i)
+    for (const i of ingredients) m.set(i.id)
     return m
   }, [ingredients])
 
   const recipeById = useMemo(() => {
     const m = new Map<string, Recipe>()
-    for (const r of allRecipes) m.set(r.id, r)
+    for (const r of allRecipes) m.set(r.id)
     return m
   }, [allRecipes])
 
@@ -475,31 +1071,24 @@ export default function RecipeEditor() {
       string,
       { net: number; gross: number; yieldPct: number; unitCost: number; lineCost: number; warnings: string[] }
     >()
-
     for (const l of lines) {
       const warnings: string[] = []
-
       const net = Math.max(0, toNum(l.qty, 0))
       const yieldPct = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
-
       const gross = l.gross_qty_override != null && l.gross_qty_override > 0 ? Math.max(0, l.gross_qty_override) : net / (yieldPct / 100)
-
       let unitCost = 0
       let lineCost = 0
-
       if (l.line_type === 'ingredient') {
         const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
         unitCost = toNum(ing?.net_unit_cost, 0)
         if (!ing) warnings.push('Missing ingredient')
         if (!Number.isFinite(unitCost) || unitCost <= 0) warnings.push('Ingredient without price')
-
         const packUnit = ing?.pack_unit || l.unit
         const qtyInPack = convertQtyToPackUnit(gross, l.unit, packUnit)
         lineCost = qtyInPack * unitCost
       } else if (l.line_type === 'subrecipe') {
         warnings.push('Subrecipe cost not expanded')
       }
-
       res.set(l.id, {
         net,
         gross,
@@ -509,14 +1098,12 @@ export default function RecipeEditor() {
         warnings,
       })
     }
-
     return res
   }, [lines, ingById])
 
   const totals = useMemo(() => {
     let totalCost = 0
     let warnings: string[] = []
-
     for (const l of lines) {
       if (l.line_type === 'group') continue
       const c = lineComputed.get(l.id)
@@ -524,23 +1111,18 @@ export default function RecipeEditor() {
       totalCost += c.lineCost
       if (c.warnings.length) warnings = warnings.concat(c.warnings)
     }
-
     const p = Math.max(1, toNum(portions, 1))
     const cpp = p > 0 ? totalCost / p : 0
-
     const sell = Math.max(0, toNum(sellingPrice, 0))
     const fcPct = sell > 0 ? (cpp / sell) * 100 : null
     const margin = sell - cpp
     const marginPct = sell > 0 ? (margin / sell) * 100 : null
-
     const uniqWarnings = Array.from(new Set(warnings)).slice(0, 4)
-
     return { totalCost, cpp, fcPct, margin, marginPct, warnings: uniqWarnings }
   }, [lines, lineComputed, portions, sellingPrice])
 
   const [savingMeta, setSavingMeta] = useState(false)
   const metaSaveTimer = useRef<number | null>(null)
-
   const [savingLines, setSavingLines] = useState(false)
   const linesSaveTimer = useRef<number | null>(null)
   const [savePulse, setSavePulse] = useState(false)
@@ -555,7 +1137,6 @@ export default function RecipeEditor() {
     }
     if (savePulseTimer.current) window.clearTimeout(savePulseTimer.current)
     savePulseTimer.current = window.setTimeout(() => setSavePulse(false), 700)
-
     return () => {
       if (savePulseTimer.current) window.clearTimeout(savePulseTimer.current)
     }
@@ -569,7 +1150,6 @@ export default function RecipeEditor() {
       setErr('Kitchen not resolved yet. Please wait a moment and try again.')
       return false
     }
-
     setErr(null)
     setSavingLines(true)
     autosave.setSaving()
@@ -580,12 +1160,10 @@ export default function RecipeEditor() {
         const { error: delErr } = await supabase.from('recipe_lines').delete().in('id', delIds)
         if (delErr) throw delErr
       }
-
       const cur = ((override ?? linesRef.current) || []) as Line[]
       const drafts = cur.filter(isDraftLine)
       const persisted = cur.filter((l) => !isDraftLine(l))
       const needsReload = drafts.length > 0 || delIds.length > 0
-
       if (persisted.length) {
         const payload = persisted.map((l) => ({
           id: l.id,
@@ -605,7 +1183,6 @@ export default function RecipeEditor() {
         const { error: upErr } = await supabase.from('recipe_lines').upsert(payload)
         if (upErr) throw upErr
       }
-
       if (drafts.length) {
         const payload = drafts.map((l) => ({
           kitchen_id: kitchenId,
@@ -624,7 +1201,6 @@ export default function RecipeEditor() {
         const { error: insErr } = await supabase.from('recipe_lines').insert(payload)
         if (insErr) throw insErr
       }
-
       if (needsReload) {
         const { data: l2, error: l2Err } = await supabase
           .from('recipe_lines')
@@ -637,7 +1213,6 @@ export default function RecipeEditor() {
       } else {
         clearDraftLines(rid)
       }
-
       autosave.setSaved()
       return true
     } catch (e: any) {
@@ -680,14 +1255,12 @@ export default function RecipeEditor() {
       const cur = (linesRef.current || []) as Line[]
       const src = cur.find((l) => l.id === lineId)
       if (!src) return
-
       const maxPos = cur.reduce((m, l) => Math.max(m, toNum(l.position, 0)), 0)
       const copy: Line = {
         ...src,
         id: uid(),
         position: maxPos + 1,
       }
-
       const next = [...cur, copy].sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0))
       linesRef.current = next
       setLinesSafe(next)
@@ -699,17 +1272,13 @@ export default function RecipeEditor() {
   const deleteLineLocal = useCallback(
     (lineId: string) => {
       if (!lineId) return
-
       const cur = (linesRef.current || []) as Line[]
       const next = cur.filter((x) => x.id !== lineId)
-
       if (!lineId.startsWith('tmp_') && !deletedLineIdsRef.current.includes(lineId)) {
         deletedLineIdsRef.current.push(lineId)
       }
-
       linesRef.current = next
       setLinesSafe(next)
-
       saveLinesNow(next).then(() => {}).catch(() => {})
     },
     [setLinesSafe, saveLinesNow]
@@ -769,6 +1338,7 @@ export default function RecipeEditor() {
   }, [id, saveMetaNow])
 
   const metaHydratedRef = useRef(false)
+
   useEffect(() => {
     if (!recipe) return
     if (!metaHydratedRef.current) {
@@ -785,12 +1355,10 @@ export default function RecipeEditor() {
   const addLineLocal = useCallback(async () => {
     if (!id) return
     const rid = id
-
     const basePos = (linesRef.current?.length || 0) + 1
     const yRaw = clamp(toNum(addYield, 100), 0.0001, 100)
     const net = Math.max(0, toNum(addNetQty, 0))
     const gross = addGross.trim() === '' ? null : Math.max(0, toNum(addGross, 0))
-
     const y = gross != null && gross > 0 && net >= 0 ? clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100) : yRaw
 
     if (addType === 'ingredient') {
@@ -912,7 +1480,6 @@ export default function RecipeEditor() {
       const net = Math.max(0, toNum(value, 0))
       const line = linesRef.current.find((x) => x.id === lineId)
       if (!line) return
-
       if (line.gross_qty_override != null && line.gross_qty_override > 0) {
         const gross = Math.max(0.0000001, line.gross_qty_override)
         const y = clamp((net / gross) * 100, 0.0001, 100)
@@ -929,18 +1496,15 @@ export default function RecipeEditor() {
       const raw = value.trim()
       const line = linesRef.current.find((x) => x.id === lineId)
       if (!line) return
-
       if (raw === '') {
         updateLine(lineId, { gross_qty_override: null })
         return
       }
-
       const gross = Math.max(0, toNum(raw, 0))
       if (gross <= 0) {
         updateLine(lineId, { gross_qty_override: null })
         return
       }
-
       const net = Math.max(0, toNum(line.qty, 0))
       const y = clamp((net / gross) * 100, 0.0001, 100)
       updateLine(lineId, { gross_qty_override: gross, yield_percent: y })
@@ -986,19 +1550,15 @@ export default function RecipeEditor() {
       try {
         const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
         const path = `${id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
-
         const { error: upErr } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
           cacheControl: '3600',
           upsert: true,
         })
         if (upErr) throw upErr
-
         const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
         const url = pub?.publicUrl || null
-
         const { error: rErr } = await supabase.from('recipes').update({ photo_url: url }).eq('id', id)
         if (rErr) throw rErr
-
         setRecipe((prev) => (prev ? { ...prev, photo_url: url } : prev))
         showToast('Photo updated.')
       } catch (e: any) {
@@ -1018,16 +1578,13 @@ export default function RecipeEditor() {
       try {
         const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
         const path = `${id}/steps/${stepIndex}_${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
-
         const { error: upErr } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, {
           cacheControl: '3600',
           upsert: true,
         })
         if (upErr) throw upErr
-
         const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
         const url = pub?.publicUrl || ''
-
         setStepPhotos((prev) => {
           const next = [...prev]
           next[stepIndex] = url
@@ -1135,7 +1692,6 @@ export default function RecipeEditor() {
         carbs_g: carbs ? Number(carbs) : null,
         fat_g: fat ? Number(fat) : null,
       }
-
       const rows = lines
         .filter((l) => l.line_type !== 'group')
         .map((l) => {
@@ -1161,13 +1717,11 @@ export default function RecipeEditor() {
           }
           return base
         })
-
       await exportRecipeExcelUltra({
         meta,
         totals: { totalCost: totals.totalCost, cpp: totals.cpp, fcPct: totals.fcPct, margin: totals.margin, marginPct: totals.marginPct },
         lines: rows as any,
       })
-
       showToast('Excel exported.')
     } catch (e: any) {
       console.error(e)
@@ -1179,65 +1733,78 @@ export default function RecipeEditor() {
     ingById, allRecipes, totals, showToast,
   ])
 
+  // ============================================================================
+  // RENDER
+  // ============================================================================
   if (loading) {
     return (
-      <div className="gc-card" style={{ padding: 16 }}>
-        <div className="gc-label flex items-center gap-2">
-          <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
-          RECIPE EDITOR
+      <>
+        {DesignTokens}
+        {ComponentStyles}
+        <div className="card" style={{ padding: 16 }}>
+          <div className="text-caption flex items-center gap-2">
+            <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+            RECIPE EDITOR
+          </div>
+          <div className="text-muted" style={{ marginTop: 10 }}>
+            Loading recipe data...
+          </div>
         </div>
-        <div className="gc-hint" style={{ marginTop: 10 }}>
-          Loading recipe data...
-        </div>
-      </div>
+      </>
     )
   }
 
   if (!id) {
     return (
-      <div className="gc-card" style={{ padding: 16 }}>
-        <div className="gc-label text-red-600">ERROR</div>
-        <div className="gc-hint" style={{ marginTop: 10 }}>
-          Missing recipe id.
+      <>
+        {DesignTokens}
+        {ComponentStyles}
+        <div className="card" style={{ padding: 16 }}>
+          <div className="text-caption text-error">ERROR</div>
+          <div className="text-muted" style={{ marginTop: 10 }}>
+            Missing recipe id.
+          </div>
         </div>
-      </div>
+      </>
     )
   }
 
   const headerLeft = (
-    <div className="gc-recipe-pro-head-left">
-      <NavLink to="/recipes" className="gc-btn gc-btn-ghost flex items-center gap-1">
+    <div className="flex items-center gap-4">
+      <NavLink to="/recipes" className="btn btn-ghost flex items-center gap-1">
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
           <line x1="19" y1="12" x2="5" y2="12" />
           <polyline points="12 19 5 12 12 5" />
         </svg>
         Back
       </NavLink>
-
-      <div className="gc-recipe-pro-titleWrap">
-        <div className="gc-recipe-pro-titleIcon" aria-hidden="true">
-          {isSubRecipe ? '🧪' : '🍽'}
+      <div className="flex items-center gap-4">
+        <div
+          className="w-14 h-14 rounded-xl flex items-center justify-center text-2xl"
+          style={{
+            background: 'linear-gradient(145deg, var(--color-primary-100), #ffffff)',
+            border: '2px solid rgba(20, 184, 166, 0.2)',
+            boxShadow: '0 8px 16px -4px rgba(20, 184, 166, 0.15)',
+          }}
+        >
+          {isSubRecipe ? '🧩' : '🍽️'}
         </div>
-
-        <div className="gc-recipe-pro-titleBlock">
-          <div className="gc-label flex items-center gap-2">
+        <div>
+          <div className="text-caption flex items-center gap-2">
             RECIPE EDITOR
-            <span className="px-2 py-0.5 bg-primary/10 rounded-full text-[10px] font-mono text-primary">
-              v2.0
-            </span>
+            <span className="badge badge-primary text-[10px]">v2.0</span>
           </div>
-          <div className="gc-recipe-pro-title">{(name || 'Untitled').trim()}</div>
-
-          <div className="gc-recipe-pro-subline">
-            <span className={`gc-recipe-pro-statusDot ${autosave.status === 'saving' ? 'animate-pulse' : ''}`} aria-hidden="true" />
-            <span className="gc-hint" style={{ fontWeight: 800 }}>
+          <div className="text-heading">{(name || 'Untitled').trim()}</div>
+          <div className="flex items-center gap-2 mt-2">
+            <span className={`status-dot ${autosave.status === 'saving' ? 'saving' : 'saved'}`} />
+            <span className="text-caption font-bold">
               {autosave.status === 'saving'
                 ? 'Saving…'
                 : autosave.status === 'error'
-                  ? (autosave.message || 'Save issue. Retrying…')
-                  : autosave.lastSavedAt
-                    ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
-                    : 'Auto-save ready.'}
+                ? (autosave.message || 'Save issue. Retrying…')
+                : autosave.lastSavedAt
+                ? `Saved ${Math.max(1, Math.round((Date.now() - autosave.lastSavedAt) / 1000))}s ago ✓`
+                : 'Auto-save ready.'}
             </span>
           </div>
         </div>
@@ -1246,14 +1813,13 @@ export default function RecipeEditor() {
   )
 
   const headerRight = (
-    <div className="gc-tabs gc-recipe-pro-head-right">
-      <span className={isKitchen ? 'gc-chip gc-chip-active' : 'gc-chip'}>
+    <div className="section-nav">
+      <span className={isKitchen ? 'badge badge-primary' : 'badge badge-secondary'}>
         {isKitchen ? '👨‍🍳 Kitchen' : '📊 Mgmt'}
       </span>
-
-      <button 
-        className="gc-btn-soft flex items-center gap-1.5" 
-        type="button" 
+      <button
+        className="btn btn-secondary btn-sm"
+        type="button"
         onClick={() => setDensity((v) => (v === 'compact' ? 'comfort' : 'compact'))}
       >
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -1262,1243 +1828,16 @@ export default function RecipeEditor() {
         </svg>
         {density === 'compact' ? 'Compact' : 'Comfort'}
       </button>
-
-      <button className={cx('gc-btn-soft', activeSection === 'sec-basics' && 'is-active')} type="button" onClick={() => scrollToSection('sec-basics')}>📋 Basics</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-method' && 'is-active')} type="button" onClick={() => scrollToSection('sec-method')}>📝 Method</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-nutrition' && 'is-active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>🥗 Nutrition</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-lines' && 'is-active')} type="button" onClick={() => scrollToSection('sec-lines')}>📦 Lines</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-print' && 'is-active')} type="button" onClick={() => scrollToSection('sec-print')}>🖨️ Print</button>
-      <button className={cx('gc-btn-soft', activeSection === 'sec-cook' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cook')}>🔥 Cook</button>
+      <button className={cx('section-btn', activeSection === 'sec-basics' && 'active')} type="button" onClick={() => scrollToSection('sec-basics')}>📋 Basics</button>
+      <button className={cx('section-btn', activeSection === 'sec-method' && 'active')} type="button" onClick={() => scrollToSection('sec-method')}>📝 Method</button>
+      <button className={cx('section-btn', activeSection === 'sec-nutrition' && 'active')} type="button" onClick={() => scrollToSection('sec-nutrition')}>🥗 Nutrition</button>
+      <button className={cx('section-btn', activeSection === 'sec-lines' && 'active')} type="button" onClick={() => scrollToSection('sec-lines')}>📦 Lines</button>
+      <button className={cx('section-btn', activeSection === 'sec-print' && 'active')} type="button" onClick={() => scrollToSection('sec-print')}>🖨️ Print</button>
+      <button className={cx('section-btn', activeSection === 'sec-cook' && 'active')} type="button" onClick={() => scrollToSection('sec-cook')}>🔥 Cook</button>
       {showCost ? (
-        <button className={cx('gc-btn-soft', activeSection === 'sec-cost' && 'is-active')} type="button" onClick={() => scrollToSection('sec-cost')}>💰 Cost</button>
+        <button className={cx('section-btn', activeSection === 'sec-cost' && 'active')} type="button" onClick={() => scrollToSection('sec-cost')}>💰 Cost</button>
       ) : null}
     </div>
-  )
-
-  const ScreenCss = (
-    <style>{`
-      .gc-recipe-pro {
-        --primary: #2E7D78;
-        --primary-light: #E8F3F2;
-        --primary-dark: #1E5A56;
-        --secondary: #C17B4A;
-        --accent: #D94E4E;
-        --text: #1E2A3A;
-        --text-light: #64748B;
-        --bg-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-        --card-shadow: 0 20px 40px -12px rgba(0,32,64,0.12), 0 8px 24px -8px rgba(0,0,0,0.08);
-        --hover-shadow: 0 24px 48px -12px rgba(46,125,120,0.18);
-        position: relative;
-        max-width: 100%;
-        overflow-x: hidden;
-      }
-
-      .gc-recipe-pro .gc-card-head {
-        align-items: center;
-        padding: 18px 24px;
-        border-radius: 28px;
-        background: rgba(255,255,255,0.92);
-        backdrop-filter: blur(10px);
-        border: 1px solid rgba(46,125,120,0.15);
-        box-shadow: 0 12px 28px -8px rgba(0,32,64,0.08), inset 0 1px 0 rgba(255,255,255,0.9);
-      }
-
-      .gc-recipe-pro-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 20px;
-        flex-wrap: wrap;
-      }
-
-      .gc-recipe-pro-head-left {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        min-width: 320px;
-      }
-
-      .gc-recipe-pro-titleWrap {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-        min-width: 0;
-      }
-
-      .gc-recipe-pro-titleIcon {
-        width: 60px;
-        height: 60px;
-        flex: 0 0 60px;
-        border-radius: 20px;
-        display: grid;
-        place-items: center;
-        font-size: 28px;
-        background: linear-gradient(145deg, var(--primary-light), #ffffff);
-        border: 2px solid rgba(46,125,120,0.2);
-        box-shadow: 0 8px 16px -4px rgba(46,125,120,0.15);
-        transition: all 0.2s ease;
-      }
-
-      .gc-recipe-pro-titleIcon:hover {
-        transform: scale(1.02);
-        border-color: var(--primary);
-        box-shadow: 0 12px 24px -6px rgba(46,125,120,0.25);
-      }
-
-      .gc-recipe-pro-titleBlock {
-        min-width: 0;
-      }
-
-      .gc-recipe-pro-title {
-        font-weight: 900;
-        font-size: 1.5rem;
-        line-height: 1.2;
-        letter-spacing: -0.02em;
-        background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
-        margin-top: 4px;
-        word-break: break-word;
-      }
-
-      .gc-recipe-pro-subline {
-        margin-top: 8px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex-wrap: wrap;
-      }
-
-      .gc-recipe-pro-statusDot {
-        width: 10px;
-        height: 10px;
-        border-radius: 999px;
-        background: linear-gradient(135deg, #4CAF50, #2E7D78);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.15);
-        animation: pulse 2s infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% { opacity: 1; transform: scale(1); }
-        50% { opacity: 0.8; transform: scale(1.1); }
-      }
-
-      .gc-recipe-pro-head-right {
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        justify-content: flex-end;
-        flex: 1 1 auto;
-        min-width: 320px;
-        overflow-x: auto;
-        padding-bottom: 4px;
-        white-space: nowrap;
-        scrollbar-width: thin;
-      }
-
-      .gc-recipe-pro .gc-btn-soft {
-        padding: 10px 18px;
-        border-radius: 40px;
-        border: 1px solid rgba(46,125,120,0.15);
-        background: rgba(255,255,255,0.85);
-        backdrop-filter: blur(4px);
-        font-weight: 600;
-        font-size: 0.9rem;
-        color: var(--text);
-        transition: all 0.15s ease;
-        cursor: pointer;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-      }
-
-      .gc-recipe-pro .gc-btn-soft:hover {
-        background: white;
-        border-color: var(--primary);
-        box-shadow: 0 8px 16px -6px rgba(46,125,120,0.2);
-        transform: translateY(-1px);
-      }
-
-      .gc-recipe-pro .gc-btn-soft.is-active {
-        background: var(--primary-light);
-        border-color: var(--primary);
-        color: var(--primary-dark);
-        font-weight: 700;
-        box-shadow: inset 0 2px 4px rgba(46,125,120,0.05), 0 4px 12px rgba(46,125,120,0.15);
-      }
-
-      .gc-recipe-pro .gc-card,
-      .gc-recipe-pro .gc-card-soft {
-        border-radius: 28px;
-        border: 1px solid rgba(46,125,120,0.1);
-        background: white;
-        box-shadow: var(--card-shadow);
-        transition: all 0.2s ease;
-        margin-bottom: 20px;
-        overflow: hidden;
-      }
-
-      .gc-recipe-pro .gc-card:hover,
-      .gc-recipe-pro .gc-card-soft:hover {
-        box-shadow: var(--hover-shadow);
-        border-color: rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-card-head {
-        padding: 20px 24px;
-        border-bottom: 1px solid rgba(46,125,120,0.1);
-        background: linear-gradient(to right, rgba(46,125,120,0.02), transparent);
-      }
-
-      .gc-recipe-pro .gc-card-body {
-        padding: 24px;
-      }
-
-      .gc-recipe-pro .gc-kpi-card {
-        border-radius: 24px;
-        border: 1px solid rgba(46,125,120,0.15);
-        background: linear-gradient(145deg, white, #fafcfc);
-        box-shadow: 0 8px 20px -8px rgba(0,0,0,0.08);
-        padding: 20px 18px 16px;
-        transition: all 0.2s ease;
-        position: relative;
-        overflow: hidden;
-      }
-
-      .gc-recipe-pro .gc-kpi-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 4px;
-        background: linear-gradient(90deg, var(--primary), var(--secondary));
-        opacity: 0.6;
-      }
-
-      .gc-recipe-pro .gc-kpi-card:hover {
-        transform: translateY(-4px);
-        box-shadow: 0 20px 32px -12px rgba(46,125,120,0.25);
-      }
-
-      .gc-recipe-pro .gc-kpi-label {
-        font-size: 0.8rem;
-        letter-spacing: 0.1em;
-        font-weight: 800;
-        color: var(--text-light);
-        margin-bottom: 12px;
-        text-transform: uppercase;
-      }
-
-      .gc-recipe-pro .gc-kpi-value {
-        font-size: 2rem;
-        line-height: 1.2;
-        font-weight: 900;
-        color: var(--primary-dark);
-        letter-spacing: -0.03em;
-      }
-
-      .gc-recipe-pro .gc-grid-4 {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 20px;
-      }
-
-      .gc-recipe-pro .gc-pricing-grid {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 16px;
-        margin-top: 16px;
-      }
-
-      .gc-recipe-pro .gc-pricing-field {
-        border-radius: 20px;
-        border: 1px solid rgba(46,125,120,0.12);
-        background: rgba(255,255,255,0.7);
-        backdrop-filter: blur(4px);
-        padding: 16px;
-        transition: all 0.15s ease;
-      }
-
-      .gc-pricing-field:focus-within {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-warning-banner {
-        margin-top: 16px;
-        padding: 16px 20px;
-        border-radius: 20px;
-        border: 1px solid rgba(217,78,78,0.2);
-        background: rgba(217,78,78,0.03);
-        display: flex;
-        align-items: flex-start;
-        gap: 14px;
-        animation: slideIn 0.3s ease;
-      }
-
-      @keyframes slideIn {
-        from { opacity: 0; transform: translateY(-10px); }
-        to { opacity: 1; transform: translateY(0); }
-      }
-
-      .gc-recipe-pro .gc-warning-icon {
-        width: 32px;
-        height: 32px;
-        flex: 0 0 32px;
-        border-radius: 50%;
-        display: grid;
-        place-items: center;
-        font-size: 16px;
-        background: rgba(217,78,78,0.1);
-        border: 1px solid rgba(217,78,78,0.2);
-      }
-
-      .gc-warning-title {
-        font-size: 0.8rem;
-        letter-spacing: 0.1em;
-        font-weight: 900;
-        color: var(--accent);
-        margin-bottom: 6px;
-      }
-
-      .gc-recipe-pro .gc-lines-container {
-        background: white;
-        border-radius: 24px;
-        overflow: hidden;
-        border: 1px solid rgba(46,125,120,0.1);
-        width: 100%;
-      }
-
-      .gc-recipe-pro .gc-table-toolbar {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 16px 20px;
-        background: linear-gradient(to right, #f8fafc, #ffffff);
-        border-bottom: 1px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-table-info {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .gc-recipe-pro .gc-table-count {
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: var(--text);
-        background: white;
-        padding: 6px 14px;
-        border-radius: 30px;
-        border: 1px solid rgba(46,125,120,0.15);
-        box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      }
-
-      .gc-recipe-pro .gc-table-badge {
-        font-size: 0.75rem;
-        font-weight: 700;
-        color: var(--primary-dark);
-        background: var(--primary-light);
-        padding: 4px 12px;
-        border-radius: 30px;
-        border: 1px solid rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-excel-table {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-        font-size: 0.9rem;
-      }
-
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(1) { width: 12%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(2) { width: 28%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(3) { width: 10%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(4) { width: 8%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(5) { width: 10%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(6) { width: 10%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(7) { width: 12%; }
-      .gc-recipe-pro .gc-excel-table colgroup col:nth-child(8) { width: 10%; }
-
-      .gc-recipe-pro .gc-excel-table thead {
-        background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
-        border-bottom: 2px solid rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-excel-table thead th {
-        padding: 14px 8px;
-        font-weight: 700;
-        font-size: 0.8rem;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: var(--primary-dark);
-        text-align: left;
-        white-space: nowrap;
-        border-right: 1px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-excel-table thead th:last-child {
-        border-right: none;
-      }
-
-      .gc-recipe-pro .gc-excel-table tbody td {
-        padding: 12px 8px;
-        border-bottom: 1px solid rgba(46,125,120,0.08);
-        border-right: 1px solid rgba(46,125,120,0.05);
-        vertical-align: middle;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-excel-table tbody td:last-child {
-        border-right: none;
-      }
-
-      .gc-recipe-pro .gc-excel-table tbody tr:hover td {
-        background-color: rgba(46,125,120,0.02);
-      }
-
-      .gc-recipe-pro .gc-excel-table tbody tr.has-note td {
-        background-color: rgba(193,123,74,0.02);
-      }
-
-      .gc-recipe-pro .gc-code-cell {
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-        color: var(--primary-dark);
-        background: rgba(46,125,120,0.05);
-        padding: 4px 8px;
-        border-radius: 4px;
-        display: inline-block;
-        font-size: 0.85rem;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-ingredient-cell {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-      }
-
-      .gc-recipe-pro .gc-ingredient-name {
-        font-weight: 500;
-        color: var(--text);
-        font-size: 0.9rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      .gc-recipe-pro .gc-ingredient-note {
-        font-size: 0.75rem;
-        color: var(--secondary);
-        background: rgba(193,123,74,0.05);
-        padding: 2px 6px;
-        border-radius: 4px;
-        display: inline-block;
-        max-width: 100%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        border: 1px solid rgba(193,123,74,0.1);
-      }
-
-      .gc-recipe-pro .gc-number-cell {
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-        color: var(--text);
-        text-align: right;
-        width: 100%;
-      }
-
-      .gc-recipe-pro .gc-number-input {
-        width: 100%;
-        padding: 6px 8px;
-        border: 1px solid rgba(46,125,120,0.2);
-        border-radius: 4px;
-        font-family: 'Courier New', monospace;
-        font-size: 0.85rem;
-        text-align: right;
-        background: white;
-        transition: all 0.15s ease;
-      }
-
-      .gc-recipe-pro .gc-number-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 2px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-number-input::placeholder {
-        color: #a0b3c9;
-        font-style: italic;
-      }
-
-      .gc-recipe-pro .gc-yield-input {
-        padding-right: 25px;
-      }
-
-      .gc-recipe-pro .gc-input-wrapper {
-        position: relative;
-        display: inline-block;
-        width: 100%;
-      }
-
-      .gc-recipe-pro .gc-yield-suffix {
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 0.7rem;
-        color: var(--primary-dark);
-        opacity: 0.6;
-        pointer-events: none;
-      }
-
-      .gc-recipe-pro .gc-unit-cell {
-        font-weight: 600;
-        color: var(--text-light);
-        background: var(--bg-gradient);
-        padding: 4px 8px;
-        border-radius: 4px;
-        display: inline-block;
-        font-size: 0.8rem;
-        text-align: center;
-        min-width: 40px;
-      }
-
-      .gc-recipe-pro .gc-cost-cell {
-        font-family: 'Courier New', monospace;
-        font-weight: 600;
-        color: var(--primary-dark);
-        text-align: right;
-        display: flex;
-        align-items: center;
-        justify-content: flex-end;
-        gap: 4px;
-      }
-
-      .gc-recipe-pro .gc-cost-warning {
-        color: var(--accent);
-        font-size: 0.8rem;
-        cursor: help;
-      }
-
-      .gc-recipe-pro .gc-cost-missing {
-        color: var(--text-light);
-        opacity: 0.5;
-      }
-
-      .gc-recipe-pro .gc-actions-cell {
-        display: flex;
-        gap: 6px;
-        justify-content: center;
-      }
-
-      .gc-recipe-pro .gc-action-btn {
-        width: 32px;
-        height: 32px;
-        border: 1px solid rgba(46,125,120,0.15);
-        border-radius: 6px;
-        background: white;
-        color: var(--text-light);
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        transition: all 0.15s ease;
-        font-size: 0.9rem;
-      }
-
-      .gc-recipe-pro .gc-action-btn:hover {
-        background: var(--primary-light);
-        border-color: var(--primary);
-        color: var(--primary-dark);
-      }
-
-      .gc-recipe-pro .gc-action-btn-danger:hover {
-        background: rgba(217,78,78,0.1);
-        border-color: var(--accent);
-        color: var(--accent);
-      }
-
-      .gc-recipe-pro .gc-group-row {
-        background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03));
-        font-weight: 700;
-      }
-
-      .gc-recipe-pro .gc-group-cell {
-        padding: 12px 16px !important;
-      }
-
-      .gc-recipe-pro .gc-group-content {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        width: 100%;
-      }
-
-      .gc-recipe-pro .gc-group-title {
-        display: flex;
-        align-items: center;
-        gap: 12px;
-      }
-
-      .gc-recipe-pro .gc-group-icon {
-        font-size: 1.1rem;
-        opacity: 0.7;
-      }
-
-      .gc-recipe-pro .gc-group-name {
-        font-size: 1rem;
-        font-weight: 800;
-        color: var(--primary-dark);
-      }
-
-      .gc-recipe-pro .gc-group-badge {
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: var(--primary-dark);
-        background: rgba(46,125,120,0.1);
-        padding: 2px 8px;
-        border-radius: 12px;
-        margin-left: 12px;
-      }
-
-      .gc-recipe-pro .gc-group-actions {
-        display: flex;
-        gap: 8px;
-      }
-
-      .gc-recipe-pro .gc-table-footer {
-        padding: 16px 20px;
-        background: linear-gradient(to right, #f8fafc, #ffffff);
-        border-top: 1px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-table-stats {
-        display: flex;
-        align-items: center;
-        gap: 24px;
-        flex-wrap: wrap;
-      }
-
-      .gc-recipe-pro .gc-stat-item {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        font-size: 0.85rem;
-      }
-
-      .gc-recipe-pro .gc-stat-label {
-        color: var(--text-light);
-        font-weight: 500;
-      }
-
-      .gc-recipe-pro .gc-stat-value {
-        font-weight: 700;
-        color: var(--primary-dark);
-        background: white;
-        padding: 4px 12px;
-        border-radius: 20px;
-        border: 1px solid rgba(46,125,120,0.15);
-      }
-
-      .gc-recipe-pro .gc-stat-total .gc-stat-value {
-        background: var(--primary-light);
-        border-color: var(--primary);
-      }
-
-      .gc-flash-row {
-        animation: excel-flash 0.5s ease;
-      }
-
-      @keyframes excel-flash {
-        0%, 100% { background: transparent; }
-        50% { background: rgba(46,125,120,0.1); }
-      }
-
-      .gc-group-row.gc-flash-row {
-        animation: group-flash 0.5s ease;
-      }
-
-      @keyframes group-flash {
-        0%, 100% { background: linear-gradient(to right, rgba(46,125,120,0.03), rgba(193,123,74,0.03)); }
-        50% { background: rgba(46,125,120,0.15); }
-      }
-
-      .gc-recipe-pro .gc-empty-state {
-        text-align: center;
-        padding: 60px 20px;
-        background: linear-gradient(145deg, #f8fafc, #ffffff);
-        border-radius: 32px;
-        border: 2px dashed rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-empty-icon {
-        font-size: 4rem;
-        margin-bottom: 20px;
-        opacity: 0.7;
-      }
-
-      .gc-recipe-pro .gc-empty-title {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: var(--primary-dark);
-        margin-bottom: 8px;
-      }
-
-      .gc-recipe-pro .gc-empty-description {
-        font-size: 0.95rem;
-        color: var(--text-light);
-        max-width: 400px;
-        margin: 0 auto;
-      }
-
-      .gc-recipe-pro .gc-add-line-modern {
-        background: linear-gradient(145deg, #ffffff, #f8fafc);
-        border-radius: 24px;
-        padding: 24px;
-        border: 1px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-add-line-type-bar {
-        display: flex;
-        gap: 8px;
-        margin-bottom: 24px;
-        background: rgba(46,125,120,0.04);
-        padding: 6px;
-        border-radius: 60px;
-        border: 1px solid rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-type-btn {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        padding: 12px 20px;
-        border-radius: 40px;
-        border: none;
-        background: transparent;
-        color: var(--text-light);
-        font-weight: 700;
-        font-size: 0.95rem;
-        cursor: pointer;
-        transition: all 0.2s ease;
-      }
-
-      .gc-recipe-pro .gc-type-btn.active {
-        background: white;
-        color: var(--primary-dark);
-        box-shadow: 0 8px 20px -8px rgba(46,125,120,0.25);
-        border: 1px solid rgba(46,125,120,0.2);
-      }
-
-      .gc-recipe-pro .gc-type-btn:hover:not(.active) {
-        background: rgba(255,255,255,0.7);
-        color: var(--primary);
-      }
-
-      .gc-recipe-pro .gc-type-icon {
-        font-size: 1.2rem;
-      }
-
-      .gc-recipe-pro .gc-add-line-search-section {
-        display: grid;
-        grid-template-columns: 1fr 2fr;
-        gap: 16px;
-        margin-bottom: 24px;
-      }
-
-      .gc-recipe-pro .gc-search-field {
-        position: relative;
-      }
-
-      .gc-recipe-pro .gc-search-icon {
-        position: absolute;
-        left: 16px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--primary);
-        opacity: 0.7;
-        width: 20px;
-        height: 20px;
-      }
-
-      .gc-recipe-pro .gc-search-input {
-        width: 100%;
-        padding: 14px 16px 14px 48px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.95rem;
-      }
-
-      .gc-recipe-pro .gc-search-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
-      }
-
-      .gc-recipe-pro .gc-modern-select {
-        width: 100%;
-        padding: 14px 24px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.95rem;
-        appearance: none;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 20px center;
-        background-size: 16px;
-        cursor: pointer;
-      }
-
-      .gc-recipe-pro .gc-group-title-field {
-        margin-bottom: 24px;
-      }
-
-      .gc-recipe-pro .gc-group-input {
-        padding: 16px 20px;
-        border: 2px dashed rgba(46,125,120,0.3);
-        text-align: center;
-        font-weight: 600;
-        color: var(--primary-dark);
-        font-size: 1rem;
-      }
-
-      .gc-recipe-pro .gc-quantity-grid {
-        display: grid;
-        grid-template-columns: repeat(5, 1fr);
-        gap: 16px;
-        margin-top: 16px;
-      }
-
-      .gc-recipe-pro .gc-field-label {
-        display: block;
-        font-size: 0.7rem;
-        font-weight: 800;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--text-light);
-        margin-bottom: 6px;
-      }
-
-      .gc-recipe-pro .gc-input-unit-group {
-        position: relative;
-      }
-
-      .gc-recipe-pro .gc-modern-input {
-        width: 100%;
-        padding: 12px 16px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.1);
-        background: white;
-        font-size: 0.95rem;
-      }
-
-      .gc-recipe-pro .gc-number-input {
-        padding-right: 50px;
-        text-align: right;
-        font-family: 'Courier New', monospace;
-      }
-
-      .gc-recipe-pro .gc-number-input-inline {
-        text-align: left;
-        padding-left: 16px;
-        padding-right: 54px;
-        line-height: 1.2;
-        font-variant-numeric: tabular-nums;
-      }
-
-      .gc-recipe-pro .gc-number-input-inline::placeholder {
-        text-align: left;
-      }
-
-      .gc-recipe-pro .gc-unit-badge {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        min-width: 28px;
-        height: 24px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 0.7rem;
-        font-weight: 700;
-        color: var(--primary-dark);
-        background: rgba(46,125,120,0.1);
-        padding: 0 8px;
-        border-radius: 999px;
-        pointer-events: none;
-        white-space: nowrap;
-      }
-
-      .gc-recipe-pro .gc-yield-quantity-input {
-        width: 100%;
-        min-height: 48px;
-        padding: 12px 60px 12px 16px;
-        text-align: left;
-        font-size: 1.125rem;
-        line-height: 1.2;
-        font-weight: 600;
-        font-family: 'Courier New', monospace;
-        font-variant-numeric: tabular-nums;
-        border: 2px solid rgb(229 229 229);
-        border-radius: 0.75rem;
-        background: #fff;
-        color: rgb(31 41 55);
-        box-sizing: border-box;
-        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-      }
-
-      .gc-recipe-pro .gc-yield-quantity-input::placeholder {
-        text-align: left;
-        color: rgb(156 163 175);
-        opacity: 1;
-      }
-
-      .gc-recipe-pro .gc-yield-quantity-input:focus {
-        outline: none;
-        border-color: rgb(20 184 166);
-        box-shadow: 0 0 0 4px rgba(20,184,166,0.12);
-      }
-
-      .gc-recipe-pro .gc-yield-quantity-input:disabled {
-        background: rgb(249 250 251);
-        color: rgb(107 114 128);
-      }
-
-      .gc-recipe-pro .gc-yield-quantity-unit {
-        position: absolute;
-        right: 12px;
-        top: 50%;
-        transform: translateY(-50%);
-        min-width: 30px;
-        height: 24px;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 8px;
-        border-radius: 999px;
-        background: rgba(20,184,166,0.10);
-        color: rgb(13 148 136);
-        font-size: 0.75rem;
-        font-weight: 700;
-        white-space: nowrap;
-        pointer-events: none;
-      }
-
-      .gc-recipe-pro .gc-field-hint {
-        font-size: 0.65rem;
-        color: var(--text-light);
-        margin-top: 4px;
-        opacity: 0.8;
-      }
-
-      .gc-recipe-pro .gc-add-line-actions-modern {
-        display: flex;
-        gap: 16px;
-        margin-top: 24px;
-        justify-content: flex-end;
-      }
-
-      .gc-recipe-pro .gc-btn-primary-modern {
-        padding: 14px 32px;
-        border-radius: 40px;
-        border: none;
-        background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-        color: white;
-        font-weight: 700;
-        font-size: 0.95rem;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 8px 16px -4px rgba(46,125,120,0.3);
-      }
-
-      .gc-recipe-pro .gc-btn-secondary-modern {
-        padding: 14px 32px;
-        border-radius: 40px;
-        border: 2px solid rgba(46,125,120,0.2);
-        background: white;
-        color: var(--text);
-        font-weight: 600;
-        font-size: 0.95rem;
-        cursor: pointer;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-      }
-
-      .gc-recipe-pro .gc-btn-primary-modern:hover,
-      .gc-recipe-pro .gc-btn-secondary-modern:hover {
-        transform: translateY(-2px);
-      }
-
-      .gc-recipe-pro .gc-label {
-        font-size: 0.75rem;
-        font-weight: 900;
-        letter-spacing: 0.1em;
-        text-transform: uppercase;
-        color: var(--text-light);
-        margin-bottom: 8px;
-      }
-
-      .gc-recipe-pro .gc-hint {
-        font-size: 0.85rem;
-        color: var(--text-light);
-        line-height: 1.5;
-      }
-
-      .gc-recipe-pro .gc-highlight-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 16px;
-        flex-wrap: wrap;
-        margin-bottom: 16px;
-      }
-
-      .gc-recipe-pro .gc-input,
-      .gc-recipe-pro .gc-select,
-      .gc-recipe-pro .gc-textarea,
-      .gc-recipe-pro .gc-modern-input {
-        width: 100%;
-        box-sizing: border-box;
-        color: var(--text);
-        background: #fff;
-        font-size: 14px;
-        font-weight: 500;
-        line-height: 1.45;
-        border-radius: 14px;
-        border: 1.5px solid rgba(46,125,120,0.12);
-        transition: border-color 0.15s ease, box-shadow 0.15s ease, background-color 0.15s ease;
-        -webkit-appearance: none;
-        appearance: none;
-      }
-
-      .gc-recipe-pro .gc-input,
-      .gc-recipe-pro .gc-select,
-      .gc-recipe-pro .gc-modern-input {
-        min-height: 44px;
-        height: 44px;
-        padding: 10px 14px;
-      }
-
-      .gc-recipe-pro .gc-textarea {
-        min-height: 96px;
-        padding: 12px 14px;
-        resize: vertical;
-        line-height: 1.55;
-        display: block;
-      }
-
-      .gc-recipe-pro .gc-input::placeholder,
-      .gc-recipe-pro .gc-modern-input::placeholder,
-      .gc-recipe-pro .gc-textarea::placeholder {
-        color: #94a3b8;
-        opacity: 1;
-        line-height: 1.45;
-      }
-
-      .gc-recipe-pro .gc-input:focus,
-      .gc-recipe-pro .gc-select:focus,
-      .gc-recipe-pro .gc-textarea:focus,
-      .gc-recipe-pro .gc-modern-input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.10);
-      }
-
-      .gc-recipe-pro .gc-select {
-        padding-right: 42px;
-        background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%232E7D78' stroke-width='2'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
-        background-repeat: no-repeat;
-        background-position: right 14px center;
-        background-size: 16px;
-        cursor: pointer;
-      }
-
-      .gc-recipe-pro .gc-grid-4 {
-        display: grid;
-        grid-template-columns: repeat(4, 1fr);
-        gap: 16px;
-      }
-
-      /* ===== أنماط التحسين الجديدة ===== */
-      .gc-meta-card {
-        background: white;
-        border: 1px solid rgba(46,125,120,0.1);
-        border-radius: 20px;
-        padding: 20px;
-        transition: all 0.2s ease;
-        height: 100%;
-      }
-
-      .gc-meta-card:hover {
-        border-color: rgba(46,125,120,0.25);
-        box-shadow: 0 12px 24px -12px rgba(46,125,120,0.2);
-      }
-
-      .gc-meta-card .gc-input,
-      .gc-meta-card .gc-select,
-      .gc-meta-card .gc-textarea {
-        font-size: 14px;
-        line-height: 1.45;
-        border-radius: 12px;
-        border: 1.5px solid rgba(46,125,120,0.10);
-      }
-
-      .gc-meta-card .gc-input,
-      .gc-meta-card .gc-select {
-        min-height: 42px;
-        height: 42px;
-        padding: 9px 14px;
-      }
-
-      .gc-meta-card .gc-textarea {
-        min-height: 96px;
-        padding: 12px 14px;
-      }
-
-      .gc-meta-card .gc-input:focus,
-      .gc-meta-card .gc-select:focus,
-      .gc-meta-card .gc-textarea:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 4px rgba(46,125,120,0.1);
-        outline: none;
-      }
-
-      .gc-meta-card .gc-input:disabled {
-        background: #f8fafc;
-        color: #94a3b8;
-        border-color: rgba(46,125,120,0.06);
-      }
-
-      .gc-recipe-pro input,
-      .gc-recipe-pro select,
-      .gc-recipe-pro textarea {
-        font-family: inherit;
-      }
-
-      .gc-recipe-pro .gc-input.pl-10 {
-        padding-left: 40px;
-      }
-
-      .grid-cols-12 {
-        display: grid;
-        grid-template-columns: repeat(12, 1fr);
-        gap: 16px;
-      }
-
-      .col-span-12 { grid-column: span 12 / span 12; }
-      .col-span-6 { grid-column: span 6 / span 6; }
-      .col-span-4 { grid-column: span 4 / span 4; }
-      .col-span-3 { grid-column: span 3 / span 3; }
-
-      @media (max-width: 768px) {
-        .grid-cols-12 {
-          grid-template-columns: 1fr;
-        }
-        .col-span-6,
-        .col-span-12,
-        .col-span-4,
-        .col-span-3 {
-          grid-column: span 1 / span 1;
-        }
-        
-        .gc-meta-card {
-          padding: 16px;
-        }
-        
-        .gc-recipe-pro .gc-quantity-grid {
-          grid-template-columns: 1fr;
-        }
-      }
-
-      .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-      }
-
-      @keyframes pulse {
-        0%, 100% { opacity: 1; }
-        50% { opacity: 0.5; }
-      }
-
-      .font-mono {
-        font-family: 'Courier New', monospace;
-      }
-
-      .text-primary { color: var(--primary); }
-      .bg-primary\\/10 { background: rgba(46,125,120,0.1); }
-      .bg-primary\\/20 { background: rgba(46,125,120,0.2); }
-      .border-primary\\/20 { border-color: rgba(46,125,120,0.2); }
-      .from-primary { --tw-gradient-from: var(--primary); }
-      .to-primary-dark { --tw-gradient-to: var(--primary-dark); }
-
-      .flex { display: flex; }
-      .items-center { align-items: center; }
-      .justify-between { justify-content: space-between; }
-      .gap-1 { gap: 0.25rem; }
-      .gap-2 { gap: 0.5rem; }
-      .gap-3 { gap: 0.75rem; }
-      .gap-4 { gap: 1rem; }
-      .mb-2 { margin-bottom: 0.5rem; }
-      .mb-3 { margin-bottom: 0.75rem; }
-      .mb-4 { margin-bottom: 1rem; }
-      .mt-1 { margin-top: 0.25rem; }
-      .mt-2 { margin-top: 0.5rem; }
-      .p-2 { padding: 0.5rem; }
-      .p-3 { padding: 0.75rem; }
-      .px-3 { padding-left: 0.75rem; padding-right: 0.75rem; }
-      .py-1 { padding-top: 0.25rem; padding-bottom: 0.25rem; }
-      .py-1\\.5 { padding-top: 0.375rem; padding-bottom: 0.375rem; }
-      .rounded-lg { border-radius: 0.5rem; }
-      .rounded-xl { border-radius: 0.75rem; }
-      .rounded-full { border-radius: 9999px; }
-      .border { border-width: 1px; }
-      .border-2 { border-width: 2px; }
-      .border-dashed { border-style: dashed; }
-      .bg-amber-50 { background: #fffbeb; }
-      .border-amber-200 { border-color: #fde68a; }
-      .text-amber-600 { color: #d97706; }
-      .text-amber-700 { color: #b45309; }
-      .text-xs { font-size: 0.75rem; }
-      .text-sm { font-size: 0.875rem; }
-      .text-\\[10px\\] { font-size: 10px; }
-      .text-\\[11px\\] { font-size: 11px; }
-      .font-semibold { font-weight: 600; }
-      .font-bold { font-weight: 700; }
-      .font-medium { font-weight: 500; }
-      .tracking-wider { letter-spacing: 0.05em; }
-      .uppercase { text-transform: uppercase; }
-      .w-2 { width: 0.5rem; }
-      .w-4 { width: 1rem; }
-      .w-8 { width: 2rem; }
-      .h-2 { height: 0.5rem; }
-      .h-4 { height: 1rem; }
-      .h-8 { height: 2rem; }
-      .min-h-\\[80px\\] { min-height: 80px; }
-      .space-y-1 > * + * { margin-top: 0.25rem; }
-      .space-y-2 > * + * { margin-top: 0.5rem; }
-      .space-y-3 > * + * { margin-top: 0.75rem; }
-      .space-y-4 > * + * { margin-top: 1rem; }
-      .pl-4 { padding-left: 1rem; }
-      .pl-10 { padding-left: 2.5rem; }
-      .list-disc { list-style-type: disc; }
-    `}</style>
   )
 
   const PrintCss = (
@@ -2515,7 +1854,6 @@ export default function RecipeEditor() {
           padding: 0 !important;
           margin: 0 !important;
         }
-        
         .gc-print-page {
           width: 210mm;
           min-height: 297mm;
@@ -2525,7 +1863,6 @@ export default function RecipeEditor() {
           color: #1E2A3A;
           background: white;
         }
-
         .gc-print-header {
           display: flex;
           align-items: flex-start;
@@ -2535,7 +1872,6 @@ export default function RecipeEditor() {
           padding-bottom: 8mm;
           margin-bottom: 8mm;
         }
-
         .gc-print-name {
           font-size: 28pt;
           font-weight: 900;
@@ -2543,13 +1879,11 @@ export default function RecipeEditor() {
           letter-spacing: -0.02em;
           line-height: 1.2;
         }
-
         .gc-print-sub {
           font-size: 12pt;
           color: #64748B;
           margin-top: 4mm;
         }
-
         .gc-print-photo {
           width: 70mm;
           height: 50mm;
@@ -2559,18 +1893,15 @@ export default function RecipeEditor() {
           background: #f8fafc;
           box-shadow: 0 8px 16px rgba(0,0,0,0.05);
         }
-
         .gc-print-photo img {
           width: 100%;
           height: 100%;
           object-fit: cover;
           display: block;
         }
-
         .gc-print-section {
           margin-top: 8mm;
         }
-
         .gc-print-title {
           font-size: 14pt;
           font-weight: 900;
@@ -2581,14 +1912,12 @@ export default function RecipeEditor() {
           border-bottom: 1px solid rgba(46,125,120,0.2);
           padding-bottom: 2mm;
         }
-
         .gc-print-text {
           font-size: 11pt;
           line-height: 1.6;
           color: #1E2A3A;
           white-space: pre-wrap;
         }
-
         .gc-print-table {
           width: 100%;
           border-collapse: collapse;
@@ -2596,7 +1925,6 @@ export default function RecipeEditor() {
           font-size: 10pt;
           table-layout: fixed;
         }
-
         .gc-print-table th {
           text-align: left;
           padding: 3mm 2mm;
@@ -2605,7 +1933,6 @@ export default function RecipeEditor() {
           color: #2E7D78;
           border-bottom: 2px solid #2E7D78;
         }
-
         .gc-print-table td {
           padding: 2.5mm 2mm;
           border-bottom: 1px solid rgba(46,125,120,0.15);
@@ -2613,14 +1940,12 @@ export default function RecipeEditor() {
           overflow: hidden;
           text-overflow: ellipsis;
         }
-
         .gc-print-kpis {
           display: flex;
           gap: 4mm;
           flex-wrap: wrap;
           margin-top: 4mm;
         }
-
         .gc-print-chip {
           border: 1px solid #2E7D78;
           border-radius: 40px;
@@ -2631,7 +1956,6 @@ export default function RecipeEditor() {
           background: white;
         }
       }
-
       .gc-print-only {
         display: none;
       }
@@ -2640,34 +1964,33 @@ export default function RecipeEditor() {
 
   return (
     <>
+      {DesignTokens}
+      {ComponentStyles}
       {PrintCss}
-      {ScreenCss}
-
-      <div className="gc-card gc-screen-only gc-recipe-pro">
-        <div className="gc-card-head gc-recipe-pro-head">
+      <div className="card gc-screen-only">
+        <div className="card-header flex justify-between items-center flex-wrap gap-4">
           {headerLeft}
           {headerRight}
         </div>
-
-        <div className="gc-card-body">
+        <div className="card-body">
           {err && (
-            <div className="gc-card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12, background: '#fee2e2', border: '1px solid #fecaca' }}>
-              <div className="flex items-center gap-2 text-red-700">
+            <div className="card-soft" style={{ padding: 12, borderRadius: 16, marginBottom: 12, background: '#fee2e2', border: '1px solid #fecaca' }}>
+              <div className="flex items-center gap-2 text-error">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
-                <span style={{ fontWeight: 900 }}>{err}</span>
+                <span className="font-bold">{err}</span>
               </div>
             </div>
           )}
 
           {/* Print Section */}
-          <div className="gc-section gc-card-soft">
-            <div style={{ padding: 14 }} className="gc-highlight-head">
+          <div className="card-soft mb-4">
+            <div className="p-4 flex justify-between items-center flex-wrap gap-4" id="sec-print">
               <div>
-                <div className="gc-label flex items-center gap-2" id="sec-print">
+                <div className="text-caption flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                     <path d="M6 9V3h12v6" />
@@ -2675,10 +1998,10 @@ export default function RecipeEditor() {
                   </svg>
                   PRINT (A4)
                 </div>
-                <div className="gc-hint" style={{ marginTop: 6 }}>Professional chef-ready A4 print. No overflow.</div>
+                <div className="text-muted mt-2">Professional chef-ready A4 print. No overflow.</div>
               </div>
-              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                <button className="gc-btn gc-btn-secondary flex items-center gap-2" type="button" onClick={printNow}>
+              <div className="flex gap-2 flex-wrap items-center">
+                <button className="btn btn-secondary flex items-center gap-2" type="button" onClick={printNow}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2" />
                     <path d="M6 9V3h12v6" />
@@ -2686,7 +2009,7 @@ export default function RecipeEditor() {
                   </svg>
                   Print now
                 </button>
-                <button className="gc-btn gc-btn-primary flex items-center gap-2" type="button" onClick={exportExcel}>
+                <button className="btn btn-primary flex items-center gap-2" type="button" onClick={exportExcel}>
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                     <polyline points="14 2 14 8 20 8" />
@@ -2696,15 +2019,14 @@ export default function RecipeEditor() {
                   Export Excel
                 </button>
                 <button
-                  className="gc-btn gc-btn-ghost"
+                  className="btn btn-ghost"
                   type="button"
                   onClick={() => (id ? window.open(`#/print?id=${encodeURIComponent(id)}`, '_blank', 'noopener,noreferrer') : null)}
                   disabled={!id}
                 >
                   Open Print Page
                 </button>
-
-                <div className={`gc-hint flex items-center gap-1 ${savePulse ? 'text-primary' : ''}`} style={{ marginLeft: 6 }}>
+                <div className={`text-muted flex items-center gap-1 ${savePulse ? 'text-primary' : ''}`} style={{ marginLeft: 6 }}>
                   <span className={`w-2 h-2 rounded-full ${savePulse ? 'bg-primary animate-pulse' : 'bg-green-500'}`} />
                   {savePulse ? 'Auto-saving…' : 'Auto-save ready.'}
                 </div>
@@ -2713,18 +2035,18 @@ export default function RecipeEditor() {
           </div>
 
           {/* Cook Mode Section */}
-          <div className="gc-section gc-section-alt gc-card-soft">
-            <div style={{ padding: 12, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+          <div className="card-soft mb-4">
+            <div className="p-3 flex items-center justify-between gap-3 flex-wrap" id="sec-cook">
               <div>
-                <div className="gc-label flex items-center gap-2" id="sec-cook">
+                <div className="text-caption flex items-center gap-2">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z" />
                   </svg>
                   COOK MODE
                 </div>
-                <div className="gc-hint" style={{ marginTop: 6 }}>Zero distraction cooking workflow.</div>
+                <div className="text-muted mt-2">Zero distraction cooking workflow.</div>
               </div>
-              <button className="gc-btn gc-btn-primary gc-btn-hero flex items-center gap-2" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>
+              <button className="btn btn-primary flex items-center gap-2" type="button" onClick={() => (id ? navigate(`/cook?id=${encodeURIComponent(id)}`) : null)} disabled={!id}>
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M18 8h1a4 4 0 0 1 0 8h-1" />
                   <path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4V8z" />
@@ -2739,10 +2061,10 @@ export default function RecipeEditor() {
 
           {/* KPI Section */}
           {showCost && (
-            <div className="gc-section gc-card-soft" style={{ padding: 14, borderRadius: 18 }}>
-              <div className="gc-highlight-head">
+            <div className="card-soft mb-4" style={{ padding: 14, borderRadius: 18 }}>
+              <div className="flex justify-between items-center flex-wrap gap-4 mb-3" id="sec-cost">
                 <div>
-                  <div className="gc-label flex items-center gap-2" id="sec-cost">
+                  <div className="text-caption flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="6" x2="12" y2="12" />
@@ -2750,39 +2072,37 @@ export default function RecipeEditor() {
                     </svg>
                     KPI
                   </div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>Live recipe performance overview.</div>
+                  <div className="text-muted mt-2">Live recipe performance overview.</div>
                 </div>
-                <div className="gc-hint flex items-center gap-1" style={{ fontWeight: 800 }}>
+                <div className="text-muted flex items-center gap-1 font-bold">
                   <span>Currency:</span>
                   <span className="px-2 py-1 bg-primary/10 rounded-full text-primary">{cur}</span>
                 </div>
               </div>
-
-              <div className="gc-grid-4" style={{ marginTop: 12 }}>
-                <div className="gc-kpi-card">
-                  <div className="gc-kpi-label">TOTAL COST</div>
-                  <div className="gc-kpi-value">{fmtMoney(totals.totalCost, cur)}</div>
+              <div className="grid grid-cols-4 gap-4 mt-3">
+                <div className="kpi-card">
+                  <div className="kpi-label">TOTAL COST</div>
+                  <div className="kpi-value">{fmtMoney(totals.totalCost, cur)}</div>
                 </div>
-                <div className="gc-kpi-card">
-                  <div className="gc-kpi-label">COST / PORTION</div>
-                  <div className="gc-kpi-value">{fmtMoney(totals.cpp, cur)}</div>
+                <div className="kpi-card">
+                  <div className="kpi-label">COST / PORTION</div>
+                  <div className="kpi-value">{fmtMoney(totals.cpp, cur)}</div>
                 </div>
-                <div className="gc-kpi-card">
-                  <div className="gc-kpi-label">FC%</div>
-                  <div className="gc-kpi-value">{totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}</div>
+                <div className="kpi-card">
+                  <div className="kpi-label">FC%</div>
+                  <div className="kpi-value">{totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}</div>
                 </div>
-                <div className="gc-kpi-card">
-                  <div className="gc-kpi-label">MARGIN</div>
-                  <div className="gc-kpi-value">{fmtMoney(totals.margin, cur)}</div>
+                <div className="kpi-card">
+                  <div className="kpi-label">MARGIN</div>
+                  <div className="kpi-value">{fmtMoney(totals.margin, cur)}</div>
                 </div>
               </div>
-
               {totals.warnings?.length ? (
-                <div className="gc-warning-banner">
-                  <div className="gc-warning-icon" aria-hidden="true">⚠</div>
+                <div className="banner-warning mt-4">
+                  <div className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(245, 158, 11, 0.2)', color: 'var(--color-warning)' }}>⚠</div>
                   <div>
-                    <div className="gc-warning-title">PRICING WARNING</div>
-                    <div style={{ fontWeight: 900, color: 'var(--accent)' }}>{totals.warnings[0]}</div>
+                    <div className="text-caption font-bold text-warning">PRICING WARNING</div>
+                    <div className="font-bold text-warning">{totals.warnings[0]}</div>
                   </div>
                 </div>
               ) : null}
@@ -2791,11 +2111,11 @@ export default function RecipeEditor() {
 
           {/* Pricing Section */}
           {showCost && (
-            <div className="gc-section gc-section-alt gc-card-soft">
-              <div style={{ padding: 14 }}>
-                <div className="gc-highlight-head">
+            <div className="card-soft mb-4">
+              <div className="p-3">
+                <div className="flex justify-between items-center flex-wrap gap-4 mb-3">
                   <div>
-                    <div className="gc-label flex items-center gap-2">
+                    <div className="text-caption flex items-center gap-2">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="12" cy="12" r="10" />
                         <line x1="12" y1="6" x2="12" y2="12" />
@@ -2803,25 +2123,22 @@ export default function RecipeEditor() {
                       </svg>
                       PRICING / PORTION
                     </div>
-                    <div className="gc-hint" style={{ marginTop: 6 }}>Set commercial values for management view and targets.</div>
+                    <div className="text-muted mt-2">Set commercial values for management view and targets.</div>
                   </div>
-                  <div className="gc-hint" style={{ fontWeight: 800 }}>FC% = cost / portion ÷ selling price</div>
+                  <div className="text-muted font-bold">FC% = cost / portion ÷ selling price</div>
                 </div>
-
-                <div className="gc-pricing-grid">
-                  <div className="gc-pricing-field">
-                    <div className="gc-label">CURRENCY</div>
-                    <input className="gc-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <div className="text-caption">CURRENCY</div>
+                    <input className="input mt-2" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} />
                   </div>
-
-                  <div className="gc-pricing-field">
-                    <div className="gc-label">SELLING PRICE</div>
-                    <input className="gc-input" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
+                  <div>
+                    <div className="text-caption">SELLING PRICE</div>
+                    <input className="input mt-2" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} inputMode="decimal" />
                   </div>
-
-                  <div className="gc-pricing-field">
-                    <div className="gc-label">TARGET FC%</div>
-                    <input className="gc-input" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
+                  <div>
+                    <div className="text-caption">TARGET FC%</div>
+                    <input className="input mt-2" value={targetFC} onChange={(e) => setTargetFC(e.target.value)} inputMode="decimal" />
                   </div>
                 </div>
               </div>
@@ -2829,34 +2146,33 @@ export default function RecipeEditor() {
           )}
 
           {/* Nutrition Section */}
-          <div className="gc-section gc-section-alt gc-card-soft">
-            <div style={{ padding: 12 }}>
-              <div className="gc-label flex items-center gap-2" id="sec-nutrition">
+          <div className="card-soft mb-4">
+            <div className="p-3">
+              <div className="text-caption flex items-center gap-2" id="sec-nutrition">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 2v20M12 12l8-8M12 12l-8-8M12 12l8 8M12 12l-8 8" />
                 </svg>
                 NUTRITION / PORTION
               </div>
-              <div className="gc-grid-4" style={{ marginTop: 10 }}>
-                <div className="gc-field">
-                  <div className="gc-label">CAL</div>
-                  <input className="gc-input" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="decimal" />
+              <div className="grid grid-cols-4 gap-4 mt-3">
+                <div>
+                  <div className="text-caption">CAL</div>
+                  <input className="input mt-2" value={calories} onChange={(e) => setCalories(e.target.value)} inputMode="decimal" />
                 </div>
-                <div className="gc-field">
-                  <div className="gc-label">PROTEIN g</div>
-                  <input className="gc-input" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" />
+                <div>
+                  <div className="text-caption">PROTEIN g</div>
+                  <input className="input mt-2" value={protein} onChange={(e) => setProtein(e.target.value)} inputMode="decimal" />
                 </div>
-                <div className="gc-field">
-                  <div className="gc-label">CARBS g</div>
-                  <input className="gc-input" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" />
+                <div>
+                  <div className="text-caption">CARBS g</div>
+                  <input className="input mt-2" value={carbs} onChange={(e) => setCarbs(e.target.value)} inputMode="decimal" />
                 </div>
-                <div className="gc-field">
-                  <div className="gc-label">FAT g</div>
-                  <input className="gc-input" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" />
+                <div>
+                  <div className="text-caption">FAT g</div>
+                  <input className="input mt-2" value={fat} onChange={(e) => setFat(e.target.value)} inputMode="decimal" />
                 </div>
               </div>
-
-              <div className="gc-hint flex items-center gap-1" style={{ marginTop: 10 }}>
+              <div className="text-muted flex items-center gap-1 mt-3">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="16" x2="12" y2="12" />
@@ -2868,11 +2184,11 @@ export default function RecipeEditor() {
           </div>
 
           {/* Meta Section - Basic Information */}
-          <div id="sec-basics" className="gc-section gc-card">
-            <div className="gc-card-head">
+          <div id="sec-basics" className="card mb-4">
+            <div className="card-header">
               <div className="flex items-center justify-between w-full">
                 <div>
-                  <div className="gc-label flex items-center gap-2">
+                  <div className="text-caption flex items-center gap-2">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
                       <line x1="3" y1="9" x2="21" y2="9" />
@@ -2881,84 +2197,70 @@ export default function RecipeEditor() {
                     </svg>
                     BASIC INFORMATION
                   </div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
+                  <div className="text-muted mt-2">
                     <span className="flex items-center gap-1">
                       <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
                       Auto-save enabled • Labels above inputs
                     </span>
                   </div>
                 </div>
-                
-                {/* Status Badge */}
                 <div className="flex items-center gap-3">
-                  <div className="px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20 text-xs font-semibold text-primary-dark flex items-center gap-1.5">
+                  <div className="px-3 py-1.5 bg-primary/10 rounded-full border border-primary/20 text-xs font-semibold text-primary flex items-center gap-1.5">
                     <span className={`w-2 h-2 ${savePulse ? 'bg-primary animate-pulse' : 'bg-green-500'} rounded-full`} />
                     {savePulse ? 'Saving...' : 'All changes saved'}
                   </div>
                 </div>
               </div>
             </div>
-
-            <div className="gc-card-body">
-              <div className="grid-cols-12">
+            <div className="card-body">
+              <div className="grid grid-cols-12 gap-4">
                 {/* Recipe Code Section */}
                 <div className="col-span-6">
-                  <div className="gc-meta-card group">
+                  <div className="card-soft p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M16 3h5v5M14 10l6-6M4 21h5v-5M10 14l-6 6" />
                           <rect x="8" y="8" width="8" height="8" rx="2" />
                         </svg>
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                          RECIPE CODE
-                        </div>
-                        <div className="text-[11px] text-neutral-500">
-                          Unique identifier for this recipe
-                        </div>
+                        <div className="text-xs font-semibold text-primary uppercase tracking-wider">RECIPE CODE</div>
+                        <div className="text-[11px] text-muted">Unique identifier for this recipe</div>
                       </div>
                     </div>
-                    
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                        <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">
                           CODE <span className="text-neutral-400 font-normal">(auto-generated if empty)</span>
                         </label>
                         <div className="relative">
-                          <input 
-                            className={`gc-input pl-10 ${!canEditCodes ? "opacity-60 cursor-not-allowed bg-neutral-50" : ""}`} 
-                            value={code} 
-                            onChange={(e) => setCode(e.target.value.toUpperCase())} 
+                          <input
+                            className={`input pl-10 ${!canEditCodes ? 'opacity-60 cursor-not-allowed bg-neutral-50' : ''}`}
+                            value={code}
+                            onChange={(e) => setCode(e.target.value.toUpperCase())}
                             placeholder="PREP-003"
-                            disabled={!canEditCodes} 
+                            disabled={!canEditCodes}
                           />
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
-                            #
-                          </div>
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">#</div>
                         </div>
                       </div>
-
                       <div>
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
+                        <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">
                           CODE CATEGORY <span className="text-neutral-400 font-normal">(max 6 chars)</span>
                         </label>
                         <div className="relative">
-                          <input 
-                            className={`gc-input pl-10 ${!canEditCodes ? "opacity-60 cursor-not-allowed bg-neutral-50" : ""}`} 
-                            value={codeCategory} 
-                            onChange={(e) => setCodeCategory(e.target.value.toUpperCase())} 
+                          <input
+                            className={`input pl-10 ${!canEditCodes ? 'opacity-60 cursor-not-allowed bg-neutral-50' : ''}`}
+                            value={codeCategory}
+                            onChange={(e) => setCodeCategory(e.target.value.toUpperCase())}
                             placeholder="BASEGR"
                             maxLength={6}
-                            disabled={!canEditCodes} 
+                            disabled={!canEditCodes}
                           />
-                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">
-                            📂
-                          </div>
+                          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">📂</div>
                         </div>
                       </div>
-
                       {!canEditCodes && (
                         <div className="mt-2 p-2 bg-amber-50 border border-amber-200 rounded-lg">
                           <div className="flex items-start gap-2">
@@ -2973,44 +2275,36 @@ export default function RecipeEditor() {
 
                 {/* Recipe Identity Section */}
                 <div className="col-span-6">
-                  <div className="gc-meta-card group">
+                  <div className="card-soft p-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+                      <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                           <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                           <circle cx="12" cy="7" r="4" />
                         </svg>
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                          RECIPE IDENTITY
-                        </div>
-                        <div className="text-[11px] text-neutral-500">
-                          Basic identification details
-                        </div>
+                        <div className="text-xs font-semibold text-primary uppercase tracking-wider">RECIPE IDENTITY</div>
+                        <div className="text-[11px] text-muted">Basic identification details</div>
                       </div>
                     </div>
-
                     <div className="space-y-3">
                       <div>
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                          NAME <span className="text-red-500">*</span>
+                        <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">
+                          NAME <span className="text-error">*</span>
                         </label>
-                        <input 
-                          className="gc-input" 
-                          value={name} 
-                          onChange={(e) => setName(e.target.value)} 
+                        <input
+                          className="input"
+                          value={name}
+                          onChange={(e) => setName(e.target.value)}
                           placeholder="Chop Masala"
                         />
                       </div>
-
                       <div className="grid grid-cols-2 gap-3">
                         <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                            CATEGORY
-                          </label>
-                          <select 
-                            className="gc-select"
+                          <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">CATEGORY</label>
+                          <select
+                            className="input select"
                             value={category}
                             onChange={(e) => setCategory(e.target.value)}
                           >
@@ -3027,20 +2321,16 @@ export default function RecipeEditor() {
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1.5">
-                            PORTIONS
-                          </label>
+                          <label className="block text-[10px] font-bold text-muted uppercase tracking-wider mb-1.5">PORTIONS</label>
                           <div className="relative">
-                            <input 
-                              className="gc-input pl-10" 
-                              value={portions} 
-                              onChange={(e) => setPortions(e.target.value)} 
+                            <input
+                              className="input pl-10"
+                              value={portions}
+                              onChange={(e) => setPortions(e.target.value)}
                               inputMode="numeric"
                               placeholder="1"
                             />
-                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">
-                              👥
-                            </div>
+                            <div className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 text-sm">👥</div>
                           </div>
                         </div>
                       </div>
@@ -3050,7 +2340,7 @@ export default function RecipeEditor() {
 
                 {/* Description Section */}
                 <div className="col-span-12">
-                  <div className="gc-meta-card">
+                  <div className="card-soft p-4">
                     <div className="flex items-center gap-3 mb-3">
                       <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3058,32 +2348,26 @@ export default function RecipeEditor() {
                         </svg>
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                          DESCRIPTION
-                        </div>
-                        <div className="text-[11px] text-neutral-500">
-                          Brief overview of the recipe
-                        </div>
+                        <div className="text-xs font-semibold text-primary uppercase tracking-wider">DESCRIPTION</div>
+                        <div className="text-[11px] text-muted">Brief overview of the recipe</div>
                       </div>
                     </div>
-                    <textarea 
-                      className="gc-textarea min-h-[80px]" 
-                      value={description} 
-                      onChange={(e) => setDescription(e.target.value)} 
+                    <textarea
+                      className="textarea input"
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
                       placeholder="Write a short description of this recipe..."
                       maxLength={500}
                     />
                     <div className="mt-1 text-right">
-                      <span className="text-[10px] text-neutral-400">
-                        {description.length}/500 characters
-                      </span>
+                      <span className="text-[10px] text-neutral-400">{description.length}/500 characters</span>
                     </div>
                   </div>
                 </div>
 
                 {/* Recipe Photo Section */}
                 <div className="col-span-12">
-                  <div className="gc-meta-card">
+                  <div className="card-soft p-4">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
@@ -3094,15 +2378,10 @@ export default function RecipeEditor() {
                           </svg>
                         </div>
                         <div>
-                          <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">
-                            RECIPE PHOTO
-                          </div>
-                          <div className="text-[11px] text-neutral-500">
-                            Upload from Supabase bucket: <span className="font-mono">{PHOTO_BUCKET}</span>
-                          </div>
+                          <div className="text-xs font-semibold text-primary uppercase tracking-wider">RECIPE PHOTO</div>
+                          <div className="text-[11px] text-muted">Upload from Supabase bucket: <span className="font-mono">{PHOTO_BUCKET}</span></div>
                         </div>
                       </div>
-                      
                       {uploading && (
                         <div className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 rounded-full">
                           <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -3110,18 +2389,13 @@ export default function RecipeEditor() {
                         </div>
                       )}
                     </div>
-
                     <div className="flex gap-6 flex-wrap items-start">
                       <div className="relative w-[200px] h-[150px] rounded-xl overflow-hidden border-2 border-dashed border-primary/20 group hover:border-primary/40 transition-all">
                         {recipe?.photo_url ? (
                           <>
-                            <img 
-                              src={recipe.photo_url} 
-                              alt="Recipe" 
-                              className="w-full h-full object-cover"
-                            />
+                            <img src={recipe.photo_url} alt="Recipe" className="w-full h-full object-cover" />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                              <button 
+                              <button
                                 className="px-3 py-1.5 bg-white rounded-lg text-xs font-medium"
                                 onClick={() => {
                                   document.getElementById('photo-upload')?.click()
@@ -3132,8 +2406,8 @@ export default function RecipeEditor() {
                             </div>
                           </>
                         ) : (
-                          <label 
-                            htmlFor="photo-upload" 
+                          <label
+                            htmlFor="photo-upload"
                             className="absolute inset-0 flex flex-col items-center justify-center cursor-pointer bg-neutral-50 hover:bg-neutral-100 transition-colors"
                           >
                             <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="text-neutral-400">
@@ -3146,7 +2420,6 @@ export default function RecipeEditor() {
                           </label>
                         )}
                       </div>
-
                       <div className="flex-1 space-y-3">
                         <input
                           id="photo-upload"
@@ -3161,7 +2434,6 @@ export default function RecipeEditor() {
                             e.currentTarget.value = ''
                           }}
                         />
-                        
                         <div className="bg-neutral-50 rounded-lg p-3 border border-neutral-200">
                           <div className="text-[11px] font-medium text-neutral-600 mb-2">Upload tips:</div>
                           <ul className="text-[10px] text-neutral-500 space-y-1 list-disc pl-4">
@@ -3170,9 +2442,8 @@ export default function RecipeEditor() {
                             <li>Supported formats: JPG, PNG, WebP</li>
                           </ul>
                         </div>
-
                         {recipe?.photo_url && (
-                          <button 
+                          <button
                             className="text-xs text-primary hover:text-primary-dark font-medium"
                             onClick={() => {
                               if (window.confirm('Remove recipe photo?')) {
@@ -3191,7 +2462,7 @@ export default function RecipeEditor() {
 
                 {/* Subrecipe Settings */}
                 <div className="col-span-12">
-                  <div className="gc-meta-card">
+                  <div className="card-soft p-4">
                     <div className="flex items-center gap-3 mb-4">
                       <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
                         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3201,22 +2472,14 @@ export default function RecipeEditor() {
                         </svg>
                       </div>
                       <div>
-                        <div className="text-xs font-semibold text-secondary-dark uppercase tracking-wider">
-                          SUBRECIPE SETTINGS
-                        </div>
-                        <div className="text-[11px] text-neutral-500">
-                          If enabled, this recipe can be used as a component inside other recipes.
-                        </div>
+                        <div className="text-xs font-semibold text-secondary uppercase tracking-wider">SUBRECIPE SETTINGS</div>
+                        <div className="text-[11px] text-muted">If enabled, this recipe can be used as a component inside other recipes.</div>
                       </div>
                     </div>
-
                     <div className="grid grid-cols-12 gap-4">
-                      {/* IS SUBRECIPE */}
                       <div className="col-span-12 md:col-span-4">
                         <div className="bg-gradient-to-br from-secondary/5 to-transparent rounded-xl p-4 border border-secondary/10">
-                          <label className="block text-[10px] font-bold text-secondary uppercase tracking-wider mb-3">
-                            IS SUBRECIPE
-                          </label>
+                          <label className="block text-[10px] font-bold text-secondary uppercase tracking-wider mb-3">IS SUBRECIPE</label>
                           <div className="flex items-center gap-4">
                             <label className="flex items-center gap-2 cursor-pointer">
                               <input
@@ -3224,7 +2487,7 @@ export default function RecipeEditor() {
                                 name="isSubRecipe"
                                 checked={isSubRecipe}
                                 onChange={() => setIsSubRecipe(true)}
-                                className="w-4 h-4 text-secondary border-secondary/30 focus:ring-secondary/20"
+                                className="w-4 h-4 text-secondary"
                               />
                               <span className="text-sm font-medium">Yes</span>
                             </label>
@@ -3234,7 +2497,7 @@ export default function RecipeEditor() {
                                 name="isSubRecipe"
                                 checked={!isSubRecipe}
                                 onChange={() => setIsSubRecipe(false)}
-                                className="w-4 h-4 text-secondary border-secondary/30 focus:ring-secondary/20"
+                                className="w-4 h-4 text-secondary"
                               />
                               <span className="text-sm font-medium">No</span>
                             </label>
@@ -3245,13 +2508,9 @@ export default function RecipeEditor() {
                           </div>
                         </div>
                       </div>
-
-                      {/* YIELD QUANTITY */}
                       <div className="col-span-6 md:col-span-4">
-                        <div className="bg-white rounded-xl p-4 border border-neutral-200 hover:border-secondary/30 transition-colors">
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
-                            YIELD QUANTITY
-                          </label>
+                        <div className="bg-white rounded-xl p-4 border border-neutral-200">
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">YIELD QUANTITY</label>
                           <div className="relative">
                             <input
                               type="text"
@@ -3259,10 +2518,10 @@ export default function RecipeEditor() {
                               value={yieldQty}
                               onChange={(e) => setYieldQty(e.target.value)}
                               placeholder="0.0"
-                              className="gc-yield-quantity-input"
+                              className="input"
                               disabled={!isSubRecipe}
                             />
-                            <div className="gc-yield-quantity-unit">
+                            <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">
                               {yieldUnit}
                             </div>
                           </div>
@@ -3272,23 +2531,13 @@ export default function RecipeEditor() {
                           </div>
                         </div>
                       </div>
-
-                      {/* YIELD UNIT */}
                       <div className="col-span-6 md:col-span-4">
-                        <div className="bg-white rounded-xl p-4 border border-neutral-200 hover:border-secondary/30 transition-colors">
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">
-                            YIELD UNIT
-                          </label>
+                        <div className="bg-white rounded-xl p-4 border border-neutral-200">
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-2">YIELD UNIT</label>
                           <select
                             value={yieldUnit}
                             onChange={(e) => setYieldUnit(e.target.value as any)}
-                            className="w-full px-4 py-3 border-2 border-neutral-200 rounded-xl focus:border-secondary focus:ring-2 focus:ring-secondary/20 outline-none transition-all appearance-none bg-white"
-                            style={{
-                              backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%23C17B4A'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E")`,
-                              backgroundRepeat: 'no-repeat',
-                              backgroundPosition: 'right 1rem center',
-                              backgroundSize: '1.5rem'
-                            }}
+                            className="input select"
                             disabled={!isSubRecipe}
                           >
                             <option value="g">g (gram)</option>
@@ -3297,14 +2546,10 @@ export default function RecipeEditor() {
                             <option value="l">l (liter)</option>
                             <option value="pcs">pcs (pieces)</option>
                           </select>
-                          <div className="mt-1.5 text-[10px] text-neutral-400">
-                            Unit of measurement for the yield
-                          </div>
+                          <div className="mt-1.5 text-[10px] text-neutral-400">Unit of measurement for the yield</div>
                         </div>
                       </div>
                     </div>
-
-                    {/* معلومات إضافية عند تفعيل subrecipe */}
                     {isSubRecipe && (
                       <div className="mt-4 p-4 bg-secondary/5 rounded-xl border border-secondary/20">
                         <div className="flex items-start gap-3">
@@ -3312,12 +2557,10 @@ export default function RecipeEditor() {
                             <span className="text-secondary text-xs">✓</span>
                           </div>
                           <div>
-                            <div className="text-sm font-semibold text-secondary-dark mb-1">
-                              Subrecipe Mode Active
-                            </div>
+                            <div className="text-sm font-semibold text-secondary mb-1">Subrecipe Mode Active</div>
                             <div className="text-xs text-neutral-600">
-                              This recipe is now available as a component in other recipes. When used as a subrecipe, 
-                              the system will use the yield quantity ({yieldQty || '0'} {yieldUnit}) to calculate 
+                              This recipe is now available as a component in other recipes. When used as a subrecipe,
+                              the system will use the yield quantity ({yieldQty || '0'} {yieldUnit}) to calculate
                               the cost and quantity in parent recipes.
                             </div>
                             {(!yieldQty || parseFloat(yieldQty) <= 0) && (
@@ -3337,67 +2580,65 @@ export default function RecipeEditor() {
           </div>
 
           {/* ADD LINE Section */}
-          <div style={{ marginTop: 14 }} className="gc-card">
-            <div className="gc-card-head">
-              <div className="gc-label flex items-center gap-2">
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="text-caption flex items-center gap-2">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="12" y1="5" x2="12" y2="19" />
                   <line x1="5" y1="12" x2="19" y2="12" />
                 </svg>
                 ADD LINE
               </div>
-              <div className="gc-hint" style={{ marginTop: 6 }}>
+              <div className="text-muted mt-2">
                 Smart rule: edit <b>Gross</b> → yield auto. edit <b>Yield%</b> → clears gross override.
               </div>
             </div>
-
-            <div className="gc-card-body">
-              <div className="gc-add-line-modern">
-                <div className="gc-add-line-type-bar">
+            <div className="card-body">
+              <div className="card-soft p-4">
+                <div className="flex gap-2 mb-6 bg-primary/5 p-1.5 rounded-full border border-primary/10">
                   <button
-                    className={cx("gc-type-btn", addType === 'ingredient' && "active")}
+                    className={cx('flex-1 flex items-center justify-center gap-2.5 py-3 rounded-full border-none bg-transparent text-muted font-bold cursor-pointer transition-all', addType === 'ingredient' && 'bg-white text-primary shadow-md border border-primary/20')}
                     onClick={() => setAddType('ingredient')}
                     type="button"
                   >
-                    <span className="gc-type-icon">🥗</span>
+                    <span>🥗</span>
                     <span>Ingredient</span>
                   </button>
                   <button
-                    className={cx("gc-type-btn", addType === 'subrecipe' && "active")}
+                    className={cx('flex-1 flex items-center justify-center gap-2.5 py-3 rounded-full border-none bg-transparent text-muted font-bold cursor-pointer transition-all', addType === 'subrecipe' && 'bg-white text-primary shadow-md border border-primary/20')}
                     onClick={() => setAddType('subrecipe')}
                     type="button"
                   >
-                    <span className="gc-type-icon">📋</span>
+                    <span>📋</span>
                     <span>Subrecipe</span>
                   </button>
                   <button
-                    className={cx("gc-type-btn", addType === 'group' && "active")}
+                    className={cx('flex-1 flex items-center justify-center gap-2.5 py-3 rounded-full border-none bg-transparent text-muted font-bold cursor-pointer transition-all', addType === 'group' && 'bg-white text-primary shadow-md border border-primary/20')}
                     onClick={() => setAddType('group')}
                     type="button"
                   >
-                    <span className="gc-type-icon">📌</span>
+                    <span>📌</span>
                     <span>Group</span>
                   </button>
                 </div>
 
                 {addType !== 'group' && (
-                  <div className="gc-add-line-search-section">
-                    <div className="gc-search-field">
-                      <svg className="gc-search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <div className="grid grid-cols-3 gap-4 mb-6">
+                    <div className="relative">
+                      <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-primary opacity-70 w-5 h-5" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <circle cx="11" cy="11" r="8" />
                         <line x1="21" y1="21" x2="16.65" y2="16.65" />
                       </svg>
                       <input
-                        className="gc-search-input"
+                        className="input pl-12"
                         value={ingSearch}
                         onChange={(e) => setIngSearch(e.target.value)}
                         placeholder={`Search ${addType === 'ingredient' ? 'ingredients' : 'subrecipes'}...`}
                       />
                     </div>
-
-                    <div className="gc-select-wrapper">
+                    <div className="col-span-2">
                       <select
-                        className="gc-modern-select"
+                        className="input select"
                         value={addType === 'ingredient' ? addIngredientId : addSubRecipeId}
                         onChange={(e) => {
                           if (addType === 'ingredient') {
@@ -3410,24 +2651,24 @@ export default function RecipeEditor() {
                         <option value="">— Select {addType === 'ingredient' ? 'ingredient' : 'subrecipe'} —</option>
                         {addType === 'ingredient'
                           ? filteredIngredients.map((i) => (
-                            <option key={i.id} value={i.id}>
-                              {i.name || 'Unnamed'} {i.code ? `(${i.code})` : ''}
-                            </option>
-                          ))
+                              <option key={i.id} value={i.id}>
+                                {i.name || 'Unnamed'} {i.code ? `(${i.code})` : ''}
+                              </option>
+                            ))
                           : subRecipeOptions.map((r) => (
-                            <option key={r.id} value={r.id}>
-                              {r.name || 'Untitled'} {r.code ? `(${r.code})` : ''}
-                            </option>
-                          ))}
+                              <option key={r.id} value={r.id}>
+                                {r.name || 'Untitled'} {r.code ? `(${r.code})` : ''}
+                              </option>
+                            ))}
                       </select>
                     </div>
                   </div>
                 )}
 
                 {addType === 'group' && (
-                  <div className="gc-group-title-field">
+                  <div className="mb-6">
                     <input
-                      className="gc-modern-input gc-group-input"
+                      className="input text-center font-semibold"
                       value={addGroupTitle}
                       onChange={(e) => setAddGroupTitle(e.target.value)}
                       placeholder="Enter group title (e.g. Sauce, Toppings, Marinade)..."
@@ -3436,86 +2677,80 @@ export default function RecipeEditor() {
                 )}
 
                 {addType !== 'group' && (
-                  <div className="gc-add-line-quantities">
-                    <div className="gc-quantity-grid">
-                      <div className="gc-quantity-field">
-                        <label className="gc-field-label">NET</label>
-                        <div className="gc-input-unit-group">
-                          <input
-                            className="gc-modern-input gc-number-input gc-number-input-inline"
-                            value={addNetQty}
-                            onChange={(e) => setAddNetQty(e.target.value)}
-                            inputMode="decimal"
-                            placeholder="0.000"
-                          />
-                          <span className="gc-unit-badge">qty</span>
-                        </div>
-                      </div>
-
-                      <div className="gc-quantity-field">
-                        <label className="gc-field-label">UNIT</label>
-                        <select
-                          className="gc-modern-select gc-unit-select"
-                          value={addUnit}
-                          onChange={(e) => setAddUnit(e.target.value)}
-                        >
-                          <option value="g">g (gram)</option>
-                          <option value="kg">kg (kilogram)</option>
-                          <option value="ml">ml (milliliter)</option>
-                          <option value="l">l (liter)</option>
-                          <option value="pcs">pcs (pieces)</option>
-                          <option value="tbsp">tbsp</option>
-                          <option value="tsp">tsp</option>
-                          <option value="cup">cup</option>
-                        </select>
-                      </div>
-
-                      <div className="gc-quantity-field">
-                        <label className="gc-field-label">YIELD %</label>
-                        <div className="gc-input-unit-group">
-                          <input
-                            className="gc-modern-input gc-number-input gc-number-input-inline"
-                            value={addYield}
-                            onChange={(e) => setAddYield(e.target.value)}
-                            inputMode="decimal"
-                            placeholder="100"
-                          />
-                          <span className="gc-unit-badge">%</span>
-                        </div>
-                        <div className="gc-field-hint">edit → auto gross</div>
-                      </div>
-
-                      <div className="gc-quantity-field">
-                        <label className="gc-field-label">GROSS</label>
-                        <div className="gc-input-unit-group">
-                          <input
-                            className="gc-modern-input gc-number-input gc-number-input-inline"
-                            value={addGross}
-                            onChange={(e) => setAddGross(e.target.value)}
-                            inputMode="decimal"
-                            placeholder="auto"
-                          />
-                          <span className="gc-unit-badge">{addUnit || 'g'}</span>
-                        </div>
-                        <div className="gc-field-hint">optional • auto from yield</div>
-                      </div>
-
-                      <div className="gc-quantity-field gc-note-field">
-                        <label className="gc-field-label">NOTE</label>
+                  <div className="grid grid-cols-5 gap-4 mt-4">
+                    <div>
+                      <label className="text-caption">NET</label>
+                      <div className="relative mt-2">
                         <input
-                          className="gc-modern-input"
-                          value={addNote}
-                          onChange={(e) => setAddNote(e.target.value)}
-                          placeholder="e.g. Chopped, Powdered, Fresh..."
+                          className="input pr-12 text-right font-mono"
+                          value={addNetQty}
+                          onChange={(e) => setAddNetQty(e.target.value)}
+                          inputMode="decimal"
+                          placeholder="0.000"
                         />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">qty</span>
                       </div>
+                    </div>
+                    <div>
+                      <label className="text-caption">UNIT</label>
+                      <select
+                        className="input select mt-2"
+                        value={addUnit}
+                        onChange={(e) => setAddUnit(e.target.value)}
+                      >
+                        <option value="g">g (gram)</option>
+                        <option value="kg">kg (kilogram)</option>
+                        <option value="ml">ml (milliliter)</option>
+                        <option value="l">l (liter)</option>
+                        <option value="pcs">pcs (pieces)</option>
+                        <option value="tbsp">tbsp</option>
+                        <option value="tsp">tsp</option>
+                        <option value="cup">cup</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-caption">YIELD %</label>
+                      <div className="relative mt-2">
+                        <input
+                          className="input pr-12 text-right font-mono"
+                          value={addYield}
+                          onChange={(e) => setAddYield(e.target.value)}
+                          inputMode="decimal"
+                          placeholder="100"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">%</span>
+                      </div>
+                      <div className="text-[10px] text-muted mt-1">edit → auto gross</div>
+                    </div>
+                    <div>
+                      <label className="text-caption">GROSS</label>
+                      <div className="relative mt-2">
+                        <input
+                          className="input pr-12 text-right font-mono"
+                          value={addGross}
+                          onChange={(e) => setAddGross(e.target.value)}
+                          inputMode="decimal"
+                          placeholder="auto"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">{addUnit || 'g'}</span>
+                      </div>
+                      <div className="text-[10px] text-muted mt-1">optional • auto from yield</div>
+                    </div>
+                    <div>
+                      <label className="text-caption">NOTE</label>
+                      <input
+                        className="input mt-2"
+                        value={addNote}
+                        onChange={(e) => setAddNote(e.target.value)}
+                        placeholder="e.g. Chopped, Powdered..."
+                      />
                     </div>
                   </div>
                 )}
 
-                <div className="gc-add-line-actions-modern">
+                <div className="flex gap-4 mt-6 justify-end">
                   <button
-                    className="gc-btn-primary-modern"
+                    className="btn btn-primary"
                     type="button"
                     onClick={addLineLocal}
                   >
@@ -3526,7 +2761,7 @@ export default function RecipeEditor() {
                     Add {addType === 'group' ? 'Group' : 'Line'}
                   </button>
                   <button
-                    className="gc-btn-secondary-modern"
+                    className="btn btn-secondary"
                     type="button"
                     onClick={() => { saveLinesNow().catch(() => { }) }}
                   >
@@ -3543,9 +2778,9 @@ export default function RecipeEditor() {
           </div>
 
           {/* LINES Section */}
-          <div style={{ marginTop: 14 }} className="gc-card">
-            <div className="gc-card-head">
-              <div className="gc-label flex items-center gap-2" id="sec-lines">
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="text-caption flex items-center gap-2" id="sec-lines">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <line x1="8" y1="6" x2="21" y2="6" />
                   <line x1="8" y1="12" x2="21" y2="12" />
@@ -3556,30 +2791,28 @@ export default function RecipeEditor() {
                 </svg>
                 LINES
               </div>
-              <div className="gc-hint" style={{ marginTop: 6 }}>
+              <div className="text-muted mt-2">
                 Edit Net/Gross/Yield safely. Groups have no cost.
               </div>
             </div>
-
-            <div className="gc-card-body">
+            <div className="card-body">
               {!visibleLines.length ? (
-                <div className="gc-empty-state">
-                  <div className="gc-empty-icon">📝</div>
-                  <div className="gc-empty-title">No ingredients yet</div>
-                  <div className="gc-empty-description">Start adding ingredients, subrecipes, or groups using the form above</div>
+                <div className="text-center p-12 bg-gradient-to-br from-neutral-50 to-white rounded-2xl border-2 border-dashed border-primary/20">
+                  <div className="text-5xl mb-4 opacity-70">📝</div>
+                  <div className="text-heading mb-2">No ingredients yet</div>
+                  <div className="text-muted">Start adding ingredients, subrecipes, or groups using the form above</div>
                 </div>
               ) : (
-                <div className="gc-lines-container">
-                  <div className="gc-table-toolbar">
-                    <div className="gc-table-info">
-                      <span className="gc-table-count">{visibleLines.length} items</span>
+                <div className="table-container">
+                  <div className="p-4 flex justify-between items-center bg-gradient-to-r from-neutral-50 to-white border-b border-primary/10">
+                    <div className="flex items-center gap-3">
+                      <span className="text-sm font-semibold bg-white px-3 py-1.5 rounded-full border border-primary/15 shadow-sm">{visibleLines.length} items</span>
                       {visibleLines.filter(l => l.line_type === 'group').length > 0 && (
-                        <span className="gc-table-badge">{visibleLines.filter(l => l.line_type === 'group').length} groups</span>
+                        <span className="text-xs font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">{visibleLines.filter(l => l.line_type === 'group').length} groups</span>
                       )}
                     </div>
                   </div>
-
-                  <table className="gc-excel-table">
+                  <table className="table">
                     <colgroup>
                       <col />
                       <col />
@@ -3607,20 +2840,19 @@ export default function RecipeEditor() {
                         const c = lineComputed.get(l.id)
                         const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
                         const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
-
                         if (l.line_type === 'group') {
                           return (
-                            <tr key={l.id} className={cx("gc-group-row", flashLineId === l.id && "gc-flash-row")}>
-                              <td colSpan={tableColSpan} className="gc-group-cell">
-                                <div className="gc-group-content">
-                                  <div className="gc-group-title">
-                                    <span className="gc-group-icon">📁</span>
-                                    <span className="gc-group-name">{l.group_title || 'Untitled Group'}</span>
-                                    <span className="gc-group-badge">Group</span>
+                            <tr key={l.id} className={cx('row-group', flashLineId === l.id && 'row-flash')}>
+                              <td colSpan={tableColSpan} className="p-3">
+                                <div className="flex items-center justify-between w-full">
+                                  <div className="flex items-center gap-3">
+                                    <span className="text-lg opacity-70">📌</span>
+                                    <span className="font-bold text-primary">{l.group_title || 'Untitled Group'}</span>
+                                    <span className="text-xs font-bold text-primary bg-primary/10 px-2 py-0.5 rounded-full">Group</span>
                                   </div>
-                                  <div className="gc-group-actions">
+                                  <div className="flex gap-2">
                                     <button
-                                      className="gc-action-btn"
+                                      className="w-8 h-8 border border-primary/15 rounded-lg bg-white text-muted hover:bg-primary/10 hover:border-primary hover:text-primary transition-all flex items-center justify-center"
                                       type="button"
                                       onClick={() => duplicateLineLocal(l.id)}
                                       title="Duplicate group"
@@ -3631,7 +2863,7 @@ export default function RecipeEditor() {
                                       </svg>
                                     </button>
                                     <button
-                                      className="gc-action-btn gc-action-btn-danger"
+                                      className="w-8 h-8 border border-error/15 rounded-lg bg-white text-muted hover:bg-error/10 hover:border-error hover:text-error transition-all flex items-center justify-center"
                                       type="button"
                                       onClick={() => deleteLineLocal(l.id)}
                                       title="Delete group"
@@ -3647,85 +2879,70 @@ export default function RecipeEditor() {
                             </tr>
                           )
                         }
-
                         return (
                           <tr
                             key={l.id}
                             className={cx(
-                              flashLineId === l.id && "gc-flash-row",
-                              l.notes && "has-note"
+                              flashLineId === l.id && 'row-flash',
+                              l.notes && 'has-note'
                             )}
                           >
                             <td>
-                              <span className="gc-code-cell" title={l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')}>
-                                {l.line_type === 'ingredient'
-                                  ? (ing?.code || '—')
-                                  : (sub?.code || '—')}
+                              <span className="font-mono font-semibold text-primary bg-primary/5 px-2 py-1 rounded text-sm inline-block max-w-full overflow-hidden text-ellipsis">
+                                {l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')}
                               </span>
                             </td>
-
                             <td>
-                              <div className="gc-ingredient-cell">
-                                <span className="gc-ingredient-name" title={l.line_type === 'ingredient' ? (ing?.name || 'Unknown Ingredient') : (sub?.name || 'Unknown Subrecipe')}>
-                                  {l.line_type === 'ingredient'
-                                    ? (ing?.name || 'Unknown Ingredient')
-                                    : (sub?.name || 'Unknown Subrecipe')}
+                              <div className="flex flex-col gap-1">
+                                <span className="font-medium text-sm">
+                                  {l.line_type === 'ingredient' ? (ing?.name || 'Unknown Ingredient') : (sub?.name || 'Unknown Subrecipe')}
                                 </span>
                                 {l.notes && (
-                                  <span className="gc-ingredient-note" title={l.notes}>
-                                    <span>📝</span> {l.notes}
+                                  <span className="text-xs text-secondary bg-secondary/5 px-1.5 py-0.5 rounded border border-secondary/10 inline-block max-w-full overflow-hidden text-ellipsis">
+                                    📝 {l.notes}
                                   </span>
                                 )}
                               </div>
                             </td>
-
                             <td>
-                              <div className="gc-input-wrapper">
-                                <input
-                                  className="gc-number-input"
-                                  value={fmtQty(toNum(l.qty, 0))}
-                                  onChange={(e) => onNetChange(l.id, e.target.value)}
-                                  inputMode="decimal"
-                                />
-                              </div>
+                              <input
+                                className="input text-right font-mono py-1.5"
+                                value={fmtQty(toNum(l.qty, 0))}
+                                onChange={(e) => onNetChange(l.id, e.target.value)}
+                                inputMode="decimal"
+                              />
                             </td>
-
                             <td>
-                              <span className="gc-unit-cell">{l.unit || 'g'}</span>
+                              <span className="font-semibold text-muted bg-neutral-50 px-2 py-1 rounded text-sm inline-block text-center min-w-[40px]">{l.unit || 'g'}</span>
                             </td>
-
                             <td>
-                              <div className="gc-input-wrapper">
-                                <input
-                                  className="gc-number-input"
-                                  value={l.gross_qty_override != null ? fmtQty(l.gross_qty_override) : ''}
-                                  onChange={(e) => onGrossChange(l.id, e.target.value)}
-                                  inputMode="decimal"
-                                  placeholder={c ? fmtQty(c.gross) : ''}
-                                />
-                              </div>
+                              <input
+                                className="input text-right font-mono py-1.5"
+                                value={l.gross_qty_override != null ? fmtQty(l.gross_qty_override) : ''}
+                                onChange={(e) => onGrossChange(l.id, e.target.value)}
+                                inputMode="decimal"
+                                placeholder={c ? fmtQty(c.gross) : ''}
+                              />
                             </td>
-
                             <td>
-                              <div className="gc-input-wrapper">
+                              <div className="relative">
                                 <input
-                                  className="gc-number-input gc-yield-input"
+                                  className="input text-right font-mono py-1.5 pr-10"
                                   value={String(Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100)}
                                   onChange={(e) => onYieldChange(l.id, e.target.value)}
                                   inputMode="decimal"
                                 />
-                                <span className="gc-yield-suffix">%</span>
+                                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary opacity-60">%</span>
                               </div>
                             </td>
-
                             {showCost ? (
                               <td>
-                                <div className={cx("gc-cost-cell", (!c || c.lineCost <= 0) && "gc-cost-missing")}>
+                                <div className={cx('font-mono font-semibold text-right flex items-center justify-end gap-1', (!c || c.lineCost <= 0) && 'text-muted opacity-50')}>
                                   {c && c.lineCost > 0 ? (
                                     <>
                                       <span>{fmtMoney(c.lineCost, cur)}</span>
                                       {c.warnings.length > 0 && (
-                                        <span className="gc-cost-warning" title={c.warnings[0]}>⚠</span>
+                                        <span className="text-warning text-sm cursor-help" title={c.warnings[0]}>⚠</span>
                                       )}
                                     </>
                                   ) : (
@@ -3734,11 +2951,10 @@ export default function RecipeEditor() {
                                 </div>
                               </td>
                             ) : null}
-
                             <td>
-                              <div className="gc-actions-cell">
+                              <div className="flex gap-1.5 justify-center">
                                 <button
-                                  className="gc-action-btn"
+                                  className="w-8 h-8 border border-primary/15 rounded-lg bg-white text-muted hover:bg-primary/10 hover:border-primary hover:text-primary transition-all flex items-center justify-center"
                                   type="button"
                                   onClick={() => duplicateLineLocal(l.id)}
                                   title="Duplicate line"
@@ -3749,7 +2965,7 @@ export default function RecipeEditor() {
                                   </svg>
                                 </button>
                                 <button
-                                  className="gc-action-btn gc-action-btn-danger"
+                                  className="w-8 h-8 border border-error/15 rounded-lg bg-white text-muted hover:bg-error/10 hover:border-error hover:text-error transition-all flex items-center justify-center"
                                   type="button"
                                   onClick={() => deleteLineLocal(l.id)}
                                   title="Delete line"
@@ -3766,26 +2982,25 @@ export default function RecipeEditor() {
                       })}
                     </tbody>
                   </table>
-
                   {visibleLines.length > 0 && (
-                    <div className="gc-table-footer">
-                      <div className="gc-table-stats">
-                        <div className="gc-stat-item">
-                          <span className="gc-stat-label">Total items:</span>
-                          <span className="gc-stat-value">{visibleLines.length}</span>
+                    <div className="p-4 bg-gradient-to-r from-neutral-50 to-white border-t border-primary/10">
+                      <div className="flex items-center gap-6 flex-wrap">
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted font-medium">Total items:</span>
+                          <span className="font-bold text-primary bg-white px-3 py-1 rounded-full border border-primary/15">{visibleLines.length}</span>
                         </div>
-                        <div className="gc-stat-item">
-                          <span className="gc-stat-label">Ingredients:</span>
-                          <span className="gc-stat-value">{visibleLines.filter(l => l.line_type === 'ingredient').length}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted font-medium">Ingredients:</span>
+                          <span className="font-bold text-primary bg-white px-3 py-1 rounded-full border border-primary/15">{visibleLines.filter(l => l.line_type === 'ingredient').length}</span>
                         </div>
-                        <div className="gc-stat-item">
-                          <span className="gc-stat-label">Subrecipes:</span>
-                          <span className="gc-stat-value">{visibleLines.filter(l => l.line_type === 'subrecipe').length}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-muted font-medium">Subrecipes:</span>
+                          <span className="font-bold text-primary bg-white px-3 py-1 rounded-full border border-primary/15">{visibleLines.filter(l => l.line_type === 'subrecipe').length}</span>
                         </div>
                         {showCost && (
-                          <div className="gc-stat-item gc-stat-total">
-                            <span className="gc-stat-label">Total cost:</span>
-                            <span className="gc-stat-value">{fmtMoney(totals.totalCost, cur)}</span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-muted font-medium">Total cost:</span>
+                            <span className="font-bold text-primary bg-primary/10 px-3 py-1 rounded-full border border-primary/20">{fmtMoney(totals.totalCost, cur)}</span>
                           </div>
                         )}
                       </div>
@@ -3796,10 +3011,10 @@ export default function RecipeEditor() {
             </div>
           </div>
 
-          {/* Method Section - شبكة عرض ثلاثية احترافية - صور مربعة */}
-          <div style={{ marginTop: 14 }} className="gc-card">
-            <div className="gc-card-head">
-              <div className="gc-label flex items-center gap-2" id="sec-method">
+          {/* Method Section */}
+          <div className="card mb-4">
+            <div className="card-header">
+              <div className="text-caption flex items-center gap-2" id="sec-method">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
                   <polyline points="14 2 14 8 20 8" />
@@ -3809,17 +3024,15 @@ export default function RecipeEditor() {
                 </svg>
                 METHOD
               </div>
-              <div className="gc-hint" style={{ marginTop: 6 }}>
+              <div className="text-muted mt-2">
                 <span className="flex items-center gap-1">
                   <span className="w-1.5 h-1.5 bg-primary rounded-full animate-pulse"></span>
                   Add steps with photos. Auto-save enabled.
                 </span>
               </div>
             </div>
-
-            <div className="gc-card-body">
-              {/* NEW STEP */}
-              <div className="gc-meta-card" style={{ padding: '16px', marginBottom: '24px' }}>
+            <div className="card-body">
+              <div className="card-soft p-4 mb-6">
                 <div className="flex items-center gap-3 mb-3">
                   <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3829,32 +3042,25 @@ export default function RecipeEditor() {
                     </svg>
                   </div>
                   <div>
-                    <div className="text-xs font-semibold text-primary-dark uppercase tracking-wider">NEW STEP</div>
-                    <div className="text-[11px] text-neutral-500">Write a clear, concise instruction</div>
+                    <div className="text-xs font-semibold text-primary uppercase tracking-wider">NEW STEP</div>
+                    <div className="text-[11px] text-muted">Write a clear, concise instruction</div>
                   </div>
                 </div>
-
                 <div className="flex gap-3 items-start flex-wrap">
                   <div className="flex-1 min-w-[300px]">
-                    <input 
-                      className="gc-modern-input" 
-                      value={newStep} 
-                      onChange={(e) => setNewStep(e.target.value)} 
+                    <input
+                      className="input"
+                      value={newStep}
+                      onChange={(e) => setNewStep(e.target.value)}
                       placeholder="e.g., Sauté onions until golden brown..."
-                      style={{
-                        padding: '14px 18px',
-                        fontSize: '0.95rem'
-                      }}
+                      style={{ padding: '14px 18px', fontSize: '0.95rem' }}
                     />
                   </div>
-                  <button 
-                    className="gc-btn-primary-modern flex items-center gap-2" 
-                    type="button" 
+                  <button
+                    className="btn btn-primary"
+                    type="button"
                     onClick={addStep}
-                    style={{
-                      padding: '14px 28px',
-                      whiteSpace: 'nowrap'
-                    }}
+                    style={{ padding: '14px 28px', whiteSpace: 'nowrap' }}
                   >
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
@@ -3865,84 +3071,39 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-              {/* شبكة عرض 3 أعمدة للخطوات - صور مربعة */}
               {steps.length ? (
-                <div 
-                  style={{ 
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(3, 1fr)',
-                    gap: '16px',
-                    marginTop: '8px'
-                  }}
-                  className="steps-grid"
-                >
+                <div className="grid gap-4" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
                   {steps.map((s, idx) => (
-                    <div 
-                      key={idx} 
-                      className="gc-meta-card"
-                      style={{
-                        padding: 0,
-                        border: '1px solid rgba(46,125,120,0.15)',
-                        transition: 'all 0.2s ease',
-                        height: 'fit-content',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        position: 'relative',
-                        overflow: 'hidden'
-                      }}
+                    <div
+                      key={idx}
+                      className="card-soft p-0 border border-primary/15 transition-all h-fit flex flex-col relative overflow-hidden"
                     >
-                      {/* شريط علوي ملون */}
-                      <div 
-                        className="absolute top-0 left-0 right-0 h-1"
-                        style={{
-                          background: 'linear-gradient(90deg, var(--primary), var(--secondary))',
-                          opacity: 0.6
-                        }}
-                      />
-                      
-                      <div style={{ padding: '16px' }}>
-                        {/* HEADER مع رقم الخطوة */}
+                      <div className="absolute top-0 left-0 right-0 h-1" style={{ background: 'linear-gradient(90deg, var(--color-primary-500), var(--color-secondary-400))', opacity: 0.6 }} />
+                      <div className="p-4">
                         <div className="flex items-center justify-between mb-3">
                           <div className="flex items-center gap-2">
-                            <div 
-                              className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold"
-                              style={{ fontSize: '1rem' }}
-                            >
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold" style={{ fontSize: '1rem' }}>
                               {idx + 1}
                             </div>
-                            <div className="text-xs font-bold text-primary-dark uppercase tracking-wider">
-                              STEP {idx + 1}
-                            </div>
+                            <div className="text-xs font-bold text-primary uppercase tracking-wider">STEP {idx + 1}</div>
                           </div>
-
-                          <button 
-                            className="text-red-500 hover:text-red-700 transition-colors"
-                            type="button" 
+                          <button
+                            className="text-error hover:text-red-700 transition-colors"
+                            type="button"
                             onClick={() => removeStep(idx)}
                             style={{ opacity: 0.7, fontSize: '16px' }}
                           >
                             ✕
                           </button>
                         </div>
-
-                        {/* نص الخطوة - Textarea مدمج */}
-                        <textarea 
-                          className="gc-textarea" 
-                          value={s} 
-                          onChange={(e) => updateStep(idx, e.target.value)} 
+                        <textarea
+                          className="textarea input"
+                          value={s}
+                          onChange={(e) => updateStep(idx, e.target.value)}
                           rows={4}
-                          style={{
-                            fontSize: '0.9rem',
-                            lineHeight: '1.5',
-                            padding: '10px',
-                            minHeight: '100px',
-                            marginBottom: '12px',
-                            resize: 'vertical'
-                          }}
+                          style={{ fontSize: '0.9rem', lineHeight: '1.5', padding: '10px', minHeight: '100px', marginBottom: '12px', resize: 'vertical' }}
                           placeholder={`Step ${idx + 1} description...`}
                         />
-
-                        {/* مؤشر الصورة المرفقة */}
                         {stepPhotos[idx] && (
                           <div className="flex items-center gap-1.5 mb-2 text-xs text-primary">
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -3953,25 +3114,15 @@ export default function RecipeEditor() {
                             <span>Photo attached</span>
                           </div>
                         )}
-
-                        {/* معاينة الصورة إذا وجدت - مربعة (1:1) */}
                         {stepPhotos[idx] ? (
                           <div className="relative group mt-2">
-                            <img 
-                              src={stepPhotos[idx]} 
-                              alt={`Step ${idx + 1}`} 
-                              style={{
-                                width: '100%',
-                                height: 'auto',
-                                aspectRatio: '1 / 1',
-                                objectFit: 'cover',
-                                borderRadius: '10px',
-                                border: '1px solid rgba(46,125,120,0.2)',
-                                display: 'block'
-                              }} 
+                            <img
+                              src={stepPhotos[idx]}
+                              alt={`Step ${idx + 1}`}
+                              style={{ width: '100%', height: 'auto', aspectRatio: '1 / 1', objectFit: 'cover', borderRadius: '10px', border: '1px solid rgba(20, 184, 166, 0.2)', display: 'block' }}
                             />
                             <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                              <label 
+                              <label
                                 htmlFor={`step-photo-${idx}`}
                                 className="px-2 py-1 bg-white rounded text-xs font-medium cursor-pointer hover:bg-neutral-100"
                               >
@@ -3994,14 +3145,10 @@ export default function RecipeEditor() {
                                 e.currentTarget.value = ''
                               }}
                             />
-                            <label 
+                            <label
                               htmlFor={`step-photo-${idx}`}
                               className="flex items-center justify-center gap-1.5 w-full py-2 border-2 border-dashed border-neutral-300 rounded-lg text-xs text-neutral-500 hover:border-primary hover:text-primary transition-colors cursor-pointer"
-                              style={{
-                                aspectRatio: '1 / 1',
-                                display: 'flex',
-                                flexDirection: 'column'
-                              }}
+                              style={{ aspectRatio: '1 / 1', display: 'flex', flexDirection: 'column' }}
                             >
                               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                 <rect x="2" y="2" width="20" height="20" rx="2.18" />
@@ -4012,7 +3159,6 @@ export default function RecipeEditor() {
                             </label>
                           </div>
                         )}
-
                         {stepUploading && (
                           <div className="mt-2 flex items-center justify-center gap-2 text-primary text-xs">
                             <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
@@ -4024,22 +3170,16 @@ export default function RecipeEditor() {
                   ))}
                 </div>
               ) : (
-                <div className="gc-empty-state" style={{ padding: '40px 20px' }}>
-                  <div className="gc-empty-icon" style={{ fontSize: '3rem', marginBottom: '12px' }}>📝</div>
-                  <div className="gc-empty-title" style={{ fontSize: '1.1rem' }}>No steps yet</div>
-                  <div className="gc-empty-description" style={{ fontSize: '0.85rem' }}>
-                    Add your first step above. Each step can have its own photo.
-                  </div>
+                <div className="text-center p-10 bg-gradient-to-br from-neutral-50 to-white rounded-2xl border-2 border-dashed border-primary/20">
+                  <div className="text-4xl mb-3 opacity-70">📝</div>
+                  <div className="text-heading mb-1">No steps yet</div>
+                  <div className="text-muted text-sm">Add your first step above. Each step can have its own photo.</div>
                 </div>
               )}
 
-              {/* LEGACY METHOD - بطريقة محسنة */}
-              <div style={{ marginTop: '24px' }}>
-                <div className="gc-meta-card" style={{ padding: 0 }}>
-                  <div 
-                    className="flex items-center gap-3 p-4 border-b border-neutral-200/60"
-                    style={{ background: 'linear-gradient(to right, rgba(46,125,120,0.02), transparent)' }}
-                  >
+              <div className="mt-6">
+                <div className="card-soft p-0">
+                  <div className="flex items-center gap-3 p-4 border-b border-neutral-200/60" style={{ background: 'linear-gradient(to right, rgba(20, 184, 166, 0.02), transparent)' }}>
                     <div className="w-8 h-8 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                         <path d="M4 7h16M4 12h16M4 17h10" />
@@ -4047,35 +3187,24 @@ export default function RecipeEditor() {
                       </svg>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold text-secondary-dark uppercase tracking-wider">
-                        LEGACY METHOD (OPTIONAL)
-                      </div>
-                      <div className="text-[11px] text-neutral-500">
-                        Use this for longer, formatted instructions or as fallback
-                      </div>
+                      <div className="text-xs font-semibold text-secondary uppercase tracking-wider">LEGACY METHOD (OPTIONAL)</div>
+                      <div className="text-[11px] text-muted">Use this for longer, formatted instructions or as fallback</div>
                     </div>
                   </div>
-
-                  <div style={{ padding: '16px' }}>
-                    <textarea 
-                      className="gc-textarea" 
-                      value={methodLegacy} 
-                      onChange={(e) => setMethodLegacy(e.target.value)} 
+                  <div className="p-4">
+                    <textarea
+                      className="textarea input"
+                      value={methodLegacy}
+                      onChange={(e) => setMethodLegacy(e.target.value)}
                       placeholder="Write your full method here. This can be used instead of steps if you prefer a single text block..."
                       rows={4}
-                      style={{
-                        fontSize: '0.95rem',
-                        lineHeight: '1.6',
-                        padding: '14px'
-                      }}
+                      style={{ fontSize: '0.95rem', lineHeight: '1.6', padding: '14px' }}
                     />
-                    
                     <div className="flex items-center justify-between mt-2">
                       <div className="text-[10px] text-neutral-400 flex items-center gap-1">
                         <span className="w-1.5 h-1.5 bg-secondary rounded-full"></span>
                         {methodLegacy.length} characters
                       </div>
-                      
                       {steps.length > 0 && methodLegacy && (
                         <div className="flex items-center gap-1 text-[10px] bg-amber-50 text-amber-700 px-2 py-1 rounded-full">
                           <span>ℹ️</span>
@@ -4087,14 +3216,12 @@ export default function RecipeEditor() {
                 </div>
               </div>
 
-              {/* CSS مخصص للشبكة المتجاوبة */}
               <style>{`
                 @media (max-width: 1024px) {
                   .steps-grid {
                     grid-template-columns: repeat(2, 1fr) !important;
                   }
                 }
-                
                 @media (max-width: 640px) {
                   .steps-grid {
                     grid-template-columns: 1fr !important;
@@ -4106,26 +3233,23 @@ export default function RecipeEditor() {
 
           {/* Cost History Section */}
           {showCost && (
-            <div style={{ marginTop: 14 }} className="gc-card">
-              <div className="gc-card-head" style={{ display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+            <div className="card mb-4">
+              <div className="card-header flex justify-between gap-3 flex-wrap">
                 <div>
-                  <div className="gc-label flex items-center gap-2">
+                  <div className="text-caption flex items-center gap-2">
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <polyline points="12 6 12 12 16 14" />
                     </svg>
                     COST HISTORY
                   </div>
-                  <div className="gc-hint" style={{ marginTop: 6 }}>
-                    Snapshots stored locally per recipe.
-                  </div>
-                  <div style={{ marginTop: 10 }}>
+                  <div className="text-muted mt-2">Snapshots stored locally per recipe.</div>
+                  <div className="mt-3">
                     <CostTimeline points={costPoints} currency={currency} />
                   </div>
                 </div>
-
-                <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
-                  <button className="gc-btn gc-btn-primary flex items-center gap-2" type="button" onClick={addSnapshot}>
+                <div className="flex gap-2 flex-wrap">
+                  <button className="btn btn-primary flex items-center gap-2" type="button" onClick={addSnapshot}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="8" x2="12" y2="16" />
@@ -4133,7 +3257,7 @@ export default function RecipeEditor() {
                     </svg>
                     Add snapshot
                   </button>
-                  <button className="gc-btn gc-btn-danger flex items-center gap-2" type="button" onClick={clearSnapshots}>
+                  <button className="btn btn-danger flex items-center gap-2" type="button" onClick={clearSnapshots}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <polyline points="3 6 5 6 21 6" />
                       <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
@@ -4142,10 +3266,9 @@ export default function RecipeEditor() {
                   </button>
                 </div>
               </div>
-
-              <div className="gc-card-body">
+              <div className="card-body">
                 {!costPoints.length ? (
-                  <div className="gc-hint flex items-center gap-2">
+                  <div className="text-muted flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <circle cx="12" cy="12" r="10" />
                       <line x1="12" y1="8" x2="12" y2="12" />
@@ -4154,17 +3277,16 @@ export default function RecipeEditor() {
                     No snapshots yet.
                   </div>
                 ) : (
-                  <div style={{ display: 'grid', gap: 10 }}>
+                  <div className="grid gap-2.5">
                     {costPoints.map((p: any) => (
-                      <div key={p.id} className="gc-card-soft" style={{ padding: 12, borderRadius: 16, display: 'flex', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
+                      <div key={p.id} className="card-soft p-3 rounded-xl flex justify-between gap-3 flex-wrap">
                         <div>
-                          <div style={{ fontWeight: 900 }}>{new Date(p.createdAt).toLocaleString()}</div>
-                          <div className="gc-hint" style={{ marginTop: 6 }}>
+                          <div className="font-bold">{new Date(p.createdAt).toLocaleString()}</div>
+                          <div className="text-muted mt-2">
                             Total: {fmtMoney(p.totalCost, p.currency)} • CPP: {fmtMoney(p.cpp, p.currency)} • Portions: {p.portions}
                           </div>
                         </div>
-
-                        <button className="gc-btn gc-btn-danger" type="button" onClick={() => removeSnapshot(p.id)}>
+                        <button className="btn btn-danger btn-sm" type="button" onClick={() => removeSnapshot(p.id)}>
                           Remove
                         </button>
                       </div>
@@ -4186,7 +3308,6 @@ export default function RecipeEditor() {
               <div className="gc-print-sub">
                 {(category || 'Uncategorized').trim()} • Portions: {Math.max(1, Math.floor(toNum(portions, 1)))} • Currency: {cur}
               </div>
-
               <div className="gc-print-kpis">
                 <div className="gc-print-chip">Total: {fmtMoney(totals.totalCost, cur)}</div>
                 <div className="gc-print-chip">CPP: {fmtMoney(totals.cpp, cur)}</div>
@@ -4194,19 +3315,16 @@ export default function RecipeEditor() {
                 <div className="gc-print-chip">Margin: {fmtMoney(totals.margin, cur)}</div>
               </div>
             </div>
-
             <div className="gc-print-photo">
               {recipe?.photo_url ? <img src={recipe.photo_url} alt="Recipe" /> : null}
             </div>
           </div>
-
           {description ? (
             <div className="gc-print-section">
               <div className="gc-print-title">Description</div>
               <div className="gc-print-text">{description}</div>
             </div>
           ) : null}
-
           <div className="gc-print-section">
             <div className="gc-print-title">Ingredients</div>
             <table className="gc-print-table">
@@ -4239,7 +3357,6 @@ export default function RecipeEditor() {
                     const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
                     const code = l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')
                     const name = l.line_type === 'ingredient' ? (ing?.name || 'Ingredient') : (sub?.name || 'Subrecipe')
-
                     return (
                       <tr key={l.id}>
                         <td><span className="gc-code-display">{code}</span></td>
@@ -4260,7 +3377,6 @@ export default function RecipeEditor() {
               </tbody>
             </table>
           </div>
-
           {steps.length ? (
             <div className="gc-print-section">
               <div className="gc-print-title">Method</div>
