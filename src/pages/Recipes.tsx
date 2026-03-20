@@ -8,6 +8,7 @@ import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/EmptyState'
 import { motion, AnimatePresence } from 'framer-motion'
+import { recipeKind, displayCode } from '../lib/codes'
 
 // ==================== Types ====================
 type LineType = 'ingredient' | 'subrecipe' | 'group'
@@ -79,7 +80,7 @@ type CostPoint = {
 
 type Density = 'comfortable' | 'dense' | 'compact'
 type ViewMode = 'grid' | 'list' | 'table'
-type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date'
+type SortField = 'name' | 'code' | 'category' | 'price' | 'cost' | 'margin' | 'date'
 type SortOrder = 'asc' | 'desc'
 type FilterType = {
   categories: string[]
@@ -885,6 +886,10 @@ function RecipesStyles() {
         line-height: 1.3;
       }
 
+      .recipe-card__code {
+        margin-top: 0.25rem;
+      }
+
       .recipe-card__category {
         display: flex;
         align-items: center;
@@ -1214,6 +1219,15 @@ function RecipesStyles() {
         font-size: 0.85rem;
       }
 
+      .recipe-list-item__code {
+        font-family: monospace;
+        font-size: 0.7rem;
+        background: var(--gray-100);
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.375rem;
+        color: var(--text-secondary);
+      }
+
       .recipe-list-item__category {
         color: var(--text-tertiary);
         font-size: 0.65rem;
@@ -1286,6 +1300,15 @@ function RecipesStyles() {
         display: flex;
         align-items: center;
         gap: 0.25rem;
+      }
+
+      .code-cell {
+        font-family: monospace;
+        font-size: 0.7rem;
+        background: var(--gray-100);
+        display: inline-block;
+        padding: 0.125rem 0.375rem;
+        border-radius: 0.375rem;
       }
 
       .recipes-pro__loading {
@@ -1568,7 +1591,7 @@ function RecipesStyles() {
   )
 }
 
-// ==================== باقي الكود (منطق المكون) يبقى كما هو تماماً ====================
+// ==================== باقي الكود (منطق المكون) ====================
 export default function Recipes() {
   const nav = useNavigate()
   const loc = useLocation()
@@ -1589,6 +1612,7 @@ export default function Recipes() {
   const [err, setErr] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [q, setQ] = useState('')
+  const [searchCode, setSearchCode] = useState('')
   const [showFilters, setShowFilters] = useState(false)
   const [showArchived, setShowArchived] = useState(false)
   const [recipes, setRecipes] = useState<RecipeRow[]>([])
@@ -1612,6 +1636,7 @@ export default function Recipes() {
   })
 
   const debouncedQ = useDebounce(q, 300)
+  const debouncedCode = useDebounce(searchCode, 300)
 
   const ingById = useMemo(() => {
     const m = new Map<string, Ingredient>()
@@ -1629,6 +1654,13 @@ export default function Recipes() {
         r.category?.toLowerCase().includes(query) ||
         r.cuisine?.toLowerCase().includes(query) ||
         r.tags?.some(tag => tag.toLowerCase().includes(query))
+      )
+    }
+
+    if (debouncedCode) {
+      const codeQuery = debouncedCode.toLowerCase()
+      list = list.filter(r => 
+        r.code?.toLowerCase().includes(codeQuery)
       )
     }
 
@@ -1659,7 +1691,7 @@ export default function Recipes() {
     }
 
     return list
-  }, [recipes, debouncedQ, showArchived, filters])
+  }, [recipes, debouncedQ, debouncedCode, showArchived, filters])
 
   const sortedRecipes = useMemo(() => {
     return [...filteredRecipes].sort((a, b) => {
@@ -1668,6 +1700,9 @@ export default function Recipes() {
       switch (sortField) {
         case 'name':
           comparison = a.name.localeCompare(b.name)
+          break
+        case 'code':
+          comparison = (a.code || '').localeCompare(b.code || '')
           break
         case 'category':
           comparison = (a.category || '').localeCompare(b.category || '')
@@ -1699,7 +1734,7 @@ export default function Recipes() {
 
   const hasAnyRecipes = recipes.length > 0
   const hasActiveRecipes = useMemo(() => recipes.some(r => !r.is_archived), [recipes])
-  const hasSearch = q.trim().length > 0
+  const hasSearch = q.trim().length > 0 || searchCode.trim().length > 0
   const showArchivedEmptyHint = !showArchived && hasAnyRecipes && !hasActiveRecipes
 
   const stats = useMemo(() => {
@@ -1936,9 +1971,33 @@ export default function Recipes() {
         throw new Error('Kitchen not ready yet. Please wait a moment and try again.')
       }
 
+      // توليد كود تلقائي للوصفة الجديدة
+      let newCode = ''
+      try {
+        const { data: lastRecipe } = await supabase
+          .from('recipes')
+          .select('code')
+          .eq('kitchen_id', k.kitchenId)
+          .like('code', 'REC-%')
+          .order('created_at', { ascending: false })
+          .limit(1)
+        
+        let nextNumber = 1
+        if (lastRecipe && lastRecipe.length > 0 && lastRecipe[0]?.code) {
+          const match = lastRecipe[0].code.match(/REC-(\d+)/)
+          if (match) nextNumber = parseInt(match[1]) + 1
+        }
+        
+        newCode = `REC-${String(nextNumber).padStart(4, '0')}`
+      } catch (codeError) {
+        console.warn('Could not generate sequential code, using fallback', codeError)
+        newCode = `REC-${Math.floor(Math.random() * 10000).toString().padStart(4, '0')}`
+      }
+
       const payload: Partial<RecipeRow> = {
         kitchen_id: k.kitchenId,
         name: 'New Recipe',
+        code: newCode,
         category: null,
         portions: 4,
         is_subrecipe: false,
@@ -1963,7 +2022,7 @@ export default function Recipes() {
       if (error) throw error
 
       const id = (data as any)?.id as string
-      showToast('success', 'Recipe created successfully. Opening editor...')
+      showToast('success', `Recipe created successfully! Code: ${newCode}`)
       
       CacheManager.clear(CACHE_KEYS.RECIPES_CACHE)
       
@@ -2165,6 +2224,7 @@ export default function Recipes() {
           const hasWarning = Boolean(c?.warnings?.length)
           const portions = toNum(r.portions, 1)
           const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
+          const recipeCode = r.code || displayCode(recipeKind(r.is_subrecipe), r.id)
 
           return (
             <motion.div
@@ -2182,6 +2242,12 @@ export default function Recipes() {
                   <div className="recipe-card__header">
                     <div className="recipe-card__title-section">
                       <h3 className="recipe-card__title">{r.name}</h3>
+                      <div className="recipe-card__code">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-mono font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
+                          <span className="text-[9px]">🔖</span>
+                          {recipeCode}
+                        </span>
+                      </div>
                       <div className="recipe-card__category">
                         <span>{r.category || 'Uncategorized'}</span>
                         {r.cuisine && <span>• {r.cuisine}</span>}
@@ -2402,6 +2468,7 @@ export default function Recipes() {
           const c = costCache[r.id]
           const cur = (r.currency || 'USD').toUpperCase()
           const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
+          const recipeCode = r.code || displayCode(recipeKind(r.is_subrecipe), r.id)
 
           return (
             <motion.div
@@ -2423,6 +2490,7 @@ export default function Recipes() {
                 
                 <div className="recipe-list-item__content">
                   <div className="recipe-list-item__title">
+                    <span className="recipe-list-item__code">{recipeCode}</span>
                     <span>{r.name}</span>
                     <span className="recipe-list-item__category">{r.category}</span>
                   </div>
@@ -2481,6 +2549,7 @@ export default function Recipes() {
               onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
             />
           </th>
+          <th>Code</th>
           <th>Name</th>
           <th>Category</th>
           <th>Portions</th>
@@ -2496,6 +2565,7 @@ export default function Recipes() {
           const c = costCache[r.id]
           const cur = (r.currency || 'USD').toUpperCase()
           const totalTime = (r.preparation_time || 0) + (r.cooking_time || 0)
+          const recipeCode = r.code || displayCode(recipeKind(r.is_subrecipe), r.id)
 
           return (
             <tr key={r.id}>
@@ -2505,6 +2575,9 @@ export default function Recipes() {
                   checked={!!selected[r.id]}
                   onChange={() => toggleSelect(r.id)}
                 />
+              </td>
+              <td className="font-mono text-xs">
+                <span className="code-cell">{recipeCode}</span>
               </td>
               <td><strong>{r.name}</strong></td>
               <td>{r.category || '—'}</td>
@@ -2652,12 +2725,33 @@ export default function Recipes() {
                 className="recipes-pro__search-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search..."
+                placeholder="Search by name, category..."
               />
               {q && (
                 <button
                   className="recipes-pro__search-clear"
                   onClick={() => setQ('')}
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            <div className="recipes-pro__search" style={{ position: 'relative' }}>
+              <input
+                className="recipes-pro__search-input"
+                value={searchCode}
+                onChange={(e) => setSearchCode(e.target.value)}
+                placeholder="🔖 Search by code (REC-xxxx)..."
+                style={{ fontFamily: 'monospace' }}
+              />
+              {searchCode && (
+                <button
+                  className="recipes-pro__search-clear"
+                  onClick={() => setSearchCode('')}
                 >
                   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
@@ -2775,6 +2869,7 @@ export default function Recipes() {
               onChange={(e) => setSortField(e.target.value as SortField)}
             >
               <option value="name">Name</option>
+              <option value="code">Code</option>
               <option value="category">Category</option>
               <option value="price">Price</option>
               <option value="cost">Cost</option>
@@ -2861,6 +2956,7 @@ export default function Recipes() {
                   }
                   if (hasSearch) {
                     setQ('')
+                    setSearchCode('')
                     return
                   }
                   createNewRecipe()
