@@ -1,7 +1,158 @@
 // src/pages/RecipeEditor.tsx
-// ... (باقي الاستيرادات والأنواع والدوال المساعدة تبقى كما هي)
+import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
+import { NavLink, useNavigate, useSearchParams } from 'react-router-dom'
+import { supabase } from '../lib/supabase'
+import { Toast } from '../components/Toast'
+import Button from '../components/ui/Button'
+import { useMode } from '../lib/mode'
+import { getIngredientsCached } from '../lib/ingredientsCache'
+import { CostTimeline } from '../components/CostTimeline'
+import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '../lib/costHistory'
+import { useKitchen } from '../lib/kitchen'
+import { useAutosave } from '../contexts/AutosaveContext'
+import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
 
-// ===== STYLES (DEFINED AT TOP TO AVOID HOISTING ISSUES) =====
+type LineType = 'ingredient' | 'subrecipe' | 'group'
+
+type Recipe = {
+  id: string
+  code?: string | null
+  code_category?: string | null
+  kitchen_id: string
+  name: string
+  category: string | null
+  portions: number
+  yield_qty: number | null
+  yield_unit: string | null
+  is_subrecipe: boolean
+  is_archived: boolean
+  photo_url?: string | null
+  description?: string | null
+  method?: string | null
+  method_steps?: string[] | null
+  method_step_photos?: string[] | null
+  calories?: number | null
+  protein_g?: number | null
+  carbs_g?: number | null
+  fat_g?: number | null
+  selling_price?: number | null
+  currency?: string | null
+  target_food_cost_pct?: number | null
+}
+
+type Ingredient = {
+  id: string
+  code?: string | null
+  code_category?: string | null
+  name?: string | null
+  pack_unit?: string | null
+  net_unit_cost?: number | null
+  is_active?: boolean | null
+}
+
+type Line = {
+  id: string
+  kitchen_id: string | null
+  recipe_id: string
+  ingredient_id: string | null
+  sub_recipe_id: string | null
+  position: number
+  qty: number
+  unit: string
+  yield_percent: number
+  notes: string | null
+  gross_qty_override: number | null
+  line_type: LineType
+  group_title: string | null
+}
+
+function toNum(x: any, fallback = 0) {
+  const n = Number(x)
+  return Number.isFinite(n) ? n : fallback
+}
+
+function clamp(n: number, a: number, b: number) {
+  return Math.min(b, Math.max(a, n))
+}
+
+function safeUnit(u: string) {
+  return (u ?? '').trim().toLowerCase() || 'g'
+}
+
+function fmtMoney(n: number, currency: string) {
+  const v = Number.isFinite(n) ? n : 0
+  const cur = (currency || 'USD').toUpperCase()
+  try {
+    return new Intl.NumberFormat(undefined, { style: 'currency', currency: cur }).format(v)
+  } catch {
+    return `${v.toFixed(2)} ${cur}`
+  }
+}
+
+function fmtQty(n: number) {
+  const v = Number.isFinite(n) ? n : 0
+  if (Math.abs(v) >= 1000) return v.toFixed(0)
+  if (Math.abs(v) >= 100) return v.toFixed(1)
+  if (Math.abs(v) >= 10) return v.toFixed(2)
+  return v.toFixed(3)
+}
+
+function convertQtyToPackUnit(qty: number, lineUnit: string, packUnit: string) {
+  const u = safeUnit(lineUnit)
+  const p = safeUnit(packUnit)
+  let conv = qty
+  if (u === 'g' && p === 'kg') conv = qty / 1000
+  else if (u === 'kg' && p === 'g') conv = qty * 1000
+  else if (u === 'ml' && p === 'l') conv = qty / 1000
+  else if (u === 'l' && p === 'ml') conv = qty * 1000
+  return conv
+}
+
+function uid() {
+  return `tmp_${Math.random().toString(16).slice(2)}_${Date.now()}`
+}
+
+const draftKey = (rid: string) => `gc_recipe_lines_draft__${rid}`
+
+function readDraftLines(rid: string): Line[] {
+  try {
+    const raw = localStorage.getItem(draftKey(rid))
+    if (!raw) return []
+    const parsed = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed as Line[]
+  } catch {
+    return []
+  }
+}
+
+function writeDraftLines(rid: string, lines: Line[]) {
+  try {
+    localStorage.setItem(draftKey(rid), JSON.stringify(lines))
+  } catch {}
+}
+
+function clearDraftLines(rid: string) {
+  try {
+    localStorage.removeItem(draftKey(rid))
+  } catch {}
+}
+
+function mergeDbAndDraft(db: Line[], draft: Line[]): Line[] {
+  const byId = new Set((db || []).map((l) => l.id))
+  const extra = (draft || []).filter((l) => l && l.id && !byId.has(l.id))
+  const merged = [...(db || []), ...extra]
+  merged.sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0))
+  return merged
+}
+
+const PHOTO_BUCKET = 'recipe-photos'
+
+function cx(...arr: Array<string | false | null | undefined>) {
+  return arr.filter(Boolean).join(' ')
+}
+
+// ===== STYLES =====
 
 const loadingStyles = `
 .ik-loading {
@@ -1246,4 +1397,1387 @@ const mainStyles = `
 }
 `
 
-// ... (باقي الكود كما هو - المكون الرئيسي والـ callbacks وكل شيء يبقى نفسه)
+export default function RecipeEditor() {
+  const { isKitchen, isMgmt } = useMode()
+  const showCost = isMgmt
+  const tableColSpan = 8 + (showCost ? 1 : 0)
+  const k = useKitchen()
+  const canEditCodes = k.isOwner
+  const navigate = useNavigate()
+  const [sp] = useSearchParams()
+  const id = sp.get('id')
+
+  const autosave = useAutosave()
+
+  const mounted = useRef(true)
+  useEffect(() => {
+    mounted.current = true
+    return () => { mounted.current = false }
+  }, [])
+
+  const [loading, setLoading] = useState(true)
+  const [err, setErr] = useState<string | null>(null)
+
+  const [recipe, setRecipe] = useState<Recipe | null>(null)
+  const [lines, setLines] = useState<Line[]>([])
+
+  const setLinesSafe = useCallback(
+    (updater: any) => {
+      setLines((prev) => {
+        try {
+          if (typeof updater === 'function') return updater(prev)
+          if (Array.isArray(updater)) return updater
+          return prev
+        } catch (e) {
+          console.error('setLinesSafe prevented crash', e)
+          return prev
+        }
+      })
+    },
+    [setLines]
+  )
+
+  const [ingredients, setIngredients] = useState<Ingredient[]>([])
+  const [allRecipes, setAllRecipes] = useState<Recipe[]>([])
+
+  const [toastMsg, setToastMsg] = useState('')
+  const [toastOpen, setToastOpen] = useState(false)
+  const showToast = useCallback((msg: string) => {
+    setToastMsg(msg)
+    setToastOpen(true)
+  }, [])
+
+  const [code, setCode] = useState('')
+  const [codeCategory, setCodeCategory] = useState('')
+  const [name, setName] = useState('')
+  const [category, setCategory] = useState('')
+  const [portions, setPortions] = useState('1')
+  const [description, setDescription] = useState('')
+
+  const [steps, setSteps] = useState<string[]>([])
+  const [newStep, setNewStep] = useState('')
+  const [methodLegacy, setMethodLegacy] = useState('')
+  const [stepPhotos, setStepPhotos] = useState<string[]>([])
+
+  const [calories, setCalories] = useState('')
+  const [protein, setProtein] = useState('')
+  const [carbs, setCarbs] = useState('')
+  const [fat, setFat] = useState('')
+
+  const [currency, setCurrency] = useState('USD')
+  const [sellingPrice, setSellingPrice] = useState('')
+  const [targetFC, setTargetFC] = useState('30')
+
+  const [isSubRecipe, setIsSubRecipe] = useState(false)
+  const [yieldQty, setYieldQty] = useState('')
+  const [yieldUnit, setYieldUnit] = useState<'g' | 'kg' | 'ml' | 'l' | 'pcs'>('g')
+
+  const [uploading, setUploading] = useState(false)
+  const [stepUploading, setStepUploading] = useState(false)
+
+  const [density, setDensity] = useState<'comfort' | 'compact'>(() => {
+    try {
+      const v = localStorage.getItem('gc_density')
+      if (v === 'compact' || v === 'comfort') return v
+      return 'comfort'
+    } catch {
+      return 'comfort'
+    }
+  })
+
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute('data-density', density)
+      localStorage.setItem('gc_density', density)
+    } catch {}
+  }, [density])
+
+  const [activeSection, setActiveSection] = useState<string>('sec-basics')
+  useEffect(() => {
+    const ids = ['sec-basics', 'sec-method', 'sec-nutrition', 'sec-lines', 'sec-print', 'sec-cook', 'sec-cost']
+    const els = ids.map((x) => document.getElementById(x)).filter(Boolean) as HTMLElement[]
+    if (!els.length) return
+    const io = new IntersectionObserver(
+      (entries) => {
+        const visible = entries.filter((e) => e.isIntersecting).sort((a, b) => (b.intersectionRatio - a.intersectionRatio))
+        const top = visible[0]
+        if (top?.target?.id) setActiveSection(top.target.id)
+      },
+      { root: null, rootMargin: '-20% 0px -70% 0px', threshold: [0.05, 0.1, 0.2, 0.35] }
+    )
+    els.forEach((el) => io.observe(el))
+    return () => io.disconnect()
+  }, [])
+
+  const scrollToSection = useCallback((anchorId: string) => {
+    try {
+      const el = document.getElementById(anchorId)
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    } catch {}
+  }, [])
+
+  const [addType, setAddType] = useState<LineType>('ingredient')
+  const [ingSearch, setIngSearch] = useState('')
+  const [addNote, setAddNote] = useState('')
+
+  const cur = (currency || 'USD').toUpperCase()
+
+  const visibleLines = useMemo(() => [...lines].sort((a, b) => (a.position ?? 0) - (b.position ?? 0)), [lines])
+
+  const filteredIngredients = useMemo(() => {
+    const s = ingSearch.trim().toLowerCase()
+    let list = ingredients
+    if (s) list = list.filter((i) => (i.name || '').toLowerCase().includes(s))
+    return list.slice(0, 60)
+  }, [ingredients, ingSearch])
+
+  const subRecipeOptions = useMemo(() => {
+    return allRecipes.filter((r) => !!r.is_subrecipe && !r.is_archived).slice(0, 200)
+  }, [allRecipes])
+
+  const [addIngredientId, setAddIngredientId] = useState('')
+  const [addSubRecipeId, setAddSubRecipeId] = useState('')
+  const [addGroupTitle, setAddGroupTitle] = useState('')
+  const [addNetQty, setAddNetQty] = useState('1')
+  const [addUnit, setAddUnit] = useState('g')
+  const [addYield, setAddYield] = useState('100')
+  const [addGross, setAddGross] = useState('')
+  const [flashLineId, setFlashLineId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!flashLineId) return
+    const t = window.setTimeout(() => setFlashLineId(null), 700)
+    return () => window.clearTimeout(t)
+  }, [flashLineId])
+
+  useEffect(() => {
+    const raw = (addGross || '').trim()
+    if (!raw) return
+    const gross = toNum(raw, NaN as any)
+    if (!Number.isFinite(gross) || gross <= 0) return
+    const net = Math.max(0, toNum(addNetQty, 0))
+    const y = clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100)
+    setAddYield(String(Math.round(y * 100) / 100))
+  }, [addGross, addNetQty])
+
+  const [costPoints, setCostPoints] = useState(() => (id ? listCostPoints(id) : []))
+  useEffect(() => {
+    if (!id) return
+    setCostPoints(listCostPoints(id))
+  }, [id])
+
+  const recipeRef = useRef<Recipe | null>(null)
+  const linesRef = useRef<Line[]>([])
+  useEffect(() => { recipeRef.current = recipe }, [recipe])
+  useEffect(() => { linesRef.current = lines }, [lines])
+
+  const deletedLineIdsRef = useRef<string[]>([])
+  const isDraftLine = useCallback((l: Line) => (l?.id || '').startsWith('tmp_'), [])
+
+  useEffect(() => {
+    if (!id) return
+    const cur = (lines || []) as Line[]
+    const hasDraft = cur.some(isDraftLine) || (deletedLineIdsRef.current?.length || 0) > 0
+    if (hasDraft) writeDraftLines(id, cur)
+  }, [id, lines, isDraftLine])
+
+  useEffect(() => {
+    if (!id) {
+      setErr('Missing recipe id.')
+      setLoading(false)
+      return
+    }
+
+    let alive = true
+    async function load() {
+      if (!alive) return
+      setLoading(true)
+      setErr(null)
+
+      try {
+        const { data: r, error: rErr } = await supabase
+          .from('recipes')
+          .select('id,code,code_category,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,method,method_steps,method_step_photos,calories,protein_g,carbs_g,fat_g,selling_price,currency,target_food_cost_pct')
+          .eq('id', id)
+          .single()
+        if (rErr) throw rErr
+
+        const recipeRow = r as Recipe
+        if (!alive) return
+
+        setRecipe(recipeRow)
+        try {
+          localStorage.setItem('gc_last_recipe_id', recipeRow.id)
+          localStorage.setItem('gc_last_recipe_name', recipeRow.name || '')
+          localStorage.setItem('gc_last_recipe_ts', String(Date.now()))
+        } catch {}
+
+        setCode((recipeRow.code || '').toUpperCase())
+        setCodeCategory((recipeRow.code_category || '').toUpperCase())
+        setName(recipeRow.name || '')
+        setCategory(recipeRow.category || '')
+        setPortions(String(recipeRow.portions ?? 1))
+        setDescription(recipeRow.description || '')
+
+        setSteps((recipeRow.method_steps || []).filter((x) => typeof x === 'string'))
+        setStepPhotos((recipeRow.method_step_photos || []).filter((x) => typeof x === 'string'))
+        setMethodLegacy(recipeRow.method || '')
+
+        setCalories(recipeRow.calories != null ? String(recipeRow.calories) : '')
+        setProtein(recipeRow.protein_g != null ? String(recipeRow.protein_g) : '')
+        setCarbs(recipeRow.carbs_g != null ? String(recipeRow.carbs_g) : '')
+        setFat(recipeRow.fat_g != null ? String(recipeRow.fat_g) : '')
+
+        setCurrency((recipeRow.currency || 'USD').toUpperCase())
+        setSellingPrice(recipeRow.selling_price != null ? String(recipeRow.selling_price) : '')
+        setTargetFC(recipeRow.target_food_cost_pct != null ? String(recipeRow.target_food_cost_pct) : '30')
+
+        setIsSubRecipe(!!recipeRow.is_subrecipe)
+        setYieldQty(recipeRow.yield_qty != null ? String(recipeRow.yield_qty) : '')
+        setYieldUnit((safeUnit(recipeRow.yield_unit || 'g') as any) || 'g')
+
+        const { data: l, error: lErr } = await supabase
+          .from('recipe_lines')
+          .select('id,kitchen_id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,notes,gross_qty_override,line_type,group_title')
+          .eq('recipe_id', id)
+          .order('position', { ascending: true })
+        if (lErr) throw lErr
+        if (!alive) return
+        const draft = id ? readDraftLines(id) : []
+        const mergedLines = draft?.length ? mergeDbAndDraft((l || []) as Line[], draft) : ((l || []) as Line[])
+        setLines(mergedLines as Line[])
+
+        const ing = await getIngredientsCached()
+        if (!alive) return
+        setIngredients((ing || []) as Ingredient[])
+
+        const { data: rs, error: rsErr } = await supabase
+          .from('recipes')
+          .select('id,code,code_category,kitchen_id,name,category,portions,yield_qty,yield_unit,is_subrecipe,is_archived,photo_url,description,currency')
+          .order('name', { ascending: true })
+        if (rsErr) throw rsErr
+        if (!alive) return
+        setAllRecipes((rs || []) as Recipe[])
+      } catch (e: any) {
+        autosave.setError(e?.message || 'Failed to load recipe.')
+        if (!alive) return
+        setErr(e?.message || 'Failed to load recipe.')
+      } finally {
+        if (!alive) return
+        setLoading(false)
+      }
+    }
+
+    load().catch(() => {})
+    return () => { alive = false }
+  }, [id])
+
+  const ingById = useMemo(() => {
+    const m = new Map<string, Ingredient>()
+    for (const i of ingredients) m.set(i.id, i)
+    return m
+  }, [ingredients])
+
+  const recipeById = useMemo(() => {
+    const m = new Map<string, Recipe>()
+    for (const r of allRecipes) m.set(r.id, r)
+    return m
+  }, [allRecipes])
+
+  const lineComputed = useMemo(() => {
+    const res = new Map<string, { net: number; gross: number; yieldPct: number; unitCost: number; lineCost: number; warnings: string[] }>()
+
+    for (const l of lines) {
+      const warnings: string[] = []
+      const net = Math.max(0, toNum(l.qty, 0))
+      const yieldPct = clamp(toNum(l.yield_percent, 100), 0.0001, 100)
+      const gross = l.gross_qty_override != null && l.gross_qty_override > 0 ? Math.max(0, l.gross_qty_override) : net / (yieldPct / 100)
+
+      let unitCost = 0
+      let lineCost = 0
+
+      if (l.line_type === 'ingredient') {
+        const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+        unitCost = toNum(ing?.net_unit_cost, 0)
+        if (!ing) warnings.push('Missing ingredient')
+        if (!Number.isFinite(unitCost) || unitCost <= 0) warnings.push('Ingredient without price')
+        const packUnit = ing?.pack_unit || l.unit
+        const qtyInPack = convertQtyToPackUnit(gross, l.unit, packUnit)
+        lineCost = qtyInPack * unitCost
+      } else if (l.line_type === 'subrecipe') {
+        warnings.push('Subrecipe cost not expanded')
+      }
+
+      res.set(l.id, { net, gross, yieldPct, unitCost, lineCost: Number.isFinite(lineCost) ? lineCost : 0, warnings })
+    }
+
+    return res
+  }, [lines, ingById])
+
+  const totals = useMemo(() => {
+    let totalCost = 0
+    let warnings: string[] = []
+
+    for (const l of lines) {
+      if (l.line_type === 'group') continue
+      const c = lineComputed.get(l.id)
+      if (!c) continue
+      totalCost += c.lineCost
+      if (c.warnings.length) warnings = warnings.concat(c.warnings)
+    }
+
+    const p = Math.max(1, toNum(portions, 1))
+    const cpp = p > 0 ? totalCost / p : 0
+    const sell = Math.max(0, toNum(sellingPrice, 0))
+    const fcPct = sell > 0 ? (cpp / sell) * 100 : null
+    const margin = sell - cpp
+    const marginPct = sell > 0 ? (margin / sell) * 100 : null
+
+    return { totalCost, cpp, fcPct, margin, marginPct, warnings: Array.from(new Set(warnings)).slice(0, 4) }
+  }, [lines, lineComputed, portions, sellingPrice])
+
+  const [savingMeta, setSavingMeta] = useState(false)
+  const [savingLines, setSavingLines] = useState(false)
+  const [savePulse, setSavePulse] = useState(false)
+
+  useEffect(() => {
+    const active = savingMeta || savingLines
+    if (active) {
+      setSavePulse(true)
+      return
+    }
+    const t = window.setTimeout(() => setSavePulse(false), 700)
+    return () => window.clearTimeout(t)
+  }, [savingMeta, savingLines])
+
+  const saveLinesNow = useCallback(async (override?: Line[]): Promise<boolean> => {
+    if (!id) return false
+    const rid = id
+    const kitchenId = recipeRef.current?.kitchen_id ?? k.kitchenId ?? null
+    if (!kitchenId) {
+      setErr('Kitchen not resolved yet.')
+      return false
+    }
+
+    setErr(null)
+    setSavingLines(true)
+    autosave.setSaving()
+    try {
+      const delIds = deletedLineIdsRef.current.filter((x) => x && !x.startsWith('tmp_'))
+      if (delIds.length) {
+        deletedLineIdsRef.current = []
+        const { error: delErr } = await supabase.from('recipe_lines').delete().in('id', delIds)
+        if (delErr) throw delErr
+      }
+
+      const cur = ((override ?? linesRef.current) || []) as Line[]
+      const drafts = cur.filter(isDraftLine)
+      const persisted = cur.filter((l) => !isDraftLine(l))
+      const needsReload = drafts.length > 0 || delIds.length > 0
+
+      if (persisted.length) {
+        const payload = persisted.map((l) => ({
+          id: l.id,
+          kitchen_id: l.kitchen_id ?? kitchenId,
+          recipe_id: rid,
+          ingredient_id: l.ingredient_id,
+          sub_recipe_id: l.sub_recipe_id,
+          position: l.position,
+          qty: toNum(l.qty, 0),
+          unit: safeUnit(l.unit),
+          yield_percent: clamp(toNum(l.yield_percent, 100), 0.0001, 100),
+          notes: l.notes ?? null,
+          gross_qty_override: l.gross_qty_override ?? null,
+          line_type: l.line_type,
+          group_title: l.group_title ?? null,
+        }))
+        const { error: upErr } = await supabase.from('recipe_lines').upsert(payload)
+        if (upErr) throw upErr
+      }
+
+      if (drafts.length) {
+        const payload = drafts.map((l) => ({
+          kitchen_id: kitchenId,
+          recipe_id: rid,
+          ingredient_id: l.ingredient_id,
+          sub_recipe_id: l.sub_recipe_id,
+          position: l.position,
+          qty: toNum(l.qty, 0),
+          unit: safeUnit(l.unit),
+          yield_percent: clamp(toNum(l.yield_percent, 100), 0.0001, 100),
+          notes: l.notes ?? null,
+          gross_qty_override: l.gross_qty_override ?? null,
+          line_type: l.line_type,
+          group_title: l.group_title ?? null,
+        }))
+        const { error: insErr } = await supabase.from('recipe_lines').insert(payload)
+        if (insErr) throw insErr
+      }
+
+      if (needsReload) {
+        const { data: l2, error: l2Err } = await supabase
+          .from('recipe_lines')
+          .select('id,kitchen_id,recipe_id,ingredient_id,sub_recipe_id,position,qty,unit,yield_percent,notes,gross_qty_override,line_type,group_title')
+          .eq('recipe_id', rid)
+          .order('position', { ascending: true })
+        if (l2Err) throw l2Err
+        setLinesSafe((l2 || []) as Line[])
+        clearDraftLines(rid)
+      } else {
+        clearDraftLines(rid)
+      }
+
+      autosave.setSaved()
+      return true
+    } catch (e: any) {
+      writeDraftLines(rid, ((override ?? linesRef.current) || []) as Line[])
+      const msg = e?.message || 'Failed to save lines.'
+      autosave.setError(msg)
+      setErr(msg)
+      return false
+    } finally {
+      setSavingLines(false)
+    }
+  }, [id, isDraftLine, setLinesSafe, k.kitchenId, autosave])
+
+  const scheduleLinesSave = useCallback(() => {
+    if (!id) return
+    window.setTimeout(() => saveLinesNow().catch(() => {}), 650)
+  }, [id, saveLinesNow])
+
+  const updateLine = useCallback(
+    (lineId: string, patch: Partial<Line>) => {
+      if (!lineId) return
+      const cur = (linesRef.current || []) as Line[]
+      const next = cur.map((l) => (l.id === lineId ? { ...l, ...patch } : l))
+      linesRef.current = next
+      setLinesSafe(next)
+      scheduleLinesSave()
+    },
+    [scheduleLinesSave, setLinesSafe]
+  )
+
+  const duplicateLineLocal = useCallback(
+    (lineId: string) => {
+      if (!lineId) return
+      const cur = (linesRef.current || []) as Line[]
+      const src = cur.find((l) => l.id === lineId)
+      if (!src) return
+
+      const maxPos = cur.reduce((m, l) => Math.max(m, toNum(l.position, 0)), 0)
+      const copy: Line = { ...src, id: uid(), position: maxPos + 1 }
+
+      const next = [...cur, copy].sort((a, b) => toNum(a.position, 0) - toNum(b.position, 0))
+      linesRef.current = next
+      setLinesSafe(next)
+      saveLinesNow(next).catch(() => {})
+    },
+    [setLinesSafe, saveLinesNow]
+  )
+
+  const deleteLineLocal = useCallback(
+    (lineId: string) => {
+      if (!lineId) return
+      const cur = (linesRef.current || []) as Line[]
+      const next = cur.filter((x) => x.id !== lineId)
+
+      if (!lineId.startsWith('tmp_') && !deletedLineIdsRef.current.includes(lineId)) {
+        deletedLineIdsRef.current.push(lineId)
+      }
+
+      linesRef.current = next
+      setLinesSafe(next)
+      saveLinesNow(next).catch(() => {})
+    },
+    [setLinesSafe, saveLinesNow]
+  )
+
+  const buildMetaPatch = useCallback(() => {
+    return {
+      code: (code || '').trim().toUpperCase() || null,
+      code_category: (codeCategory || '').trim().toUpperCase() || null,
+      name: (name || '').trim() || 'Untitled',
+      category: (category || '').trim() || null,
+      portions: Math.max(1, Math.floor(toNum(portions, 1))),
+      description: description || '',
+      method_steps: steps,
+      method_step_photos: stepPhotos,
+      method: methodLegacy || '',
+      calories: calories === '' ? null : toNum(calories, null as any),
+      protein_g: protein === '' ? null : toNum(protein, null as any),
+      carbs_g: carbs === '' ? null : toNum(carbs, null as any),
+      fat_g: fat === '' ? null : toNum(fat, null as any),
+      currency: (currency || 'USD').toUpperCase(),
+      selling_price: sellingPrice === '' ? null : toNum(sellingPrice, null as any),
+      target_food_cost_pct: targetFC === '' ? null : toNum(targetFC, null as any),
+      is_subrecipe: !!isSubRecipe,
+      yield_qty: yieldQty === '' ? null : toNum(yieldQty, null as any),
+      yield_unit: safeUnit(yieldUnit),
+    }
+  }, [code, codeCategory, name, category, portions, description, steps, stepPhotos, methodLegacy, calories, protein, carbs, fat, currency, sellingPrice, targetFC, isSubRecipe, yieldQty, yieldUnit])
+
+  const saveMetaNow = useCallback(async () => {
+    if (!id) return
+    setErr(null)
+    setSavingMeta(true)
+    try {
+      const patch = buildMetaPatch()
+      const { error } = await supabase.from('recipes').update(patch).eq('id', id)
+      if (error) throw error
+      showToast('Saved.')
+    } catch (e: any) {
+      setErr(e?.message || 'Failed to save.')
+    } finally {
+      setSavingMeta(false)
+    }
+  }, [id, buildMetaPatch, showToast])
+
+  const scheduleMetaSave = useCallback(() => {
+    if (!id) return
+    window.setTimeout(() => saveMetaNow().catch(() => {}), 650)
+  }, [id, saveMetaNow])
+
+  const metaHydratedRef = useRef(false)
+  useEffect(() => {
+    if (!recipe) return
+    if (!metaHydratedRef.current) {
+      metaHydratedRef.current = true
+      return
+    }
+    scheduleMetaSave()
+  }, [code, codeCategory, name, category, portions, description, steps, stepPhotos, methodLegacy, calories, protein, carbs, fat, currency, sellingPrice, targetFC, isSubRecipe, yieldQty, yieldUnit, recipe, scheduleMetaSave])
+
+  const addLineLocal = useCallback(async () => {
+    if (!id) return
+    const rid = id
+
+    const basePos = (linesRef.current?.length || 0) + 1
+    const yRaw = clamp(toNum(addYield, 100), 0.0001, 100)
+    const net = Math.max(0, toNum(addNetQty, 0))
+    const gross = addGross.trim() === '' ? null : Math.max(0, toNum(addGross, 0))
+    const y = gross != null && gross > 0 && net >= 0 ? clamp((net / Math.max(0.0000001, gross)) * 100, 0.0001, 100) : yRaw
+
+    if (addType === 'ingredient') {
+      if (!addIngredientId) { setErr('Pick an ingredient first.'); return }
+      const newL: Line = {
+        id: uid(),
+        kitchen_id: recipeRef.current?.kitchen_id ?? k.kitchenId ?? null,
+        recipe_id: rid,
+        ingredient_id: addIngredientId,
+        sub_recipe_id: null,
+        position: basePos,
+        qty: net,
+        unit: addUnit || 'g',
+        yield_percent: y,
+        notes: addNote || null,
+        gross_qty_override: gross,
+        line_type: 'ingredient',
+        group_title: null,
+      }
+      setErr(null)
+      const next = [...(linesRef.current || []), newL]
+      linesRef.current = next
+      setLinesSafe(next)
+      setFlashLineId(newL.id)
+      const ok = await saveLinesNow(next)
+      if (ok) {
+        showToast('Line added & saved.')
+        setAddNote(''); setAddNetQty('1'); setAddGross(''); setAddYield('100'); setAddIngredientId(''); setIngSearch('')
+      } else {
+        showToast('Could not save line yet. It is kept locally.')
+      }
+      return
+    }
+
+    if (addType === 'subrecipe') {
+      if (!addSubRecipeId) { setErr('Pick a subrecipe first.'); return }
+      const newL: Line = {
+        id: uid(),
+        kitchen_id: recipeRef.current?.kitchen_id ?? k.kitchenId ?? null,
+        recipe_id: rid,
+        ingredient_id: null,
+        sub_recipe_id: addSubRecipeId,
+        position: basePos,
+        qty: net,
+        unit: addUnit || 'g',
+        yield_percent: y,
+        notes: addNote || null,
+        gross_qty_override: gross,
+        line_type: 'subrecipe',
+        group_title: null,
+      }
+      setErr(null)
+      const next = [...(linesRef.current || []), newL]
+      linesRef.current = next
+      setLinesSafe(next)
+      setFlashLineId(newL.id)
+      const ok = await saveLinesNow(next)
+      showToast(ok ? 'Subrecipe line added & saved.' : 'Subrecipe line added — saved locally.')
+      if (ok) { setAddNote(''); setAddNetQty('1'); setAddGross(''); setAddYield('100'); setAddSubRecipeId(''); setIngSearch('') }
+      return
+    }
+
+    const title = (addGroupTitle || '').trim()
+    if (!title) { setErr('Enter group title.'); return }
+    const newL: Line = {
+      id: uid(),
+      kitchen_id: recipeRef.current?.kitchen_id ?? k.kitchenId ?? null,
+      recipe_id: rid,
+      ingredient_id: null,
+      sub_recipe_id: null,
+      position: basePos,
+      qty: 0,
+      unit: 'g',
+      yield_percent: 100,
+      notes: null,
+      gross_qty_override: null,
+      line_type: 'group',
+      group_title: title,
+    }
+    setErr(null)
+    const next = [...(linesRef.current || []), newL]
+    linesRef.current = next
+    setLinesSafe(next)
+    const ok = await saveLinesNow(next)
+    showToast(ok ? 'Group added & saved.' : 'Group added — saved locally.')
+    if (ok) setAddGroupTitle('')
+  }, [id, addType, addIngredientId, addSubRecipeId, addGroupTitle, addNetQty, addUnit, addYield, addGross, addNote, setLinesSafe, saveLinesNow, showToast, k.kitchenId])
+
+  const onNetChange = useCallback(
+    (lineId: string, value: string) => {
+      const net = Math.max(0, toNum(value, 0))
+      const line = linesRef.current.find((x) => x.id === lineId)
+      if (!line) return
+      if (line.gross_qty_override != null && line.gross_qty_override > 0) {
+        const gross = Math.max(0.0000001, line.gross_qty_override)
+        const y = clamp((net / gross) * 100, 0.0001, 100)
+        updateLine(lineId, { qty: net, yield_percent: y })
+      } else {
+        updateLine(lineId, { qty: net })
+      }
+    },
+    [updateLine]
+  )
+
+  const onGrossChange = useCallback(
+    (lineId: string, value: string) => {
+      const raw = value.trim()
+      const line = linesRef.current.find((x) => x.id === lineId)
+      if (!line) return
+      if (raw === '') { updateLine(lineId, { gross_qty_override: null }); return }
+      const gross = Math.max(0, toNum(raw, 0))
+      if (gross <= 0) { updateLine(lineId, { gross_qty_override: null }); return }
+      const net = Math.max(0, toNum(line.qty, 0))
+      const y = clamp((net / gross) * 100, 0.0001, 100)
+      updateLine(lineId, { gross_qty_override: gross, yield_percent: y })
+    },
+    [updateLine]
+  )
+
+  const onYieldChange = useCallback(
+    (lineId: string, value: string) => {
+      const y = clamp(toNum(value, 100), 0.0001, 100)
+      updateLine(lineId, { yield_percent: y, gross_qty_override: null })
+    },
+    [updateLine]
+  )
+
+  const uploadRecipePhoto = useCallback(
+    async (file: File) => {
+      if (!id) return
+      setErr(null)
+      setUploading(true)
+      try {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        const path = `${id}/${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
+        const { error: upErr } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, { cacheControl: '3600', upsert: true })
+        if (upErr) throw upErr
+        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+        const url = pub?.publicUrl || null
+        const { error: rErr } = await supabase.from('recipes').update({ photo_url: url }).eq('id', id)
+        if (rErr) throw rErr
+        setRecipe((prev) => (prev ? { ...prev, photo_url: url } : prev))
+        showToast('Photo updated.')
+      } catch (e: any) {
+        setErr(e?.message || 'Failed to upload photo.')
+      } finally {
+        setUploading(false)
+      }
+    },
+    [id, showToast]
+  )
+
+  const uploadStepPhoto = useCallback(
+    async (file: File, stepIndex: number) => {
+      if (!id) return
+      setErr(null)
+      setStepUploading(true)
+      try {
+        const ext = (file.name.split('.').pop() || 'jpg').toLowerCase()
+        const path = `${id}/steps/${stepIndex}_${Date.now()}_${Math.random().toString(16).slice(2)}.${ext}`
+        const { error: upErr } = await supabase.storage.from(PHOTO_BUCKET).upload(path, file, { cacheControl: '3600', upsert: true })
+        if (upErr) throw upErr
+        const { data: pub } = supabase.storage.from(PHOTO_BUCKET).getPublicUrl(path)
+        const url = pub?.publicUrl || ''
+        setStepPhotos((prev) => { const next = [...prev]; next[stepIndex] = url; return next })
+        showToast('Step photo updated.')
+      } catch (e: any) {
+        setErr(e?.message || 'Failed to upload step photo.')
+      } finally {
+        setStepUploading(false)
+      }
+    },
+    [id, showToast]
+  )
+
+  const addStep = useCallback(() => {
+    const s = (newStep || '').trim()
+    if (!s) return
+    setSteps((prev) => [...prev, s])
+    setStepPhotos((prev) => [...prev, ''])
+    setNewStep('')
+  }, [newStep])
+
+  const removeStep = useCallback((idx: number) => {
+    setSteps((prev) => prev.filter((_, i) => i !== idx))
+    setStepPhotos((prev) => prev.filter((_, i) => i !== idx))
+  }, [])
+
+  const updateStep = useCallback((idx: number, value: string) => {
+    setSteps((prev) => prev.map((s, i) => (i === idx ? value : s)))
+  }, [])
+
+  const addSnapshot = useCallback(() => {
+    if (!id) return
+    const p = Math.max(1, Math.floor(toNum(portions, 1)))
+    addCostPoint(id, { createdAt: Date.now(), totalCost: totals.totalCost, cpp: totals.cpp, portions: p, currency: cur } as any)
+    setCostPoints(listCostPoints(id))
+    showToast('Cost snapshot added.')
+  }, [id, portions, cur, totals.totalCost, totals.cpp, showToast])
+
+  const clearSnapshots = useCallback(() => {
+    if (!id) return
+    if (!window.confirm('Clear all cost snapshots?')) return
+    clearCostPoints(id)
+    setCostPoints(listCostPoints(id))
+    showToast('Cost snapshots cleared.')
+  }, [id, showToast])
+
+  const removeSnapshot = useCallback((pid: string) => {
+    if (!id) return
+    deleteCostPoint(id, pid)
+    setCostPoints(listCostPoints(id))
+    showToast('Snapshot removed.')
+  }, [id, showToast])
+
+  const printNow = useCallback(() => {
+    if (!id) return
+    window.open(`#/print?id=${encodeURIComponent(id)}&autoprint=1`, '_blank', 'noopener,noreferrer')
+  }, [id])
+
+  const exportExcel = useCallback(async () => {
+    try {
+      const meta = {
+        id: id || undefined,
+        code: code || null,
+        kitchen_id: (recipeRef.current as any)?.kitchen_id ?? null,
+        name: name || 'Recipe',
+        category: category || '',
+        portions: Math.max(1, Math.floor(Number(portions || 1))),
+        yield_qty: yieldQty ? Number(yieldQty) : null,
+        yield_unit: yieldUnit || null,
+        currency: currency || 'USD',
+        selling_price: sellingPrice ? Number(sellingPrice) : null,
+        target_food_cost_pct: targetFC ? Number(targetFC) : null,
+        photo_url: recipe?.photo_url || null,
+        step_photos: stepPhotos,
+        description: description || '',
+        steps: (steps || []).filter(Boolean),
+        calories: calories ? Number(calories) : null,
+        protein_g: protein ? Number(protein) : null,
+        carbs_g: carbs ? Number(carbs) : null,
+        fat_g: fat ? Number(fat) : null,
+      }
+      const rows = lines.filter((l) => l.line_type !== 'group').map((l) => {
+        const c = lineComputed.get(l.id)
+        return {
+          type: l.line_type === 'subrecipe' ? 'subrecipe' : 'ingredient',
+          code: l.line_type === 'ingredient' ? (l.ingredient_id ? (ingById.get(l.ingredient_id) as any)?.code : null) || '' : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.code || ''),
+          name: l.line_type === 'ingredient' ? (l.ingredient_id ? ingById.get(l.ingredient_id)?.name : null) || 'Ingredient' : (allRecipes.find((sr) => sr.id === l.sub_recipe_id)?.name || 'Subrecipe'),
+          net_qty: c?.net ?? 0,
+          unit: l.unit || '',
+          yield_percent: c?.yieldPct ?? 100,
+          gross_qty: c?.gross ?? 0,
+          unit_cost: c?.unitCost ?? 0,
+          line_cost: c?.lineCost ?? 0,
+          notes: l.notes || '',
+          warnings: c?.warnings || [],
+        }
+      })
+      await exportRecipeExcelUltra({ meta, totals: { totalCost: totals.totalCost, cpp: totals.cpp, fcPct: totals.fcPct, margin: totals.margin, marginPct: totals.marginPct }, lines: rows as any })
+      showToast('Excel exported.')
+    } catch (e: any) {
+      console.error(e)
+      showToast('Excel export failed.')
+    }
+  }, [id, name, category, portions, yieldQty, yieldUnit, currency, sellingPrice, targetFC, description, steps, stepPhotos, calories, protein, carbs, fat, lines, lineComputed, ingById, allRecipes, totals, showToast])
+
+  if (loading) {
+    return (
+      <div className="ik-loading">
+        <style>{loadingStyles}</style>
+        <div className="ik-loading-inner">
+          <div className="ik-loading-spinner"></div>
+          <div className="ik-loading-text">Loading Recipe</div>
+          <div className="ik-loading-bar"><div className="ik-loading-progress"></div></div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!id) {
+    return (
+      <div className="ik-error-page">
+        <style>{loadingStyles}</style>
+        <div className="ik-error-icon">⚠</div>
+        <div className="ik-error-title">No Recipe Selected</div>
+        <div className="ik-error-text">Please select a recipe to edit.</div>
+      </div>
+    )
+  }
+
+  return (
+    <>
+      <style>{mainStyles}</style>
+      
+      <div className="ik-app">
+        <aside className="ik-sidebar">
+          <div className="ik-sidebar-header">
+            <NavLink to="/recipes" className="ik-back-link">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M19 12H5M12 19l-7-7 7-7"/>
+              </svg>
+            </NavLink>
+            <div className="ik-recipe-badge">{isSubRecipe ? 'SUB' : 'MAIN'}</div>
+          </div>
+          
+          <div className="ik-sidebar-title">
+            <h1>{(name || 'Untitled').trim()}</h1>
+            <div className="ik-autosave">
+              <span className={`ik-status-dot ${savePulse ? 'saving' : ''}`}></span>
+              <span>{savePulse ? 'Saving...' : 'Auto-saved'}</span>
+            </div>
+          </div>
+
+          <nav className="ik-nav">
+            <button className={`ik-nav-item ${activeSection === 'sec-basics' ? 'active' : ''}`} onClick={() => scrollToSection('sec-basics')}>
+              <span className="ik-nav-icon">◈</span>
+              <span>Basics</span>
+            </button>
+            <button className={`ik-nav-item ${activeSection === 'sec-lines' ? 'active' : ''}`} onClick={() => scrollToSection('sec-lines')}>
+              <span className="ik-nav-icon">▣</span>
+              <span>Lines</span>
+            </button>
+            <button className={`ik-nav-item ${activeSection === 'sec-method' ? 'active' : ''}`} onClick={() => scrollToSection('sec-method')}>
+              <span className="ik-nav-icon">☰</span>
+              <span>Method</span>
+            </button>
+            {showCost && (
+              <button className={`ik-nav-item ${activeSection === 'sec-cost' ? 'active' : ''}`} onClick={() => scrollToSection('sec-cost')}>
+                <span className="ik-nav-icon">◆</span>
+                <span>Cost</span>
+              </button>
+            )}
+            <button className={`ik-nav-item ${activeSection === 'sec-nutrition' ? 'active' : ''}`} onClick={() => scrollToSection('sec-nutrition')}>
+              <span className="ik-nav-icon">◎</span>
+              <span>Nutrition</span>
+            </button>
+          </nav>
+
+          <div className="ik-sidebar-actions">
+            <button className="ik-action-btn" onClick={printNow} title="Print">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M6 9V2h12v7M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/>
+                <rect x="6" y="14" width="12" height="8"/>
+              </svg>
+            </button>
+            <button className="ik-action-btn" onClick={exportExcel} title="Export Excel">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+                <line x1="16" y1="13" x2="8" y2="13"/>
+                <line x1="16" y1="17" x2="8" y2="17"/>
+              </svg>
+            </button>
+            <button className="ik-action-btn" onClick={() => navigate(`/cook?id=${encodeURIComponent(id)}`)} title="Cook Mode">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M18 8h1a4 4 0 010 8h-1M2 8h16v9a4 4 0 01-4 4H6a4 4 0 01-4-4V8z"/>
+                <line x1="6" y1="1" x2="6" y2="4"/>
+                <line x1="10" y1="1" x2="10" y2="4"/>
+                <line x1="14" y1="1" x2="14" y2="4"/>
+              </svg>
+            </button>
+          </div>
+
+          <div className="ik-sidebar-footer">
+            <button className="ik-density-btn" onClick={() => setDensity(d => d === 'compact' ? 'comfort' : 'compact')}>
+              {density === 'compact' ? '☰ Compact' : '≡ Comfort'}
+            </button>
+          </div>
+        </aside>
+
+        <main className="ik-main">
+          {err && (
+            <div className="ik-error-banner">
+              <span className="ik-error-icon-sm">⚠</span>
+              <span>{err}</span>
+              <button onClick={() => setErr(null)} className="ik-error-close">✕</button>
+            </div>
+          )}
+
+          {showCost && (
+            <section id="sec-cost" className="ik-section">
+              <div className="ik-section-header">
+                <h2 className="ik-section-title">COST ANALYSIS</h2>
+                <span className="ik-currency-tag">{cur}</span>
+              </div>
+              <div className="ik-kpi-grid">
+                <div className="ik-kpi">
+                  <div className="ik-kpi-label">TOTAL COST</div>
+                  <div className="ik-kpi-value">{fmtMoney(totals.totalCost, cur)}</div>
+                </div>
+                <div className="ik-kpi">
+                  <div className="ik-kpi-label">COST/PORTION</div>
+                  <div className="ik-kpi-value">{fmtMoney(totals.cpp, cur)}</div>
+                </div>
+                <div className="ik-kpi">
+                  <div className="ik-kpi-label">FOOD COST %</div>
+                  <div className={`ik-kpi-value ${totals.fcPct && totals.fcPct > 30 ? 'negative' : ''}`}>
+                    {totals.fcPct != null ? `${totals.fcPct.toFixed(1)}%` : '—'}
+                  </div>
+                </div>
+                <div className="ik-kpi">
+                  <div className="ik-kpi-label">MARGIN</div>
+                  <div className="ik-kpi-value">{fmtMoney(totals.margin, cur)}</div>
+                </div>
+              </div>
+              {totals.warnings?.length > 0 && (
+                <div className="ik-warning-strip">
+                  <span>⚠</span>
+                  <span>{totals.warnings[0]}</span>
+                </div>
+              )}
+            </section>
+          )}
+
+          <section id="sec-basics" className="ik-section">
+            <div className="ik-section-header">
+              <h2 className="ik-section-title">BASIC INFORMATION</h2>
+            </div>
+            
+            <div className="ik-form-grid">
+              <div className="ik-field">
+                <label className="ik-label">RECIPE CODE</label>
+                <input
+                  className="ik-input"
+                  value={code}
+                  onChange={(e) => setCode(e.target.value.toUpperCase())}
+                  placeholder="PREP-001"
+                  disabled={!canEditCodes}
+                />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">CODE CATEGORY</label>
+                <input
+                  className="ik-input"
+                  value={codeCategory}
+                  onChange={(e) => setCodeCategory(e.target.value.toUpperCase())}
+                  placeholder="BASE"
+                  maxLength={6}
+                  disabled={!canEditCodes}
+                />
+              </div>
+              <div className="ik-field ik-span-2">
+                <label className="ik-label">RECIPE NAME *</label>
+                <input
+                  className="ik-input ik-input-lg"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Recipe name"
+                />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">CATEGORY</label>
+                <select className="ik-select" value={category} onChange={(e) => setCategory(e.target.value)}>
+                  <option value="">Select...</option>
+                  <option value="Appetizer">Appetizer</option>
+                  <option value="Main Course">Main Course</option>
+                  <option value="Dessert">Dessert</option>
+                  <option value="Sauce">Sauce</option>
+                  <option value="Soup">Soup</option>
+                  <option value="Salad">Salad</option>
+                  <option value="Beverage">Beverage</option>
+                  <option value="Bakery">Bakery</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">PORTIONS</label>
+                <input className="ik-input" type="number" value={portions} onChange={(e) => setPortions(e.target.value)} min="1" />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">CURRENCY</label>
+                <input className="ik-input" value={currency} onChange={(e) => setCurrency(e.target.value.toUpperCase())} maxLength={3} />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">SELLING PRICE</label>
+                <input className="ik-input" type="number" value={sellingPrice} onChange={(e) => setSellingPrice(e.target.value)} placeholder="0.00" />
+              </div>
+              <div className="ik-field ik-span-2">
+                <label className="ik-label">DESCRIPTION</label>
+                <textarea
+                  className="ik-textarea"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Brief description..."
+                  rows={3}
+                />
+              </div>
+            </div>
+
+            <div className="ik-subrecipe-toggle">
+              <label className="ik-toggle-label">
+                <input type="checkbox" checked={isSubRecipe} onChange={(e) => setIsSubRecipe(e.target.checked)} className="ik-toggle" />
+                <span className="ik-toggle-slider"></span>
+                <span className="ik-toggle-text">USE AS SUBRECIPE</span>
+              </label>
+              {isSubRecipe && (
+                <div className="ik-subrecipe-fields">
+                  <div className="ik-field">
+                    <label className="ik-label">YIELD QTY</label>
+                    <input className="ik-input" type="number" value={yieldQty} onChange={(e) => setYieldQty(e.target.value)} placeholder="1000" />
+                  </div>
+                  <div className="ik-field">
+                    <label className="ik-label">YIELD UNIT</label>
+                    <select className="ik-select" value={yieldUnit} onChange={(e) => setYieldUnit(e.target.value as any)}>
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="l">l</option>
+                      <option value="pcs">pcs</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="ik-photo-section">
+              <label className="ik-label">RECIPE PHOTO</label>
+              <div className="ik-photo-upload">
+                {recipe?.photo_url ? (
+                  <div className="ik-photo-preview">
+                    <img src={recipe.photo_url} alt="Recipe" />
+                    <div className="ik-photo-overlay">
+                      <label htmlFor="photo-upload" className="ik-photo-change">Change</label>
+                    </div>
+                  </div>
+                ) : (
+                  <label htmlFor="photo-upload" className="ik-photo-placeholder">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                      <rect x="2" y="2" width="20" height="20" rx="2"/>
+                      <circle cx="8.5" cy="8.5" r="1.5"/>
+                      <path d="M21 15l-5-5L7 21"/>
+                    </svg>
+                    <span>Upload Photo</span>
+                  </label>
+                )}
+                <input id="photo-upload" type="file" accept="image/*" style={{display: 'none'}} disabled={uploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadRecipePhoto(f) }} />
+              </div>
+              {uploading && <div className="ik-uploading">Uploading...</div>}
+            </div>
+          </section>
+
+          <section className="ik-section ik-section-dark">
+            <div className="ik-section-header">
+              <h2 className="ik-section-title">ADD LINE</h2>
+            </div>
+
+            <div className="ik-type-tabs">
+              {(['ingredient', 'subrecipe', 'group'] as LineType[]).map((t) => (
+                <button
+                  key={t}
+                  className={`ik-type-tab ${addType === t ? 'active' : ''}`}
+                  onClick={() => setAddType(t)}
+                >
+                  {t === 'ingredient' && '🥗'}
+                  {t === 'subrecipe' && '📋'}
+                  {t === 'group' && '📁'}
+                  <span>{t.charAt(0).toUpperCase() + t.slice(1)}</span>
+                </button>
+              ))}
+            </div>
+
+            {addType !== 'group' ? (
+              <>
+                <div className="ik-add-row">
+                  <div className="ik-field ik-flex-2">
+                    <input
+                      className="ik-input"
+                      value={ingSearch}
+                      onChange={(e) => setIngSearch(e.target.value)}
+                      placeholder={`Search ${addType}s...`}
+                    />
+                  </div>
+                  <div className="ik-field ik-flex-3">
+                    <select
+                      className="ik-select"
+                      value={addType === 'ingredient' ? addIngredientId : addSubRecipeId}
+                      onChange={(e) => addType === 'ingredient' ? setAddIngredientId(e.target.value) : setAddSubRecipeId(e.target.value)}
+                    >
+                      <option value="">— Select —</option>
+                      {addType === 'ingredient'
+                        ? filteredIngredients.map((i) => <option key={i.id} value={i.id}>{i.name} {i.code && `(${i.code})`}</option>)
+                        : subRecipeOptions.map((r) => <option key={r.id} value={r.id}>{r.name} {r.code && `(${r.code})`}</option>)}
+                    </select>
+                  </div>
+                </div>
+                <div className="ik-add-row">
+                  <div className="ik-field">
+                    <label className="ik-label-sm">NET</label>
+                    <input className="ik-input" type="number" value={addNetQty} onChange={(e) => setAddNetQty(e.target.value)} placeholder="0" />
+                  </div>
+                  <div className="ik-field">
+                    <label className="ik-label-sm">UNIT</label>
+                    <select className="ik-select" value={addUnit} onChange={(e) => setAddUnit(e.target.value)}>
+                      <option value="g">g</option>
+                      <option value="kg">kg</option>
+                      <option value="ml">ml</option>
+                      <option value="l">l</option>
+                      <option value="pcs">pcs</option>
+                    </select>
+                  </div>
+                  <div className="ik-field">
+                    <label className="ik-label-sm">YIELD %</label>
+                    <input className="ik-input" type="number" value={addYield} onChange={(e) => setAddYield(e.target.value)} placeholder="100" />
+                  </div>
+                  <div className="ik-field">
+                    <label className="ik-label-sm">GROSS</label>
+                    <input className="ik-input" type="number" value={addGross} onChange={(e) => setAddGross(e.target.value)} placeholder="auto" />
+                  </div>
+                  <div className="ik-field ik-flex-2">
+                    <label className="ik-label-sm">NOTE</label>
+                    <input className="ik-input" value={addNote} onChange={(e) => setAddNote(e.target.value)} placeholder="Optional..." />
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="ik-field" style={{padding: '16px 24px'}}>
+                <input className="ik-input" value={addGroupTitle} onChange={(e) => setAddGroupTitle(e.target.value)} placeholder="Group title (e.g., Sauce, Toppings)" />
+              </div>
+            )}
+
+            <div className="ik-add-actions">
+              <button className="ik-btn ik-btn-secondary" onClick={() => saveLinesNow()}>Save Lines</button>
+              <button className="ik-btn ik-btn-primary" onClick={addLineLocal}>Add {addType === 'group' ? 'Group' : 'Line'}</button>
+            </div>
+          </section>
+
+          <section id="sec-lines" className="ik-section">
+            <div className="ik-section-header">
+              <h2 className="ik-section-title">RECIPE LINES</h2>
+              <span className="ik-count-badge">{visibleLines.length}</span>
+            </div>
+
+            {!visibleLines.length ? (
+              <div className="ik-empty">
+                <div className="ik-empty-icon">📦</div>
+                <div className="ik-empty-title">No Lines Yet</div>
+                <div className="ik-empty-text">Add ingredients, subrecipes, or groups above</div>
+              </div>
+            ) : (
+              <div className="ik-table-wrapper">
+                <table className="ik-table">
+                  <thead>
+                    <tr>
+                      <th>CODE</th>
+                      <th>ITEM</th>
+                      <th className="ik-text-right">NET</th>
+                      <th>UNIT</th>
+                      <th className="ik-text-right">GROSS</th>
+                      <th className="ik-text-right">YIELD</th>
+                      {showCost && <th className="ik-text-right">COST</th>}
+                      <th className="ik-text-center">ACTION</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {visibleLines.map((l) => {
+                      const c = lineComputed.get(l.id)
+                      const ing = l.ingredient_id ? ingById.get(l.ingredient_id) : null
+                      const sub = l.sub_recipe_id ? recipeById.get(l.sub_recipe_id) : null
+
+                      if (l.line_type === 'group') {
+                        return (
+                          <tr key={l.id} className={`ik-group-row ${flashLineId === l.id ? 'ik-flash' : ''}`}>
+                            <td colSpan={tableColSpan}>
+                              <div className="ik-group-content">
+                                <div className="ik-group-left">
+                                  <span className="ik-group-icon">📁</span>
+                                  <span className="ik-group-name">{l.group_title}</span>
+                                  <span className="ik-group-badge">GROUP</span>
+                                </div>
+                                <div className="ik-group-actions">
+                                  <button className="ik-table-btn" onClick={() => duplicateLineLocal(l.id)}>⧉</button>
+                                  <button className="ik-table-btn ik-danger" onClick={() => deleteLineLocal(l.id)}>✕</button>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )
+                      }
+
+                      return (
+                        <tr key={l.id} className={flashLineId === l.id ? 'ik-flash' : ''}>
+                          <td><span className="ik-code">{l.line_type === 'ingredient' ? (ing?.code || '—') : (sub?.code || '—')}</span></td>
+                          <td>
+                            <div className="ik-item-cell">
+                              <span className="ik-item-name">{l.line_type === 'ingredient' ? (ing?.name || 'Unknown') : (sub?.name || 'Unknown')}</span>
+                              {l.notes && <span className="ik-item-note">{l.notes}</span>}
+                            </div>
+                          </td>
+                          <td><input className="ik-table-input" type="number" value={fmtQty(toNum(l.qty, 0))} onChange={(e) => onNetChange(l.id, e.target.value)} /></td>
+                          <td><span className="ik-unit">{l.unit || 'g'}</span></td>
+                          <td><input className="ik-table-input" type="number" value={l.gross_qty_override != null ? fmtQty(l.gross_qty_override) : ''} onChange={(e) => onGrossChange(l.id, e.target.value)} placeholder={c ? fmtQty(c.gross) : ''} /></td>
+                          <td><input className="ik-table-input" type="number" value={String(Math.round(clamp(toNum(l.yield_percent, 100), 0.0001, 100) * 100) / 100)} onChange={(e) => onYieldChange(l.id, e.target.value)} /></td>
+                          {showCost && (
+                            <td className="ik-text-right">
+                              <span className="ik-cost">{c && c.lineCost > 0 ? fmtMoney(c.lineCost, cur) : '—'}</span>
+                              {c?.warnings?.length ? <span className="ik-cost-warn"> ⚠</span> : null}
+                            </td>
+                          )}
+                          <td className="ik-text-center">
+                            <button className="ik-table-btn" onClick={() => duplicateLineLocal(l.id)}>⧉</button>
+                            <button className="ik-table-btn ik-danger" onClick={() => deleteLineLocal(l.id)}>✕</button>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+
+          <section id="sec-method" className="ik-section">
+            <div className="ik-section-header">
+              <h2 className="ik-section-title">COOKING METHOD</h2>
+            </div>
+
+            <div className="ik-step-input">
+              <input
+                className="ik-input ik-input-lg"
+                value={newStep}
+                onChange={(e) => setNewStep(e.target.value)}
+                placeholder="Add a cooking step..."
+                onKeyDown={(e) => e.key === 'Enter' && addStep()}
+              />
+              <button className="ik-btn ik-btn-primary" onClick={addStep}>Add Step</button>
+            </div>
+
+            {steps.length > 0 ? (
+              <div className="ik-steps-grid">
+                {steps.map((s, idx) => (
+                  <div key={idx} className="ik-step-card">
+                    <div className="ik-step-header">
+                      <div className="ik-step-number">{idx + 1}</div>
+                      <span className="ik-step-label">STEP</span>
+                      <button className="ik-step-remove" onClick={() => removeStep(idx)}>✕</button>
+                    </div>
+                    <textarea
+                      className="ik-step-textarea"
+                      value={s}
+                      onChange={(e) => updateStep(idx, e.target.value)}
+                      rows={4}
+                    />
+                    <div className="ik-step-photo">
+                      {stepPhotos[idx] ? (
+                        <div className="ik-step-photo-preview">
+                          <img src={stepPhotos[idx]} alt={`Step ${idx + 1}`} />
+                        </div>
+                      ) : (
+                        <label htmlFor={`step-photo-${idx}`} className="ik-step-photo-upload">
+                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+                            <rect x="2" y="2" width="20" height="20" rx="2"/>
+                            <circle cx="8.5" cy="8.5" r="1.5"/>
+                            <path d="M21 15l-5-5L7 21"/>
+                          </svg>
+                          <span>Add Photo</span>
+                        </label>
+                      )}
+                      <input id={`step-photo-${idx}`} type="file" accept="image/*" style={{display: 'none'}} disabled={stepUploading} onChange={(e) => { const f = e.target.files?.[0]; if (f) uploadStepPhoto(f, idx) }} />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="ik-empty">
+                <div className="ik-empty-icon">📝</div>
+                <div className="ik-empty-title">No Steps Yet</div>
+              </div>
+            )}
+
+            <div className="ik-legacy-method">
+              <label className="ik-label">LEGACY METHOD (OPTIONAL)</label>
+              <textarea
+                className="ik-textarea"
+                value={methodLegacy}
+                onChange={(e) => setMethodLegacy(e.target.value)}
+                placeholder="Alternative full method text..."
+                rows={4}
+              />
+            </div>
+          </section>
+
+          <section id="sec-nutrition" className="ik-section">
+            <div className="ik-section-header">
+              <h2 className="ik-section-title">NUTRITION / PORTION</h2>
+            </div>
+            <div className="ik-nutrition-grid">
+              <div className="ik-field">
+                <label className="ik-label">CALORIES</label>
+                <input className="ik-input" type="number" value={calories} onChange={(e) => setCalories(e.target.value)} placeholder="0" />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">PROTEIN (g)</label>
+                <input className="ik-input" type="number" value={protein} onChange={(e) => setProtein(e.target.value)} placeholder="0" />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">CARBS (g)</label>
+                <input className="ik-input" type="number" value={carbs} onChange={(e) => setCarbs(e.target.value)} placeholder="0" />
+              </div>
+              <div className="ik-field">
+                <label className="ik-label">FAT (g)</label>
+                <input className="ik-input" type="number" value={fat} onChange={(e) => setFat(e.target.value)} placeholder="0" />
+              </div>
+            </div>
+          </section>
+
+          {showCost && (
+            <section className="ik-section">
+              <div className="ik-section-header">
+                <h2 className="ik-section-title">COST HISTORY</h2>
+                <div className="ik-history-actions">
+                  <button className="ik-btn ik-btn-sm ik-btn-primary" onClick={addSnapshot}>+ Snapshot</button>
+                  {costPoints.length > 0 && <button className="ik-btn ik-btn-sm ik-btn-secondary" onClick={clearSnapshots}>Clear</button>}
+                </div>
+              </div>
+              <CostTimeline points={costPoints} currency={currency} />
+              {!costPoints.length && <div className="ik-empty"><div className="ik-empty-text">No snapshots yet</div></div>}
+            </section>
+          )}
+        </main>
+      </div>
+
+      {toastOpen && <Toast message={toastMsg} onClose={() => setToastOpen(false)} />}
+    </>
+  )
+}
