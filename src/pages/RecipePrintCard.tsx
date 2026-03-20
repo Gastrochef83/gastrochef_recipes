@@ -438,6 +438,7 @@ export default function RecipePrintCard() {
           width: 100%;
           border-collapse: separate;
           border-spacing: 0;
+          min-width: 1200px;
         }
 
         .recipe-table thead {
@@ -456,6 +457,16 @@ export default function RecipePrintCard() {
         .recipe-table tfoot {
           break-inside: avoid;
           page-break-inside: avoid;
+        }
+
+        .recipe-table td,
+        .recipe-table th {
+          word-break: break-word;
+          white-space: normal;
+        }
+
+        .recipe-table .whitespace-nowrap {
+          white-space: nowrap;
         }
 
         .step-grid {
@@ -498,6 +509,12 @@ export default function RecipePrintCard() {
           img {
             break-inside: avoid !important;
             page-break-inside: avoid !important;
+          }
+        }
+
+        @media (max-width: 1024px) {
+          .recipe-table {
+            min-width: 1000px;
           }
         }
       `}</style>
@@ -605,21 +622,21 @@ export default function RecipePrintCard() {
 
             <div className="overflow-hidden rounded-[28px] border border-[#dfe5df]">
               <div className="overflow-x-auto">
-                <table className="recipe-table min-w-full border-collapse text-sm">
+                <table className="recipe-table w-full border-collapse text-sm">
                   <thead className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] text-[#556b2f]">
                     <tr>
-                      <Th className="w-[8%]">Code</Th>
-                      <Th className="w-[22%]">Item</Th>
-                      <Th className="w-[12%]">Note</Th>
-                      <Th className="w-[9%] text-right">Net Qty</Th>
-                      <Th className="w-[6%]">Unit</Th>
-                      <Th className="w-[9%] text-right">Gross Qty</Th>
-                      <Th className="w-[6%]">Unit</Th>
-                      <Th className="w-[7%] text-right">Yield</Th>
-                      <Th className="w-[7%] text-right">Qty %</Th>
-                      <Th className="w-[7%] text-right">Cost %</Th>
-                      <Th className="w-[9%] text-right">Unit Cost</Th>
-                      <Th className="w-[10%] text-right">Line Cost</Th>
+                      <Th className="w-[80px]">Code</Th>
+                      <Th className="min-w-[200px] w-[28%]">Item</Th>
+                      <Th className="min-w-[100px] w-[10%]">Note</Th>
+                      <Th className="w-[90px] text-right">Net Qty</Th>
+                      <Th className="w-[60px]">Unit</Th>
+                      <Th className="w-[90px] text-right">Gross Qty</Th>
+                      <Th className="w-[60px]">Unit</Th>
+                      <Th className="w-[80px] text-right">Yield</Th>
+                      <Th className="w-[80px] text-right">Qty %</Th>
+                      <Th className="w-[80px] text-right">Cost %</Th>
+                      <Th className="w-[100px] text-right">Unit Cost</Th>
+                      <Th className="w-[100px] text-right">Line Cost</Th>
                     </tr>
                   </thead>
 
@@ -640,23 +657,23 @@ export default function RecipePrintCard() {
 
                       return (
                         <tr key={row.id} className={`${rowClass} align-top text-stone-700`}>
-                          <Td className="font-medium text-[#2f6f5e]">{row.code || '—'}</Td>
+                          <Td className="font-medium text-[#2f6f5e] whitespace-nowrap">{row.code || '—'}</Td>
                           <Td className="font-semibold text-stone-900">
                             <div className="flex items-center gap-2">
                               {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
-                              <span>{row.title}</span>
+                              <span className="break-words">{row.title}</span>
                             </div>
                           </Td>
-                          <Td className="max-w-[180px] text-stone-600">{row.note || '—'}</Td>
-                          <Td className="text-right tabular-nums">{fmtQty(row.net)}</Td>
-                          <Td>{row.unit}</Td>
-                          <Td className="text-right tabular-nums">{fmtQty(row.gross)}</Td>
-                          <Td>{row.unit}</Td>
-                          <Td className="text-right tabular-nums">{row.yieldPct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{row.sharePct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{row.costSharePct.toFixed(1)}%</Td>
-                          <Td className="text-right tabular-nums">{fmtMoney(row.unitCost, currency)}</Td>
-                          <Td className="text-right font-semibold tabular-nums text-[#556b2f]">{fmtMoney(row.lineCost, currency)}</Td>
+                          <Td className="text-stone-600 break-words">{row.note || '—'}</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap">{fmtQty(row.net)}</Td>
+                          <Td className="whitespace-nowrap">{row.unit}</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap">{fmtQty(row.gross)}</Td>
+                          <Td className="whitespace-nowrap">{row.unit}</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap">{row.yieldPct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap">{row.sharePct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap">{row.costSharePct.toFixed(1)}%</Td>
+                          <Td className="text-right tabular-nums whitespace-nowrap">{fmtMoney(row.unitCost, currency)}</Td>
+                          <Td className="text-right font-semibold tabular-nums whitespace-nowrap text-[#556b2f]">{fmtMoney(row.lineCost, currency)}</Td>
                         </tr>
                       )
                     })}
