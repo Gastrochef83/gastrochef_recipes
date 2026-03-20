@@ -131,19 +131,15 @@ function isValidText(text: string | null | undefined): boolean {
   const cleaned = String(text).trim()
   if (cleaned.length === 0) return false
   
-  // Check if text is mostly Greek letters
   const greekPattern = /[α-ωΑ-Ωγδφψω]/g
   const greekMatches = cleaned.match(greekPattern)
   if (greekMatches && greekMatches.length > cleaned.length * 0.3) return false
   
-  // Check if text contains random pattern like P-α-β-D-γ
   const randomPattern = /[A-Z]-[α-ω]-[α-ω]-[A-Z]-[α-ω]/g
   if (randomPattern.test(cleaned)) return false
   
-  // Check if text is too short or only symbols
   if (cleaned.length < 2) return false
   
-  // Check if text contains only special characters
   if (/^[^a-zA-Z0-9\u0600-\u06FF\u4e00-\u9fa5]+$/.test(cleaned)) return false
   
   return true
@@ -153,7 +149,18 @@ function isValidText(text: string | null | undefined): boolean {
 function getValidName(name: string | null | undefined, fallback: string = '—'): string {
   const cleaned = cleanText(name)
   if (!cleaned) return fallback
-  if (isValidText(cleaned)) return cleaned
+  if (isValidText(cleaned)) {
+    let result = cleaned
+    const redundantWords = ['powdered', 'ground', 'whole', 'fresh', 'dried', 'powder']
+    redundantWords.forEach(word => {
+      const wordPattern = new RegExp(`\\b${word}\\b`, 'gi')
+      const matches = result.match(wordPattern)
+      if (matches && matches.length > 1) {
+        result = result.replace(wordPattern, '').trim()
+      }
+    })
+    return result.replace(/\s+/g, ' ').trim()
+  }
   return fallback
 }
 
@@ -161,7 +168,6 @@ function getValidName(name: string | null | undefined, fallback: string = '—')
 function getValidCode(code: string | null | undefined, fallback: string = '—'): string {
   const cleaned = cleanText(code)
   if (!cleaned) return fallback
-  // Check if code is valid (not greek letters, not too long, not just symbols)
   const greekPattern = /[α-ωΑ-Ωγδφψω]/g
   if (greekPattern.test(cleaned)) return fallback
   if (cleaned.length > 30) return cleaned.slice(0, 25) + '…'
@@ -219,9 +225,23 @@ export default function RecipePrintCard() {
 
         if (lErr) throw lErr
 
+        // Filter out duplicate lines
+        const rawLines = l || []
+        const uniqueLines = rawLines.filter((line: any, index: number, self: any[]) => {
+          if (line.line_type === 'ingredient' && line.ingredient_id) {
+            const firstIndex = self.findIndex((x: any) => 
+              x.line_type === 'ingredient' && 
+              x.ingredient_id === line.ingredient_id &&
+              Math.abs(Number(x.qty) - Number(line.qty)) < 0.001
+            )
+            return firstIndex === index
+          }
+          return true
+        })
+
         const ingredientIds = Array.from(
           new Set(
-            (l || [])
+            (uniqueLines || [])
               .filter((x: any) => x?.line_type === 'ingredient' && x?.ingredient_id)
               .map((x: any) => x.ingredient_id)
           )
@@ -247,7 +267,7 @@ export default function RecipePrintCard() {
         if (!mounted.current) return
 
         setRecipe((r || null) as Recipe | null)
-        setLines(((l || []) as Line[]) || [])
+        setLines((uniqueLines as Line[]) || [])
         setIngredients(((ing || []) as Ingredient[]) || [])
         setSubRecipes(((sr || []) as SubRecipe[]) || [])
       } catch (e: any) {
@@ -300,13 +320,30 @@ export default function RecipePrintCard() {
       let title = 'Line'
       let code: string | undefined
       let isSubrecipe = false
+      let note = ''
 
       if (l.line_type === 'ingredient' && l.ingredient_id) {
         const ing = ingById.get(l.ingredient_id)
         const validName = getValidName(ing?.name, '—')
-        title = validName
+        
+        let fullTitle = validName
+        if (ing?.pack_unit && ing.pack_unit.trim() && !validName.toLowerCase().includes(ing.pack_unit.toLowerCase())) {
+          fullTitle = `${validName} (${ing.pack_unit})`
+        }
+        
+        title = fullTitle
         code = getValidCode(ing?.code, undefined)
         unitCost = toNum(ing?.net_unit_cost, 0)
+        
+        const notesList = [
+          cleanText(l.note),
+          cleanText(l.notes),
+          cleanText(l.prep_note),
+          cleanText(l.instruction),
+          cleanText(l.remark)
+        ].filter(n => n && n.length > 0 && n !== ing?.pack_unit && !fullTitle.toLowerCase().includes(n.toLowerCase()))
+        
+        note = notesList.join(' · ')
       }
 
       if (l.line_type === 'subrecipe' && l.sub_recipe_id) {
@@ -316,6 +353,7 @@ export default function RecipePrintCard() {
         code = getValidCode(sr?.code, undefined)
         unitCost = 0
         isSubrecipe = true
+        note = cleanText(l.note || l.notes || l.prep_note || l.instruction || l.remark)
       }
 
       const lineCost = net * unitCost
@@ -332,13 +370,7 @@ export default function RecipePrintCard() {
         unit: safeUnit(l.unit),
         unitCost,
         lineCost,
-        note: cleanText(
-          (l as any).note ??
-            (l as any).notes ??
-            (l as any).prep_note ??
-            (l as any).instruction ??
-            (l as any).remark
-        ),
+        note,
       }
     })
 
@@ -717,7 +749,7 @@ export default function RecipePrintCard() {
                           <tr key={row.id} className="bg-[linear-gradient(90deg,#556b2f_0%,#2f6f5e_100%)] text-white">
                             <td colSpan={12} className="px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em]">
                               {row.groupTitle}
-                             </td>
+                            </td>
                           </tr>
                         )
                       }
@@ -725,7 +757,6 @@ export default function RecipePrintCard() {
                       const zebra = index % 2 === 0 ? 'bg-white' : 'bg-[#fbfcfb]'
                       const rowClass = row.isSubrecipe ? 'bg-[#eef3ef] text-stone-800' : zebra
                       
-                      // Final validation for display
                       let displayCode = '—'
                       let displayTitle = '—'
                       
@@ -744,12 +775,17 @@ export default function RecipePrintCard() {
                         <tr key={row.id} className={`${rowClass} align-top text-stone-700 hover:bg-[#f5f7f2] transition-colors`}>
                           <Td className="font-mono text-[11px] font-medium text-[#2f6f5e] whitespace-nowrap">{displayCode}</Td>
                           <Td className="font-semibold text-stone-900">
-                            <div className="flex items-center gap-2">
-                              {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
-                              <span className="break-words leading-tight">{displayTitle}</span>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
+                                <span className="break-words font-medium">{displayTitle}</span>
+                              </div>
+                              {row.note && row.note !== '—' && (
+                                <span className="text-[11px] text-stone-400 italic">{row.note}</span>
+                              )}
                             </div>
                           </Td>
-                          <Td className="text-stone-500 text-[12px] break-words">{row.note || '—'}</Td>
+                          <Td className="text-stone-500 text-[12px] break-words">—</Td>
                           <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtQty(row.net)}</Td>
                           <Td className="whitespace-nowrap text-center">{row.unit}</Td>
                           <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtQty(row.gross)}</Td>
