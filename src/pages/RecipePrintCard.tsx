@@ -380,6 +380,12 @@ export default function RecipePrintCard() {
     }
   }, [autoPrint, loading, err, recipe])
 
+  const handleExport = () => {
+    setTimeout(() => {
+      exportRecipePdf(recipe?.name)
+    }, 50)
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen bg-[#f7f6f2] p-6 text-stone-700">
@@ -499,7 +505,7 @@ export default function RecipePrintCard() {
       <div className="print-stage min-h-screen bg-[#f7f6f2] px-4 py-5 md:px-8 md:py-8 text-[#2b2b2b]">
         <div className="no-print mx-auto mb-4 flex max-w-6xl items-center justify-end gap-3">
           <button
-            onClick={exportRecipePdf}
+            onClick={handleExport}
             className="rounded-2xl border border-[#dfe5df] bg-white px-5 py-3 text-sm font-medium text-[#8b5e34] shadow-sm transition hover:bg-[#f7f6f2]"
             title="Export current recipe card as PDF"
           >
@@ -562,6 +568,7 @@ export default function RecipePrintCard() {
                     src={recipe.photo_url}
                     alt={recipe.name || 'Recipe'}
                     className="h-full w-full object-cover"
+                    crossOrigin="anonymous"
                   />
                 </div>
               ) : (
@@ -697,6 +704,7 @@ export default function RecipePrintCard() {
                                   src={img}
                                   alt={`Step ${i + 1}`}
                                   className="aspect-square w-full object-cover"
+                                  crossOrigin="anonymous"
                                 />
                               </div>
                             ) : (
