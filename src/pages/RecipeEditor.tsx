@@ -11,6 +11,7 @@ import { addCostPoint, clearCostPoints, listCostPoints, deleteCostPoint } from '
 import { useKitchen } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import { exportRecipeExcelUltra } from '../utils/exportRecipeExcelUltra'
+import { recipeKind, displayCode } from '../lib/codes'
 
 type LineType = 'ingredient' | 'subrecipe' | 'group'
 
@@ -342,6 +343,7 @@ const mainStyles = `
   display: flex;
   align-items: center;
   gap: 10px;
+  flex-wrap: wrap;
 }
 
 .ik-header-title {
@@ -364,6 +366,26 @@ const mainStyles = `
   letter-spacing: 0.1em;
   color: var(--ik-primary);
   flex-shrink: 0;
+}
+
+.ik-code-badge {
+  padding: 4px 12px;
+  background: linear-gradient(135deg, rgba(107, 127, 59, 0.12), rgba(31, 122, 120, 0.12));
+  border: 1px solid rgba(107, 127, 59, 0.3);
+  border-radius: 24px;
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  font-weight: 600;
+  color: var(--ik-primary);
+  letter-spacing: 0.3px;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+
+.ik-code-badge:hover {
+  background: linear-gradient(135deg, rgba(107, 127, 59, 0.2), rgba(31, 122, 120, 0.2));
+  border-color: rgba(107, 127, 59, 0.5);
+  transform: translateY(-1px);
 }
 
 .ik-autosave {
@@ -1764,6 +1786,11 @@ export default function RecipeEditor() {
                 <div className="ik-header-title-row">
                   <h1 className="ik-header-title">{(name || 'Untitled').trim()}</h1>
                   <span className="ik-recipe-badge">{isSubRecipe ? 'SUB' : 'MAIN'}</span>
+                  {code && (
+                    <span className="ik-code-badge">
+                      🔖 {code}
+                    </span>
+                  )}
                 </div>
                 <div className="ik-autosave">
                   <span className={`ik-status-dot ${savePulse ? 'saving' : ''}`}></span>
@@ -1884,7 +1911,7 @@ export default function RecipeEditor() {
                   className="ik-input"
                   value={code}
                   onChange={(e) => setCode(e.target.value.toUpperCase())}
-                  placeholder="PREP-001"
+                  placeholder="REC-0001"
                   disabled={!canEditCodes}
                 />
               </div>
