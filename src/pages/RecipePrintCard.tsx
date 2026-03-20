@@ -152,63 +152,92 @@ function buildIngredientTitle(ing: Ingredient | undefined, line: Line): string {
   const baseName = cleanText(ing.name)
   if (!baseName) return '—'
   
-  const parts: string[] = [baseName]
+  // Start with base name
+  let result = baseName
   
-  // Add pack_unit if exists and not already in name
+  // Collect all additional info
+  const additionalInfo: string[] = []
+  
+  // Add pack_unit if exists and not already in base name
   if (ing.pack_unit && ing.pack_unit.trim()) {
     const packUnit = cleanText(ing.pack_unit)
-    if (!baseName.toLowerCase().includes(packUnit.toLowerCase())) {
-      parts.push(packUnit)
+    const packUnitClean = packUnit.replace(/[()]/g, '').toLowerCase()
+    const baseNameClean = baseName.toLowerCase()
+    
+    if (!baseNameClean.includes(packUnitClean) && 
+        !baseNameClean.includes(`(${packUnitClean})`) &&
+        packUnit !== 'kg' && packUnit !== 'g' && packUnit !== 'ml') {
+      additionalInfo.push(packUnit)
     }
   }
   
-  // Add prep_note if exists and not already included
+  // Add prep_note if exists
   const prepNote = cleanText(line.prep_note || line.note || line.notes || line.instruction || line.remark)
   if (prepNote && prepNote !== ing.pack_unit) {
-    const existingText = parts.join(' ').toLowerCase()
-    if (!existingText.includes(prepNote.toLowerCase())) {
-      parts.push(prepNote)
+    const prepNoteClean = prepNote.toLowerCase()
+    const resultClean = result.toLowerCase()
+    
+    if (!resultClean.includes(prepNoteClean) && 
+        prepNote !== 'kg' && prepNote !== 'g' && prepNote !== 'ml') {
+      additionalInfo.push(prepNote)
     }
   }
   
-  // Remove duplicate words
-  const uniqueParts: string[] = []
-  parts.forEach(part => {
-    const words = part.split(/\s+/)
-    words.forEach(word => {
-      if (word && !uniqueParts.some(existing => existing.toLowerCase() === word.toLowerCase())) {
-        uniqueParts.push(word)
-      }
-    })
-  })
+  // Add additional info in parentheses if exists
+  if (additionalInfo.length > 0) {
+    const uniqueInfo = additionalInfo.filter((v, i, a) => a.indexOf(v) === i)
+    result = `${result} (${uniqueInfo.join(' · ')})`
+  }
   
-  // Join with space, remove duplicates
-  let result = uniqueParts.join(' ')
-  
-  // Clean up redundant patterns
-  const redundantPatterns = [
-    /powdered\s+powdered/gi,
-    /ground\s+ground/gi,
-    /whole\s+whole/gi,
-    /-\s*-/g
-  ]
-  redundantPatterns.forEach(pattern => {
-    result = result.replace(pattern, match => {
-      const words = match.split(/\s+/)
-      return words[0]
-    })
-  })
+  // Clean up parentheses
+  result = result.replace(/\(\(/g, '(').replace(/\)\)/g, ')')
+  result = result.replace(/\(\s*\)/g, '')
   
   // Remove duplicate words
-  const wordArray = result.split(/\s+/)
-  const uniqueWordArray: string[] = []
-  wordArray.forEach(word => {
-    if (!uniqueWordArray.some(existing => existing.toLowerCase() === word.toLowerCase())) {
-      uniqueWordArray.push(word)
+  const words = result.split(/\s+/)
+  const uniqueWords: string[] = []
+  words.forEach(word => {
+    const wordClean = word.replace(/[()]/g, '').toLowerCase()
+    if (!uniqueWords.some(w => w.replace(/[()]/g, '').toLowerCase() === wordClean)) {
+      uniqueWords.push(word)
     }
   })
   
-  return uniqueWordArray.join(' ')
+  result = uniqueWords.join(' ')
+  result = result.replace(/\s+\(\s+/g, ' (')
+  result = result.replace(/\s+\)/g, ')')
+  result = result.replace(/\(\s+/g, '(')
+  result = result.replace(/(kg|g|ml)\s+\(\1\)/gi, '$1')
+  result = result.replace(/\(\s*(kg|g|ml)\s*\)/gi, '($1)')
+  
+  return result
+}
+
+function getValidName(name: string | null | undefined, fallback: string = '—'): string {
+  const cleaned = cleanText(name)
+  if (!cleaned) return fallback
+  if (isValidText(cleaned)) {
+    let result = cleaned
+    const redundantWords = ['powdered', 'ground', 'whole', 'fresh', 'dried', 'powder']
+    redundantWords.forEach(word => {
+      const wordPattern = new RegExp(`\\b${word}\\b`, 'gi')
+      const matches = result.match(wordPattern)
+      if (matches && matches.length > 1) {
+        result = result.replace(wordPattern, '').trim()
+      }
+    })
+    return result.replace(/\s+/g, ' ').trim()
+  }
+  return fallback
+}
+
+function getValidCode(code: string | null | undefined, fallback: string = '—'): string {
+  const cleaned = cleanText(code)
+  if (!cleaned) return fallback
+  const greekPattern = /[α-ωΑ-Ωγδφψω]/g
+  if (greekPattern.test(cleaned)) return fallback
+  if (cleaned.length > 30) return cleaned.slice(0, 25) + '…'
+  return cleaned
 }
 
 export default function RecipePrintCard() {
@@ -265,7 +294,6 @@ export default function RecipePrintCard() {
         // Filter out duplicate lines and lines that are just notes
         const rawLines = l || []
         const uniqueLines = rawLines.filter((line: any, index: number, self: any[]) => {
-          // Skip lines that are empty notes with no quantity
           if (line.line_type === 'ingredient' && (!line.ingredient_id || line.qty === 0 || line.qty === null)) {
             return false
           }
@@ -911,34 +939,6 @@ export default function RecipePrintCard() {
   )
 }
 
-// Helper functions (continued)
-function getValidName(name: string | null | undefined, fallback: string = '—'): string {
-  const cleaned = cleanText(name)
-  if (!cleaned) return fallback
-  if (isValidText(cleaned)) {
-    let result = cleaned
-    const redundantWords = ['powdered', 'ground', 'whole', 'fresh', 'dried', 'powder']
-    redundantWords.forEach(word => {
-      const wordPattern = new RegExp(`\\b${word}\\b`, 'gi')
-      const matches = result.match(wordPattern)
-      if (matches && matches.length > 1) {
-        result = result.replace(wordPattern, '').trim()
-      }
-    })
-    return result.replace(/\s+/g, ' ').trim()
-  }
-  return fallback
-}
-
-function getValidCode(code: string | null | undefined, fallback: string = '—'): string {
-  const cleaned = cleanText(code)
-  if (!cleaned) return fallback
-  const greekPattern = /[α-ωΑ-Ωγδφψω]/g
-  if (greekPattern.test(cleaned)) return fallback
-  if (cleaned.length > 30) return cleaned.slice(0, 25) + '…'
-  return cleaned
-}
-
 function SectionTitle({ children }: { children: ReactNode }) {
   return <h2 className="mb-5 text-[1.7rem] font-semibold tracking-[-0.03em] text-[#556b2f] md:mb-6 md:text-[1.85rem]">{children}</h2>
 }
@@ -1011,5 +1011,5 @@ function Th({ children, className = '' }: { children: ReactNode; className?: str
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children} </td>
+  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children}  </td>
 }
