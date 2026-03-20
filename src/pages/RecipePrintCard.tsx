@@ -145,33 +145,70 @@ function isValidText(text: string | null | undefined): boolean {
   return true
 }
 
-// Helper function to clean and validate ingredient name
-function getValidName(name: string | null | undefined, fallback: string = '—'): string {
-  const cleaned = cleanText(name)
-  if (!cleaned) return fallback
-  if (isValidText(cleaned)) {
-    let result = cleaned
-    const redundantWords = ['powdered', 'ground', 'whole', 'fresh', 'dried', 'powder']
-    redundantWords.forEach(word => {
-      const wordPattern = new RegExp(`\\b${word}\\b`, 'gi')
-      const matches = result.match(wordPattern)
-      if (matches && matches.length > 1) {
-        result = result.replace(wordPattern, '').trim()
+// Helper function to build full ingredient name with all details
+function buildIngredientTitle(ing: Ingredient | undefined, line: Line): string {
+  if (!ing) return '—'
+  
+  const baseName = cleanText(ing.name)
+  if (!baseName) return '—'
+  
+  const parts: string[] = [baseName]
+  
+  // Add pack_unit if exists and not already in name
+  if (ing.pack_unit && ing.pack_unit.trim()) {
+    const packUnit = cleanText(ing.pack_unit)
+    if (!baseName.toLowerCase().includes(packUnit.toLowerCase())) {
+      parts.push(packUnit)
+    }
+  }
+  
+  // Add prep_note if exists and not already included
+  const prepNote = cleanText(line.prep_note || line.note || line.notes || line.instruction || line.remark)
+  if (prepNote && prepNote !== ing.pack_unit) {
+    const existingText = parts.join(' ').toLowerCase()
+    if (!existingText.includes(prepNote.toLowerCase())) {
+      parts.push(prepNote)
+    }
+  }
+  
+  // Remove duplicate words
+  const uniqueParts: string[] = []
+  parts.forEach(part => {
+    const words = part.split(/\s+/)
+    words.forEach(word => {
+      if (word && !uniqueParts.some(existing => existing.toLowerCase() === word.toLowerCase())) {
+        uniqueParts.push(word)
       }
     })
-    return result.replace(/\s+/g, ' ').trim()
-  }
-  return fallback
-}
-
-// Helper function to clean and validate ingredient code
-function getValidCode(code: string | null | undefined, fallback: string = '—'): string {
-  const cleaned = cleanText(code)
-  if (!cleaned) return fallback
-  const greekPattern = /[α-ωΑ-Ωγδφψω]/g
-  if (greekPattern.test(cleaned)) return fallback
-  if (cleaned.length > 30) return cleaned.slice(0, 25) + '…'
-  return cleaned
+  })
+  
+  // Join with space, remove duplicates
+  let result = uniqueParts.join(' ')
+  
+  // Clean up redundant patterns
+  const redundantPatterns = [
+    /powdered\s+powdered/gi,
+    /ground\s+ground/gi,
+    /whole\s+whole/gi,
+    /-\s*-/g
+  ]
+  redundantPatterns.forEach(pattern => {
+    result = result.replace(pattern, match => {
+      const words = match.split(/\s+/)
+      return words[0]
+    })
+  })
+  
+  // Remove duplicate words
+  const wordArray = result.split(/\s+/)
+  const uniqueWordArray: string[] = []
+  wordArray.forEach(word => {
+    if (!uniqueWordArray.some(existing => existing.toLowerCase() === word.toLowerCase())) {
+      uniqueWordArray.push(word)
+    }
+  })
+  
+  return uniqueWordArray.join(' ')
 }
 
 export default function RecipePrintCard() {
@@ -225,14 +262,18 @@ export default function RecipePrintCard() {
 
         if (lErr) throw lErr
 
-        // Filter out duplicate lines
+        // Filter out duplicate lines and lines that are just notes
         const rawLines = l || []
         const uniqueLines = rawLines.filter((line: any, index: number, self: any[]) => {
+          // Skip lines that are empty notes with no quantity
+          if (line.line_type === 'ingredient' && (!line.ingredient_id || line.qty === 0 || line.qty === null)) {
+            return false
+          }
+          
           if (line.line_type === 'ingredient' && line.ingredient_id) {
             const firstIndex = self.findIndex((x: any) => 
               x.line_type === 'ingredient' && 
-              x.ingredient_id === line.ingredient_id &&
-              Math.abs(Number(x.qty) - Number(line.qty)) < 0.001
+              x.ingredient_id === line.ingredient_id
             )
             return firstIndex === index
           }
@@ -320,40 +361,20 @@ export default function RecipePrintCard() {
       let title = 'Line'
       let code: string | undefined
       let isSubrecipe = false
-      let note = ''
 
       if (l.line_type === 'ingredient' && l.ingredient_id) {
         const ing = ingById.get(l.ingredient_id)
-        const validName = getValidName(ing?.name, '—')
-        
-        let fullTitle = validName
-        if (ing?.pack_unit && ing.pack_unit.trim() && !validName.toLowerCase().includes(ing.pack_unit.toLowerCase())) {
-          fullTitle = `${validName} (${ing.pack_unit})`
-        }
-        
-        title = fullTitle
+        title = buildIngredientTitle(ing, l)
         code = getValidCode(ing?.code, undefined)
         unitCost = toNum(ing?.net_unit_cost, 0)
-        
-        const notesList = [
-          cleanText(l.note),
-          cleanText(l.notes),
-          cleanText(l.prep_note),
-          cleanText(l.instruction),
-          cleanText(l.remark)
-        ].filter(n => n && n.length > 0 && n !== ing?.pack_unit && !fullTitle.toLowerCase().includes(n.toLowerCase()))
-        
-        note = notesList.join(' · ')
       }
 
       if (l.line_type === 'subrecipe' && l.sub_recipe_id) {
         const sr = subById.get(l.sub_recipe_id)
-        const validName = getValidName(sr?.name, '—')
-        title = validName
+        title = getValidName(sr?.name, '—')
         code = getValidCode(sr?.code, undefined)
         unitCost = 0
         isSubrecipe = true
-        note = cleanText(l.note || l.notes || l.prep_note || l.instruction || l.remark)
       }
 
       const lineCost = net * unitCost
@@ -370,7 +391,6 @@ export default function RecipePrintCard() {
         unit: safeUnit(l.unit),
         unitCost,
         lineCost,
-        note,
       }
     })
 
@@ -728,8 +748,7 @@ export default function RecipePrintCard() {
                   <thead className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] text-[#556b2f]">
                     <tr>
                       <Th className="w-[70px]">Code</Th>
-                      <Th className="min-w-[220px] w-[26%]">Item</Th>
-                      <Th className="min-w-[120px] w-[12%]">Note / Spec</Th>
+                      <Th className="min-w-[280px] w-[32%]">Item</Th>
                       <Th className="w-[85px] text-right">Net Qty</Th>
                       <Th className="w-[55px] text-center">Unit</Th>
                       <Th className="w-[85px] text-right">Gross Qty</Th>
@@ -747,7 +766,7 @@ export default function RecipePrintCard() {
                       if (row.isGroup) {
                         return (
                           <tr key={row.id} className="bg-[linear-gradient(90deg,#556b2f_0%,#2f6f5e_100%)] text-white">
-                            <td colSpan={12} className="px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em]">
+                            <td colSpan={11} className="px-4 py-3 text-sm font-semibold uppercase tracking-[0.16em]">
                               {row.groupTitle}
                             </td>
                           </tr>
@@ -778,14 +797,10 @@ export default function RecipePrintCard() {
                             <div className="flex flex-col gap-1">
                               <div className="flex items-center gap-2 flex-wrap">
                                 {row.isSubrecipe ? <SubBadge>Sub Recipe</SubBadge> : null}
-                                <span className="break-words font-medium">{displayTitle}</span>
+                                <span className="break-words font-medium leading-tight">{displayTitle}</span>
                               </div>
-                              {row.note && row.note !== '—' && (
-                                <span className="text-[11px] text-stone-400 italic">{row.note}</span>
-                              )}
                             </div>
                           </Td>
-                          <Td className="text-stone-500 text-[12px] break-words">—</Td>
                           <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtQty(row.net)}</Td>
                           <Td className="whitespace-nowrap text-center">{row.unit}</Td>
                           <Td className="text-right tabular-nums whitespace-nowrap font-mono">{fmtQty(row.gross)}</Td>
@@ -802,7 +817,7 @@ export default function RecipePrintCard() {
 
                   <tfoot>
                     <tr className="bg-[linear-gradient(180deg,#f7f6f2_0%,#eef3ef_100%)] border-t border-[#dfe5df]">
-                      <td colSpan={10} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
+                      <td colSpan={9} className="px-4 py-4 text-right text-xs font-semibold uppercase tracking-[0.18em] text-stone-500">
                         Total Recipe Cost
                       </td>
                       <td colSpan={2} className="px-4 py-4 text-right text-lg font-semibold text-[#556b2f]">
@@ -896,6 +911,34 @@ export default function RecipePrintCard() {
   )
 }
 
+// Helper functions (continued)
+function getValidName(name: string | null | undefined, fallback: string = '—'): string {
+  const cleaned = cleanText(name)
+  if (!cleaned) return fallback
+  if (isValidText(cleaned)) {
+    let result = cleaned
+    const redundantWords = ['powdered', 'ground', 'whole', 'fresh', 'dried', 'powder']
+    redundantWords.forEach(word => {
+      const wordPattern = new RegExp(`\\b${word}\\b`, 'gi')
+      const matches = result.match(wordPattern)
+      if (matches && matches.length > 1) {
+        result = result.replace(wordPattern, '').trim()
+      }
+    })
+    return result.replace(/\s+/g, ' ').trim()
+  }
+  return fallback
+}
+
+function getValidCode(code: string | null | undefined, fallback: string = '—'): string {
+  const cleaned = cleanText(code)
+  if (!cleaned) return fallback
+  const greekPattern = /[α-ωΑ-Ωγδφψω]/g
+  if (greekPattern.test(cleaned)) return fallback
+  if (cleaned.length > 30) return cleaned.slice(0, 25) + '…'
+  return cleaned
+}
+
 function SectionTitle({ children }: { children: ReactNode }) {
   return <h2 className="mb-5 text-[1.7rem] font-semibold tracking-[-0.03em] text-[#556b2f] md:mb-6 md:text-[1.85rem]">{children}</h2>
 }
@@ -968,5 +1011,5 @@ function Th({ children, className = '' }: { children: ReactNode; className?: str
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children}</td>
+  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children} </td>
 }
