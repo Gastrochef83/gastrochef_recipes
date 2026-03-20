@@ -11,6 +11,7 @@ interface ExportConfig {
   maxPages?: number;
   pageOrientation?: "portrait" | "landscape";
   includeTimestamp?: boolean;
+  elementId?: string;
 }
 
 const DEFAULT_CONFIG: ExportConfig = {
@@ -22,33 +23,69 @@ const DEFAULT_CONFIG: ExportConfig = {
   maxPages: 30,
   pageOrientation: "portrait",
   includeTimestamp: true,
+  elementId: "recipe-print-card",
 };
 
 export async function exportRecipePdf(
   recipeTitle?: string,
   config?: ExportConfig
 ): Promise<void> {
-  const element = document.getElementById("recipe-print-card");
+  const options = { ...DEFAULT_CONFIG, ...config };
+  const elementId = options.elementId!;
+  
+  // Wait for DOM to be fully ready
+  await new Promise(resolve => setTimeout(resolve, 100));
+  
+  // Try to find the element
+  let element = document.getElementById(elementId);
+  
+  // If not found, try to find by class as fallback
+  if (!element) {
+    element = document.querySelector(".recipe-print-card") as HTMLElement;
+  }
+  
+  // If still not found, try to find any article with recipe card
+  if (!element) {
+    element = document.querySelector("article[id*='recipe']") as HTMLElement;
+  }
+  
   const btn = document.getElementById("export-btn") as HTMLButtonElement | null;
   
-  const options = { ...DEFAULT_CONFIG, ...config };
-  const title = recipeTitle || document.querySelector("h1")?.innerText || "recipe";
+  // Get title from various sources
+  let title = recipeTitle;
+  if (!title) {
+    const h1 = document.querySelector("h1");
+    const recipeNameElem = document.querySelector(".recipe-name, [class*='recipe-title']");
+    title = h1?.innerText || recipeNameElem?.innerText || document.title || "recipe";
+  }
 
   if (!element) {
-    showNotification("Recipe card not found. Make sure element with id 'recipe-print-card' exists.", "error");
+    console.error("Element not found:", elementId);
+    showNotification(
+      "⚠️ Recipe card not found. Please wait for the page to fully load and try again.",
+      "error"
+    );
     return;
   }
 
   const originalBtnText = btn?.innerText;
   if (btn) {
     btn.disabled = true;
-    btn.innerText = "⏳ Exporting...";
+    btn.innerText = "⏳ جاري التصدير...";
   }
 
   try {
-    showNotification("Preparing recipe card...", "info");
+    showNotification("📄 جاري تجهيز بطاقة الوصفة...", "info");
 
+    // Wait for images to load
     await waitForImages(element);
+    
+    // Extra delay for any dynamic content
+    await new Promise(resolve => setTimeout(resolve, 200));
+
+    // Log for debugging
+    console.log("Exporting element:", element);
+    console.log("Element dimensions:", element.offsetWidth, "x", element.offsetHeight);
 
     const canvas = await html2canvas(element, {
       scale: options.scale,
@@ -57,6 +94,14 @@ export async function exportRecipePdf(
       logging: false,
       windowWidth: element.scrollWidth,
       windowHeight: element.scrollHeight,
+      onclone: (clonedDoc, element) => {
+        // Ensure cloned element has proper styling
+        const clonedElem = clonedDoc.getElementById(elementId);
+        if (clonedElem) {
+          clonedElem.style.visibility = "visible";
+          clonedElem.style.display = "block";
+        }
+      }
     });
 
     const pdf = new jsPDF(
@@ -82,7 +127,7 @@ export async function exportRecipePdf(
 
     if (totalPages > maxPages) {
       showNotification(
-        `Recipe is long (${totalPages} pages). Exporting first ${maxPages} pages.`,
+        `📄 الوصفة طويلة (${totalPages} صفحات). سيتم تصدير أول ${maxPages} صفحات.`,
         "warning"
       );
     }
@@ -151,7 +196,10 @@ export async function exportRecipePdf(
           );
           resolve();
         };
-        img.onerror = () => resolve();
+        img.onerror = () => {
+          console.error("Failed to load page image:", i);
+          resolve();
+        };
       });
     }
 
@@ -162,17 +210,17 @@ export async function exportRecipePdf(
     }
 
     pdf.save(`${fileName}.pdf`);
-    showNotification(`Successfully exported ${pages.length} page(s)!`, "success");
+    showNotification(`✅ تم التصدير بنجاح! (${pages.length} صفحة)`, "success");
   } catch (error) {
     console.error("Export failed:", error);
     showNotification(
-      `Export failed: ${error instanceof Error ? error.message : "Unknown error"}`,
+      `❌ فشل التصدير: ${error instanceof Error ? error.message : "خطأ غير معروف"}`,
       "error"
     );
   } finally {
     if (btn) {
       btn.disabled = false;
-      btn.innerText = originalBtnText || "Export PDF";
+      btn.innerText = originalBtnText || "📄 تصدير PDF";
     }
   }
 }
@@ -181,21 +229,27 @@ async function waitForImages(element: HTMLElement): Promise<void> {
   const images = Array.from(element.querySelectorAll("img"));
   if (images.length === 0) return;
 
-  await Promise.all(
-    images.map(
-      (img) =>
-        new Promise<void>((resolve) => {
-          if (img.complete && img.naturalHeight > 0) {
+  const promises = images.map(
+    (img) =>
+      new Promise<void>((resolve) => {
+        if (img.complete && img.naturalHeight > 0) {
+          resolve();
+        } else {
+          img.onload = () => resolve();
+          img.onerror = () => {
+            console.warn("Image failed to load:", img.src);
             resolve();
-          } else {
-            img.onload = () => resolve();
-            img.onerror = () => resolve();
-          }
-        })
-    )
+          };
+        }
+        // Timeout after 5 seconds
+        setTimeout(resolve, 5000);
+      })
   );
+
+  await Promise.all(promises);
 }
 
+// Improved notification with better styling
 function showNotification(message: string, type: "success" | "error" | "warning" | "info" = "info") {
   // Remove existing notification
   const existing = document.querySelector(".pdf-notification");
@@ -205,44 +259,70 @@ function showNotification(message: string, type: "success" | "error" | "warning"
   const notification = document.createElement("div");
   notification.className = `pdf-notification pdf-notification-${type}`;
   
-  const icons = { success: "✓", error: "✗", warning: "⚠", info: "ℹ" };
+  const icons = { 
+    success: "✅", 
+    error: "❌", 
+    warning: "⚠️", 
+    info: "ℹ️" 
+  };
+  
+  const colors = {
+    success: "#10b981",
+    error: "#ef4444",
+    warning: "#f59e0b",
+    info: "#3b82f6"
+  };
   
   notification.innerHTML = `
     <div class="notification-content">
       <span class="notification-icon">${icons[type]}</span>
       <span class="notification-message">${message}</span>
-      <button class="notification-close">×</button>
+      <button class="notification-close">✕</button>
     </div>
   `;
   
-  // Add styles
-  const style = document.createElement("style");
+  // Add styles if not exists
   if (!document.querySelector("#pdf-notification-styles")) {
+    const style = document.createElement("style");
     style.id = "pdf-notification-styles";
     style.textContent = `
-      @keyframes slideIn {
-        from { transform: translateX(100%); opacity: 0; }
-        to { transform: translateX(0); opacity: 1; }
+      @keyframes slideInRight {
+        from {
+          transform: translateX(100%);
+          opacity: 0;
+        }
+        to {
+          transform: translateX(0);
+          opacity: 1;
+        }
       }
-      @keyframes slideOut {
-        from { transform: translateX(0); opacity: 1; }
-        to { transform: translateX(100%); opacity: 0; }
+      @keyframes slideOutRight {
+        from {
+          transform: translateX(0);
+          opacity: 1;
+        }
+        to {
+          transform: translateX(100%);
+          opacity: 0;
+        }
       }
       .pdf-notification {
         position: fixed;
-        top: 20px;
+        top: 80px;
         right: 20px;
         z-index: 10001;
-        background: ${type === "success" ? "#4caf50" : type === "error" ? "#f44336" : type === "warning" ? "#ff9800" : "#2196f3"};
+        background: ${colors[type]};
         color: white;
-        padding: 12px 20px;
+        padding: 14px 20px;
         border-radius: 12px;
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: system-ui, -apple-system, 'Segoe UI', sans-serif;
         font-size: 14px;
         font-weight: 500;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        animation: slideIn 0.3s ease-out;
-        max-width: 350px;
+        box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+        animation: slideInRight 0.3s ease-out;
+        max-width: 380px;
+        backdrop-filter: blur(8px);
+        border: 1px solid rgba(255,255,255,0.2);
       }
       .notification-content {
         display: flex;
@@ -251,23 +331,41 @@ function showNotification(message: string, type: "success" | "error" | "warning"
       }
       .notification-icon {
         font-size: 18px;
-        font-weight: bold;
+      }
+      .notification-message {
+        flex: 1;
+        line-height: 1.4;
       }
       .notification-close {
         background: none;
         border: none;
         color: white;
-        font-size: 20px;
+        font-size: 18px;
         cursor: pointer;
         padding: 0;
         margin-left: 8px;
         opacity: 0.7;
+        transition: opacity 0.2s;
       }
       .notification-close:hover {
         opacity: 1;
       }
+      @media print {
+        .pdf-notification {
+          display: none !important;
+        }
+      }
     `;
     document.head.appendChild(style);
+  } else {
+    // Update color for this notification
+    const style = document.querySelector("#pdf-notification-styles");
+    if (style) {
+      style.textContent = style.textContent?.replace(
+        /background: #[0-9a-f]{6};/,
+        `background: ${colors[type]};`
+      );
+    }
   }
   
   document.body.appendChild(notification);
@@ -275,18 +373,17 @@ function showNotification(message: string, type: "success" | "error" | "warning"
   // Close button handler
   const closeBtn = notification.querySelector(".notification-close");
   closeBtn?.addEventListener("click", () => {
-    notification.style.animation = "slideOut 0.3s ease-out";
+    notification.style.animation = "slideOutRight 0.3s ease-out";
     setTimeout(() => notification.remove(), 300);
   });
   
   // Auto remove after 4 seconds
   setTimeout(() => {
     if (notification.parentNode) {
-      notification.style.animation = "slideOut 0.3s ease-out";
+      notification.style.animation = "slideOutRight 0.3s ease-out";
       setTimeout(() => notification.remove(), 300);
     }
   }, 4000);
 }
 
-// Also export as default for convenience
 export default exportRecipePdf;
