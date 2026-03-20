@@ -37,6 +37,7 @@ type Ingredient = {
 type RecipeRow = {
   id: string
   code?: string | null
+  code_category?: string | null
   kitchen_id: string
   name: string
   category: string | null
@@ -79,7 +80,7 @@ type CostPoint = {
 
 type Density = 'comfortable' | 'dense' | 'compact'
 type ViewMode = 'grid' | 'list' | 'table'
-type SortField = 'name' | 'category' | 'price' | 'cost' | 'margin' | 'date'
+type SortField = 'name' | 'code' | 'category' | 'price' | 'cost' | 'margin' | 'date'
 type SortOrder = 'asc' | 'desc'
 type FilterType = {
   categories: string[]
@@ -371,7 +372,7 @@ function RecipesStyles() {
         flex-wrap: wrap;
       }
 
-      /* ===== Stats Cards - مصغرة ===== */
+      /* ===== Stats Cards ===== */
       .recipes-pro__stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -895,6 +896,29 @@ function RecipesStyles() {
         font-weight: 600;
       }
 
+      /* ===== Recipe Code Badge ===== */
+      .recipe-card__code {
+        font-family: 'JetBrains Mono', 'SF Mono', 'Courier New', monospace;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--primary-700);
+        background: var(--primary-50);
+        padding: 0.15rem 0.4rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--primary-200);
+        letter-spacing: 0.02em;
+        white-space: nowrap;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.2rem;
+      }
+
+      .recipe-card__code svg {
+        width: 10px;
+        height: 10px;
+        opacity: 0.7;
+      }
+
       .recipe-card__badges {
         display: flex;
         align-items: center;
@@ -1164,6 +1188,7 @@ function RecipesStyles() {
         cursor: pointer;
       }
 
+      /* ===== List View ===== */
       .recipes-pro__list {
         display: flex;
         flex-direction: column;
@@ -1197,6 +1222,7 @@ function RecipesStyles() {
         justify-content: center;
         color: white;
         font-size: 1.125rem;
+        flex-shrink: 0;
       }
 
       .recipe-list-item__content {
@@ -1217,6 +1243,19 @@ function RecipesStyles() {
       .recipe-list-item__category {
         color: var(--text-tertiary);
         font-size: 0.65rem;
+      }
+
+      /* Code in List View */
+      .recipe-list-item__code {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 0.6rem;
+        font-weight: 700;
+        color: var(--primary-700);
+        background: var(--primary-50);
+        padding: 0.1rem 0.35rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--primary-200);
+        margin-right: 0.5rem;
       }
 
       .recipe-list-item__meta {
@@ -1245,6 +1284,7 @@ function RecipesStyles() {
         font-size: 0.75rem;
       }
 
+      /* ===== Table View ===== */
       .recipes-pro__table {
         width: 100%;
         border-collapse: collapse;
@@ -1282,12 +1322,26 @@ function RecipesStyles() {
         border-bottom: none;
       }
 
+      /* Code in Table */
+      .table-code {
+        font-family: 'JetBrains Mono', 'Courier New', monospace;
+        font-size: 0.7rem;
+        font-weight: 700;
+        color: var(--primary-700);
+        background: var(--primary-50);
+        padding: 0.2rem 0.5rem;
+        border-radius: var(--radius-sm);
+        border: 1px solid var(--primary-200);
+        white-space: nowrap;
+      }
+
       .table-actions {
         display: flex;
         align-items: center;
         gap: 0.25rem;
       }
 
+      /* ===== Loading & Error ===== */
       .recipes-pro__loading {
         display: flex;
         align-items: center;
@@ -1343,6 +1397,7 @@ function RecipesStyles() {
         background: var(--danger-100);
       }
 
+      /* ===== Toast ===== */
       .toast-container {
         position: fixed;
         bottom: 1rem;
@@ -1403,6 +1458,7 @@ function RecipesStyles() {
         color: var(--text-primary);
       }
 
+      /* ===== Responsive ===== */
       @media (max-width: 1280px) {
         .recipes-pro__grid--comfortable {
           grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -1568,7 +1624,7 @@ function RecipesStyles() {
   )
 }
 
-// ==================== باقي الكود (منطق المكون) يبقى كما هو تماماً ====================
+// ==================== Main Component ====================
 export default function Recipes() {
   const nav = useNavigate()
   const loc = useLocation()
@@ -1626,6 +1682,7 @@ export default function Recipes() {
       const query = debouncedQ.toLowerCase()
       list = list.filter(r => 
         r.name.toLowerCase().includes(query) ||
+        r.code?.toLowerCase().includes(query) ||
         r.category?.toLowerCase().includes(query) ||
         r.cuisine?.toLowerCase().includes(query) ||
         r.tags?.some(tag => tag.toLowerCase().includes(query))
@@ -1668,6 +1725,9 @@ export default function Recipes() {
       switch (sortField) {
         case 'name':
           comparison = a.name.localeCompare(b.name)
+          break
+        case 'code':
+          comparison = (a.code || '').localeCompare(b.code || '')
           break
         case 'category':
           comparison = (a.category || '').localeCompare(b.category || '')
@@ -1751,6 +1811,7 @@ export default function Recipes() {
       const selectRecipes = `
         id,
         code,
+        code_category,
         kitchen_id,
         name,
         category,
@@ -2183,6 +2244,15 @@ export default function Recipes() {
                     <div className="recipe-card__title-section">
                       <h3 className="recipe-card__title">{r.name}</h3>
                       <div className="recipe-card__category">
+                        {r.code && (
+                          <span className="recipe-card__code">
+                            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                              <rect x="3" y="3" width="18" height="18" rx="2" />
+                              <path d="M9 9h6M9 12h6M9 15h4" />
+                            </svg>
+                            {r.code}
+                          </span>
+                        )}
                         <span>{r.category || 'Uncategorized'}</span>
                         {r.cuisine && <span>• {r.cuisine}</span>}
                       </div>
@@ -2423,6 +2493,7 @@ export default function Recipes() {
                 
                 <div className="recipe-list-item__content">
                   <div className="recipe-list-item__title">
+                    {r.code && <span className="recipe-list-item__code">{r.code}</span>}
                     <span>{r.name}</span>
                     <span className="recipe-list-item__category">{r.category}</span>
                   </div>
@@ -2481,6 +2552,7 @@ export default function Recipes() {
               onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
             />
           </th>
+          <th>Code</th>
           <th>Name</th>
           <th>Category</th>
           <th>Portions</th>
@@ -2505,6 +2577,9 @@ export default function Recipes() {
                   checked={!!selected[r.id]}
                   onChange={() => toggleSelect(r.id)}
                 />
+              </td>
+              <td>
+                {r.code ? <code className="table-code">{r.code}</code> : '—'}
               </td>
               <td><strong>{r.name}</strong></td>
               <td>{r.category || '—'}</td>
@@ -2652,7 +2727,7 @@ export default function Recipes() {
                 className="recipes-pro__search-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search..."
+                placeholder="Search by name, code, category..."
               />
               {q && (
                 <button
@@ -2775,6 +2850,7 @@ export default function Recipes() {
               onChange={(e) => setSortField(e.target.value as SortField)}
             >
               <option value="name">Name</option>
+              <option value="code">Code</option>
               <option value="category">Category</option>
               <option value="price">Price</option>
               <option value="cost">Cost</option>
