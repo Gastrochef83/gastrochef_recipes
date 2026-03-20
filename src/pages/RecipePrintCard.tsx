@@ -152,63 +152,51 @@ function buildIngredientTitle(ing: Ingredient | undefined, line: Line): string {
   const baseName = cleanText(ing.name)
   if (!baseName) return '—'
   
-  // Start with base name
-  let result = baseName
+  // Collect all parts
+  const parts: string[] = [baseName]
   
-  // Collect all additional info
-  const additionalInfo: string[] = []
-  
-  // Add pack_unit if exists and not already in base name
+  // Add pack_unit if exists and not already in name
   if (ing.pack_unit && ing.pack_unit.trim()) {
-    const packUnit = cleanText(ing.pack_unit)
-    const packUnitClean = packUnit.replace(/[()]/g, '').toLowerCase()
-    const baseNameClean = baseName.toLowerCase()
-    
-    if (!baseNameClean.includes(packUnitClean) && 
-        !baseNameClean.includes(`(${packUnitClean})`) &&
-        packUnit !== 'kg' && packUnit !== 'g' && packUnit !== 'ml') {
-      additionalInfo.push(packUnit)
+    const packUnit = cleanText(ing.pack_unit).replace(/[()]/g, '')
+    const baseNameLower = baseName.toLowerCase()
+    if (!baseNameLower.includes(packUnit.toLowerCase())) {
+      parts.push(packUnit)
     }
   }
   
-  // Add prep_note if exists
+  // Add prep_note if exists and not already included
   const prepNote = cleanText(line.prep_note || line.note || line.notes || line.instruction || line.remark)
-  if (prepNote && prepNote !== ing.pack_unit) {
-    const prepNoteClean = prepNote.toLowerCase()
-    const resultClean = result.toLowerCase()
-    
-    if (!resultClean.includes(prepNoteClean) && 
-        prepNote !== 'kg' && prepNote !== 'g' && prepNote !== 'ml') {
-      additionalInfo.push(prepNote)
+  if (prepNote) {
+    const prepNoteClean = prepNote.replace(/[()]/g, '')
+    const combinedText = parts.join(' ').toLowerCase()
+    if (!combinedText.includes(prepNoteClean.toLowerCase()) && 
+        prepNoteClean !== 'kg' && prepNoteClean !== 'g' && prepNoteClean !== 'ml') {
+      parts.push(prepNoteClean)
     }
   }
   
-  // Add additional info in parentheses if exists
-  if (additionalInfo.length > 0) {
-    const uniqueInfo = additionalInfo.filter((v, i, a) => a.indexOf(v) === i)
-    result = `${result} (${uniqueInfo.join(' · ')})`
-  }
-  
-  // Clean up parentheses
-  result = result.replace(/\(\(/g, '(').replace(/\)\)/g, ')')
-  result = result.replace(/\(\s*\)/g, '')
-  
-  // Remove duplicate words
-  const words = result.split(/\s+/)
-  const uniqueWords: string[] = []
-  words.forEach(word => {
-    const wordClean = word.replace(/[()]/g, '').toLowerCase()
-    if (!uniqueWords.some(w => w.replace(/[()]/g, '').toLowerCase() === wordClean)) {
-      uniqueWords.push(word)
+  // Remove duplicates
+  const uniqueParts: string[] = []
+  parts.forEach(part => {
+    if (!uniqueParts.some(p => p.toLowerCase() === part.toLowerCase())) {
+      uniqueParts.push(part)
     }
   })
   
-  result = uniqueWords.join(' ')
-  result = result.replace(/\s+\(\s+/g, ' (')
-  result = result.replace(/\s+\)/g, ')')
-  result = result.replace(/\(\s+/g, '(')
-  result = result.replace(/(kg|g|ml)\s+\(\1\)/gi, '$1')
-  result = result.replace(/\(\s*(kg|g|ml)\s*\)/gi, '($1)')
+  // Join parts
+  let result = uniqueParts.join(' ')
+  
+  // Format: if there are extra parts beyond the first, put them in parentheses
+  if (uniqueParts.length > 1) {
+    const first = uniqueParts[0]
+    const rest = uniqueParts.slice(1).join(' ')
+    result = `${first} (${rest})`
+  }
+  
+  // Clean up
+  result = result.replace(/\s+/g, ' ')
+  result = result.replace(/\(\)/g, '')
+  result = result.trim()
   
   return result
 }
@@ -1011,5 +999,5 @@ function Th({ children, className = '' }: { children: ReactNode; className?: str
 }
 
 function Td({ children, className = '' }: { children: ReactNode; className?: string }) {
-  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children}  </td>
+  return <td className={`border-b border-[#eef1ee] px-3 py-3 ${className}`}>{children}   </td>
 }
