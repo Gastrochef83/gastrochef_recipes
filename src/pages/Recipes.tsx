@@ -8,7 +8,6 @@ import { useKitchen } from '../lib/kitchen'
 import Button from '../components/ui/Button'
 import EmptyState from '../components/EmptyState'
 import { motion, AnimatePresence } from 'framer-motion'
-import { recipeKind, displayCode } from '../lib/codes'
 
 // ==================== Types ====================
 type LineType = 'ingredient' | 'subrecipe' | 'group'
@@ -372,7 +371,7 @@ function RecipesStyles() {
         flex-wrap: wrap;
       }
 
-      /* ===== Stats Cards - مصغرة ===== */
+      /* ===== Stats Cards ===== */
       .recipes-pro__stats {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -886,10 +885,6 @@ function RecipesStyles() {
         line-height: 1.3;
       }
 
-      .recipe-card__code {
-        margin-top: 4px;
-      }
-
       .recipe-card__category {
         display: flex;
         align-items: center;
@@ -1219,21 +1214,6 @@ function RecipesStyles() {
         font-size: 0.85rem;
       }
 
-      .recipe-list-item__code {
-        font-family: monospace;
-        font-size: 10px;
-        background: #f3f4f6;
-        padding: 2px 6px;
-        border-radius: 12px;
-        color: #4b5563;
-        display: inline-block;
-      }
-
-      .dark .recipe-list-item__code {
-        background: #374151;
-        color: #9ca3af;
-      }
-
       .recipe-list-item__category {
         color: var(--text-tertiary);
         font-size: 0.65rem;
@@ -1306,20 +1286,6 @@ function RecipesStyles() {
         display: flex;
         align-items: center;
         gap: 0.25rem;
-      }
-
-      .code-cell {
-        font-family: monospace;
-        font-size: 11px;
-        background: #f3f4f6;
-        padding: 2px 6px;
-        border-radius: 6px;
-        display: inline-block;
-      }
-
-      .dark .code-cell {
-        background: #374151;
-        color: #9ca3af;
       }
 
       .recipes-pro__loading {
@@ -1602,7 +1568,7 @@ function RecipesStyles() {
   )
 }
 
-// ==================== باقي الكود (منطق المكون) ====================
+// ==================== Main Component ====================
 export default function Recipes() {
   const nav = useNavigate()
   const loc = useLocation()
@@ -2216,12 +2182,6 @@ export default function Recipes() {
                   <div className="recipe-card__header">
                     <div className="recipe-card__title-section">
                       <h3 className="recipe-card__title">{r.name}</h3>
-                      <div className="recipe-card__code mt-1">
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 dark:bg-gray-800 text-[10px] font-mono font-medium text-gray-600 dark:text-gray-400 border border-gray-200 dark:border-gray-700">
-                          <span className="text-[9px]">🔖</span>
-                          {r.code || displayCode(recipeKind(r.is_subrecipe), r.id)}
-                        </span>
-                      </div>
                       <div className="recipe-card__category">
                         <span>{r.category || 'Uncategorized'}</span>
                         {r.cuisine && <span>• {r.cuisine}</span>}
@@ -2463,9 +2423,6 @@ export default function Recipes() {
                 
                 <div className="recipe-list-item__content">
                   <div className="recipe-list-item__title">
-                    <span className="recipe-list-item__code">
-                      {r.code || displayCode(recipeKind(r.is_subrecipe), r.id)}
-                    </span>
                     <span>{r.name}</span>
                     <span className="recipe-list-item__category">{r.category}</span>
                   </div>
@@ -2524,7 +2481,6 @@ export default function Recipes() {
               onChange={(e) => e.target.checked ? selectAll() : clearSelection()}
             />
           </th>
-          <th>Code</th>
           <th>Name</th>
           <th>Category</th>
           <th>Portions</th>
@@ -2533,7 +2489,8 @@ export default function Recipes() {
           <th>Price</th>
           <th>FC%</th>
           <th style={{ width: 60 }}></th>
-        </thead>
+        </tr>
+      </thead>
       <tbody>
         {sortedRecipes.map(r => {
           const c = costCache[r.id]
@@ -2548,11 +2505,6 @@ export default function Recipes() {
                   checked={!!selected[r.id]}
                   onChange={() => toggleSelect(r.id)}
                 />
-              </td>
-              <td className="font-mono text-xs">
-                <span className="code-cell">
-                  {r.code || displayCode(recipeKind(r.is_subrecipe), r.id)}
-                </span>
               </td>
               <td><strong>{r.name}</strong></td>
               <td>{r.category || '—'}</td>
@@ -2681,11 +2633,11 @@ export default function Recipes() {
                   </svg>
                 </div>
               </div>
-              <div className={`stat-card__value ${stats.avgMargin > 0 ? 'text-success' : 'text-danger'}`}>
+              <div className="stat-card__value">
                 {formatPercentage(stats.avgMargin)}
               </div>
               <div className="stat-card__change">
-                <span className="stat-card__change--negative">↓ {stats.archived}</span>
+                <span>{stats.archived} archived</span>
               </div>
             </div>
           </div>
@@ -2700,7 +2652,7 @@ export default function Recipes() {
                 className="recipes-pro__search-input"
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
-                placeholder="Search..."
+                placeholder="Search recipes..."
               />
               {q && (
                 <button
@@ -2826,6 +2778,8 @@ export default function Recipes() {
               <option value="category">Category</option>
               <option value="price">Price</option>
               <option value="cost">Cost</option>
+              <option value="margin">Margin</option>
+              <option value="date">Date</option>
             </select>
             <button
               className="sort-order-btn"
