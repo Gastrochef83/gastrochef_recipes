@@ -6,7 +6,6 @@ import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import CommandPalette, { type CommandItem } from '../components/CommandPalette'
-import { motion } from 'framer-motion'
 
 function cx(...arr: Array<string | false | null | undefined>) {
   return arr.filter(Boolean).join(' ')
@@ -90,26 +89,13 @@ export default function AppLayout() {
   const [recipesCount, setRecipesCount] = useState(0)
   const [ingredientsCount, setIngredientsCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
-  const [focusMode, setFocusMode] = useState(() => {
-    try { return localStorage.getItem('gc_focus_mode') === 'true' } catch { return false }
-  })
   const [showKitchenMenu, setShowKitchenMenu] = useState(false)
   const [kitchens, setKitchens] = useState<Array<{ id: string; name: string }>>([])
   const [quickSearchQuery, setQuickSearchQuery] = useState('')
   const [showQuickSearch, setShowQuickSearch] = useState(false)
   const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
 
-  useEffect(() => {
-    try {
-      localStorage.setItem('gc_focus_mode', String(focusMode))
-      if (focusMode) {
-        document.body.classList.add('focus-mode')
-      } else {
-        document.body.classList.remove('focus-mode')
-      }
-    } catch {}
-  }, [focusMode])
-
+  // Network status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
@@ -400,7 +386,6 @@ export default function AppLayout() {
       { id: 'go-print', label: 'Open Print', kbd: 'G P', run: () => navigate('/print') },
       { id: 'go-settings', label: 'Go to Settings', kbd: 'G S', run: () => navigate('/settings') },
       { id: 'toggle-theme', label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode', kbd: 'T', run: () => setDark(v => !v) },
-      { id: 'toggle-focus', label: focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode', kbd: 'F', run: () => setFocusMode(v => !v) },
       { id: 'refresh-kitchen', label: 'Refresh kitchen', kbd: 'R', run: async () => { await k.refresh().catch(() => {}) } },
       { id: 'export-backup', label: 'Export Backup', kbd: 'E', run: () => handleQuickExport() },
       { id: 'logout', label: 'Log out', kbd: 'L', danger: true, run: async () => { await handleLogout() } },
@@ -412,7 +397,7 @@ export default function AppLayout() {
       cmds.push({ id: `rec-${r.id}`, label: `Recipe: ${r.name}`, kbd: '⏎', run: () => navigate('/recipes') })
     })
     return cmds
-  }, [navigate, dark, focusMode, k, handleLogout, handleQuickExport, ingredientIndex, recipeIndex])
+  }, [navigate, dark, k, handleLogout, handleQuickExport, ingredientIndex, recipeIndex])
 
   const avatarText = initialsFrom(userEmail || 'GastroChef')
   const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
@@ -893,77 +878,6 @@ export default function AppLayout() {
       50% { opacity: 0.7; transform: scale(1.1); }
     }
     
-    /* ===== FOCUS MODE - HIDE NON-ESSENTIAL ELEMENTS ===== */
-    .gc-focus-mode .gc-side {
-      display: none !important;
-    }
-    
-    .gc-focus-mode .gc-main {
-      margin-left: 0 !important;
-      width: 100%;
-    }
-    
-    .gc-focus-mode .gc-topbar-pill {
-      justify-content: flex-start !important;
-    }
-    
-    .gc-focus-mode .gc-stats-group,
-    .gc-focus-mode .gc-connection-status,
-    .gc-focus-mode .gc-autosave-status .autosave-text,
-    .gc-focus-mode .gc-action-btn .btn-text,
-    .gc-focus-mode .gc-action-btn:not(.gc-cmdk-btn):not(.focus-toggle),
-    .gc-focus-mode .gc-quick-search,
-    .gc-focus-mode .gc-notifications,
-    .gc-focus-mode .gc-recent,
-    .gc-focus-mode .user-name,
-    .gc-focus-mode .kitchen-chevron,
-    .gc-focus-mode .kitchen-icon {
-      display: none !important;
-    }
-    
-    .gc-focus-mode .gc-topbar-left {
-      flex: 1;
-    }
-    
-    .gc-focus-mode .gc-kitchen-btn {
-      background: transparent !important;
-      border: none !important;
-      padding: 0 !important;
-    }
-    
-    .gc-focus-mode .kitchen-name {
-      font-size: 16px !important;
-      font-weight: 700 !important;
-      color: var(--gc-text) !important;
-    }
-    
-    .gc-focus-mode .gc-cmdk-btn {
-      margin-left: auto;
-    }
-    
-    .gc-focus-mode .focus-toggle {
-      background: #10b981 !important;
-      border-color: #10b981 !important;
-      color: white !important;
-    }
-    
-    .gc-focus-mode .focus-toggle .btn-icon {
-      margin-right: 4px;
-    }
-    
-    .gc-focus-mode .focus-toggle .btn-text {
-      display: inline !important;
-    }
-    
-    .gc-focus-mode .gc-autosave-status {
-      background: transparent !important;
-      padding: 4px 8px !important;
-    }
-    
-    .gc-focus-mode .gc-autosave-status .autosave-icon {
-      font-size: 14px;
-    }
-    
     @media (max-width: 1024px) {
       .gc-topbar-pill { padding: 0 16px; gap: 10px; }
       .gc-stats-group { display: none; }
@@ -985,7 +899,7 @@ export default function AppLayout() {
     <>
       <style>{styles}</style>
       
-      <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt', focusMode && 'gc-focus-mode')}>
+      <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
         <div className="gc-shell">
           <button
             className="gc-mobile-menu-toggle"
@@ -1120,15 +1034,6 @@ export default function AppLayout() {
                     <span className="btn-text">Export</span>
                   </button>
 
-                  <button 
-                    className={`gc-action-btn focus-toggle ${focusMode ? 'active' : ''}`} 
-                    onClick={() => setFocusMode(!focusMode)} 
-                    title={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
-                  >
-                    <span className="btn-icon">{focusMode ? '🎯' : '🔍'}</span>
-                    <span className="btn-text">{focusMode ? 'Exit' : 'Focus'}</span>
-                  </button>
-
                   <div className="gc-quick-search">
                     <button className="gc-action-btn" onClick={() => setShowQuickSearch(!showQuickSearch)} title="Quick Search">
                       <span className="btn-icon">🔍</span>
@@ -1238,10 +1143,6 @@ export default function AppLayout() {
                         <button className="dropdown-item" onClick={() => { setDark(!dark); setShowUserMenu(false); }}>
                           <span className="item-icon">{dark ? '☀️' : '🌙'}</span>
                           <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>
-                        </button>
-                        <button className="dropdown-item" onClick={() => { setFocusMode(!focusMode); setShowUserMenu(false); }}>
-                          <span className="item-icon">{focusMode ? '🎯' : '🔍'}</span>
-                          <span>{focusMode ? 'Exit Focus Mode' : 'Focus Mode'}</span>
                         </button>
                         <div className="dropdown-divider" />
                         <button className="dropdown-item" onClick={async () => { await k.refresh(); setShowUserMenu(false); }}>
