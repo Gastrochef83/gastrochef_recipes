@@ -1,6 +1,3 @@
-## الملف الكامل: src/layouts/AppLayout.tsx
-
-```tsx
 // src/layouts/AppLayout.tsx
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
@@ -90,7 +87,6 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const loc = useLocation()
 
-  // Stats for quick display
   const [recipesCount, setRecipesCount] = useState(0)
   const [ingredientsCount, setIngredientsCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
@@ -103,7 +99,6 @@ export default function AppLayout() {
   const [showQuickSearch, setShowQuickSearch] = useState(false)
   const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
 
-  // Save focus mode preference
   useEffect(() => {
     try {
       localStorage.setItem('gc_focus_mode', String(focusMode))
@@ -115,7 +110,6 @@ export default function AppLayout() {
     } catch {}
   }, [focusMode])
 
-  // Network status
   useEffect(() => {
     const handleOnline = () => setIsOnline(true)
     const handleOffline = () => setIsOnline(false)
@@ -127,7 +121,6 @@ export default function AppLayout() {
     }
   }, [])
 
-  // Fetch quick stats
   useEffect(() => {
     const fetchStats = async () => {
       if (!k.kitchenId) return
@@ -145,7 +138,6 @@ export default function AppLayout() {
     return () => clearInterval(interval)
   }, [k.kitchenId])
 
-  // Fetch available kitchens
   useEffect(() => {
     const fetchKitchens = async () => {
       try {
@@ -163,12 +155,10 @@ export default function AppLayout() {
     fetchKitchens()
   }, [])
 
-  // Notifications
   const [notifications, setNotifications] = useState<Notification[]>([
     { id: '1', type: 'info', message: 'Welcome to GastroChef!', read: false, path: '/dashboard', timestamp: new Date() }
   ])
 
-  // Recent items
   const [recentItems, setRecentItems] = useState<Array<{ 
     id: string; 
     name: string; 
@@ -192,7 +182,6 @@ export default function AppLayout() {
   const kitchenButtonRef = useRef<HTMLButtonElement>(null)
   const quickSearchRef = useRef<HTMLDivElement>(null)
 
-  // Fetch recent items
   const fetchRecentItems = useCallback(async () => {
     if (!k.kitchenId) return
     try {
@@ -227,7 +216,6 @@ export default function AppLayout() {
     return () => clearInterval(interval)
   }, [fetchRecentItems])
 
-  // Quick search handler
   useEffect(() => {
     if (!quickSearchQuery.trim()) {
       setQuickSearchResults([])
@@ -249,7 +237,6 @@ export default function AppLayout() {
     return () => clearTimeout(timeout)
   }, [quickSearchQuery, k.kitchenId])
 
-  // Close menus when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node) &&
@@ -409,7 +396,6 @@ export default function AppLayout() {
   }
 
   const styles = `
-    /* ===== ENHANCED TOP BAR STYLES ===== */
     .gc-topbar-pill {
       display: flex;
       align-items: center;
@@ -427,7 +413,6 @@ export default function AppLayout() {
       border-bottom: 1px solid rgba(107, 127, 59, 0.3);
     }
     
-    /* Left Section */
     .gc-topbar-left {
       display: flex;
       align-items: center;
@@ -440,7 +425,6 @@ export default function AppLayout() {
       width: auto;
     }
     
-    /* Kitchen Selector */
     .gc-kitchen-btn {
       display: flex;
       align-items: center;
@@ -466,7 +450,6 @@ export default function AppLayout() {
     .kitchen-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kitchen-chevron { font-size: 10px; opacity: 0.7; }
     
-    /* Stats Badges */
     .gc-stats-group {
       display: flex;
       align-items: center;
@@ -492,7 +475,6 @@ export default function AppLayout() {
     .stat-icon { font-size: 14px; }
     .stat-value { font-weight: 700; color: var(--gc-brand-olive); }
     
-    /* Connection Status */
     .gc-connection-status {
       display: flex;
       align-items: center;
@@ -517,7 +499,6 @@ export default function AppLayout() {
       color: var(--gc-muted);
     }
     
-    /* Right Section */
     .gc-topbar-right {
       display: flex;
       align-items: center;
@@ -525,7 +506,6 @@ export default function AppLayout() {
       flex-shrink: 0;
     }
     
-    /* Action Buttons */
     .gc-action-btn {
       display: flex;
       align-items: center;
@@ -555,7 +535,6 @@ export default function AppLayout() {
     .btn-icon { font-size: 14px; }
     .btn-text { font-size: 12px; }
     
-    /* Command Palette Button */
     .gc-cmdk-btn {
       background: rgba(107, 127, 59, 0.08);
       border-color: rgba(107, 127, 59, 0.3);
@@ -574,7 +553,6 @@ export default function AppLayout() {
       background: rgba(255, 255, 255, 0.1);
     }
     
-    /* Autosave Status */
     .gc-autosave-status {
       display: flex;
       align-items: center;
@@ -605,7 +583,6 @@ export default function AppLayout() {
       color: var(--gc-muted);
     }
     
-    /* Notifications Badge */
     .gc-action-btn.has-badge {
       position: relative;
     }
@@ -627,7 +604,6 @@ export default function AppLayout() {
       padding: 0 4px;
     }
     
-    /* Dropdown Menus */
     .gc-dropdown {
       position: absolute;
       top: calc(100% + 8px);
@@ -724,7 +700,6 @@ export default function AppLayout() {
       font-size: 13px;
     }
     
-    /* User Menu */
     .gc-user-btn {
       display: flex;
       align-items: center;
@@ -814,7 +789,6 @@ export default function AppLayout() {
       margin: 6px 0;
     }
     
-    /* Quick Search Dropdown */
     .gc-quick-search {
       position: relative;
     }
@@ -861,13 +835,11 @@ export default function AppLayout() {
       background: rgba(107, 127, 59, 0.08);
     }
     
-    /* Pulse Animation */
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.7; transform: scale(1.2); }
     }
     
-    /* Responsive */
     @media (max-width: 1024px) {
       .gc-topbar-pill { padding: 0 16px; gap: 12px; }
       .gc-stats-group { display: none; }
@@ -891,7 +863,6 @@ export default function AppLayout() {
       
       <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt', focusMode && 'gc-focus-mode')}>
         <div className="gc-shell">
-          {/* Mobile Menu Toggle */}
           <button
             className="gc-mobile-menu-toggle"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
@@ -923,40 +894,20 @@ export default function AppLayout() {
           <aside className={cx('gc-side', isSidebarOpen && 'is-open')}>
             <div className="gc-side-card">
               <div className="gc-brand">
-                <div className="gc-brand-mark" aria-hidden="true">
-                  <img
-                    src={brandLogo}
-                    alt=""
-                    onError={(e) => {
-                      ;(e.currentTarget as HTMLImageElement).src = brandFallback
-                    }}
-                  />
+                <div className="gc-brand-mark">
+                  <img src={brandLogo} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).src = brandFallback }} />
                 </div>
                 <div>
-                  <div className="gc-brand-name">
-                    Gastro<span className="gc-brand-accent">Chef</span>
-                  </div>
+                  <div className="gc-brand-name">Gastro<span className="gc-brand-accent">Chef</span></div>
                   <div className="gc-brand-sub">{kitchenLabel}</div>
                 </div>
               </div>
 
               <div className="gc-side-block" style={{ marginTop: 14 }}>
                 <div className="gc-label">MODE</div>
-                <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')} role="tablist" aria-label="Mode">
-                  <button
-                    className={cx('gc-mode-seg', isKitchen && 'is-active')}
-                    type="button"
-                    onClick={() => setMode('kitchen')}
-                  >
-                    Kitchen
-                  </button>
-                  <button
-                    className={cx('gc-mode-seg', isMgmt && 'is-active')}
-                    type="button"
-                    onClick={() => setMode('mgmt')}
-                  >
-                    Mgmt
-                  </button>
+                <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')}>
+                  <button className={cx('gc-mode-seg', isKitchen && 'is-active')} onClick={() => setMode('kitchen')}>Kitchen</button>
+                  <button className={cx('gc-mode-seg', isMgmt && 'is-active')} onClick={() => setMode('mgmt')}>Mgmt</button>
                 </div>
                 <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
               </div>
@@ -964,29 +915,16 @@ export default function AppLayout() {
               <div className="gc-side-block" style={{ marginTop: 14 }}>
                 <div className="gc-label">NAVIGATION</div>
                 <nav className="gc-nav">
-                  <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                    Dashboard
-                  </NavLink>
-                  <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                    Ingredients
-                  </NavLink>
-                  <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                    Recipes
-                  </NavLink>
-                  <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
-                    Settings
-                  </NavLink>
+                  <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Dashboard</NavLink>
+                  <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Ingredients</NavLink>
+                  <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Recipes</NavLink>
+                  <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Settings</NavLink>
                 </nav>
                 <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
               </div>
 
               <div className="gc-side-block" style={{ marginTop: 14 }}>
-                <button
-                  className="gc-btn gc-btn-danger gc-btn--full"
-                  type="button"
-                  onClick={handleLogout}
-                  disabled={loggingOut}
-                >
+                <button className="gc-btn gc-btn-danger gc-btn--full" onClick={handleLogout} disabled={loggingOut}>
                   {loggingOut ? 'Logging out…' : 'Log out'}
                 </button>
               </div>
@@ -994,28 +932,13 @@ export default function AppLayout() {
           </aside>
 
           <main className="gc-main">
-            {/* TOP BAR - ENHANCED */}
-            <div className="gc-topbar" aria-label="Top bar">
+            <div className="gc-topbar">
               <div className="gc-topbar-pill">
-                
-                {/* LEFT SECTION */}
                 <div className="gc-topbar-left">
-                  <img
-                    className="gc-topbar-logo"
-                    src={brandLogo}
-                    alt="GastroChef"
-                    onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = brandFallback
-                    }}
-                  />
+                  <img className="gc-topbar-logo" src={brandLogo} alt="GastroChef" onError={(e) => { (e.currentTarget as HTMLImageElement).src = brandFallback }} />
                   
-                  {/* Kitchen Selector */}
                   <div className="gc-kitchen-selector">
-                    <button 
-                      ref={kitchenButtonRef}
-                      className="gc-kitchen-btn"
-                      onClick={() => setShowKitchenMenu(!showKitchenMenu)}
-                    >
+                    <button ref={kitchenButtonRef} className="gc-kitchen-btn" onClick={() => setShowKitchenMenu(!showKitchenMenu)}>
                       <span className="kitchen-icon">🏠</span>
                       <span className="kitchen-name">{kitchenLabel}</span>
                       <span className="kitchen-chevron">▼</span>
@@ -1033,7 +956,6 @@ export default function AppLayout() {
                     )}
                   </div>
 
-                  {/* Quick Stats Badges */}
                   <div className="gc-stats-group">
                     <div className="gc-stat-badge" title="Active Recipes">
                       <span className="stat-icon">📝</span>
@@ -1045,20 +967,15 @@ export default function AppLayout() {
                     </div>
                   </div>
 
-                  {/* Connection Status */}
                   <div className="gc-connection-status">
                     <div className={`status-dot ${!isOnline ? 'offline' : a.status === 'saving' ? 'saving' : a.status === 'error' ? 'error' : 'online'}`} />
                     {!isOnline && <span className="status-text">Offline</span>}
                   </div>
                 </div>
 
-                {/* CENTER SPACER */}
                 <div className="gc-topbar-spacer" />
 
-                {/* RIGHT SECTION */}
                 <div className="gc-topbar-right">
-                  
-                  {/* Autosave Status */}
                   <div className={`gc-autosave-status ${a.status}`}>
                     <span className="autosave-icon">
                       {a.status === 'saving' && '⏳'}
@@ -1074,33 +991,23 @@ export default function AppLayout() {
                     </span>
                   </div>
 
-                  {/* Export Button */}
                   <button className="gc-action-btn" onClick={handleQuickExport} title="Export Backup">
                     <span className="btn-icon">📦</span>
                     <span className="btn-text">Export</span>
                   </button>
 
-                  {/* Focus Mode Toggle */}
                   <button className={`gc-action-btn ${focusMode ? 'active' : ''}`} onClick={() => setFocusMode(!focusMode)} title={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}>
                     <span className="btn-icon">{focusMode ? '🎯' : '🔍'}</span>
                     <span className="btn-text">Focus</span>
                   </button>
 
-                  {/* Quick Search */}
                   <div className="gc-quick-search">
                     <button className="gc-action-btn" onClick={() => setShowQuickSearch(!showQuickSearch)} title="Quick Search">
                       <span className="btn-icon">🔍</span>
                     </button>
                     {showQuickSearch && (
                       <div className="gc-quick-search-dropdown" ref={quickSearchRef}>
-                        <input
-                          autoFocus
-                          type="text"
-                          placeholder="Search recipes or ingredients..."
-                          value={quickSearchQuery}
-                          onChange={(e) => setQuickSearchQuery(e.target.value)}
-                          onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)}
-                        />
+                        <input autoFocus type="text" placeholder="Search recipes or ingredients..." value={quickSearchQuery} onChange={(e) => setQuickSearchQuery(e.target.value)} onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)} />
                         {quickSearchResults.length > 0 && (
                           <div className="search-results">
                             {quickSearchResults.map(r => (
@@ -1115,19 +1022,13 @@ export default function AppLayout() {
                     )}
                   </div>
 
-                  {/* Command Palette */}
                   <button className="gc-action-btn gc-cmdk-btn" onClick={() => setPaletteOpen(true)} title="Command Palette (⌘K)">
                     <span className="cmd-key">⌘</span>
                     <span className="cmd-key">K</span>
                   </button>
 
-                  {/* Notifications */}
                   <div className="gc-notifications">
-                    <button 
-                      ref={notificationsButtonRef}
-                      className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} 
-                      onClick={() => setShowNotifications(!showNotifications)}
-                    >
+                    <button ref={notificationsButtonRef} className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} onClick={() => setShowNotifications(!showNotifications)}>
                       <span className="btn-icon">🔔</span>
                       {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                     </button>
@@ -1163,14 +1064,8 @@ export default function AppLayout() {
                     )}
                   </div>
 
-                  {/* Recent Items */}
                   <div className="gc-recent">
-                    <button 
-                      ref={recentButtonRef}
-                      className="gc-action-btn" 
-                      onClick={() => setShowRecent(!showRecent)} 
-                      disabled={loadingRecent}
-                    >
+                    <button ref={recentButtonRef} className="gc-action-btn" onClick={() => setShowRecent(!showRecent)} disabled={loadingRecent}>
                       <span className="btn-icon">{loadingRecent ? '⏳' : '🕒'}</span>
                     </button>
                     {showRecent && (
@@ -1195,16 +1090,9 @@ export default function AppLayout() {
                     )}
                   </div>
 
-                  {/* User Menu */}
                   <div className="gc-user-menu">
-                    <button 
-                      ref={userButtonRef}
-                      className="gc-user-btn" 
-                      onClick={() => setShowUserMenu(!showUserMenu)}
-                    >
-                      <div className="user-avatar" style={{ background: timeBased.gradient }}>
-                        {avatarText}
-                      </div>
+                    <button ref={userButtonRef} className="gc-user-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
+                      <div className="user-avatar" style={{ background: timeBased.gradient }}>{avatarText}</div>
                       <span className="user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</span>
                       <span className="user-chevron">▼</span>
                     </button>
@@ -1265,38 +1153,14 @@ export default function AppLayout() {
 
       <style>{`
         @media (max-width: 768px) {
-          .gc-mobile-menu-toggle {
-            display: flex !important;
-          }
-          .gc-side {
-            transform: translateX(-100%);
-            transition: transform 0.3s ease;
-            position: fixed;
-            z-index: 1000;
-          }
-          .gc-side.is-open {
-            transform: translateX(0);
-          }
-          .gc-main {
-            margin-left: 0 !important;
-          }
+          .gc-mobile-menu-toggle { display: flex !important; }
+          .gc-side { transform: translateX(-100%); transition: transform 0.3s ease; position: fixed; z-index: 1000; }
+          .gc-side.is-open { transform: translateX(0); }
+          .gc-main { margin-left: 0 !important; }
         }
-        
-        .gc-focus-mode .gc-side {
-          display: none !important;
-        }
-        
-        .gc-focus-mode .gc-main {
-          margin-left: 0 !important;
-          max-width: 1200px;
-          margin: 0 auto;
-        }
+        .gc-focus-mode .gc-side { display: none !important; }
+        .gc-focus-mode .gc-main { margin-left: 0 !important; max-width: 1200px; margin: 0 auto; }
       `}</style>
     </>
   )
 }
-```
-
----
-
-**هذا هو الملف الكامل. قومي باستبدال محتوى ملفك الحالي بهذا الكود.**
