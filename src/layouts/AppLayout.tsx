@@ -562,32 +562,7 @@ export default function AppLayout() {
                     )}
                   </div>
 
-                  {/* Stats Display - FIXED */}
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '12px',
-                    background: dark ? '#374151' : '#f9fafb',
-                    padding: '4px 16px',
-                    borderRadius: '40px',
-                    border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
-                      <span style={{ fontSize: '14px' }}>📝</span>
-                      <span style={{ fontWeight: 700, color: '#10b981', fontSize: '16px' }}>
-                        {statsLoading ? '...' : recipesCount}
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#6b7280' }}>recipes</span>
-                    </div>
-                    <div style={{ width: '1px', height: '20px', background: dark ? '#4b5563' : '#e5e7eb' }} />
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
-                      <span style={{ fontSize: '14px' }}>🥗</span>
-                      <span style={{ fontWeight: 700, color: '#10b981', fontSize: '16px' }}>
-                        {statsLoading ? '...' : ingredientsCount}
-                      </span>
-                      <span style={{ fontSize: '11px', color: '#6b7280' }}>ingredients</span>
-                    </div>
-                  </div>
+                  {/* Counters removed as requested */}
 
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div style={{
