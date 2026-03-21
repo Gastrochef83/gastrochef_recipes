@@ -7,6 +7,7 @@ import { Toast } from '../components/Toast'
 import { Skeleton } from '../components/Skeleton'
 import { useKitchen } from '../lib/kitchen'
 import { motion, AnimatePresence } from 'framer-motion'
+import { displayCode } from '../lib/codes'
 
 type IngredientRow = {
   id: string
@@ -255,8 +256,8 @@ const IngredientTableRow = memo(function IngredientTableRow({
   const net = toNum(ingredient.net_unit_cost, 0)
   const unit = ingredient.pack_unit ?? 'g'
   const flag = sanityFlag(net, unit)
+  const ingredientCode = ingredient.code || displayCode('ING', ingredient.id)
 
-  // Safer approach: deactivate is primary, delete is secondary with confirmation
   const handleDeleteClick = () => {
     if (window.confirm('Delete permanently? This cannot be undone.')) {
       onHardDelete(ingredient.id)
@@ -282,9 +283,9 @@ const IngredientTableRow = memo(function IngredientTableRow({
     >
       <td className="px-4 py-3">
         <span className="text-xs font-mono text-gray-500 dark:text-gray-400">
-          {ingredient.code || '—'}
+          {ingredientCode}
         </span>
-      </td>
+       </td>
       <td className="px-4 py-3">
         <div className="flex items-center gap-2">
           <span className={cls(
@@ -305,24 +306,24 @@ const IngredientTableRow = memo(function IngredientTableRow({
             {ingredient.id.slice(0, 8)}...
           </div>
         )}
-      </td>
+       </td>
       <td className="px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
         {ingredient.category ?? '—'}
-      </td>
+       </td>
       <td className="px-4 py-3 text-center">
         <span className="text-sm font-mono text-gray-900 dark:text-white">
           {Math.max(1, toNum(ingredient.pack_size, 1))}
         </span>
-      </td>
+       </td>
       <td className="px-4 py-3">
         <UnitBadge unit={unit} />
-      </td>
+       </td>
       <td className="px-4 py-3">
         <PriceDisplay amount={toNum(ingredient.pack_price, 0)} unit={unit} />
-      </td>
+       </td>
       <td className="px-4 py-3">
         <PriceDisplay amount={net} unit={unit} />
-      </td>
+       </td>
       <td className="px-4 py-3">
         <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -352,7 +353,7 @@ const IngredientTableRow = memo(function IngredientTableRow({
             <Icons.delete />
           </button>
         </div>
-      </td>
+       </td>
     </motion.tr>
   )
 })
@@ -481,6 +482,7 @@ export default function Ingredients() {
   const [err, setErr] = useState<string | null>(null)
   const [rows, setRows] = useState<IngredientRow[]>([])
   const [search, setSearch] = useState('')
+  const [searchCode, setSearchCode] = useState('')
   const loc = useLocation()
 
   // One-time search prefill from Command Palette
@@ -495,6 +497,7 @@ export default function Ingredients() {
   }, [loc.pathname, loc.hash])
 
   const deferredSearch = useDeferredValue(search)
+  const deferredSearchCode = useDeferredValue(searchCode)
   const [category, setCategory] = useState('')
   const [showInactive, setShowInactive] = useState(false)
   const [sortBy, setSortBy] = useState<'name' | 'cost' | 'pack_price'>('name')
@@ -610,13 +613,18 @@ export default function Ingredients() {
 
   const filtered = useMemo(() => {
     const s = deferredSearch.trim().toLowerCase()
+    const codeQuery = deferredSearchCode.trim().toLowerCase()
+    
     let list = normalized.filter((r) => {
       const name = (r.name ?? '').toLowerCase()
       const sup = (r.supplier ?? '').toLowerCase()
       const code = (r.code ?? '').toLowerCase()
+      const displayCodeValue = displayCode('ING', r.id).toLowerCase()
+      
       const okSearch = !s || name.includes(s) || sup.includes(s) || code.includes(s)
+      const okCode = !codeQuery || code.includes(codeQuery) || displayCodeValue.includes(codeQuery)
       const okCat = !category || (r.category ?? '') === category
-      return okSearch && okCat
+      return okSearch && okCode && okCat
     })
 
     if (sortBy === 'name') {
@@ -628,7 +636,7 @@ export default function Ingredients() {
     }
 
     return list
-  }, [normalized, deferredSearch, category, sortBy])
+  }, [normalized, deferredSearch, deferredSearchCode, category, sortBy])
 
   const stats = useMemo(() => {
     const items = filtered.length
@@ -640,14 +648,17 @@ export default function Ingredients() {
   }, [filtered])
 
   // Filter state tracking
-  const hasActiveFilters = search !== '' || category !== ''
+  const hasActiveFilters = search !== '' || searchCode !== '' || category !== ''
 
   // Bulk actions apply to filtered results, not selection (safer approach)
   const hasFilteredItems = filtered.length > 0
 
   const openCreate = () => {
     setEditingId(null)
-    setFCode('')
+    // Generate new ingredient code
+    const nextNumber = rows.length + 1
+    const newCode = `ING-${String(nextNumber).padStart(4, '0')}`
+    setFCode(newCode)
     setFCodeCategory('')
     setFName('')
     setFCategory('')
@@ -661,7 +672,8 @@ export default function Ingredients() {
 
   const openEdit = (r: IngredientRow) => {
     setEditingId(r.id)
-    setFCode((r.code ?? '').toUpperCase())
+    const existingCode = (r.code ?? '').toUpperCase()
+    setFCode(existingCode || `ING-${String(rows.findIndex(x => x.id === r.id) + 1).padStart(4, '0')}`)
     setFCodeCategory((r.code_category ?? '').toUpperCase())
     setFName(r.name ?? '')
     setFCategory(r.category ?? '')
@@ -686,7 +698,9 @@ export default function Ingredients() {
     if (!name) return showToast('Name is required')
 
     const codeInput = (fCode || '').trim().toUpperCase()
-    if (codeInput && !codeInput.startsWith('ING-')) return showToast('Code must start with ING-')
+    if (codeInput && !codeInput.startsWith('ING-')) {
+      return showToast('Code must start with ING-')
+    }
 
     const codeCatInput = (fCodeCategory || '').trim().toUpperCase()
     if (codeCatInput) {
@@ -921,9 +935,9 @@ export default function Ingredients() {
         </motion.div>
 
         {/* Filter Bar */}
-        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6">
-          {/* Search */}
-          <div className="flex-1 max-w-sm">
+        <motion.div variants={itemVariants} className="flex items-center gap-3 mb-6 flex-wrap">
+          {/* Search by Name */}
+          <div className="flex-1 min-w-[200px]">
             <div className="relative">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
                 <Icons.search />
@@ -939,6 +953,30 @@ export default function Ingredients() {
                   type="button"
                   className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                   onClick={() => setSearch('')}
+                >
+                  <Icons.close width={14} height={14} />
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Search by Code */}
+          <div className="flex-1 min-w-[200px]">
+            <div className="relative">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                🔖
+              </span>
+              <input
+                className="w-full pl-9 pr-8 py-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-sm font-mono text-gray-900 dark:text-gray-100 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 dark:focus:border-blue-400 transition-all"
+                value={searchCode}
+                onChange={(e) => setSearchCode(e.target.value)}
+                placeholder="Search by code (e.g., ING-0001)..."
+              />
+              {searchCode && (
+                <button
+                  type="button"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  onClick={() => setSearchCode('')}
                 >
                   <Icons.close width={14} height={14} />
                 </button>
@@ -994,6 +1032,7 @@ export default function Ingredients() {
               className="p-2.5 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-xl text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
               onClick={() => {
                 setSearch('')
+                setSearchCode('')
                 setCategory('')
               }}
               title="Clear filters"
@@ -1056,7 +1095,7 @@ export default function Ingredients() {
                         <th className="px-4 py-3 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Pack Price</th>
                         <th className="px-4 py-3 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Unit Price</th>
                         <th className="px-4 py-3 text-right text-[10px] font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
-                      </tr>
+                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
                       <AnimatePresence>
@@ -1072,7 +1111,7 @@ export default function Ingredients() {
                         ))}
                       </AnimatePresence>
                     </tbody>
-                  </table>
+                   </table>
                 </div>
               </div>
             )}
