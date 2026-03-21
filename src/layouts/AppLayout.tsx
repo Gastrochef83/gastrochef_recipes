@@ -86,15 +86,12 @@ export default function AppLayout() {
   const navigate = useNavigate()
   const loc = useLocation()
 
-  const [recipesCount, setRecipesCount] = useState(0)
-  const [ingredientsCount, setIngredientsCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [showKitchenMenu, setShowKitchenMenu] = useState(false)
   const [kitchens, setKitchens] = useState<Array<{ id: string; name: string }>>([])
   const [quickSearchQuery, setQuickSearchQuery] = useState('')
   const [showQuickSearch, setShowQuickSearch] = useState(false)
   const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
-  const [statsLoading, setStatsLoading] = useState(false)
 
   // Network status
   useEffect(() => {
@@ -108,65 +105,6 @@ export default function AppLayout() {
     }
   }, [])
 
-  // Fetch stats
-  const fetchStats = useCallback(async () => {
-    if (!k.kitchenId) {
-      console.log('No kitchen ID yet')
-      return
-    }
-    
-    console.log('Fetching stats for kitchen:', k.kitchenId)
-    setStatsLoading(true)
-    
-    try {
-      // Get active recipes (not archived)
-      const { count: activeRecipes, error: recipesError } = await supabase
-        .from('recipes')
-        .select('*', { count: 'exact', head: true })
-        .eq('kitchen_id', k.kitchenId)
-        .eq('is_archived', false)
-      
-      if (recipesError) {
-        console.error('Error fetching recipes:', recipesError)
-      } else {
-        console.log('Active recipes count:', activeRecipes)
-        setRecipesCount(activeRecipes || 0)
-      }
-      
-      // Get active ingredients
-      const { count: activeIngredients, error: ingredientsError } = await supabase
-        .from('ingredients')
-        .select('*', { count: 'exact', head: true })
-        .eq('kitchen_id', k.kitchenId)
-        .eq('is_active', true)
-      
-      if (ingredientsError) {
-        console.error('Error fetching ingredients:', ingredientsError)
-      } else {
-        console.log('Active ingredients count:', activeIngredients)
-        setIngredientsCount(activeIngredients || 0)
-      }
-      
-    } catch (error) {
-      console.error('Error fetching stats:', error)
-    } finally {
-      setStatsLoading(false)
-    }
-  }, [k.kitchenId])
-
-  // Initial fetch and refresh on kitchen change
-  useEffect(() => {
-    if (k.kitchenId) {
-      fetchStats()
-    }
-  }, [k.kitchenId, fetchStats])
-
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    if (!k.kitchenId) return
-    const interval = setInterval(fetchStats, 30000)
-    return () => clearInterval(interval)
-  }, [k.kitchenId, fetchStats])
 
   useEffect(() => {
     const fetchKitchens = async () => {
@@ -183,6 +121,10 @@ export default function AppLayout() {
       } catch { /* ignore */ }
     }
     fetchKitchens()
+  }, [])
+
+  const fetchStats = useCallback(async () => {
+    return
   }, [])
 
   const [notifications, setNotifications] = useState<Notification[]>([
@@ -561,9 +503,6 @@ export default function AppLayout() {
                       </div>
                     )}
                   </div>
-
-                  {/* Counters removed as requested */}
-
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <div style={{
                       width: '8px',
