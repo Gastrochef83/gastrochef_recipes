@@ -1,3 +1,6 @@
+## الملف الكامل: src/layouts/AppLayout.tsx
+
+```tsx
 // src/layouts/AppLayout.tsx
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { useEffect, useMemo, useRef, useState, useCallback } from 'react'
@@ -6,7 +9,6 @@ import { supabase } from '../lib/supabase'
 import { useKitchen, clearKitchenCache } from '../lib/kitchen'
 import { useAutosave } from '../contexts/AutosaveContext'
 import CommandPalette, { type CommandItem } from '../components/CommandPalette'
-import { exportKitchenBackup } from '../lib/backupJson'
 import { motion } from 'framer-motion'
 
 function cx(...arr: Array<string | false | null | undefined>) {
@@ -24,15 +26,6 @@ function initialsFrom(emailOrName: string) {
   const a = (parts[0] || 'G')[0]
   const b = (parts[1] || parts[0] || 'C')[0]
   return (a + b).toUpperCase()
-}
-
-function formatCurrency(amount: number, currency: string = 'USD') {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: currency,
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  }).format(amount)
 }
 
 function clearAppCaches() {
@@ -102,10 +95,13 @@ export default function AppLayout() {
   const [ingredientsCount, setIngredientsCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [focusMode, setFocusMode] = useState(() => {
-    try {
-      return localStorage.getItem('gc_focus_mode') === 'true'
-    } catch { return false }
+    try { return localStorage.getItem('gc_focus_mode') === 'true' } catch { return false }
   })
+  const [showKitchenMenu, setShowKitchenMenu] = useState(false)
+  const [kitchens, setKitchens] = useState<Array<{ id: string; name: string }>>([])
+  const [quickSearchQuery, setQuickSearchQuery] = useState('')
+  const [showQuickSearch, setShowQuickSearch] = useState(false)
+  const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
 
   // Save focus mode preference
   useEffect(() => {
@@ -149,38 +145,6 @@ export default function AppLayout() {
     return () => clearInterval(interval)
   }, [k.kitchenId])
 
-  const [notifications, setNotifications] = useState<Notification[]>([
-    { id: '1', type: 'info', message: 'Welcome to GastroChef!', read: false, path: '/dashboard', timestamp: new Date() }
-  ])
-
-  const [recentItems, setRecentItems] = useState<Array<{ 
-    id: string; 
-    name: string; 
-    type: 'recipe' | 'ingredient'; 
-    path: string;
-    updated_at: string;
-  }>>([])
-
-  const [loadingRecent, setLoadingRecent] = useState(false)
-  const [showUserMenu, setShowUserMenu] = useState(false)
-  const [showNotifications, setShowNotifications] = useState(false)
-  const [showRecent, setShowRecent] = useState(false)
-  const [showKitchenMenu, setShowKitchenMenu] = useState(false)
-  const [kitchens, setKitchens] = useState<Array<{ id: string; name: string }>>([])
-  const [quickSearchQuery, setQuickSearchQuery] = useState('')
-  const [showQuickSearch, setShowQuickSearch] = useState(false)
-  const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
-  
-  const userMenuRef = useRef<HTMLDivElement>(null)
-  const notificationsRef = useRef<HTMLDivElement>(null)
-  const recentRef = useRef<HTMLDivElement>(null)
-  const kitchenMenuRef = useRef<HTMLDivElement>(null)
-  const userButtonRef = useRef<HTMLButtonElement>(null)
-  const notificationsButtonRef = useRef<HTMLButtonElement>(null)
-  const recentButtonRef = useRef<HTMLButtonElement>(null)
-  const kitchenButtonRef = useRef<HTMLButtonElement>(null)
-  const quickSearchRef = useRef<HTMLDivElement>(null)
-
   // Fetch available kitchens
   useEffect(() => {
     const fetchKitchens = async () => {
@@ -198,6 +162,35 @@ export default function AppLayout() {
     }
     fetchKitchens()
   }, [])
+
+  // Notifications
+  const [notifications, setNotifications] = useState<Notification[]>([
+    { id: '1', type: 'info', message: 'Welcome to GastroChef!', read: false, path: '/dashboard', timestamp: new Date() }
+  ])
+
+  // Recent items
+  const [recentItems, setRecentItems] = useState<Array<{ 
+    id: string; 
+    name: string; 
+    type: 'recipe' | 'ingredient'; 
+    path: string;
+    updated_at: string;
+  }>>([])
+
+  const [loadingRecent, setLoadingRecent] = useState(false)
+  const [showUserMenu, setShowUserMenu] = useState(false)
+  const [showNotifications, setShowNotifications] = useState(false)
+  const [showRecent, setShowRecent] = useState(false)
+  
+  const userMenuRef = useRef<HTMLDivElement>(null)
+  const notificationsRef = useRef<HTMLDivElement>(null)
+  const recentRef = useRef<HTMLDivElement>(null)
+  const kitchenMenuRef = useRef<HTMLDivElement>(null)
+  const userButtonRef = useRef<HTMLButtonElement>(null)
+  const notificationsButtonRef = useRef<HTMLButtonElement>(null)
+  const recentButtonRef = useRef<HTMLButtonElement>(null)
+  const kitchenButtonRef = useRef<HTMLButtonElement>(null)
+  const quickSearchRef = useRef<HTMLDivElement>(null)
 
   // Fetch recent items
   const fetchRecentItems = useCallback(async () => {
@@ -363,6 +356,7 @@ export default function AppLayout() {
   const handleQuickExport = useCallback(async () => {
     if (!k.kitchenId) return
     try {
+      const { exportKitchenBackup } = await import('../lib/backupJson')
       const backup = await exportKitchenBackup(k.kitchenId, k.kitchenName || 'My Kitchen')
       const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
@@ -371,10 +365,9 @@ export default function AppLayout() {
       a.download = `gastrochef_backup_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`
       a.click()
       URL.revokeObjectURL(url)
-      // Add notification
-      setNotifications(prev => [{ id: `${Date.now()}`, type: 'success', message: 'Backup exported successfully!', read: false, timestamp: new Date() }, ...prev].slice(0, 50))
+      setNotifications(prev => [{ id: `${Date.now()}`, type: 'success', message: 'Backup exported successfully!', read: false, timestamp: new Date(), path: '' }, ...prev].slice(0, 50))
     } catch (e: any) {
-      setNotifications(prev => [{ id: `${Date.now()}`, type: 'error', message: `Export failed: ${e.message}`, read: false, timestamp: new Date() }, ...prev].slice(0, 50))
+      setNotifications(prev => [{ id: `${Date.now()}`, type: 'error', message: `Export failed: ${e.message}`, read: false, timestamp: new Date(), path: '' }, ...prev].slice(0, 50))
     }
   }, [k.kitchenId, k.kitchenName])
 
@@ -415,223 +408,895 @@ export default function AppLayout() {
     )
   }
 
+  const styles = `
+    /* ===== ENHANCED TOP BAR STYLES ===== */
+    .gc-topbar-pill {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 60px;
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(107, 127, 59, 0.2);
+      padding: 0 20px;
+      gap: 16px;
+    }
+    
+    .gc-dark .gc-topbar-pill {
+      background: rgba(20, 25, 35, 0.95);
+      border-bottom: 1px solid rgba(107, 127, 59, 0.3);
+    }
+    
+    /* Left Section */
+    .gc-topbar-left {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-shrink: 0;
+    }
+    
+    .gc-topbar-logo {
+      height: 32px;
+      width: auto;
+    }
+    
+    /* Kitchen Selector */
+    .gc-kitchen-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 14px;
+      background: rgba(107, 127, 59, 0.12);
+      border: 1px solid rgba(107, 127, 59, 0.25);
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      font-size: 13px;
+      color: var(--gc-text);
+    }
+    
+    .gc-kitchen-btn:hover {
+      background: rgba(107, 127, 59, 0.2);
+      border-color: rgba(107, 127, 59, 0.4);
+      transform: translateY(-1px);
+    }
+    
+    .kitchen-icon { font-size: 14px; }
+    .kitchen-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .kitchen-chevron { font-size: 10px; opacity: 0.7; }
+    
+    /* Stats Badges */
+    .gc-stats-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(0, 0, 0, 0.03);
+      padding: 4px 12px;
+      border-radius: 32px;
+    }
+    
+    .gc-dark .gc-stats-group {
+      background: rgba(255, 255, 255, 0.05);
+    }
+    
+    .gc-stat-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gc-text);
+    }
+    
+    .stat-icon { font-size: 14px; }
+    .stat-value { font-weight: 700; color: var(--gc-brand-olive); }
+    
+    /* Connection Status */
+    .gc-connection-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+    
+    .status-dot.online { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
+    .status-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
+    .status-dot.error { background: #ef4444; }
+    .status-dot.offline { background: #6b7280; }
+    
+    .status-text {
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--gc-muted);
+    }
+    
+    /* Right Section */
+    .gc-topbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+    
+    /* Action Buttons */
+    .gc-action-btn {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      background: transparent;
+      border: 1px solid var(--gc-border);
+      border-radius: 32px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--gc-text);
+    }
+    
+    .gc-action-btn:hover {
+      background: rgba(107, 127, 59, 0.1);
+      border-color: rgba(107, 127, 59, 0.4);
+      transform: translateY(-1px);
+    }
+    
+    .gc-action-btn.active {
+      background: rgba(107, 127, 59, 0.15);
+      border-color: rgba(107, 127, 59, 0.5);
+    }
+    
+    .btn-icon { font-size: 14px; }
+    .btn-text { font-size: 12px; }
+    
+    /* Command Palette Button */
+    .gc-cmdk-btn {
+      background: rgba(107, 127, 59, 0.08);
+      border-color: rgba(107, 127, 59, 0.3);
+    }
+    
+    .cmd-key {
+      font-family: monospace;
+      font-size: 11px;
+      font-weight: 700;
+      background: rgba(0, 0, 0, 0.05);
+      padding: 2px 5px;
+      border-radius: 6px;
+    }
+    
+    .gc-dark .cmd-key {
+      background: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Autosave Status */
+    .gc-autosave-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 32px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    .gc-autosave-status.saving {
+      background: rgba(245, 158, 11, 0.12);
+      color: #f59e0b;
+    }
+    
+    .gc-autosave-status.saved {
+      background: rgba(16, 185, 129, 0.12);
+      color: #10b981;
+    }
+    
+    .gc-autosave-status.error {
+      background: rgba(239, 68, 68, 0.12);
+      color: #ef4444;
+    }
+    
+    .gc-autosave-status.idle {
+      background: transparent;
+      color: var(--gc-muted);
+    }
+    
+    /* Notifications Badge */
+    .gc-action-btn.has-badge {
+      position: relative;
+    }
+    
+    .notification-badge {
+      position: absolute;
+      top: -4px;
+      right: -4px;
+      min-width: 18px;
+      height: 18px;
+      background: #ef4444;
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      border-radius: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0 4px;
+    }
+    
+    /* Dropdown Menus */
+    .gc-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 320px;
+      background: var(--gc-bg-card);
+      border: 1px solid var(--gc-border);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      z-index: 1000;
+      animation: slideDown 0.2s ease;
+    }
+    
+    .gc-dark .gc-dropdown {
+      background: #1f2937;
+    }
+    
+    @keyframes slideDown {
+      from {
+        opacity: 0;
+        transform: translateY(-10px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .dropdown-header {
+      padding: 14px 16px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--gc-muted);
+      border-bottom: 1px solid var(--gc-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .mark-read-btn {
+      background: none;
+      border: none;
+      font-size: 11px;
+      color: var(--gc-brand-olive);
+      cursor: pointer;
+    }
+    
+    .dropdown-list {
+      max-height: 320px;
+      overflow-y: auto;
+    }
+    
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      width: 100%;
+      padding: 12px 16px;
+      text-align: left;
+      background: none;
+      border: none;
+      cursor: pointer;
+      transition: background 0.15s ease;
+      font-size: 13px;
+      color: var(--gc-text);
+    }
+    
+    .dropdown-item:hover {
+      background: rgba(107, 127, 59, 0.08);
+    }
+    
+    .dropdown-item.unread {
+      background: rgba(107, 127, 59, 0.05);
+    }
+    
+    .dropdown-item.danger {
+      color: #ef4444;
+    }
+    
+    .dropdown-item.danger:hover {
+      background: rgba(239, 68, 68, 0.1);
+    }
+    
+    .item-icon { font-size: 16px; width: 28px; }
+    .item-info { flex: 1; }
+    .item-name { font-weight: 600; margin-bottom: 2px; }
+    .item-meta { font-size: 11px; color: var(--gc-muted); }
+    
+    .empty-state {
+      padding: 40px;
+      text-align: center;
+      color: var(--gc-muted);
+      font-size: 13px;
+    }
+    
+    /* User Menu */
+    .gc-user-btn {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 4px 12px 4px 4px;
+      background: transparent;
+      border: 1px solid var(--gc-border);
+      border-radius: 40px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .gc-user-btn:hover {
+      background: rgba(107, 127, 59, 0.08);
+      border-color: rgba(107, 127, 59, 0.3);
+    }
+    
+    .user-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 13px;
+      color: white;
+    }
+    
+    .user-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--gc-text);
+    }
+    
+    .user-chevron {
+      font-size: 10px;
+      color: var(--gc-muted);
+    }
+    
+    .user-dropdown {
+      width: 260px;
+      right: 0;
+      left: auto;
+    }
+    
+    .user-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--gc-border);
+    }
+    
+    .user-avatar-large {
+      width: 48px;
+      height: 48px;
+      border-radius: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 18px;
+      color: white;
+    }
+    
+    .user-info .user-name {
+      font-size: 15px;
+      font-weight: 700;
+      margin-bottom: 2px;
+    }
+    
+    .user-role {
+      font-size: 11px;
+      color: var(--gc-muted);
+    }
+    
+    .user-time {
+      font-size: 10px;
+      color: var(--gc-muted);
+      margin-top: 4px;
+    }
+    
+    .dropdown-divider {
+      height: 1px;
+      background: var(--gc-border);
+      margin: 6px 0;
+    }
+    
+    /* Quick Search Dropdown */
+    .gc-quick-search {
+      position: relative;
+    }
+    
+    .gc-quick-search-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      width: 300px;
+      background: var(--gc-bg-card);
+      border: 1px solid var(--gc-border);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
+      overflow: hidden;
+      z-index: 1000;
+    }
+    
+    .gc-quick-search-dropdown input {
+      width: 100%;
+      padding: 12px 16px;
+      border: none;
+      border-bottom: 1px solid var(--gc-border);
+      background: transparent;
+      font-size: 14px;
+      color: var(--gc-text);
+      outline: none;
+    }
+    
+    .search-results {
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    
+    .search-result-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 10px 16px;
+      cursor: pointer;
+      transition: background 0.15s ease;
+    }
+    
+    .search-result-item:hover {
+      background: rgba(107, 127, 59, 0.08);
+    }
+    
+    /* Pulse Animation */
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.7; transform: scale(1.2); }
+    }
+    
+    /* Responsive */
+    @media (max-width: 1024px) {
+      .gc-topbar-pill { padding: 0 16px; gap: 12px; }
+      .gc-stats-group { display: none; }
+      .gc-autosave-status .autosave-text { display: none; }
+      .gc-action-btn .btn-text { display: none; }
+      .gc-action-btn { padding: 6px 10px; }
+      .user-name { display: none; }
+    }
+    
+    @media (max-width: 768px) {
+      .gc-topbar-logo { display: none; }
+      .gc-kitchen-btn .kitchen-name { max-width: 100px; }
+      .gc-quick-search-dropdown { width: 280px; right: -40px; }
+      .gc-dropdown { width: 280px; right: -20px; }
+    }
+  `
+
   return (
-    <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt', focusMode && 'gc-focus-mode')}>
-      <style>{`
-        .gc-topbar-pill { height: 56px; background: rgba(255,255,255,0.9); backdrop-filter: blur(12px); border-bottom: 1px solid rgba(107,127,59,0.15); box-shadow: 0 2px 8px rgba(0,0,0,0.02); padding: 0 16px; display: flex; align-items: center; justify-content: space-between; }
-        .gc-dark .gc-topbar-pill { background: rgba(20,25,35,0.9); border-bottom: 1px solid rgba(107,127,59,0.2); }
-        .gc-topbar-logo { height: 28px; width: auto; }
-        .stat-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; background: rgba(107,127,59,0.1); border-radius: 20px; font-size: 11px; font-weight: 600; color: var(--gc-text); }
-        .icon-btn, .action-btn { display: flex; align-items: center; justify-content: center; gap: 6px; padding: 6px 12px; border-radius: 30px; border: 1px solid var(--gc-border); background: transparent; cursor: pointer; font-size: 12px; font-weight: 600; transition: all 0.2s ease; }
-        .icon-btn { width: 34px; height: 34px; padding: 0; }
-        .icon-btn:hover, .action-btn:hover { background: rgba(107,127,59,0.1); border-color: rgba(107,127,59,0.4); transform: translateY(-1px); }
-        .kitchen-btn { display: flex; align-items: center; gap: 8px; padding: 6px 12px; border-radius: 30px; border: 1px solid var(--gc-border); background: transparent; cursor: pointer; font-size: 13px; font-weight: 600; transition: all 0.2s ease; }
-        .kitchen-btn:hover { background: rgba(107,127,59,0.1); border-color: rgba(107,127,59,0.4); transform: translateY(-1px); }
-        .autosave-indicator { display: flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 30px; font-size: 12px; font-weight: 600; transition: all 0.2s ease; }
-        .autosave-indicator.saving { background: rgba(245,158,11,0.1); color: #f59e0b; }
-        .autosave-indicator.saved { background: rgba(16,185,129,0.1); color: #10b981; }
-        .autosave-indicator.error { background: rgba(239,68,68,0.1); color: #ef4444; }
-        .dropdown-menu { position: absolute; top: calc(100% + 8px); right: 0; width: 320px; background: white; border-radius: 16px; border: 1px solid rgba(107,127,59,0.2); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); overflow: hidden; z-index: 1000; animation: slideDown 0.2s ease-out; }
-        .gc-dark .dropdown-menu { background: #1f2937; border-color: rgba(107,127,59,0.3); }
-        @keyframes slideDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
-        .dropdown-header { padding: 12px 16px; background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%); border-bottom: 1px solid rgba(107,127,59,0.1); }
-        .gc-dark .dropdown-header { background: #111827; }
-        .dropdown-item { width: 100%; padding: 10px 12px; text-align: left; background: none; border: none; border-radius: 8px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; gap: 8px; }
-        .dropdown-item:hover { background: rgba(107,127,59,0.1); }
-        .dropdown-item.danger { color: #ef4444; }
-        .dropdown-item.danger:hover { background: rgba(239,68,68,0.1); }
-        .dropdown-divider { height: 1px; background: rgba(107,127,59,0.1); margin: 8px 0; }
-        .badge-dot { position: absolute; top: 2px; right: 2px; width: 8px; height: 8px; border-radius: 4px; background: #ef4444; border: 2px solid white; }
-        .status-dot { width: 10px; height: 10px; border-radius: 50%; transition: all 0.2s ease; }
-        .status-dot.saving { animation: pulse 1s infinite; }
-        @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.2); } }
-        .quick-search-input { position: absolute; right: 0; top: 100%; margin-top: 8px; width: 280px; padding: 10px 12px; border-radius: 12px; border: 1px solid var(--gc-border); background: var(--gc-bg-card); font-size: 14px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 100; }
-        .quick-search-results { position: absolute; right: 0; top: 100%; margin-top: 8px; width: 320px; background: var(--gc-bg-card); border-radius: 12px; border: 1px solid var(--gc-border); box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1); z-index: 100; max-height: 300px; overflow-y: auto; }
-        .quick-search-result-item { padding: 10px 12px; cursor: pointer; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--gc-border); }
-        .quick-search-result-item:hover { background: rgba(107,127,59,0.1); }
-        .quick-search-result-item:last-child { border-bottom: none; }
-        .gc-focus-mode .gc-side { display: none !important; }
-        .gc-focus-mode .gc-main { margin-left: 0 !important; max-width: 1200px; margin: 0 auto; }
-        @media (max-width: 768px) { .gc-topbar-pill { height: 52px; padding: 0 12px; } .kitchen-btn span:first-child { display: none; } .stat-badge { display: none; } .autosave-indicator span:last-child { display: none; } .action-btn span:last-child { display: none; } .dropdown-menu { width: 280px; } }
-      `}</style>
+    <>
+      <style>{styles}</style>
+      
+      <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt', focusMode && 'gc-focus-mode')}>
+        <div className="gc-shell">
+          {/* Mobile Menu Toggle */}
+          <button
+            className="gc-mobile-menu-toggle"
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            style={{
+              position: 'fixed',
+              bottom: 20,
+              right: 20,
+              zIndex: 60,
+              display: 'none',
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              background: 'linear-gradient(135deg, #6B7F3B 0%, #1F7A78 100%)',
+              color: 'white',
+              border: 'none',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              cursor: 'pointer',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="3" y1="12" x2="21" y2="12" />
+              <line x1="3" y1="6" x2="21" y2="6" />
+              <line x1="3" y1="18" x2="21" y2="18" />
+            </svg>
+          </button>
 
-      <div className="gc-shell">
-        {/* Mobile Menu Toggle */}
-        <button className="gc-mobile-menu-toggle" onClick={() => setIsSidebarOpen(!isSidebarOpen)} style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 60, display: 'none', width: 44, height: 44, borderRadius: 22, background: 'linear-gradient(135deg, #6B7F3B 0%, #1F7A78 100%)', color: 'white', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.15)', cursor: 'pointer', alignItems: 'center', justifyContent: 'center' }}>
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="18" x2="21" y2="18" /></svg>
-        </button>
-
-        <aside className={cx('gc-side', isSidebarOpen && 'is-open')}>
-          <div className="gc-side-card">
-            <div className="gc-brand">
-              <div className="gc-brand-mark"><img src={brandLogo} alt="" onError={(e) => { (e.currentTarget as HTMLImageElement).src = brandFallback }} /></div>
-              <div><div className="gc-brand-name">Gastro<span className="gc-brand-accent">Chef</span></div><div className="gc-brand-sub">{kitchenLabel}</div></div>
-            </div>
-            <div className="gc-side-block" style={{ marginTop: 14 }}>
-              <div className="gc-label">MODE</div>
-              <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')}>
-                <button className={cx('gc-mode-seg', isKitchen && 'is-active')} onClick={() => setMode('kitchen')}>Kitchen</button>
-                <button className={cx('gc-mode-seg', isMgmt && 'is-active')} onClick={() => setMode('mgmt')}>Mgmt</button>
+          <aside className={cx('gc-side', isSidebarOpen && 'is-open')}>
+            <div className="gc-side-card">
+              <div className="gc-brand">
+                <div className="gc-brand-mark" aria-hidden="true">
+                  <img
+                    src={brandLogo}
+                    alt=""
+                    onError={(e) => {
+                      ;(e.currentTarget as HTMLImageElement).src = brandFallback
+                    }}
+                  />
+                </div>
+                <div>
+                  <div className="gc-brand-name">
+                    Gastro<span className="gc-brand-accent">Chef</span>
+                  </div>
+                  <div className="gc-brand-sub">{kitchenLabel}</div>
+                </div>
               </div>
-              <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
-            </div>
-            <div className="gc-side-block" style={{ marginTop: 14 }}>
-              <div className="gc-label">NAVIGATION</div>
-              <nav className="gc-nav">
-                <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Dashboard</NavLink>
-                <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Ingredients</NavLink>
-                <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Recipes</NavLink>
-                <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Settings</NavLink>
-              </nav>
-              <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
-            </div>
-            <div className="gc-side-block" style={{ marginTop: 14 }}>
-              <button className="gc-btn gc-btn-danger gc-btn--full" onClick={handleLogout} disabled={loggingOut}>{loggingOut ? 'Logging out…' : 'Log out'}</button>
-            </div>
-          </div>
-        </aside>
 
-        <main className="gc-main">
-          {/* TOP BAR - ENHANCED */}
-          <div className="gc-topbar">
-            <div className="gc-topbar-pill">
-              
-              {/* LEFT SECTION */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <img className="gc-topbar-logo" src={brandLogo} alt="GastroChef" onError={(e) => { (e.currentTarget as HTMLImageElement).src = brandFallback }} />
-                
-                {/* Kitchen Selector */}
-                <div style={{ position: 'relative' }}>
-                  <button ref={kitchenButtonRef} className="kitchen-btn" onClick={() => setShowKitchenMenu(!showKitchenMenu)}>
-                    <span>🏠</span><span>{kitchenLabel}</span><span style={{ fontSize: 10 }}>▼</span>
+              <div className="gc-side-block" style={{ marginTop: 14 }}>
+                <div className="gc-label">MODE</div>
+                <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')} role="tablist" aria-label="Mode">
+                  <button
+                    className={cx('gc-mode-seg', isKitchen && 'is-active')}
+                    type="button"
+                    onClick={() => setMode('kitchen')}
+                  >
+                    Kitchen
                   </button>
-                  {showKitchenMenu && kitchens.length > 0 && (
-                    <div ref={kitchenMenuRef} className="dropdown-menu" style={{ width: 240 }}>
-                      <div className="dropdown-header"><span>Switch Kitchen</span></div>
-                      {kitchens.map(kit => (
-                        <button key={kit.id} className="dropdown-item" onClick={() => { window.location.reload(); setShowKitchenMenu(false); }}><span>{kit.name}</span>{kit.id === k.kitchenId && <span>✓</span>}</button>
-                      ))}
-                    </div>
-                  )}
+                  <button
+                    className={cx('gc-mode-seg', isMgmt && 'is-active')}
+                    type="button"
+                    onClick={() => setMode('mgmt')}
+                  >
+                    Mgmt
+                  </button>
                 </div>
-
-                {/* Quick Stats */}
-                <div style={{ display: 'flex', gap: 6 }}>
-                  <div className="stat-badge" title="Active Recipes">📝 {recipesCount}</div>
-                  <div className="stat-badge" title="Active Ingredients">🥗 {ingredientsCount}</div>
-                </div>
-
-                {/* Status Dot */}
-                <motion.div className={cx('status-dot', a.status === 'saving' && 'saving')} animate={{ scale: a.status === 'saving' ? [1, 1.2, 1] : 1 }} style={{ background: a.status === 'error' ? '#ef4444' : a.status === 'saving' ? '#f59e0b' : !isOnline ? '#6b7280' : '#10b981' }} />
-                {!isOnline && <span className="gc-hint" style={{ fontSize: 11 }}>Offline</span>}
+                <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
               </div>
 
-              {/* RIGHT SECTION */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }}>
+              <div className="gc-side-block" style={{ marginTop: 14 }}>
+                <div className="gc-label">NAVIGATION</div>
+                <nav className="gc-nav">
+                  <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Dashboard
+                  </NavLink>
+                  <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Ingredients
+                  </NavLink>
+                  <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Recipes
+                  </NavLink>
+                  <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>
+                    Settings
+                  </NavLink>
+                </nav>
+                <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
+              </div>
+
+              <div className="gc-side-block" style={{ marginTop: 14 }}>
+                <button
+                  className="gc-btn gc-btn-danger gc-btn--full"
+                  type="button"
+                  onClick={handleLogout}
+                  disabled={loggingOut}
+                >
+                  {loggingOut ? 'Logging out…' : 'Log out'}
+                </button>
+              </div>
+            </div>
+          </aside>
+
+          <main className="gc-main">
+            {/* TOP BAR - ENHANCED */}
+            <div className="gc-topbar" aria-label="Top bar">
+              <div className="gc-topbar-pill">
                 
-                {/* Autosave Indicator */}
-                <div className={cx('autosave-indicator', a.status === 'saving' ? 'saving' : a.status === 'saved' ? 'saved' : a.status === 'error' ? 'error' : '')}>
-                  <span>{a.status === 'saving' ? '⏳' : a.status === 'error' ? '⚠️' : a.status === 'saved' ? '✓' : '💾'}</span>
-                  <span>{a.status === 'saving' ? 'Saving' : a.status === 'error' ? 'Error' : a.status === 'saved' ? 'Saved' : 'Auto'}</span>
+                {/* LEFT SECTION */}
+                <div className="gc-topbar-left">
+                  <img
+                    className="gc-topbar-logo"
+                    src={brandLogo}
+                    alt="GastroChef"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).src = brandFallback
+                    }}
+                  />
+                  
+                  {/* Kitchen Selector */}
+                  <div className="gc-kitchen-selector">
+                    <button 
+                      ref={kitchenButtonRef}
+                      className="gc-kitchen-btn"
+                      onClick={() => setShowKitchenMenu(!showKitchenMenu)}
+                    >
+                      <span className="kitchen-icon">🏠</span>
+                      <span className="kitchen-name">{kitchenLabel}</span>
+                      <span className="kitchen-chevron">▼</span>
+                    </button>
+                    {showKitchenMenu && kitchens.length > 0 && (
+                      <div ref={kitchenMenuRef} className="gc-dropdown" style={{ width: 240 }}>
+                        <div className="dropdown-header">Switch Kitchen</div>
+                        {kitchens.map(kit => (
+                          <button key={kit.id} className="dropdown-item" onClick={() => { window.location.reload(); setShowKitchenMenu(false); }}>
+                            <span>{kit.name}</span>
+                            {kit.id === k.kitchenId && <span>✓</span>}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Quick Stats Badges */}
+                  <div className="gc-stats-group">
+                    <div className="gc-stat-badge" title="Active Recipes">
+                      <span className="stat-icon">📝</span>
+                      <span className="stat-value">{recipesCount}</span>
+                    </div>
+                    <div className="gc-stat-badge" title="Active Ingredients">
+                      <span className="stat-icon">🥗</span>
+                      <span className="stat-value">{ingredientsCount}</span>
+                    </div>
+                  </div>
+
+                  {/* Connection Status */}
+                  <div className="gc-connection-status">
+                    <div className={`status-dot ${!isOnline ? 'offline' : a.status === 'saving' ? 'saving' : a.status === 'error' ? 'error' : 'online'}`} />
+                    {!isOnline && <span className="status-text">Offline</span>}
+                  </div>
                 </div>
 
-                {/* Quick Export */}
-                <button className="action-btn" onClick={handleQuickExport} title="Export Backup"><span>💾</span><span>Export</span></button>
+                {/* CENTER SPACER */}
+                <div className="gc-topbar-spacer" />
 
-                {/* Focus Mode Toggle */}
-                <button className="action-btn" onClick={() => setFocusMode(!focusMode)} title={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}><span>{focusMode ? '🎯' : '🔍'}</span><span>Focus</span></button>
+                {/* RIGHT SECTION */}
+                <div className="gc-topbar-right">
+                  
+                  {/* Autosave Status */}
+                  <div className={`gc-autosave-status ${a.status}`}>
+                    <span className="autosave-icon">
+                      {a.status === 'saving' && '⏳'}
+                      {a.status === 'saved' && '✓'}
+                      {a.status === 'error' && '⚠️'}
+                      {a.status === 'idle' && '💾'}
+                    </span>
+                    <span className="autosave-text">
+                      {a.status === 'saving' && 'Saving...'}
+                      {a.status === 'saved' && 'Saved'}
+                      {a.status === 'error' && 'Failed'}
+                      {a.status === 'idle' && 'Auto-saved'}
+                    </span>
+                  </div>
 
-                {/* Quick Search */}
-                <div style={{ position: 'relative' }}>
-                  <button className="icon-btn" onClick={() => setShowQuickSearch(!showQuickSearch)} title="Quick Search"><span>🔍</span></button>
-                  {showQuickSearch && (
-                    <div ref={quickSearchRef}>
-                      <input autoFocus className="quick-search-input" placeholder="Search recipes or ingredients..." value={quickSearchQuery} onChange={(e) => setQuickSearchQuery(e.target.value)} onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)} />
-                      {quickSearchResults.length > 0 && (
-                        <div className="quick-search-results">
-                          {quickSearchResults.map(r => (
-                            <div key={r.id} className="quick-search-result-item" onClick={() => { navigate(r.path); setShowQuickSearch(false); setQuickSearchQuery(''); }}>
-                              <span>{r.type === 'recipe' ? '📝' : '🥗'}</span><span>{r.name}</span>
-                            </div>
-                          ))}
+                  {/* Export Button */}
+                  <button className="gc-action-btn" onClick={handleQuickExport} title="Export Backup">
+                    <span className="btn-icon">📦</span>
+                    <span className="btn-text">Export</span>
+                  </button>
+
+                  {/* Focus Mode Toggle */}
+                  <button className={`gc-action-btn ${focusMode ? 'active' : ''}`} onClick={() => setFocusMode(!focusMode)} title={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}>
+                    <span className="btn-icon">{focusMode ? '🎯' : '🔍'}</span>
+                    <span className="btn-text">Focus</span>
+                  </button>
+
+                  {/* Quick Search */}
+                  <div className="gc-quick-search">
+                    <button className="gc-action-btn" onClick={() => setShowQuickSearch(!showQuickSearch)} title="Quick Search">
+                      <span className="btn-icon">🔍</span>
+                    </button>
+                    {showQuickSearch && (
+                      <div className="gc-quick-search-dropdown" ref={quickSearchRef}>
+                        <input
+                          autoFocus
+                          type="text"
+                          placeholder="Search recipes or ingredients..."
+                          value={quickSearchQuery}
+                          onChange={(e) => setQuickSearchQuery(e.target.value)}
+                          onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)}
+                        />
+                        {quickSearchResults.length > 0 && (
+                          <div className="search-results">
+                            {quickSearchResults.map(r => (
+                              <div key={r.id} className="search-result-item" onClick={() => { navigate(r.path); setShowQuickSearch(false); setQuickSearchQuery(''); }}>
+                                <span>{r.type === 'recipe' ? '📝' : '🥗'}</span>
+                                <span>{r.name}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Command Palette */}
+                  <button className="gc-action-btn gc-cmdk-btn" onClick={() => setPaletteOpen(true)} title="Command Palette (⌘K)">
+                    <span className="cmd-key">⌘</span>
+                    <span className="cmd-key">K</span>
+                  </button>
+
+                  {/* Notifications */}
+                  <div className="gc-notifications">
+                    <button 
+                      ref={notificationsButtonRef}
+                      className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} 
+                      onClick={() => setShowNotifications(!showNotifications)}
+                    >
+                      <span className="btn-icon">🔔</span>
+                      {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                    </button>
+                    {showNotifications && (
+                      <div ref={notificationsRef} className="gc-dropdown notifications-dropdown">
+                        <div className="dropdown-header">
+                          <span>Notifications</span>
+                          {unreadCount > 0 && (
+                            <button className="mark-read-btn" onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}>
+                              Mark all read
+                            </button>
+                          )}
                         </div>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Command Palette */}
-                <button className="action-btn" onClick={() => setPaletteOpen(true)} title="Quick actions (⌘K)"><span style={{ background: 'rgba(107,127,59,0.2)', padding: '2px 6px', borderRadius: 6 }}>⌘</span><span>K</span></button>
-
-                {/* Notifications */}
-                <div style={{ position: 'relative' }}>
-                  <button ref={notificationsButtonRef} className="icon-btn" onClick={() => setShowNotifications(!showNotifications)}><span>🔔</span>{unreadCount > 0 && <span className="badge-dot" />}</button>
-                  {showNotifications && (
-                    <div ref={notificationsRef} className="dropdown-menu">
-                      <div className="dropdown-header"><div style={{ display: 'flex', justifyContent: 'space-between' }}><span>NOTIFICATIONS</span>{unreadCount > 0 && <button style={{ fontSize: 11, color: '#6B7F3B', background: 'none', border: 'none', cursor: 'pointer' }} onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}>Mark all read</button>}</div></div>
-                      <div style={{ padding: 8, maxHeight: 300, overflowY: 'auto' }}>
-                        {notifications.length > 0 ? notifications.map(n => (
-                          <button key={n.id} className="dropdown-item" style={{ background: n.read ? 'transparent' : 'rgba(107,127,59,0.05)' }} onClick={() => { setNotifications(prev => prev.map(notif => notif.id === n.id ? { ...notif, read: true } : notif)); if (n.path) navigate(n.path); setShowNotifications(false); }}>
-                            <span>{n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : n.type === 'warning' ? '⚠' : 'ℹ'}</span><span style={{ flex: 1 }}>{n.message}</span>
-                          </button>
-                        )) : <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>No notifications</div>}
+                        <div className="dropdown-list">
+                          {notifications.length > 0 ? (
+                            notifications.map(n => (
+                              <button key={n.id} className={`dropdown-item ${!n.read ? 'unread' : ''}`} onClick={() => { 
+                                setNotifications(prev => prev.map(notif => notif.id === n.id ? { ...notif, read: true } : notif)); 
+                                if (n.path) navigate(n.path); 
+                                setShowNotifications(false); 
+                              }}>
+                                <span className="item-icon">
+                                  {n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : n.type === 'warning' ? '⚠' : 'ℹ'}
+                                </span>
+                                <span className="item-message">{n.message}</span>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="empty-state">No notifications</div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* Recent Items */}
-                <div style={{ position: 'relative' }}>
-                  <button ref={recentButtonRef} className="icon-btn" onClick={() => setShowRecent(!showRecent)} disabled={loadingRecent}><span>{loadingRecent ? '⏳' : '🕒'}</span></button>
-                  {showRecent && (
-                    <div ref={recentRef} className="dropdown-menu">
-                      <div className="dropdown-header"><span>RECENTLY UPDATED</span></div>
-                      <div style={{ padding: 8, maxHeight: 300, overflowY: 'auto' }}>
-                        {recentItems.length > 0 ? recentItems.map((item, idx) => (
-                          <button key={`${item.id}-${idx}`} className="dropdown-item" onClick={() => { navigate(item.path); setShowRecent(false); }}>
-                            <span style={{ fontSize: 18 }}>{item.type === 'recipe' ? '📝' : '🥗'}</span>
-                            <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>{item.name}</div><div style={{ fontSize: 10, color: '#6b7280' }}>{item.type === 'recipe' ? 'Recipe' : 'Ingredient'} • {new Date(item.updated_at).toLocaleDateString()}</div></div>
-                          </button>
-                        )) : <div style={{ padding: '20px', textAlign: 'center', color: '#6b7280' }}>No recent items</div>}
+                  {/* Recent Items */}
+                  <div className="gc-recent">
+                    <button 
+                      ref={recentButtonRef}
+                      className="gc-action-btn" 
+                      onClick={() => setShowRecent(!showRecent)} 
+                      disabled={loadingRecent}
+                    >
+                      <span className="btn-icon">{loadingRecent ? '⏳' : '🕒'}</span>
+                    </button>
+                    {showRecent && (
+                      <div ref={recentRef} className="gc-dropdown recent-dropdown">
+                        <div className="dropdown-header">Recently Updated</div>
+                        <div className="dropdown-list">
+                          {recentItems.length > 0 ? (
+                            recentItems.map((item, idx) => (
+                              <button key={`${item.id}-${idx}`} className="dropdown-item" onClick={() => { navigate(item.path); setShowRecent(false); }}>
+                                <span className="item-icon">{item.type === 'recipe' ? '📝' : '🥗'}</span>
+                                <div className="item-info">
+                                  <div className="item-name">{item.name}</div>
+                                  <div className="item-meta">{item.type === 'recipe' ? 'Recipe' : 'Ingredient'} • {new Date(item.updated_at).toLocaleDateString()}</div>
+                                </div>
+                              </button>
+                            ))
+                          ) : (
+                            <div className="empty-state">No recent items</div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
 
-                {/* User Menu */}
-                <div style={{ position: 'relative' }}>
-                  <button ref={userButtonRef} className="kitchen-btn" onClick={() => setShowUserMenu(!showUserMenu)} style={{ padding: '4px 8px 4px 4px' }}>
-                    <span className="gc-avatar" style={{ width: 32, height: 32, borderRadius: 16, background: timeBased.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 12 }}>{avatarText}</span>
-                    <span style={{ fontSize: 12, fontWeight: 500 }}>{userEmail ? userEmail.split('@')[0] : 'Account'}</span>
-                    <span style={{ fontSize: 10 }}>▼</span>
-                  </button>
-                  {showUserMenu && (
-                    <div ref={userMenuRef} className="dropdown-menu" style={{ width: 260 }}>
-                      <div className="dropdown-header"><div style={{ display: 'flex', alignItems: 'center', gap: 12 }}><span style={{ width: 40, height: 40, borderRadius: 20, background: timeBased.gradient, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontWeight: 700, fontSize: 14 }}>{avatarText}</span><div><div style={{ fontWeight: 700 }}>{userEmail ? userEmail.split('@')[0] : 'Account'}</div><div style={{ fontSize: 11, color: '#6b7280' }}>{k.profile?.role === 'owner' ? '👑 Owner' : k.profile?.role === 'staff' ? '👥 Staff' : '👀 Viewer'}</div><div style={{ fontSize: 10, color: '#6b7280' }}>{timeBased.label} {timeBased.icon}</div></div></div></div>
-                      <div style={{ padding: 8 }}>
-                        <button className="dropdown-item" onClick={() => { setDark(!dark); setShowUserMenu(false); }}><span>{dark ? '☀️' : '🌙'}</span><span>{dark ? 'Light Mode' : 'Dark Mode'}</span></button>
-                        <button className="dropdown-item" onClick={() => { setFocusMode(!focusMode); setShowUserMenu(false); }}><span>{focusMode ? '🎯' : '🔍'}</span><span>{focusMode ? 'Exit Focus' : 'Focus Mode'}</span></button>
+                  {/* User Menu */}
+                  <div className="gc-user-menu">
+                    <button 
+                      ref={userButtonRef}
+                      className="gc-user-btn" 
+                      onClick={() => setShowUserMenu(!showUserMenu)}
+                    >
+                      <div className="user-avatar" style={{ background: timeBased.gradient }}>
+                        {avatarText}
+                      </div>
+                      <span className="user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</span>
+                      <span className="user-chevron">▼</span>
+                    </button>
+                    {showUserMenu && (
+                      <div ref={userMenuRef} className="gc-dropdown user-dropdown">
+                        <div className="user-header">
+                          <div className="user-avatar-large" style={{ background: timeBased.gradient }}>{avatarText}</div>
+                          <div className="user-info">
+                            <div className="user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
+                            <div className="user-role">{k.profile?.role === 'owner' ? 'Owner' : k.profile?.role === 'staff' ? 'Staff' : 'Viewer'}</div>
+                            <div className="user-time">{timeBased.label} {timeBased.icon}</div>
+                          </div>
+                        </div>
                         <div className="dropdown-divider" />
-                        <button className="dropdown-item" onClick={async () => { await k.refresh(); setShowUserMenu(false); }}><span>🔄</span><span>Refresh kitchen</span></button>
-                        <button className="dropdown-item" onClick={() => { navigate('/settings'); setShowUserMenu(false); }}><span>⚙️</span><span>Settings</span></button>
-                        <button className="dropdown-item" onClick={handleQuickExport}><span>💾</span><span>Export Backup</span></button>
+                        <button className="dropdown-item" onClick={() => { setDark(!dark); setShowUserMenu(false); }}>
+                          <span className="item-icon">{dark ? '☀️' : '🌙'}</span>
+                          <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>
+                        </button>
+                        <button className="dropdown-item" onClick={() => { setFocusMode(!focusMode); setShowUserMenu(false); }}>
+                          <span className="item-icon">{focusMode ? '🎯' : '🔍'}</span>
+                          <span>{focusMode ? 'Exit Focus Mode' : 'Focus Mode'}</span>
+                        </button>
                         <div className="dropdown-divider" />
-                        <button className="dropdown-item danger" onClick={handleLogout} disabled={loggingOut}><span>🚪</span><span>{loggingOut ? 'Logging out…' : 'Log out'}</span></button>
+                        <button className="dropdown-item" onClick={async () => { await k.refresh(); setShowUserMenu(false); }}>
+                          <span className="item-icon">🔄</span>
+                          <span>Refresh Kitchen</span>
+                        </button>
+                        <button className="dropdown-item" onClick={() => { navigate('/settings'); setShowUserMenu(false); }}>
+                          <span className="item-icon">⚙️</span>
+                          <span>Settings</span>
+                        </button>
+                        <button className="dropdown-item" onClick={handleQuickExport}>
+                          <span className="item-icon">📦</span>
+                          <span>Export Backup</span>
+                        </button>
+                        <div className="dropdown-divider" />
+                        <button className="dropdown-item danger" onClick={handleLogout} disabled={loggingOut}>
+                          <span className="item-icon">🚪</span>
+                          <span>{loggingOut ? 'Logging out…' : 'Log out'}</span>
+                        </button>
                       </div>
-                    </div>
-                  )}
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commands} />
+            <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} items={commands} />
 
-          <div className="gc-content"><div className="gc-page"><Outlet /></div></div>
-        </main>
+            <div className="gc-content">
+              <div className="gc-page">
+                <Outlet />
+              </div>
+            </div>
+          </main>
+        </div>
       </div>
 
-      <style>{`@media (max-width: 768px) { .gc-mobile-menu-toggle { display: flex !important; } .gc-side { transform: translateX(-100%); transition: transform 0.3s ease; position: fixed; z-index: 1000; } .gc-side.is-open { transform: translateX(0); } .gc-main { margin-left: 0 !important; } }`}</style>
-    </div>
+      <style>{`
+        @media (max-width: 768px) {
+          .gc-mobile-menu-toggle {
+            display: flex !important;
+          }
+          .gc-side {
+            transform: translateX(-100%);
+            transition: transform 0.3s ease;
+            position: fixed;
+            z-index: 1000;
+          }
+          .gc-side.is-open {
+            transform: translateX(0);
+          }
+          .gc-main {
+            margin-left: 0 !important;
+          }
+        }
+        
+        .gc-focus-mode .gc-side {
+          display: none !important;
+        }
+        
+        .gc-focus-mode .gc-main {
+          margin-left: 0 !important;
+          max-width: 1200px;
+          margin: 0 auto;
+        }
+      `}</style>
+    </>
   )
 }
+```
+
+---
+
+**هذا هو الملف الكامل. قومي باستبدال محتوى ملفك الحالي بهذا الكود.**
