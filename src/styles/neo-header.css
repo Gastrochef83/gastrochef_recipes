@@ -1,5 +1,5 @@
 /* src/styles/neo-header.css */
-/* أنماط الـ Header الجديدة - مكملة لـ Tailwind */
+/* أنماط الـ Header الجديدة */
 
 /* === الألوان الأساسية === */
 :root {
@@ -407,6 +407,32 @@
   margin: 0 auto;
   padding: 24px;
   min-height: calc(100vh - 64px);
+}
+
+/* Dashboard Layout */
+.neo-dashboard-layout {
+  padding: 0;
+}
+
+.neo-dashboard-header {
+  margin-bottom: 24px;
+}
+
+.neo-dashboard-title-section {
+  margin-bottom: 16px;
+}
+
+.neo-dashboard-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  margin: 0 0 4px 0;
+}
+
+.neo-dashboard-subtitle {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  margin: 0;
 }
 
 /* Responsive */
