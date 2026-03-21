@@ -124,7 +124,6 @@ export default function AppLayout() {
   const fetchStats = useCallback(async () => {
     if (!k.kitchenId) return
     try {
-      // جلب جميع الوصفات وتحليل is_archived
       const { data: allRecipes, error: allError } = await supabase
         .from('recipes')
         .select('id, is_archived')
@@ -142,7 +141,6 @@ export default function AppLayout() {
         if (!error) setRecipesCount(count || 0)
       }
       
-      // جلب المكونات النشطة
       const { data: allIngredients, error: ingError } = await supabase
         .from('ingredients')
         .select('id, is_active')
@@ -895,6 +893,77 @@ export default function AppLayout() {
       50% { opacity: 0.7; transform: scale(1.1); }
     }
     
+    /* ===== FOCUS MODE - HIDE NON-ESSENTIAL ELEMENTS ===== */
+    .gc-focus-mode .gc-side {
+      display: none !important;
+    }
+    
+    .gc-focus-mode .gc-main {
+      margin-left: 0 !important;
+      width: 100%;
+    }
+    
+    .gc-focus-mode .gc-topbar-pill {
+      justify-content: flex-start !important;
+    }
+    
+    .gc-focus-mode .gc-stats-group,
+    .gc-focus-mode .gc-connection-status,
+    .gc-focus-mode .gc-autosave-status .autosave-text,
+    .gc-focus-mode .gc-action-btn .btn-text,
+    .gc-focus-mode .gc-action-btn:not(.gc-cmdk-btn):not(.focus-toggle),
+    .gc-focus-mode .gc-quick-search,
+    .gc-focus-mode .gc-notifications,
+    .gc-focus-mode .gc-recent,
+    .gc-focus-mode .user-name,
+    .gc-focus-mode .kitchen-chevron,
+    .gc-focus-mode .kitchen-icon {
+      display: none !important;
+    }
+    
+    .gc-focus-mode .gc-topbar-left {
+      flex: 1;
+    }
+    
+    .gc-focus-mode .gc-kitchen-btn {
+      background: transparent !important;
+      border: none !important;
+      padding: 0 !important;
+    }
+    
+    .gc-focus-mode .kitchen-name {
+      font-size: 16px !important;
+      font-weight: 700 !important;
+      color: var(--gc-text) !important;
+    }
+    
+    .gc-focus-mode .gc-cmdk-btn {
+      margin-left: auto;
+    }
+    
+    .gc-focus-mode .focus-toggle {
+      background: #10b981 !important;
+      border-color: #10b981 !important;
+      color: white !important;
+    }
+    
+    .gc-focus-mode .focus-toggle .btn-icon {
+      margin-right: 4px;
+    }
+    
+    .gc-focus-mode .focus-toggle .btn-text {
+      display: inline !important;
+    }
+    
+    .gc-focus-mode .gc-autosave-status {
+      background: transparent !important;
+      padding: 4px 8px !important;
+    }
+    
+    .gc-focus-mode .gc-autosave-status .autosave-icon {
+      font-size: 14px;
+    }
+    
     @media (max-width: 1024px) {
       .gc-topbar-pill { padding: 0 16px; gap: 10px; }
       .gc-stats-group { display: none; }
@@ -1051,9 +1120,13 @@ export default function AppLayout() {
                     <span className="btn-text">Export</span>
                   </button>
 
-                  <button className={`gc-action-btn ${focusMode ? 'active' : ''}`} onClick={() => setFocusMode(!focusMode)} title={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}>
+                  <button 
+                    className={`gc-action-btn focus-toggle ${focusMode ? 'active' : ''}`} 
+                    onClick={() => setFocusMode(!focusMode)} 
+                    title={focusMode ? 'Exit Focus Mode' : 'Enter Focus Mode'}
+                  >
                     <span className="btn-icon">{focusMode ? '🎯' : '🔍'}</span>
-                    <span className="btn-text">Focus</span>
+                    <span className="btn-text">{focusMode ? 'Exit' : 'Focus'}</span>
                   </button>
 
                   <div className="gc-quick-search">
@@ -1213,8 +1286,6 @@ export default function AppLayout() {
           .gc-side.is-open { transform: translateX(0); }
           .gc-main { margin-left: 0 !important; }
         }
-        .gc-focus-mode .gc-side { display: none !important; }
-        .gc-focus-mode .gc-main { margin-left: 0 !important; max-width: 1200px; margin: 0 auto; }
       `}</style>
     </>
   )
