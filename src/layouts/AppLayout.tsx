@@ -94,6 +94,7 @@ export default function AppLayout() {
   const [quickSearchQuery, setQuickSearchQuery] = useState('')
   const [showQuickSearch, setShowQuickSearch] = useState(false)
   const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
+  const [statsLoading, setStatsLoading] = useState(false)
 
   // Network status
   useEffect(() => {
@@ -107,43 +108,65 @@ export default function AppLayout() {
     }
   }, [])
 
-  // Fetch stats - FIXED: counts all recipes regardless of is_archived
+  // Fetch stats
   const fetchStats = useCallback(async () => {
-    if (!k.kitchenId) return
+    if (!k.kitchenId) {
+      console.log('No kitchen ID yet')
+      return
+    }
+    
+    console.log('Fetching stats for kitchen:', k.kitchenId)
+    setStatsLoading(true)
+    
     try {
-      // جلب جميع الوصفات (بدون فلتر is_archived)
-      const { count: allRecipesCount, error: recipesError } = await supabase
+      // Get active recipes (not archived)
+      const { count: activeRecipes, error: recipesError } = await supabase
         .from('recipes')
         .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
+        .eq('is_archived', false)
       
-      if (!recipesError) {
-        setRecipesCount(allRecipesCount || 0)
-      } else {
+      if (recipesError) {
         console.error('Error fetching recipes:', recipesError)
+      } else {
+        console.log('Active recipes count:', activeRecipes)
+        setRecipesCount(activeRecipes || 0)
       }
       
-      // جلب المكونات النشطة فقط
-      const { count: ingredientsCount, error: ingredientsError } = await supabase
+      // Get active ingredients
+      const { count: activeIngredients, error: ingredientsError } = await supabase
         .from('ingredients')
         .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
         .eq('is_active', true)
       
-      if (!ingredientsError) {
-        setIngredientsCount(ingredientsCount || 0)
+      if (ingredientsError) {
+        console.error('Error fetching ingredients:', ingredientsError)
+      } else {
+        console.log('Active ingredients count:', activeIngredients)
+        setIngredientsCount(activeIngredients || 0)
       }
       
     } catch (error) {
       console.error('Error fetching stats:', error)
+    } finally {
+      setStatsLoading(false)
     }
   }, [k.kitchenId])
 
+  // Initial fetch and refresh on kitchen change
   useEffect(() => {
-    fetchStats()
+    if (k.kitchenId) {
+      fetchStats()
+    }
+  }, [k.kitchenId, fetchStats])
+
+  // Auto-refresh every 30 seconds
+  useEffect(() => {
+    if (!k.kitchenId) return
     const interval = setInterval(fetchStats, 30000)
     return () => clearInterval(interval)
-  }, [fetchStats])
+  }, [k.kitchenId, fetchStats])
 
   useEffect(() => {
     const fetchKitchens = async () => {
@@ -375,7 +398,7 @@ export default function AppLayout() {
       { id: 'go-print', label: 'Open Print', kbd: 'G P', run: () => navigate('/print') },
       { id: 'go-settings', label: 'Go to Settings', kbd: 'G S', run: () => navigate('/settings') },
       { id: 'toggle-theme', label: dark ? 'Switch to Light Mode' : 'Switch to Dark Mode', kbd: 'T', run: () => setDark(v => !v) },
-      { id: 'refresh-kitchen', label: 'Refresh kitchen', kbd: 'R', run: async () => { await k.refresh().catch(() => {}) } },
+      { id: 'refresh-kitchen', label: 'Refresh kitchen', kbd: 'R', run: async () => { await k.refresh().catch(() => {}); fetchStats(); } },
       { id: 'export-backup', label: 'Export Backup', kbd: 'E', run: () => handleQuickExport() },
       { id: 'logout', label: 'Log out', kbd: 'L', danger: true, run: async () => { await handleLogout() } },
     ]
@@ -386,7 +409,7 @@ export default function AppLayout() {
       cmds.push({ id: `rec-${r.id}`, label: `Recipe: ${r.name}`, kbd: '⏎', run: () => navigate('/recipes') })
     })
     return cmds
-  }, [navigate, dark, k, handleLogout, handleQuickExport, ingredientIndex, recipeIndex])
+  }, [navigate, dark, k, handleLogout, handleQuickExport, ingredientIndex, recipeIndex, fetchStats])
 
   const avatarText = initialsFrom(userEmail || 'GastroChef')
   const kitchenLabel = k.kitchenName || (k.kitchenId ? 'Kitchen' : 'Resolving kitchen…')
@@ -401,493 +424,8 @@ export default function AppLayout() {
     )
   }
 
-  const styles = `
-    .gc-topbar-pill {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      height: 60px;
-      background: #ffffff;
-      border-bottom: 1px solid #e5e7eb;
-      padding: 0 20px;
-      gap: 16px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-    }
-    
-    .gc-dark .gc-topbar-pill {
-      background: #1f2937;
-      border-bottom: 1px solid #374151;
-    }
-    
-    .gc-topbar-left {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-shrink: 0;
-    }
-    
-    .gc-topbar-logo {
-      height: 32px;
-      width: auto;
-    }
-    
-    .gc-kitchen-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 12px;
-      background: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 13px;
-      font-weight: 500;
-      color: #1f2937;
-    }
-    
-    .gc-dark .gc-kitchen-btn {
-      background: #374151;
-      border-color: #4b5563;
-      color: #f3f4f6;
-    }
-    
-    .gc-kitchen-btn:hover {
-      background: #e5e7eb;
-      transform: translateY(-1px);
-    }
-    
-    .gc-stats-group {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      background: #f9fafb;
-      padding: 4px 12px;
-      border-radius: 8px;
-    }
-    
-    .gc-dark .gc-stats-group {
-      background: #374151;
-    }
-    
-    .gc-stat-badge {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
-      color: #4b5563;
-    }
-    
-    .gc-dark .gc-stat-badge {
-      color: #9ca3af;
-    }
-    
-    .stat-icon { font-size: 14px; }
-    .stat-value { font-weight: 700; color: #10b981; }
-    
-    .gc-connection-status {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-    
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    
-    .status-dot.online { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
-    .status-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
-    .status-dot.error { background: #ef4444; }
-    .status-dot.offline { background: #6b7280; }
-    
-    .status-text { font-size: 11px; font-weight: 500; color: #6b7280; }
-    
-    .gc-topbar-right {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex-shrink: 0;
-    }
-    
-    .gc-action-btn {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 6px 10px;
-      background: #f9fafb;
-      border: 1px solid #e5e7eb;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 12px;
-      font-weight: 500;
-      color: #374151;
-    }
-    
-    .gc-dark .gc-action-btn {
-      background: #374151;
-      border-color: #4b5563;
-      color: #e5e7eb;
-    }
-    
-    .gc-action-btn:hover {
-      background: #e5e7eb;
-      transform: translateY(-1px);
-    }
-    
-    .gc-action-btn.active {
-      background: #10b981;
-      border-color: #10b981;
-      color: white;
-    }
-    
-    .gc-cmdk-btn {
-      background: #f3f4f6;
-      border-color: #e5e7eb;
-    }
-    
-    .cmd-key {
-      font-family: monospace;
-      font-size: 10px;
-      font-weight: 700;
-      background: #e5e7eb;
-      padding: 2px 4px;
-      border-radius: 4px;
-    }
-    
-    .gc-autosave-status {
-      display: flex;
-      align-items: center;
-      gap: 4px;
-      padding: 4px 8px;
-      border-radius: 6px;
-      font-size: 11px;
-      font-weight: 500;
-    }
-    
-    .gc-autosave-status.saving { background: #fef3c7; color: #d97706; }
-    .gc-autosave-status.saved { background: #d1fae5; color: #059669; }
-    .gc-autosave-status.error { background: #fee2e2; color: #dc2626; }
-    
-    .gc-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      min-width: 240px;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
-      overflow: hidden;
-      z-index: 1000;
-      animation: slideDown 0.2s ease;
-    }
-    
-    .gc-dark .gc-dropdown {
-      background: #1f2937;
-      border-color: #374151;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
-    }
-    
-    @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-8px); }
-      to { opacity: 1; transform: translateY(0); }
-    }
-    
-    .dropdown-header {
-      padding: 12px 16px;
-      font-size: 11px;
-      font-weight: 600;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #6b7280;
-      border-bottom: 1px solid #f3f4f6;
-      background: #f9fafb;
-    }
-    
-    .gc-dark .dropdown-header {
-      color: #9ca3af;
-      border-bottom-color: #374151;
-      background: #111827;
-    }
-    
-    .dropdown-list {
-      max-height: 320px;
-      overflow-y: auto;
-    }
-    
-    .dropdown-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      width: 100%;
-      padding: 10px 16px;
-      text-align: left;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      font-size: 13px;
-      color: #1f2937;
-    }
-    
-    .gc-dark .dropdown-item {
-      color: #e5e7eb;
-    }
-    
-    .dropdown-item:hover {
-      background: #f3f4f6;
-    }
-    
-    .gc-dark .dropdown-item:hover {
-      background: #374151;
-    }
-    
-    .dropdown-item.unread {
-      background: #eff6ff;
-    }
-    
-    .gc-dark .dropdown-item.unread {
-      background: #1e3a8a;
-    }
-    
-    .dropdown-item.danger {
-      color: #ef4444;
-    }
-    
-    .dropdown-item.danger:hover {
-      background: #fee2e2;
-    }
-    
-    .gc-dark .dropdown-item.danger:hover {
-      background: #7f1a1a;
-    }
-    
-    .item-icon { font-size: 14px; width: 24px; }
-    .item-info { flex: 1; }
-    .item-name { font-weight: 600; margin-bottom: 2px; }
-    .item-meta { font-size: 10px; color: #6b7280; }
-    
-    .empty-state {
-      padding: 32px;
-      text-align: center;
-      color: #6b7280;
-      font-size: 12px;
-    }
-    
-    .gc-user-btn {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 4px 10px 4px 6px;
-      background: #f3f4f6;
-      border: 1px solid #e5e7eb;
-      border-radius: 40px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    
-    .gc-dark .gc-user-btn {
-      background: #374151;
-      border-color: #4b5563;
-    }
-    
-    .gc-user-btn:hover {
-      background: #e5e7eb;
-    }
-    
-    .user-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 12px;
-      color: white;
-    }
-    
-    .user-name {
-      font-size: 12px;
-      font-weight: 500;
-      color: #1f2937;
-    }
-    
-    .gc-dark .user-name {
-      color: #e5e7eb;
-    }
-    
-    .user-chevron {
-      font-size: 10px;
-      color: #6b7280;
-    }
-    
-    .user-dropdown {
-      width: 260px;
-    }
-    
-    .user-header {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 16px;
-      border-bottom: 1px solid #f3f4f6;
-    }
-    
-    .gc-dark .user-header {
-      border-bottom-color: #374151;
-    }
-    
-    .user-avatar-large {
-      width: 44px;
-      height: 44px;
-      border-radius: 28px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-weight: 700;
-      font-size: 16px;
-      color: white;
-    }
-    
-    .user-info .user-name {
-      font-size: 14px;
-      font-weight: 700;
-      margin-bottom: 2px;
-    }
-    
-    .user-role {
-      font-size: 10px;
-      color: #6b7280;
-    }
-    
-    .user-time {
-      font-size: 10px;
-      color: #6b7280;
-      margin-top: 4px;
-    }
-    
-    .dropdown-divider {
-      height: 1px;
-      background: #f3f4f6;
-      margin: 6px 0;
-    }
-    
-    .gc-dark .dropdown-divider {
-      background: #374151;
-    }
-    
-    .gc-quick-search {
-      position: relative;
-    }
-    
-    .gc-quick-search-dropdown {
-      position: absolute;
-      top: calc(100% + 8px);
-      right: 0;
-      width: 280px;
-      background: #ffffff;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
-      overflow: hidden;
-      z-index: 1000;
-    }
-    
-    .gc-dark .gc-quick-search-dropdown {
-      background: #1f2937;
-      border-color: #374151;
-    }
-    
-    .gc-quick-search-dropdown input {
-      width: 100%;
-      padding: 12px 14px;
-      border: none;
-      border-bottom: 1px solid #f3f4f6;
-      background: transparent;
-      font-size: 13px;
-      outline: none;
-    }
-    
-    .gc-dark .gc-quick-search-dropdown input {
-      border-bottom-color: #374151;
-      color: #e5e7eb;
-    }
-    
-    .search-results {
-      max-height: 280px;
-      overflow-y: auto;
-    }
-    
-    .search-result-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
-      cursor: pointer;
-      transition: background 0.15s ease;
-      font-size: 13px;
-    }
-    
-    .search-result-item:hover {
-      background: #f3f4f6;
-    }
-    
-    .gc-dark .search-result-item:hover {
-      background: #374151;
-    }
-    
-    .gc-action-btn.has-badge {
-      position: relative;
-    }
-    
-    .notification-badge {
-      position: absolute;
-      top: -4px;
-      right: -4px;
-      min-width: 16px;
-      height: 16px;
-      background: #ef4444;
-      color: white;
-      font-size: 9px;
-      font-weight: 700;
-      border-radius: 20px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 0 4px;
-    }
-    
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.1); }
-    }
-    
-    @media (max-width: 1024px) {
-      .gc-topbar-pill { padding: 0 16px; gap: 10px; }
-      .gc-stats-group { display: none; }
-      .gc-autosave-status .autosave-text { display: none; }
-      .gc-action-btn .btn-text { display: none; }
-      .gc-action-btn { padding: 6px 8px; }
-      .user-name { display: none; }
-    }
-    
-    @media (max-width: 768px) {
-      .gc-topbar-logo { display: none; }
-      .gc-kitchen-btn .kitchen-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
-      .gc-quick-search-dropdown { width: 260px; right: -20px; }
-      .gc-dropdown { width: 260px; right: -10px; }
-    }
-  `
-
   return (
     <>
-      <style>{styles}</style>
-      
       <div className={cx('gc-root', dark && 'gc-dark', isKitchen ? 'gc-kitchen' : 'gc-mgmt')}>
         <div className="gc-shell">
           <button
@@ -899,13 +437,13 @@ export default function AppLayout() {
               right: 20,
               zIndex: 60,
               display: 'none',
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              background: 'linear-gradient(135deg, #6B7F3B 0%, #1F7A78 100%)',
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: 'white',
               border: 'none',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
               cursor: 'pointer',
               alignItems: 'center',
               justifyContent: 'center'
@@ -960,57 +498,129 @@ export default function AppLayout() {
 
           <main className="gc-main">
             <div className="gc-topbar">
-              <div className="gc-topbar-pill">
-                <div className="gc-topbar-left">
-                  <img className="gc-topbar-logo" src={brandLogo} alt="GastroChef" onError={(e) => { (e.currentTarget as HTMLImageElement).src = brandFallback }} />
+              <div className="gc-topbar-pill" style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                height: '60px',
+                background: dark ? '#1f2937' : '#ffffff',
+                borderBottom: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                padding: '0 20px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                  <img className="gc-topbar-logo" src={brandLogo} alt="GastroChef" style={{ height: '32px' }} onError={(e) => { (e.currentTarget as HTMLImageElement).src = brandFallback }} />
                   
                   <div className="gc-kitchen-selector">
-                    <button ref={kitchenButtonRef} className="gc-kitchen-btn" onClick={() => setShowKitchenMenu(!showKitchenMenu)}>
-                      <span className="kitchen-icon">🏠</span>
-                      <span className="kitchen-name">{kitchenLabel}</span>
-                      <span className="kitchen-chevron">▼</span>
+                    <button ref={kitchenButtonRef} className="gc-kitchen-btn" onClick={() => setShowKitchenMenu(!showKitchenMenu)} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '6px 12px',
+                      background: dark ? '#374151' : '#f3f4f6',
+                      border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      fontSize: '13px',
+                      fontWeight: '500',
+                      color: dark ? '#f3f4f6' : '#1f2937'
+                    }}>
+                      <span>🏠</span>
+                      <span>{kitchenLabel}</span>
+                      <span>▼</span>
                     </button>
                     {showKitchenMenu && kitchens.length > 0 && (
-                      <div ref={kitchenMenuRef} className="gc-dropdown" style={{ width: 240 }}>
-                        <div className="dropdown-header">Switch Kitchen</div>
+                      <div ref={kitchenMenuRef} className="gc-dropdown" style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        left: 0,
+                        minWidth: '240px',
+                        background: dark ? '#1f2937' : '#ffffff',
+                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000
+                      }}>
+                        <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 600, borderBottom: `1px solid ${dark ? '#374151' : '#f3f4f6'}` }}>Switch Kitchen</div>
                         {kitchens.map(kit => (
-                          <button key={kit.id} className="dropdown-item" onClick={() => { window.location.reload(); setShowKitchenMenu(false); }}>
+                          <button key={kit.id} style={{
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'space-between',
+                            width: '100%',
+                            padding: '10px 16px',
+                            background: 'transparent',
+                            border: 'none',
+                            cursor: 'pointer',
+                            fontSize: '13px',
+                            color: dark ? '#e5e7eb' : '#1f2937'
+                          }} onClick={() => { window.location.reload(); setShowKitchenMenu(false); }}>
                             <span>{kit.name}</span>
-                            {kit.id === k.kitchenId && <span>✓</span>}
+                            {kit.id === k.kitchenId && <span style={{ color: '#10b981' }}>✓</span>}
                           </button>
                         ))}
                       </div>
                     )}
                   </div>
 
-                  <div className="gc-stats-group">
-                    <div className="gc-stat-badge">
-                      <span className="stat-value">{recipesCount}</span>
-                      <span className="stat-label">recipes</span>
+                  {/* Stats Display - FIXED */}
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px',
+                    background: dark ? '#374151' : '#f9fafb',
+                    padding: '4px 16px',
+                    borderRadius: '40px',
+                    border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
+                      <span style={{ fontSize: '14px' }}>📝</span>
+                      <span style={{ fontWeight: 700, color: '#10b981', fontSize: '16px' }}>
+                        {statsLoading ? '...' : recipesCount}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>recipes</span>
                     </div>
-                    <div className="gc-stat-badge">
-                      <span className="stat-value">{ingredientsCount}</span>
-                      <span className="stat-label">ingredients</span>
+                    <div style={{ width: '1px', height: '20px', background: dark ? '#4b5563' : '#e5e7eb' }} />
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', fontWeight: 500 }}>
+                      <span style={{ fontSize: '14px' }}>🥗</span>
+                      <span style={{ fontWeight: 700, color: '#10b981', fontSize: '16px' }}>
+                        {statsLoading ? '...' : ingredientsCount}
+                      </span>
+                      <span style={{ fontSize: '11px', color: '#6b7280' }}>ingredients</span>
                     </div>
                   </div>
 
-                  <div className="gc-connection-status">
-                    <div className={`status-dot ${!isOnline ? 'offline' : a.status === 'saving' ? 'saving' : a.status === 'error' ? 'error' : 'online'}`} />
-                    {!isOnline && <span className="status-text">Offline</span>}
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <div style={{
+                      width: '8px',
+                      height: '8px',
+                      borderRadius: '50%',
+                      background: !isOnline ? '#6b7280' : a.status === 'saving' ? '#f59e0b' : a.status === 'error' ? '#ef4444' : '#10b981'
+                    }} />
+                    {!isOnline && <span style={{ fontSize: '11px', color: '#6b7280' }}>Offline</span>}
                   </div>
                 </div>
 
-                <div className="gc-topbar-spacer" />
+                <div style={{ flex: 1 }} />
 
-                <div className="gc-topbar-right">
-                  <div className={`gc-autosave-status ${a.status}`}>
-                    <span className="autosave-icon">
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <div style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '4px 8px',
+                    borderRadius: '6px',
+                    fontSize: '11px',
+                    fontWeight: 500,
+                    background: a.status === 'saving' ? '#fef3c7' : a.status === 'saved' ? '#d1fae5' : a.status === 'error' ? '#fee2e2' : '#f3f4f6',
+                    color: a.status === 'saving' ? '#d97706' : a.status === 'saved' ? '#059669' : a.status === 'error' ? '#dc2626' : '#6b7280'
+                  }}>
+                    <span>
                       {a.status === 'saving' && '⏳'}
                       {a.status === 'saved' && '✓'}
                       {a.status === 'error' && '⚠️'}
                       {a.status === 'idle' && '💾'}
                     </span>
-                    <span className="autosave-text">
+                    <span>
                       {a.status === 'saving' && 'Saving...'}
                       {a.status === 'saved' && 'Saved'}
                       {a.status === 'error' && 'Failed'}
@@ -1018,22 +628,76 @@ export default function AppLayout() {
                     </span>
                   </div>
 
-                  <button className="gc-action-btn" onClick={handleQuickExport} title="Export Backup">
-                    <span className="btn-icon">📦</span>
-                    <span className="btn-text">Export</span>
+                  <button className="gc-action-btn" onClick={handleQuickExport} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 10px',
+                    background: dark ? '#374151' : '#f9fafb',
+                    border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontSize: '12px',
+                    fontWeight: 500,
+                    color: dark ? '#e5e7eb' : '#374151'
+                  }}>
+                    <span>📦</span>
+                    <span>Export</span>
                   </button>
 
                   <div className="gc-quick-search">
-                    <button className="gc-action-btn" onClick={() => setShowQuickSearch(!showQuickSearch)} title="Quick Search">
-                      <span className="btn-icon">🔍</span>
+                    <button className="gc-action-btn" onClick={() => setShowQuickSearch(!showQuickSearch)} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 10px',
+                      background: dark ? '#374151' : '#f9fafb',
+                      border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}>
+                      <span>🔍</span>
                     </button>
                     {showQuickSearch && (
-                      <div className="gc-quick-search-dropdown" ref={quickSearchRef}>
-                        <input autoFocus type="text" placeholder="Search recipes or ingredients..." value={quickSearchQuery} onChange={(e) => setQuickSearchQuery(e.target.value)} onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)} />
+                      <div ref={quickSearchRef} style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        right: 0,
+                        width: '280px',
+                        background: dark ? '#1f2937' : '#ffffff',
+                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000
+                      }}>
+                        <input 
+                          autoFocus 
+                          type="text" 
+                          placeholder="Search recipes or ingredients..." 
+                          value={quickSearchQuery} 
+                          onChange={(e) => setQuickSearchQuery(e.target.value)} 
+                          onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)}
+                          style={{
+                            width: '100%',
+                            padding: '12px 14px',
+                            border: 'none',
+                            borderBottom: `1px solid ${dark ? '#374151' : '#f3f4f6'}`,
+                            background: 'transparent',
+                            fontSize: '13px',
+                            outline: 'none',
+                            color: dark ? '#e5e7eb' : '#1f2937'
+                          }}
+                        />
                         {quickSearchResults.length > 0 && (
-                          <div className="search-results">
+                          <div style={{ maxHeight: '280px', overflowY: 'auto' }}>
                             {quickSearchResults.map(r => (
-                              <div key={r.id} className="search-result-item" onClick={() => { navigate(r.path); setShowQuickSearch(false); setQuickSearchQuery(''); }}>
+                              <div key={r.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                padding: '10px 14px',
+                                cursor: 'pointer'
+                              }} onClick={() => { navigate(r.path); setShowQuickSearch(false); setQuickSearchQuery(''); }}>
                                 <span>{r.type === 'recipe' ? '📝' : '🥗'}</span>
                                 <span>{r.name}</span>
                               </div>
@@ -1044,42 +708,106 @@ export default function AppLayout() {
                     )}
                   </div>
 
-                  <button className="gc-action-btn gc-cmdk-btn" onClick={() => setPaletteOpen(true)} title="Command Palette (⌘K)">
-                    <span className="cmd-key">⌘</span>
-                    <span className="cmd-key">K</span>
+                  <button className="gc-action-btn gc-cmdk-btn" onClick={() => setPaletteOpen(true)} style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px',
+                    padding: '6px 10px',
+                    background: dark ? '#374151' : '#f9fafb',
+                    border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    fontFamily: 'monospace'
+                  }}>
+                    <span style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '4px' }}>⌘</span>
+                    <span style={{ background: 'rgba(0,0,0,0.1)', padding: '2px 4px', borderRadius: '4px' }}>K</span>
                   </button>
 
                   <div className="gc-notifications">
-                    <button ref={notificationsButtonRef} className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} onClick={() => setShowNotifications(!showNotifications)}>
-                      <span className="btn-icon">🔔</span>
-                      {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
+                    <button ref={notificationsButtonRef} className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} onClick={() => setShowNotifications(!showNotifications)} style={{
+                      position: 'relative',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 10px',
+                      background: dark ? '#374151' : '#f9fafb',
+                      border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}>
+                      <span>🔔</span>
+                      {unreadCount > 0 && (
+                        <span style={{
+                          position: 'absolute',
+                          top: '-4px',
+                          right: '-4px',
+                          minWidth: '16px',
+                          height: '16px',
+                          background: '#ef4444',
+                          color: 'white',
+                          fontSize: '9px',
+                          fontWeight: 'bold',
+                          borderRadius: '20px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          padding: '0 4px'
+                        }}>{unreadCount > 9 ? '9+' : unreadCount}</span>
+                      )}
                     </button>
                     {showNotifications && (
-                      <div ref={notificationsRef} className="gc-dropdown notifications-dropdown">
-                        <div className="dropdown-header">
+                      <div ref={notificationsRef} style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        right: 0,
+                        minWidth: '280px',
+                        background: dark ? '#1f2937' : '#ffffff',
+                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000
+                      }}>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          padding: '12px 16px',
+                          fontSize: '11px',
+                          fontWeight: 600,
+                          borderBottom: `1px solid ${dark ? '#374151' : '#f3f4f6'}`
+                        }}>
                           <span>Notifications</span>
                           {unreadCount > 0 && (
-                            <button className="mark-read-btn" onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}>
+                            <button style={{ fontSize: '10px', background: 'none', border: 'none', color: '#10b981', cursor: 'pointer' }} onClick={() => setNotifications(prev => prev.map(n => ({ ...n, read: true })))}>
                               Mark all read
                             </button>
                           )}
                         </div>
-                        <div className="dropdown-list">
+                        <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
                           {notifications.length > 0 ? (
-                            notifications.map(n => (
-                              <button key={n.id} className={`dropdown-item ${!n.read ? 'unread' : ''}`} onClick={() => { 
+                            notifications.slice(0, 10).map(n => (
+                              <button key={n.id} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                width: '100%',
+                                padding: '12px 16px',
+                                background: !n.read ? (dark ? '#1e3a8a' : '#eff6ff') : 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                color: dark ? '#e5e7eb' : '#1f2937'
+                              }} onClick={() => { 
                                 setNotifications(prev => prev.map(notif => notif.id === n.id ? { ...notif, read: true } : notif)); 
                                 if (n.path) navigate(n.path); 
                                 setShowNotifications(false); 
                               }}>
-                                <span className="item-icon">
-                                  {n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : n.type === 'warning' ? '⚠' : 'ℹ'}
-                                </span>
-                                <span className="item-message">{n.message}</span>
+                                <span>{n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : n.type === 'warning' ? '⚠' : 'ℹ'}</span>
+                                <span style={{ flex: 1 }}>{n.message}</span>
                               </button>
                             ))
                           ) : (
-                            <div className="empty-state">No notifications</div>
+                            <div style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>No notifications</div>
                           )}
                         </div>
                       </div>
@@ -1087,25 +815,55 @@ export default function AppLayout() {
                   </div>
 
                   <div className="gc-recent">
-                    <button ref={recentButtonRef} className="gc-action-btn" onClick={() => setShowRecent(!showRecent)} disabled={loadingRecent}>
-                      <span className="btn-icon">{loadingRecent ? '⏳' : '🕒'}</span>
+                    <button ref={recentButtonRef} className="gc-action-btn" onClick={() => setShowRecent(!showRecent)} disabled={loadingRecent} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      padding: '6px 10px',
+                      background: dark ? '#374151' : '#f9fafb',
+                      border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                      borderRadius: '6px',
+                      cursor: 'pointer'
+                    }}>
+                      <span>{loadingRecent ? '⏳' : '🕒'}</span>
                     </button>
                     {showRecent && (
-                      <div ref={recentRef} className="gc-dropdown recent-dropdown">
-                        <div className="dropdown-header">Recently Updated</div>
-                        <div className="dropdown-list">
+                      <div ref={recentRef} style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        right: 0,
+                        minWidth: '280px',
+                        background: dark ? '#1f2937' : '#ffffff',
+                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000
+                      }}>
+                        <div style={{ padding: '12px 16px', fontSize: '11px', fontWeight: 600, borderBottom: `1px solid ${dark ? '#374151' : '#f3f4f6'}` }}>Recently Updated</div>
+                        <div style={{ maxHeight: '360px', overflowY: 'auto' }}>
                           {recentItems.length > 0 ? (
-                            recentItems.map((item, idx) => (
-                              <button key={`${item.id}-${idx}`} className="dropdown-item" onClick={() => { navigate(item.path); setShowRecent(false); }}>
-                                <span className="item-icon">{item.type === 'recipe' ? '📝' : '🥗'}</span>
-                                <div className="item-info">
-                                  <div className="item-name">{item.name}</div>
-                                  <div className="item-meta">{item.type === 'recipe' ? 'Recipe' : 'Ingredient'} • {new Date(item.updated_at).toLocaleDateString()}</div>
+                            recentItems.slice(0, 8).map((item, idx) => (
+                              <button key={`${item.id}-${idx}`} style={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '12px',
+                                width: '100%',
+                                padding: '10px 16px',
+                                background: 'transparent',
+                                border: 'none',
+                                cursor: 'pointer',
+                                fontSize: '13px',
+                                color: dark ? '#e5e7eb' : '#1f2937'
+                              }} onClick={() => { navigate(item.path); setShowRecent(false); }}>
+                                <span>{item.type === 'recipe' ? '📝' : '🥗'}</span>
+                                <div style={{ flex: 1 }}>
+                                  <div style={{ fontWeight: 600 }}>{item.name}</div>
+                                  <div style={{ fontSize: '10px', color: '#6b7280' }}>{item.type === 'recipe' ? 'Recipe' : 'Ingredient'} • {new Date(item.updated_at).toLocaleDateString()}</div>
                                 </div>
                               </button>
                             ))
                           ) : (
-                            <div className="empty-state">No recent items</div>
+                            <div style={{ padding: '32px', textAlign: 'center', color: '#6b7280' }}>No recent items</div>
                           )}
                         </div>
                       </div>
@@ -1113,42 +871,122 @@ export default function AppLayout() {
                   </div>
 
                   <div className="gc-user-menu">
-                    <button ref={userButtonRef} className="gc-user-btn" onClick={() => setShowUserMenu(!showUserMenu)}>
-                      <div className="user-avatar" style={{ background: timeBased.gradient }}>{avatarText}</div>
-                      <span className="user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</span>
-                      <span className="user-chevron">▼</span>
+                    <button ref={userButtonRef} className="gc-user-btn" onClick={() => setShowUserMenu(!showUserMenu)} style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '8px',
+                      padding: '4px 10px 4px 6px',
+                      background: dark ? '#374151' : '#f3f4f6',
+                      border: `1px solid ${dark ? '#4b5563' : '#e5e7eb'}`,
+                      borderRadius: '40px',
+                      cursor: 'pointer'
+                    }}>
+                      <div style={{
+                        width: '28px',
+                        height: '28px',
+                        borderRadius: '20px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontWeight: 'bold',
+                        fontSize: '12px',
+                        color: 'white',
+                        background: timeBased.gradient
+                      }}>{avatarText}</div>
+                      <span style={{ fontSize: '12px', fontWeight: 500, color: dark ? '#e5e7eb' : '#1f2937' }}>{userEmail ? userEmail.split('@')[0] : 'Account'}</span>
+                      <span style={{ fontSize: '10px', color: '#6b7280' }}>▼</span>
                     </button>
                     {showUserMenu && (
-                      <div ref={userMenuRef} className="gc-dropdown user-dropdown">
-                        <div className="user-header">
-                          <div className="user-avatar-large" style={{ background: timeBased.gradient }}>{avatarText}</div>
-                          <div className="user-info">
-                            <div className="user-name">{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
-                            <div className="user-role">{k.profile?.role === 'owner' ? 'Owner' : k.profile?.role === 'staff' ? 'Staff' : 'Viewer'}</div>
-                            <div className="user-time">{timeBased.label} {timeBased.icon}</div>
+                      <div ref={userMenuRef} style={{
+                        position: 'absolute',
+                        top: 'calc(100% + 8px)',
+                        right: 0,
+                        width: '280px',
+                        background: dark ? '#1f2937' : '#ffffff',
+                        border: `1px solid ${dark ? '#374151' : '#e5e7eb'}`,
+                        borderRadius: '12px',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)',
+                        zIndex: 1000
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '16px', borderBottom: `1px solid ${dark ? '#374151' : '#f3f4f6'}` }}>
+                          <div style={{
+                            width: '44px',
+                            height: '44px',
+                            borderRadius: '28px',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            fontWeight: 'bold',
+                            fontSize: '16px',
+                            color: 'white',
+                            background: timeBased.gradient
+                          }}>{avatarText}</div>
+                          <div>
+                            <div style={{ fontSize: '14px', fontWeight: 'bold', color: dark ? '#e5e7eb' : '#1f2937' }}>{userEmail ? userEmail.split('@')[0] : 'Account'}</div>
+                            <div style={{ fontSize: '10px', color: '#6b7280' }}>{k.profile?.role === 'owner' ? 'Owner' : k.profile?.role === 'staff' ? 'Staff' : 'Viewer'}</div>
+                            <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '4px' }}>{timeBased.label} {timeBased.icon}</div>
                           </div>
                         </div>
-                        <div className="dropdown-divider" />
-                        <button className="dropdown-item" onClick={() => { setDark(!dark); setShowUserMenu(false); }}>
-                          <span className="item-icon">{dark ? '☀️' : '🌙'}</span>
+                        <div style={{ height: '1px', background: dark ? '#374151' : '#f3f4f6', margin: '6px 0' }} />
+                        <button style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          width: '100%',
+                          padding: '10px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: dark ? '#e5e7eb' : '#1f2937'
+                        }} onClick={() => { setDark(!dark); setShowUserMenu(false); }}>
+                          <span>{dark ? '☀️' : '🌙'}</span>
                           <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>
                         </button>
-                        <div className="dropdown-divider" />
-                        <button className="dropdown-item" onClick={async () => { await k.refresh(); setShowUserMenu(false); }}>
-                          <span className="item-icon">🔄</span>
+                        <div style={{ height: '1px', background: dark ? '#374151' : '#f3f4f6', margin: '6px 0' }} />
+                        <button style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          width: '100%',
+                          padding: '10px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: dark ? '#e5e7eb' : '#1f2937'
+                        }} onClick={async () => { await k.refresh(); fetchStats(); setShowUserMenu(false); }}>
+                          <span>🔄</span>
                           <span>Refresh Kitchen</span>
                         </button>
-                        <button className="dropdown-item" onClick={() => { navigate('/settings'); setShowUserMenu(false); }}>
-                          <span className="item-icon">⚙️</span>
+                        <button style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          width: '100%',
+                          padding: '10px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: dark ? '#e5e7eb' : '#1f2937'
+                        }} onClick={() => { navigate('/settings'); setShowUserMenu(false); }}>
+                          <span>⚙️</span>
                           <span>Settings</span>
                         </button>
-                        <button className="dropdown-item" onClick={handleQuickExport}>
-                          <span className="item-icon">📦</span>
-                          <span>Export Backup</span>
-                        </button>
-                        <div className="dropdown-divider" />
-                        <button className="dropdown-item danger" onClick={handleLogout} disabled={loggingOut}>
-                          <span className="item-icon">🚪</span>
+                        <button style={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: '12px',
+                          width: '100%',
+                          padding: '10px 16px',
+                          background: 'transparent',
+                          border: 'none',
+                          cursor: 'pointer',
+                          fontSize: '13px',
+                          color: '#ef4444'
+                        }} onClick={handleLogout} disabled={loggingOut}>
+                          <span>🚪</span>
                           <span>{loggingOut ? 'Logging out…' : 'Log out'}</span>
                         </button>
                       </div>
@@ -1172,9 +1010,189 @@ export default function AppLayout() {
       <style>{`
         @media (max-width: 768px) {
           .gc-mobile-menu-toggle { display: flex !important; }
-          .gc-side { transform: translateX(-100%); transition: transform 0.3s ease; position: fixed; z-index: 1000; }
+          .gc-side { 
+            transform: translateX(-100%); 
+            transition: transform 0.3s ease; 
+            position: fixed; 
+            z-index: 1000; 
+            top: 0;
+            left: 0;
+            height: 100vh;
+            background: ${dark ? '#1f2937' : '#ffffff'};
+          }
           .gc-side.is-open { transform: translateX(0); }
           .gc-main { margin-left: 0 !important; }
+        }
+        
+        .gc-root {
+          min-height: 100vh;
+        }
+        
+        .gc-shell {
+          display: flex;
+          min-height: 100vh;
+        }
+        
+        .gc-side {
+          width: 280px;
+          flex-shrink: 0;
+          background: ${dark ? '#111827' : '#f9fafb'};
+          border-right: 1px solid ${dark ? '#374151' : '#e5e7eb'};
+        }
+        
+        .gc-side-card {
+          padding: 20px;
+        }
+        
+        .gc-brand {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 24px;
+        }
+        
+        .gc-brand-mark img {
+          width: 32px;
+          height: 32px;
+        }
+        
+        .gc-brand-name {
+          font-size: 18px;
+          font-weight: 700;
+          color: ${dark ? '#f3f4f6' : '#1f2937'};
+        }
+        
+        .gc-brand-accent {
+          color: #10b981;
+        }
+        
+        .gc-brand-sub {
+          font-size: 11px;
+          color: #6b7280;
+        }
+        
+        .gc-side-block {
+          margin-bottom: 24px;
+        }
+        
+        .gc-label {
+          font-size: 11px;
+          font-weight: 600;
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+          color: #6b7280;
+          margin-bottom: 8px;
+        }
+        
+        .gc-mode-switch {
+          display: flex;
+          gap: 4px;
+          background: ${dark ? '#1f2937' : '#f3f4f6'};
+          border-radius: 8px;
+          padding: 2px;
+        }
+        
+        .gc-mode-seg {
+          flex: 1;
+          padding: 6px 12px;
+          border: none;
+          background: transparent;
+          border-radius: 6px;
+          cursor: pointer;
+          font-size: 12px;
+          font-weight: 500;
+          color: ${dark ? '#9ca3af' : '#6b7280'};
+        }
+        
+        .gc-mode-seg.is-active {
+          background: ${dark ? '#10b981' : '#ffffff'};
+          color: ${dark ? '#ffffff' : '#10b981'};
+          box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+        }
+        
+        .gc-hint {
+          font-size: 10px;
+          color: #6b7280;
+          margin-top: 6px;
+        }
+        
+        .gc-nav {
+          display: flex;
+          flex-direction: column;
+          gap: 2px;
+        }
+        
+        .gc-nav-item {
+          padding: 8px 12px;
+          border-radius: 8px;
+          font-size: 13px;
+          font-weight: 500;
+          color: ${dark ? '#9ca3af' : '#6b7280'};
+          text-decoration: none;
+          transition: all 0.2s ease;
+        }
+        
+        .gc-nav-item:hover {
+          background: ${dark ? '#374151' : '#f3f4f6'};
+          color: ${dark ? '#f3f4f6' : '#1f2937'};
+        }
+        
+        .gc-nav-item.is-active {
+          background: ${dark ? '#10b981' : '#10b981'};
+          color: white;
+        }
+        
+        .gc-tip {
+          font-size: 10px;
+          color: #6b7280;
+          margin-top: 12px;
+          padding: 8px;
+          background: ${dark ? '#1f2937' : '#f3f4f6'};
+          border-radius: 8px;
+        }
+        
+        .gc-btn {
+          padding: 8px 16px;
+          border-radius: 8px;
+          border: none;
+          cursor: pointer;
+          font-size: 13px;
+          font-weight: 500;
+          transition: all 0.2s ease;
+        }
+        
+        .gc-btn-danger {
+          background: #ef4444;
+          color: white;
+        }
+        
+        .gc-btn-danger:hover {
+          background: #dc2626;
+        }
+        
+        .gc-btn--full {
+          width: 100%;
+        }
+        
+        .gc-main {
+          flex: 1;
+          background: ${dark ? '#1f2937' : '#ffffff'};
+          min-height: 100vh;
+        }
+        
+        .gc-topbar {
+          position: sticky;
+          top: 0;
+          z-index: 50;
+        }
+        
+        .gc-content {
+          padding: 20px;
+        }
+        
+        .gc-page {
+          max-width: 1400px;
+          margin: 0 auto;
         }
       `}</style>
     </>
