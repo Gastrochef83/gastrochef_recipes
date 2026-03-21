@@ -124,20 +124,36 @@ export default function AppLayout() {
   const fetchStats = useCallback(async () => {
     if (!k.kitchenId) return
     try {
-      const { count: recipes, error: recipesError } = await supabase
+      // جلب جميع الوصفات وتحليل is_archived
+      const { data: allRecipes, error: allError } = await supabase
         .from('recipes')
-        .select('*', { count: 'exact', head: true })
+        .select('id, is_archived')
         .eq('kitchen_id', k.kitchenId)
-        .eq('is_archived', false)
       
+      if (!allError && allRecipes) {
+        // حساب الوصفات النشطة (غير المؤرشفة)
+        const activeRecipes = allRecipes.filter(r => r.is_archived !== true)
+        setRecipesCount(activeRecipes.length)
+      } else {
+        // Fallback: استخدام count مع شرط
+        const { count, error } = await supabase
+          .from('recipes')
+          .select('*', { count: 'exact', head: true })
+          .eq('kitchen_id', k.kitchenId)
+          .not('is_archived', 'eq', true)
+        
+        if (!error) setRecipesCount(count || 0)
+      }
+      
+      // جلب المكونات النشطة
       const { count: ingredients, error: ingredientsError } = await supabase
         .from('ingredients')
         .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
         .eq('is_active', true)
       
-      if (!recipesError) setRecipesCount(recipes || 0)
       if (!ingredientsError) setIngredientsCount(ingredients || 0)
+      
     } catch (error) {
       console.error('Error fetching stats:', error)
     }
