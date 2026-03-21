@@ -8,6 +8,7 @@ interface KitchenContextType {
   setKitchenId: (id: string | null) => void
   kitchen: any | null
   isOwner: boolean
+  clearKitchenCache: () => void
 }
 
 const KitchenContext = createContext<KitchenContextType | undefined>(undefined)
@@ -45,11 +46,18 @@ export function KitchenProvider({ children }: { children: React.ReactNode }) {
     if (!id) localStorage.removeItem('kitchenId')
   }
 
+  const clearKitchenCache = () => {
+    setKitchen(null)
+    setKitchenId(null)
+    localStorage.removeItem('kitchenId')
+  }
+
   const contextValue: KitchenContextType = {
     kitchenId,
     setKitchenId: handleSetKitchenId,
     kitchen,
-    isOwner
+    isOwner,
+    clearKitchenCache
   }
 
   return React.createElement(KitchenContext.Provider, { value: contextValue }, children)
@@ -59,4 +67,8 @@ export function useKitchen() {
   const context = useContext(KitchenContext)
   if (!context) throw new Error('useKitchen must be used within KitchenProvider')
   return context
+}
+
+export function clearKitchenCache() {
+  localStorage.removeItem('kitchenId')
 }
