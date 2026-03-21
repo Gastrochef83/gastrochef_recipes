@@ -1,12 +1,33 @@
-// src/main.tsx
-import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { HashRouter } from 'react-router-dom'
 import App from './App'
-import './index.css'        // Tailwind - موجود
-import './styles/neo-header.css'  // أنماط الـ Header الجديدة - أضف هذا
+
+import './index.css'
+import './styles.css'
+
+import { ModeProvider } from './lib/mode'
+import { AutosaveProvider } from './contexts/AutosaveContext'
+import ErrorBoundary from './components/ErrorBoundary'
+
+function removePreloadSplash() {
+  const el = document.getElementById('gc-preload')
+  if (!el) return
+  // remove after first paint to avoid white flash
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => el.remove())
+  })
+}
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>
+  <HashRouter>
+    <ModeProvider>
+      <ErrorBoundary>
+        <AutosaveProvider>
+          <App />
+        </AutosaveProvider>
+      </ErrorBoundary>
+    </ModeProvider>
+  </HashRouter>
 )
+
+removePreloadSplash()
