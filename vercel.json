@@ -1,0 +1,5 @@
+{
+  "installCommand": "corepack enable && yarn install --non-interactive --network-timeout 600000",
+  "buildCommand": "yarn build",
+  "outputDirectory": "dist"
+}

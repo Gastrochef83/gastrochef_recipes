@@ -1,0 +1,41 @@
+@import './styles/tokens.css';
+@import './styles/globals.css';
+
+
+/* =========================================================
+   RecipeEditor — Grid helpers (fix stacked fields)
+   ========================================================= */
+.gc-field-row{
+  display:grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+  align-items: end;
+}
+
+.gc-col-12{ grid-column: span 12; }
+.gc-col-9{ grid-column: span 9; }
+.gc-col-6{ grid-column: span 6; }
+.gc-col-4{ grid-column: span 4; }
+.gc-col-3{ grid-column: span 3; }
+
+.gc-grid-4{
+  display:grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.gc-grid-3{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* Responsive: stack cleanly on small screens */
+@media (max-width: 900px){
+  .gc-col-9, .gc-col-6, .gc-col-4, .gc-col-3{ grid-column: span 12; }
+  .gc-grid-4{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .gc-grid-3{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
+@media (max-width: 520px){
+  .gc-grid-4{ grid-template-columns: repeat(1, minmax(0, 1fr)); }
+}
