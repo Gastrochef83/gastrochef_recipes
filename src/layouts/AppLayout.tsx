@@ -121,22 +121,33 @@ export default function AppLayout() {
     }
   }, [])
 
-  useEffect(() => {
-    const fetchStats = async () => {
-      if (!k.kitchenId) return
-      try {
-        const [{ count: recipes }, { count: ingredients }] = await Promise.all([
-          supabase.from('recipes').select('*', { count: 'exact', head: true }).eq('kitchen_id', k.kitchenId).eq('is_archived', false),
-          supabase.from('ingredients').select('*', { count: 'exact', head: true }).eq('kitchen_id', k.kitchenId).eq('is_active', true)
-        ])
-        setRecipesCount(recipes || 0)
-        setIngredientsCount(ingredients || 0)
-      } catch { /* ignore */ }
+  const fetchStats = useCallback(async () => {
+    if (!k.kitchenId) return
+    try {
+      const { count: recipes, error: recipesError } = await supabase
+        .from('recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('kitchen_id', k.kitchenId)
+        .eq('is_archived', false)
+      
+      const { count: ingredients, error: ingredientsError } = await supabase
+        .from('ingredients')
+        .select('*', { count: 'exact', head: true })
+        .eq('kitchen_id', k.kitchenId)
+        .eq('is_active', true)
+      
+      if (!recipesError) setRecipesCount(recipes || 0)
+      if (!ingredientsError) setIngredientsCount(ingredients || 0)
+    } catch (error) {
+      console.error('Error fetching stats:', error)
     }
+  }, [k.kitchenId])
+
+  useEffect(() => {
     fetchStats()
     const interval = setInterval(fetchStats, 30000)
     return () => clearInterval(interval)
-  }, [k.kitchenId])
+  }, [fetchStats])
 
   useEffect(() => {
     const fetchKitchens = async () => {
@@ -407,24 +418,20 @@ export default function AppLayout() {
       padding: 0 20px;
       gap: 16px;
     }
-    
     .gc-dark .gc-topbar-pill {
       background: rgba(20, 25, 35, 0.95);
       border-bottom: 1px solid rgba(107, 127, 59, 0.3);
     }
-    
     .gc-topbar-left {
       display: flex;
       align-items: center;
       gap: 16px;
       flex-shrink: 0;
     }
-    
     .gc-topbar-logo {
       height: 32px;
       width: auto;
     }
-    
     .gc-kitchen-btn {
       display: flex;
       align-items: center;
@@ -439,17 +446,14 @@ export default function AppLayout() {
       font-size: 13px;
       color: var(--gc-text);
     }
-    
     .gc-kitchen-btn:hover {
       background: rgba(107, 127, 59, 0.2);
       border-color: rgba(107, 127, 59, 0.4);
       transform: translateY(-1px);
     }
-    
     .kitchen-icon { font-size: 14px; }
     .kitchen-name { max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .kitchen-chevron { font-size: 10px; opacity: 0.7; }
-    
     .gc-stats-group {
       display: flex;
       align-items: center;
@@ -458,11 +462,9 @@ export default function AppLayout() {
       padding: 4px 12px;
       border-radius: 32px;
     }
-    
     .gc-dark .gc-stats-group {
       background: rgba(255, 255, 255, 0.05);
     }
-    
     .gc-stat-badge {
       display: flex;
       align-items: center;
@@ -471,41 +473,30 @@ export default function AppLayout() {
       font-weight: 600;
       color: var(--gc-text);
     }
-    
     .stat-icon { font-size: 14px; }
     .stat-value { font-weight: 700; color: var(--gc-brand-olive); }
-    
     .gc-connection-status {
       display: flex;
       align-items: center;
       gap: 6px;
     }
-    
     .status-dot {
       width: 10px;
       height: 10px;
       border-radius: 50%;
       transition: all 0.2s ease;
     }
-    
     .status-dot.online { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
     .status-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
     .status-dot.error { background: #ef4444; }
     .status-dot.offline { background: #6b7280; }
-    
-    .status-text {
-      font-size: 11px;
-      font-weight: 500;
-      color: var(--gc-muted);
-    }
-    
+    .status-text { font-size: 11px; font-weight: 500; color: var(--gc-muted); }
     .gc-topbar-right {
       display: flex;
       align-items: center;
       gap: 8px;
       flex-shrink: 0;
     }
-    
     .gc-action-btn {
       display: flex;
       align-items: center;
@@ -520,26 +511,21 @@ export default function AppLayout() {
       font-weight: 500;
       color: var(--gc-text);
     }
-    
     .gc-action-btn:hover {
       background: rgba(107, 127, 59, 0.1);
       border-color: rgba(107, 127, 59, 0.4);
       transform: translateY(-1px);
     }
-    
     .gc-action-btn.active {
       background: rgba(107, 127, 59, 0.15);
       border-color: rgba(107, 127, 59, 0.5);
     }
-    
     .btn-icon { font-size: 14px; }
     .btn-text { font-size: 12px; }
-    
     .gc-cmdk-btn {
       background: rgba(107, 127, 59, 0.08);
       border-color: rgba(107, 127, 59, 0.3);
     }
-    
     .cmd-key {
       font-family: monospace;
       font-size: 11px;
@@ -548,11 +534,9 @@ export default function AppLayout() {
       padding: 2px 5px;
       border-radius: 6px;
     }
-    
     .gc-dark .cmd-key {
       background: rgba(255, 255, 255, 0.1);
     }
-    
     .gc-autosave-status {
       display: flex;
       align-items: center;
@@ -562,31 +546,25 @@ export default function AppLayout() {
       font-size: 12px;
       font-weight: 500;
     }
-    
     .gc-autosave-status.saving {
       background: rgba(245, 158, 11, 0.12);
       color: #f59e0b;
     }
-    
     .gc-autosave-status.saved {
       background: rgba(16, 185, 129, 0.12);
       color: #10b981;
     }
-    
     .gc-autosave-status.error {
       background: rgba(239, 68, 68, 0.12);
       color: #ef4444;
     }
-    
     .gc-autosave-status.idle {
       background: transparent;
       color: var(--gc-muted);
     }
-    
     .gc-action-btn.has-badge {
       position: relative;
     }
-    
     .notification-badge {
       position: absolute;
       top: -4px;
@@ -603,7 +581,6 @@ export default function AppLayout() {
       justify-content: center;
       padding: 0 4px;
     }
-    
     .gc-dropdown {
       position: absolute;
       top: calc(100% + 8px);
@@ -617,22 +594,13 @@ export default function AppLayout() {
       z-index: 1000;
       animation: slideDown 0.2s ease;
     }
-    
     .gc-dark .gc-dropdown {
       background: #1f2937;
     }
-    
     @keyframes slideDown {
-      from {
-        opacity: 0;
-        transform: translateY(-10px);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
+      from { opacity: 0; transform: translateY(-10px); }
+      to { opacity: 1; transform: translateY(0); }
     }
-    
     .dropdown-header {
       padding: 14px 16px;
       font-size: 12px;
@@ -643,7 +611,6 @@ export default function AppLayout() {
       justify-content: space-between;
       align-items: center;
     }
-    
     .mark-read-btn {
       background: none;
       border: none;
@@ -651,12 +618,10 @@ export default function AppLayout() {
       color: var(--gc-brand-olive);
       cursor: pointer;
     }
-    
     .dropdown-list {
       max-height: 320px;
       overflow-y: auto;
     }
-    
     .dropdown-item {
       display: flex;
       align-items: center;
@@ -671,35 +636,28 @@ export default function AppLayout() {
       font-size: 13px;
       color: var(--gc-text);
     }
-    
     .dropdown-item:hover {
       background: rgba(107, 127, 59, 0.08);
     }
-    
     .dropdown-item.unread {
       background: rgba(107, 127, 59, 0.05);
     }
-    
     .dropdown-item.danger {
       color: #ef4444;
     }
-    
     .dropdown-item.danger:hover {
       background: rgba(239, 68, 68, 0.1);
     }
-    
     .item-icon { font-size: 16px; width: 28px; }
     .item-info { flex: 1; }
     .item-name { font-weight: 600; margin-bottom: 2px; }
     .item-meta { font-size: 11px; color: var(--gc-muted); }
-    
     .empty-state {
       padding: 40px;
       text-align: center;
       color: var(--gc-muted);
       font-size: 13px;
     }
-    
     .gc-user-btn {
       display: flex;
       align-items: center;
@@ -711,12 +669,10 @@ export default function AppLayout() {
       cursor: pointer;
       transition: all 0.2s ease;
     }
-    
     .gc-user-btn:hover {
       background: rgba(107, 127, 59, 0.08);
       border-color: rgba(107, 127, 59, 0.3);
     }
-    
     .user-avatar {
       width: 32px;
       height: 32px;
@@ -728,24 +684,20 @@ export default function AppLayout() {
       font-size: 13px;
       color: white;
     }
-    
     .user-name {
       font-size: 13px;
       font-weight: 500;
       color: var(--gc-text);
     }
-    
     .user-chevron {
       font-size: 10px;
       color: var(--gc-muted);
     }
-    
     .user-dropdown {
       width: 260px;
       right: 0;
       left: auto;
     }
-    
     .user-header {
       display: flex;
       align-items: center;
@@ -753,7 +705,6 @@ export default function AppLayout() {
       padding: 16px;
       border-bottom: 1px solid var(--gc-border);
     }
-    
     .user-avatar-large {
       width: 48px;
       height: 48px;
@@ -765,34 +716,28 @@ export default function AppLayout() {
       font-size: 18px;
       color: white;
     }
-    
     .user-info .user-name {
       font-size: 15px;
       font-weight: 700;
       margin-bottom: 2px;
     }
-    
     .user-role {
       font-size: 11px;
       color: var(--gc-muted);
     }
-    
     .user-time {
       font-size: 10px;
       color: var(--gc-muted);
       margin-top: 4px;
     }
-    
     .dropdown-divider {
       height: 1px;
       background: var(--gc-border);
       margin: 6px 0;
     }
-    
     .gc-quick-search {
       position: relative;
     }
-    
     .gc-quick-search-dropdown {
       position: absolute;
       top: calc(100% + 8px);
@@ -805,7 +750,6 @@ export default function AppLayout() {
       overflow: hidden;
       z-index: 1000;
     }
-    
     .gc-quick-search-dropdown input {
       width: 100%;
       padding: 12px 16px;
@@ -816,12 +760,10 @@ export default function AppLayout() {
       color: var(--gc-text);
       outline: none;
     }
-    
     .search-results {
       max-height: 280px;
       overflow-y: auto;
     }
-    
     .search-result-item {
       display: flex;
       align-items: center;
@@ -830,16 +772,13 @@ export default function AppLayout() {
       cursor: pointer;
       transition: background 0.15s ease;
     }
-    
     .search-result-item:hover {
       background: rgba(107, 127, 59, 0.08);
     }
-    
     @keyframes pulse {
       0%, 100% { opacity: 1; transform: scale(1); }
       50% { opacity: 0.7; transform: scale(1.2); }
     }
-    
     @media (max-width: 1024px) {
       .gc-topbar-pill { padding: 0 16px; gap: 12px; }
       .gc-stats-group { display: none; }
@@ -848,7 +787,6 @@ export default function AppLayout() {
       .gc-action-btn { padding: 6px 10px; }
       .user-name { display: none; }
     }
-    
     @media (max-width: 768px) {
       .gc-topbar-logo { display: none; }
       .gc-kitchen-btn .kitchen-name { max-width: 100px; }
