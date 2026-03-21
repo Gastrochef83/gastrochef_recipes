@@ -88,12 +88,17 @@ export default function AppLayout() {
 
   const [recipesCount, setRecipesCount] = useState(0)
   const [ingredientsCount, setIngredientsCount] = useState(0)
+  const [totalRecipesCount, setTotalRecipesCount] = useState(0)
+  const [totalIngredientsCount, setTotalIngredientsCount] = useState(0)
+  const [archivedRecipesCount, setArchivedRecipesCount] = useState(0)
+  const [archivedIngredientsCount, setArchivedIngredientsCount] = useState(0)
   const [isOnline, setIsOnline] = useState(navigator.onLine)
   const [showKitchenMenu, setShowKitchenMenu] = useState(false)
   const [kitchens, setKitchens] = useState<Array<{ id: string; name: string }>>([])
   const [quickSearchQuery, setQuickSearchQuery] = useState('')
   const [showQuickSearch, setShowQuickSearch] = useState(false)
   const [quickSearchResults, setQuickSearchResults] = useState<Array<{ id: string; name: string; type: string; path: string }>>([])
+  const [statsLoading, setStatsLoading] = useState(false)
 
   // Network status
   useEffect(() => {
@@ -107,35 +112,80 @@ export default function AppLayout() {
     }
   }, [])
 
-  // Fetch stats - FIXED: counts all recipes regardless of is_archived
+  // Fetch all kitchen statistics
   const fetchStats = useCallback(async () => {
     if (!k.kitchenId) return
+    
+    setStatsLoading(true)
     try {
-      // جلب جميع الوصفات (بدون فلتر is_archived)
-      const { count: allRecipesCount, error: recipesError } = await supabase
+      // Get all recipes (including archived)
+      const { count: allRecipes, error: allRecipesError } = await supabase
         .from('recipes')
         .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
       
-      if (!recipesError) {
-        setRecipesCount(allRecipesCount || 0)
-      } else {
-        console.error('Error fetching recipes:', recipesError)
+      if (!allRecipesError) {
+        setTotalRecipesCount(allRecipes || 0)
+      }
+
+      // Get active recipes (not archived)
+      const { count: activeRecipes, error: activeRecipesError } = await supabase
+        .from('recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('kitchen_id', k.kitchenId)
+        .eq('is_archived', false)
+      
+      if (!activeRecipesError) {
+        setRecipesCount(activeRecipes || 0)
+      }
+
+      // Get archived recipes
+      const { count: archivedRecipes, error: archivedRecipesError } = await supabase
+        .from('recipes')
+        .select('*', { count: 'exact', head: true })
+        .eq('kitchen_id', k.kitchenId)
+        .eq('is_archived', true)
+      
+      if (!archivedRecipesError) {
+        setArchivedRecipesCount(archivedRecipes || 0)
       }
       
-      // جلب المكونات النشطة فقط
-      const { count: ingredientsCount, error: ingredientsError } = await supabase
+      // Get all ingredients (including inactive)
+      const { count: allIngredients, error: allIngredientsError } = await supabase
+        .from('ingredients')
+        .select('*', { count: 'exact', head: true })
+        .eq('kitchen_id', k.kitchenId)
+      
+      if (!allIngredientsError) {
+        setTotalIngredientsCount(allIngredients || 0)
+      }
+      
+      // Get active ingredients only
+      const { count: activeIngredients, error: activeIngredientsError } = await supabase
         .from('ingredients')
         .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
         .eq('is_active', true)
       
-      if (!ingredientsError) {
-        setIngredientsCount(ingredientsCount || 0)
+      if (!activeIngredientsError) {
+        setIngredientsCount(activeIngredients || 0)
+      }
+
+      // Get archived/inactive ingredients
+      const { count: archivedIngredients, error: archivedIngredientsError } = await supabase
+        .from('ingredients')
+        .select('*', { count: 'exact', head: true })
+        .eq('kitchen_id', k.kitchenId)
+        .eq('is_active', false)
+      
+      if (!archivedIngredientsError) {
+        setArchivedIngredientsCount(archivedIngredients || 0)
       }
       
     } catch (error) {
       console.error('Error fetching stats:', error)
+    } finally {
+      setStatsLoading(false)
     }
   }, [k.kitchenId])
 
@@ -406,12 +456,12 @@ export default function AppLayout() {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      height: 60px;
+      height: 64px;
       background: #ffffff;
       border-bottom: 1px solid #e5e7eb;
-      padding: 0 20px;
-      gap: 16px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+      padding: 0 24px;
+      gap: 20px;
+      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
     }
     
     .gc-dark .gc-topbar-pill {
@@ -422,7 +472,7 @@ export default function AppLayout() {
     .gc-topbar-left {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 16px;
       flex-shrink: 0;
     }
     
@@ -435,93 +485,152 @@ export default function AppLayout() {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 12px;
-      background: #f3f4f6;
+      padding: 8px 14px;
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
       border: 1px solid #e5e7eb;
-      border-radius: 8px;
+      border-radius: 10px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       font-size: 13px;
       font-weight: 500;
       color: #1f2937;
     }
     
     .gc-dark .gc-kitchen-btn {
-      background: #374151;
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
       border-color: #4b5563;
       color: #f3f4f6;
     }
     
     .gc-kitchen-btn:hover {
-      background: #e5e7eb;
-      transform: translateY(-1px);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-color: #10b981;
     }
     
     .gc-stats-group {
       display: flex;
       align-items: center;
-      gap: 8px;
-      background: #f9fafb;
-      padding: 4px 12px;
-      border-radius: 8px;
+      gap: 12px;
+      background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+      padding: 6px 16px;
+      border-radius: 40px;
+      border: 1px solid #e5e7eb;
     }
     
     .gc-dark .gc-stats-group {
-      background: #374151;
+      background: linear-gradient(135deg, #1f2937 0%, #111827 100%);
+      border-color: #374151;
     }
     
     .gc-stat-badge {
       display: flex;
       align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      font-weight: 600;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 500;
       color: #4b5563;
+      padding: 4px 8px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+    
+    .gc-stat-badge:hover {
+      background: rgba(16, 185, 129, 0.1);
     }
     
     .gc-dark .gc-stat-badge {
       color: #9ca3af;
     }
     
-    .stat-icon { font-size: 14px; }
-    .stat-value { font-weight: 700; color: #10b981; }
+    .stat-icon { 
+      font-size: 16px; 
+      filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.1));
+    }
+    
+    .stat-value { 
+      font-weight: 700; 
+      color: #10b981;
+      font-size: 16px;
+      letter-spacing: -0.3px;
+    }
+    
+    .stat-label {
+      font-size: 11px;
+      color: #6b7280;
+      margin-left: 4px;
+    }
     
     .gc-connection-status {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
+      padding: 4px 10px;
+      background: #f9fafb;
+      border-radius: 20px;
     }
     
     .status-dot {
       width: 8px;
       height: 8px;
       border-radius: 50%;
+      transition: all 0.2s ease;
     }
     
-    .status-dot.online { background: #10b981; box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2); }
-    .status-dot.saving { background: #f59e0b; animation: pulse 1s infinite; }
-    .status-dot.error { background: #ef4444; }
-    .status-dot.offline { background: #6b7280; }
+    .status-dot.online { 
+      background: #10b981; 
+      box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+      animation: glow 2s ease-in-out infinite;
+    }
     
-    .status-text { font-size: 11px; font-weight: 500; color: #6b7280; }
+    .status-dot.saving { 
+      background: #f59e0b; 
+      animation: pulse 1s ease-in-out infinite;
+    }
+    
+    .status-dot.error { 
+      background: #ef4444;
+      animation: shake 0.5s ease;
+    }
+    
+    .status-dot.offline { 
+      background: #6b7280;
+    }
+    
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4); }
+      50% { box-shadow: 0 0 0 4px rgba(16, 185, 129, 0.2); }
+    }
+    
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-2px); }
+      75% { transform: translateX(2px); }
+    }
+    
+    .status-text { 
+      font-size: 11px; 
+      font-weight: 500; 
+      color: #6b7280;
+    }
     
     .gc-topbar-right {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       flex-shrink: 0;
     }
     
     .gc-action-btn {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 6px 10px;
+      gap: 6px;
+      padding: 8px 12px;
       background: #f9fafb;
       border: 1px solid #e5e7eb;
-      border-radius: 6px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
       font-size: 12px;
       font-weight: 500;
       color: #374151;
@@ -536,68 +645,97 @@ export default function AppLayout() {
     .gc-action-btn:hover {
       background: #e5e7eb;
       transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-color: #10b981;
     }
     
     .gc-action-btn.active {
-      background: #10b981;
+      background: linear-gradient(135deg, #10b981 0%, #059669 100%);
       border-color: #10b981;
       color: white;
     }
     
     .gc-cmdk-btn {
-      background: #f3f4f6;
-      border-color: #e5e7eb;
+      background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+      font-family: monospace;
+      font-weight: 700;
+    }
+    
+    .gc-dark .gc-cmdk-btn {
+      background: linear-gradient(135deg, #4b5563 0%, #374151 100%);
     }
     
     .cmd-key {
       font-family: monospace;
-      font-size: 10px;
+      font-size: 11px;
       font-weight: 700;
-      background: #e5e7eb;
-      padding: 2px 4px;
-      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.1);
+      padding: 2px 6px;
+      border-radius: 6px;
+      letter-spacing: 0.5px;
     }
     
     .gc-autosave-status {
       display: flex;
       align-items: center;
-      gap: 4px;
-      padding: 4px 8px;
-      border-radius: 6px;
+      gap: 6px;
+      padding: 6px 12px;
+      border-radius: 8px;
       font-size: 11px;
       font-weight: 500;
+      transition: all 0.2s ease;
     }
     
-    .gc-autosave-status.saving { background: #fef3c7; color: #d97706; }
-    .gc-autosave-status.saved { background: #d1fae5; color: #059669; }
-    .gc-autosave-status.error { background: #fee2e2; color: #dc2626; }
+    .gc-autosave-status.saving { 
+      background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+      color: #d97706;
+      animation: pulse 1s ease-in-out infinite;
+    }
+    
+    .gc-autosave-status.saved { 
+      background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+      color: #059669;
+    }
+    
+    .gc-autosave-status.error { 
+      background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+      color: #dc2626;
+    }
+    
+    .gc-autosave-status.idle { 
+      background: #f3f4f6;
+      color: #6b7280;
+    }
     
     .gc-dropdown {
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
-      min-width: 240px;
+      min-width: 280px;
       background: #ffffff;
       border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
       overflow: hidden;
       z-index: 1000;
-      animation: slideDown 0.2s ease;
+      animation: slideDown 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .gc-dark .gc-dropdown {
       background: #1f2937;
       border-color: #374151;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);
     }
     
     @keyframes slideDown {
-      from { opacity: 0; transform: translateY(-8px); }
+      from { opacity: 0; transform: translateY(-12px); }
       to { opacity: 1; transform: translateY(0); }
     }
     
     .dropdown-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
       padding: 12px 16px;
       font-size: 11px;
       font-weight: 600;
@@ -614,8 +752,17 @@ export default function AppLayout() {
       background: #111827;
     }
     
+    .mark-read-btn {
+      font-size: 10px;
+      background: none;
+      border: none;
+      color: #10b981;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    
     .dropdown-list {
-      max-height: 320px;
+      max-height: 360px;
       overflow-y: auto;
     }
     
@@ -624,12 +771,12 @@ export default function AppLayout() {
       align-items: center;
       gap: 12px;
       width: 100%;
-      padding: 10px 16px;
+      padding: 12px 16px;
       text-align: left;
       background: transparent;
       border: none;
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: all 0.15s ease;
       font-size: 13px;
       color: #1f2937;
     }
@@ -640,6 +787,7 @@ export default function AppLayout() {
     
     .dropdown-item:hover {
       background: #f3f4f6;
+      transform: translateX(2px);
     }
     
     .gc-dark .dropdown-item:hover {
@@ -647,11 +795,12 @@ export default function AppLayout() {
     }
     
     .dropdown-item.unread {
-      background: #eff6ff;
+      background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+      border-left: 3px solid #3b82f6;
     }
     
     .gc-dark .dropdown-item.unread {
-      background: #1e3a8a;
+      background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
     }
     
     .dropdown-item.danger {
@@ -662,53 +811,75 @@ export default function AppLayout() {
       background: #fee2e2;
     }
     
-    .gc-dark .dropdown-item.danger:hover {
-      background: #7f1a1a;
+    .item-icon { 
+      font-size: 16px; 
+      width: 28px;
+      text-align: center;
     }
     
-    .item-icon { font-size: 14px; width: 24px; }
-    .item-info { flex: 1; }
-    .item-name { font-weight: 600; margin-bottom: 2px; }
-    .item-meta { font-size: 10px; color: #6b7280; }
+    .item-info { 
+      flex: 1; 
+    }
+    
+    .item-name { 
+      font-weight: 600; 
+      margin-bottom: 2px;
+    }
+    
+    .item-meta { 
+      font-size: 10px; 
+      color: #6b7280;
+    }
+    
+    .item-message {
+      flex: 1;
+    }
     
     .empty-state {
-      padding: 32px;
+      padding: 40px;
       text-align: center;
       color: #6b7280;
-      font-size: 12px;
+      font-size: 13px;
     }
     
     .gc-user-btn {
       display: flex;
       align-items: center;
-      gap: 8px;
-      padding: 4px 10px 4px 6px;
-      background: #f3f4f6;
+      gap: 10px;
+      padding: 6px 12px 6px 8px;
+      background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
       border: 1px solid #e5e7eb;
       border-radius: 40px;
       cursor: pointer;
-      transition: all 0.2s ease;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     }
     
     .gc-dark .gc-user-btn {
-      background: #374151;
+      background: linear-gradient(135deg, #374151 0%, #1f2937 100%);
       border-color: #4b5563;
     }
     
     .gc-user-btn:hover {
-      background: #e5e7eb;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+      border-color: #10b981;
     }
     
     .user-avatar {
-      width: 28px;
-      height: 28px;
-      border-radius: 20px;
+      width: 30px;
+      height: 30px;
+      border-radius: 30px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
       font-size: 12px;
       color: white;
+      transition: transform 0.2s ease;
+    }
+    
+    .gc-user-btn:hover .user-avatar {
+      transform: scale(1.05);
     }
     
     .user-name {
@@ -727,14 +898,14 @@ export default function AppLayout() {
     }
     
     .user-dropdown {
-      width: 260px;
+      width: 280px;
     }
     
     .user-header {
       display: flex;
       align-items: center;
-      gap: 12px;
-      padding: 16px;
+      gap: 14px;
+      padding: 20px;
       border-bottom: 1px solid #f3f4f6;
     }
     
@@ -743,38 +914,39 @@ export default function AppLayout() {
     }
     
     .user-avatar-large {
-      width: 44px;
-      height: 44px;
-      border-radius: 28px;
+      width: 48px;
+      height: 48px;
+      border-radius: 48px;
       display: flex;
       align-items: center;
       justify-content: center;
       font-weight: 700;
-      font-size: 16px;
+      font-size: 18px;
       color: white;
     }
     
     .user-info .user-name {
       font-size: 14px;
       font-weight: 700;
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
     
     .user-role {
       font-size: 10px;
       color: #6b7280;
+      font-weight: 500;
     }
     
     .user-time {
       font-size: 10px;
       color: #6b7280;
-      margin-top: 4px;
+      margin-top: 6px;
     }
     
     .dropdown-divider {
       height: 1px;
       background: #f3f4f6;
-      margin: 6px 0;
+      margin: 8px 0;
     }
     
     .gc-dark .dropdown-divider {
@@ -789,11 +961,11 @@ export default function AppLayout() {
       position: absolute;
       top: calc(100% + 8px);
       right: 0;
-      width: 280px;
+      width: 300px;
       background: #ffffff;
       border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+      border-radius: 16px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
       overflow: hidden;
       z-index: 1000;
     }
@@ -805,7 +977,7 @@ export default function AppLayout() {
     
     .gc-quick-search-dropdown input {
       width: 100%;
-      padding: 12px 14px;
+      padding: 14px 16px;
       border: none;
       border-bottom: 1px solid #f3f4f6;
       background: transparent;
@@ -818,23 +990,28 @@ export default function AppLayout() {
       color: #e5e7eb;
     }
     
+    .gc-quick-search-dropdown input::placeholder {
+      color: #9ca3af;
+    }
+    
     .search-results {
-      max-height: 280px;
+      max-height: 320px;
       overflow-y: auto;
     }
     
     .search-result-item {
       display: flex;
       align-items: center;
-      gap: 10px;
-      padding: 10px 14px;
+      gap: 12px;
+      padding: 12px 16px;
       cursor: pointer;
-      transition: background 0.15s ease;
+      transition: all 0.15s ease;
       font-size: 13px;
     }
     
     .search-result-item:hover {
       background: #f3f4f6;
+      transform: translateX(2px);
     }
     
     .gc-dark .search-result-item:hover {
@@ -849,38 +1026,49 @@ export default function AppLayout() {
       position: absolute;
       top: -4px;
       right: -4px;
-      min-width: 16px;
-      height: 16px;
-      background: #ef4444;
+      min-width: 18px;
+      height: 18px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
       color: white;
-      font-size: 9px;
+      font-size: 10px;
       font-weight: 700;
       border-radius: 20px;
       display: flex;
       align-items: center;
       justify-content: center;
-      padding: 0 4px;
+      padding: 0 5px;
+      animation: bounce 0.3s ease;
+    }
+    
+    @keyframes bounce {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.2); }
     }
     
     @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.7; transform: scale(1.1); }
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    
+    .stats-loading {
+      animation: pulse 1s ease-in-out infinite;
     }
     
     @media (max-width: 1024px) {
-      .gc-topbar-pill { padding: 0 16px; gap: 10px; }
+      .gc-topbar-pill { padding: 0 16px; gap: 12px; }
       .gc-stats-group { display: none; }
       .gc-autosave-status .autosave-text { display: none; }
       .gc-action-btn .btn-text { display: none; }
-      .gc-action-btn { padding: 6px 8px; }
+      .gc-action-btn { padding: 8px 10px; }
       .user-name { display: none; }
     }
     
     @media (max-width: 768px) {
       .gc-topbar-logo { display: none; }
       .gc-kitchen-btn .kitchen-name { max-width: 100px; overflow: hidden; text-overflow: ellipsis; }
-      .gc-quick-search-dropdown { width: 260px; right: -20px; }
-      .gc-dropdown { width: 260px; right: -10px; }
+      .gc-quick-search-dropdown { width: 280px; right: -20px; }
+      .gc-dropdown { width: 280px; right: -10px; }
+      .gc-connection-status { display: none; }
     }
   `
 
@@ -899,17 +1087,20 @@ export default function AppLayout() {
               right: 20,
               zIndex: 60,
               display: 'none',
-              width: 44,
-              height: 44,
-              borderRadius: 22,
-              background: 'linear-gradient(135deg, #6B7F3B 0%, #1F7A78 100%)',
+              width: 48,
+              height: 48,
+              borderRadius: 24,
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
               color: 'white',
               border: 'none',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
               cursor: 'pointer',
               alignItems: 'center',
-              justifyContent: 'center'
+              justifyContent: 'center',
+              transition: 'transform 0.2s ease'
             }}
+            onMouseEnter={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+            onMouseLeave={(e) => e.currentTarget.style.transform = 'scale(1)'}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <line x1="3" y1="12" x2="21" y2="12" />
@@ -931,23 +1122,23 @@ export default function AppLayout() {
               </div>
 
               <div className="gc-side-block" style={{ marginTop: 14 }}>
-                <div className="gc-label">MODE</div>
+                <div className="gc-label">Mode</div>
                 <div className={cx('gc-mode-switch', isKitchen ? 'is-kitchen' : 'is-mgmt')}>
                   <button className={cx('gc-mode-seg', isKitchen && 'is-active')} onClick={() => setMode('kitchen')}>Kitchen</button>
                   <button className={cx('gc-mode-seg', isMgmt && 'is-active')} onClick={() => setMode('mgmt')}>Mgmt</button>
                 </div>
-                <div className="gc-hint">{isKitchen ? 'Kitchen mode is active.' : 'Mgmt mode is active.'}</div>
+                <div className="gc-hint">{isKitchen ? 'Kitchen mode active.' : 'Mgmt mode active.'}</div>
               </div>
 
               <div className="gc-side-block" style={{ marginTop: 14 }}>
-                <div className="gc-label">NAVIGATION</div>
+                <div className="gc-label">Navigation</div>
                 <nav className="gc-nav">
                   <NavLink to="/dashboard" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Dashboard</NavLink>
                   <NavLink to="/ingredients" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Ingredients</NavLink>
                   <NavLink to="/recipes" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Recipes</NavLink>
                   <NavLink to="/settings" className={({ isActive }) => cx('gc-nav-item', isActive && 'is-active')}>Settings</NavLink>
                 </nav>
-                <div className="gc-tip">Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
+                <div className="gc-tip">💡 Tip: Kitchen for cooking · Mgmt for costing & pricing.</div>
               </div>
 
               <div className="gc-side-block" style={{ marginTop: 14 }}>
@@ -971,12 +1162,13 @@ export default function AppLayout() {
                       <span className="kitchen-chevron">▼</span>
                     </button>
                     {showKitchenMenu && kitchens.length > 0 && (
-                      <div ref={kitchenMenuRef} className="gc-dropdown" style={{ width: 240 }}>
+                      <div ref={kitchenMenuRef} className="gc-dropdown" style={{ width: 260 }}>
                         <div className="dropdown-header">Switch Kitchen</div>
                         {kitchens.map(kit => (
                           <button key={kit.id} className="dropdown-item" onClick={() => { window.location.reload(); setShowKitchenMenu(false); }}>
-                            <span>{kit.name}</span>
-                            {kit.id === k.kitchenId && <span>✓</span>}
+                            <span className="item-icon">🏠</span>
+                            <span className="item-info">{kit.name}</span>
+                            {kit.id === k.kitchenId && <span className="stat-value">✓</span>}
                           </button>
                         ))}
                       </div>
@@ -986,21 +1178,29 @@ export default function AppLayout() {
                   <div className="gc-stats-group">
                     <div className="gc-stat-badge" title="Active Recipes">
                       <span className="stat-icon">📝</span>
-                      <span className="stat-value">{recipesCount}</span>
+                      <span className="stat-value">{statsLoading ? '...' : recipesCount}</span>
+                      {totalRecipesCount > recipesCount && (
+                        <span className="stat-label">+{archivedRecipesCount} archived</span>
+                      )}
                     </div>
+                    <div className="gc-stat-divider" style={{ width: 1, height: 20, background: '#e5e7eb' }} />
                     <div className="gc-stat-badge" title="Active Ingredients">
                       <span className="stat-icon">🥗</span>
-                      <span className="stat-value">{ingredientsCount}</span>
+                      <span className="stat-value">{statsLoading ? '...' : ingredientsCount}</span>
+                      {totalIngredientsCount > ingredientsCount && (
+                        <span className="stat-label">+{archivedIngredientsCount} inactive</span>
+                      )}
                     </div>
                   </div>
 
                   <div className="gc-connection-status">
                     <div className={`status-dot ${!isOnline ? 'offline' : a.status === 'saving' ? 'saving' : a.status === 'error' ? 'error' : 'online'}`} />
                     {!isOnline && <span className="status-text">Offline</span>}
+                    {isOnline && a.status === 'saving' && <span className="status-text">Syncing...</span>}
                   </div>
                 </div>
 
-                <div className="gc-topbar-spacer" />
+                <div className="gc-topbar-spacer" style={{ flex: 1 }} />
 
                 <div className="gc-topbar-right">
                   <div className={`gc-autosave-status ${a.status}`}>
@@ -1029,16 +1229,27 @@ export default function AppLayout() {
                     </button>
                     {showQuickSearch && (
                       <div className="gc-quick-search-dropdown" ref={quickSearchRef}>
-                        <input autoFocus type="text" placeholder="Search recipes or ingredients..." value={quickSearchQuery} onChange={(e) => setQuickSearchQuery(e.target.value)} onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)} />
+                        <input 
+                          autoFocus 
+                          type="text" 
+                          placeholder="Search recipes or ingredients..." 
+                          value={quickSearchQuery} 
+                          onChange={(e) => setQuickSearchQuery(e.target.value)} 
+                          onBlur={() => setTimeout(() => setShowQuickSearch(false), 200)} 
+                        />
                         {quickSearchResults.length > 0 && (
                           <div className="search-results">
                             {quickSearchResults.map(r => (
                               <div key={r.id} className="search-result-item" onClick={() => { navigate(r.path); setShowQuickSearch(false); setQuickSearchQuery(''); }}>
                                 <span>{r.type === 'recipe' ? '📝' : '🥗'}</span>
-                                <span>{r.name}</span>
+                                <span style={{ flex: 1 }}>{r.name}</span>
+                                <span style={{ fontSize: 10, color: '#6b7280' }}>{r.type === 'recipe' ? 'Recipe' : 'Ingredient'}</span>
                               </div>
                             ))}
                           </div>
+                        )}
+                        {quickSearchQuery && quickSearchResults.length === 0 && (
+                          <div className="empty-state">No results found</div>
                         )}
                       </div>
                     )}
@@ -1050,7 +1261,7 @@ export default function AppLayout() {
                   </button>
 
                   <div className="gc-notifications">
-                    <button ref={notificationsButtonRef} className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} onClick={() => setShowNotifications(!showNotifications)}>
+                    <button ref={notificationsButtonRef} className={`gc-action-btn ${unreadCount > 0 ? 'has-badge' : ''}`} onClick={() => setShowNotifications(!showNotifications)} title="Notifications">
                       <span className="btn-icon">🔔</span>
                       {unreadCount > 0 && <span className="notification-badge">{unreadCount > 9 ? '9+' : unreadCount}</span>}
                     </button>
@@ -1066,7 +1277,7 @@ export default function AppLayout() {
                         </div>
                         <div className="dropdown-list">
                           {notifications.length > 0 ? (
-                            notifications.map(n => (
+                            notifications.slice(0, 10).map(n => (
                               <button key={n.id} className={`dropdown-item ${!n.read ? 'unread' : ''}`} onClick={() => { 
                                 setNotifications(prev => prev.map(notif => notif.id === n.id ? { ...notif, read: true } : notif)); 
                                 if (n.path) navigate(n.path); 
@@ -1076,10 +1287,13 @@ export default function AppLayout() {
                                   {n.type === 'success' ? '✓' : n.type === 'error' ? '✗' : n.type === 'warning' ? '⚠' : 'ℹ'}
                                 </span>
                                 <span className="item-message">{n.message}</span>
+                                <span className="item-meta" style={{ fontSize: 9 }}>
+                                  {new Date(n.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                </span>
                               </button>
                             ))
                           ) : (
-                            <div className="empty-state">No notifications</div>
+                            <div className="empty-state">✨ No notifications</div>
                           )}
                         </div>
                       </div>
@@ -1087,7 +1301,7 @@ export default function AppLayout() {
                   </div>
 
                   <div className="gc-recent">
-                    <button ref={recentButtonRef} className="gc-action-btn" onClick={() => setShowRecent(!showRecent)} disabled={loadingRecent}>
+                    <button ref={recentButtonRef} className="gc-action-btn" onClick={() => setShowRecent(!showRecent)} disabled={loadingRecent} title="Recent Items">
                       <span className="btn-icon">{loadingRecent ? '⏳' : '🕒'}</span>
                     </button>
                     {showRecent && (
@@ -1095,7 +1309,7 @@ export default function AppLayout() {
                         <div className="dropdown-header">Recently Updated</div>
                         <div className="dropdown-list">
                           {recentItems.length > 0 ? (
-                            recentItems.map((item, idx) => (
+                            recentItems.slice(0, 8).map((item, idx) => (
                               <button key={`${item.id}-${idx}`} className="dropdown-item" onClick={() => { navigate(item.path); setShowRecent(false); }}>
                                 <span className="item-icon">{item.type === 'recipe' ? '📝' : '🥗'}</span>
                                 <div className="item-info">
@@ -1105,7 +1319,7 @@ export default function AppLayout() {
                               </button>
                             ))
                           ) : (
-                            <div className="empty-state">No recent items</div>
+                            <div className="empty-state">📭 No recent items</div>
                           )}
                         </div>
                       </div>
@@ -1134,7 +1348,7 @@ export default function AppLayout() {
                           <span>{dark ? 'Light Mode' : 'Dark Mode'}</span>
                         </button>
                         <div className="dropdown-divider" />
-                        <button className="dropdown-item" onClick={async () => { await k.refresh(); setShowUserMenu(false); }}>
+                        <button className="dropdown-item" onClick={async () => { await k.refresh(); fetchStats(); setShowUserMenu(false); }}>
                           <span className="item-icon">🔄</span>
                           <span>Refresh Kitchen</span>
                         </button>
@@ -1172,7 +1386,15 @@ export default function AppLayout() {
       <style>{`
         @media (max-width: 768px) {
           .gc-mobile-menu-toggle { display: flex !important; }
-          .gc-side { transform: translateX(-100%); transition: transform 0.3s ease; position: fixed; z-index: 1000; }
+          .gc-side { 
+            transform: translateX(-100%); 
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1); 
+            position: fixed; 
+            z-index: 1000; 
+            top: 0;
+            left: 0;
+            height: 100vh;
+          }
           .gc-side.is-open { transform: translateX(0); }
           .gc-main { margin-left: 0 !important; }
         }
