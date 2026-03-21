@@ -46,12 +46,14 @@ export function KitchenProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <KitchenContext.Provider value={{
-      kitchenId,
-      setKitchenId: handleSetKitchenId,
-      kitchen,
-      isOwner
-    }}>
+    <KitchenContext.Provider
+      value={{
+        kitchenId,
+        setKitchenId: handleSetKitchenId,
+        kitchen,
+        isOwner
+      }}
+    >
       {children}
     </KitchenContext.Provider>
   )
