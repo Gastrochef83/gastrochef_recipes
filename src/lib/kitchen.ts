@@ -1,5 +1,5 @@
-// src/lib/kitchen.ts
-import { createContext, useContext, useState, useEffect } from 'react'
+// src/lib/kitchen.tsx
+import React, { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from './supabase'
 import { useAuth } from './auth'
 
@@ -45,18 +45,14 @@ export function KitchenProvider({ children }: { children: React.ReactNode }) {
     if (!id) localStorage.removeItem('kitchenId')
   }
 
-  return (
-    <KitchenContext.Provider
-      value={{
-        kitchenId,
-        setKitchenId: handleSetKitchenId,
-        kitchen,
-        isOwner
-      }}
-    >
-      {children}
-    </KitchenContext.Provider>
-  )
+  const contextValue: KitchenContextType = {
+    kitchenId,
+    setKitchenId: handleSetKitchenId,
+    kitchen,
+    isOwner
+  }
+
+  return React.createElement(KitchenContext.Provider, { value: contextValue }, children)
 }
 
 export function useKitchen() {
