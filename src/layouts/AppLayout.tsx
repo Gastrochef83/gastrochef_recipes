@@ -107,42 +107,31 @@ export default function AppLayout() {
     }
   }, [])
 
+  // Fetch stats - FIXED: counts all recipes regardless of is_archived
   const fetchStats = useCallback(async () => {
     if (!k.kitchenId) return
     try {
-      const { data: allRecipes, error: allError } = await supabase
+      // جلب جميع الوصفات (بدون فلتر is_archived)
+      const { count: allRecipesCount, error: recipesError } = await supabase
         .from('recipes')
-        .select('id, is_archived')
+        .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
       
-      if (!allError && allRecipes) {
-        const activeRecipes = allRecipes.filter(r => r.is_archived !== true)
-        setRecipesCount(activeRecipes.length)
+      if (!recipesError) {
+        setRecipesCount(allRecipesCount || 0)
       } else {
-        const { count, error } = await supabase
-          .from('recipes')
-          .select('*', { count: 'exact', head: true })
-          .eq('kitchen_id', k.kitchenId)
-        
-        if (!error) setRecipesCount(count || 0)
+        console.error('Error fetching recipes:', recipesError)
       }
       
-      const { data: allIngredients, error: ingError } = await supabase
+      // جلب المكونات النشطة فقط
+      const { count: ingredientsCount, error: ingredientsError } = await supabase
         .from('ingredients')
-        .select('id, is_active')
+        .select('*', { count: 'exact', head: true })
         .eq('kitchen_id', k.kitchenId)
+        .eq('is_active', true)
       
-      if (!ingError && allIngredients) {
-        const activeIngredients = allIngredients.filter(i => i.is_active !== false)
-        setIngredientsCount(activeIngredients.length)
-      } else {
-        const { count, error } = await supabase
-          .from('ingredients')
-          .select('*', { count: 'exact', head: true })
-          .eq('kitchen_id', k.kitchenId)
-          .eq('is_active', true)
-        
-        if (!error) setIngredientsCount(count || 0)
+      if (!ingredientsError) {
+        setIngredientsCount(ingredientsCount || 0)
       }
       
     } catch (error) {
